@@ -10,6 +10,7 @@ import { GeneratePage } from './pages/GeneratePage';
 import { CheckoutPage } from './pages/CheckoutPage';
 import { PublicMenuPage } from './pages/PublicMenuPage';
 import { SettingsPage } from './pages/SettingsPage';
+import { EstablishmentSettingsPage } from './pages/EstablishmentSettingsPage';
 
 function App() {
   return (
@@ -24,6 +25,7 @@ function App() {
         <Route path="dashboard" element={<DashboardPage />} />
         <Route path="generate" element={<GeneratePage />} />
         <Route path="settings" element={<SettingsPage />} />
+        <Route path="settings/establishment" element={<EstablishmentSettingsPage />} />
         <Route path="menu/:userId" element={<PublicMenuPage />} />
       </Route>
     </Routes>

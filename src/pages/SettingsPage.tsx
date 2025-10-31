@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/lib/api';
-import { User, Mail, CreditCard, LogOut, Loader2 } from 'lucide-react';
+import { User, Mail, CreditCard, LogOut, Loader2, BookOpen } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -247,6 +247,32 @@ export function SettingsPage() {
                     </Button>
                   </div>
                 )}
+              </CardContent>
+            </Card>
+
+            <Separator />
+
+            {/* Establishment Settings */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <BookOpen className="w-5 h-5 text-saffron" />
+                  Establishment Settings
+                </CardTitle>
+                <CardDescription>
+                  Customize your menu book appearance
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-slate mb-4">
+                  Configure your restaurant name, tagline, menu book style, and layout preferences.
+                </p>
+                <Button
+                  onClick={() => navigate('/settings/establishment')}
+                  className="bg-saffron hover:bg-saffron-600"
+                >
+                  Manage Establishment
+                </Button>
               </CardContent>
             </Card>
 

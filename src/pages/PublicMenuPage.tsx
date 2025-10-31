@@ -1,27 +1,22 @@
 import { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Leaf, Flame, Package, Image as ImageIcon, Coffee, Soup, Salad, UtensilsCrossed, Cookie, Apple } from 'lucide-react';
+import { Leaf, Flame, Package, Image as ImageIcon, Coffee, Soup, Salad, UtensilsCrossed, Cookie, Apple, BookOpen, List } from 'lucide-react';
 import { api } from '@/lib/api';
-import type { DietaryOption, MenuCategory } from '@/types';
-
-interface MenuItem {
-  id: string;
-  name: string;
-  description: string | null;
-  price: string | null;
-  dietaryInfo: DietaryOption[] | null;
-  allergens: string[] | null;
-  generatedImages: string[] | null;
-  displayOrder: number;
-  isAvailable: boolean;
-}
+import { MenuBook } from '@/components/MenuBook';
+import type { DietaryOption, MenuCategory, MenuItem, EstablishmentSettings } from '@/types';
 
 export function PublicMenuPage() {
   const { userId } = useParams<{ userId: string }>();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
   const [menuByCategory, setMenuByCategory] = useState<Record<string, MenuItem[]>>({});
+  const [establishmentSettings, setEstablishmentSettings] = useState<Partial<EstablishmentSettings> | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+
+  // Get view mode from URL params, default to 'book'
+  const viewMode = (searchParams.get('view') as 'book' | 'list') || 'book';
 
   useEffect(() => {
     const fetchMenu = async () => {
@@ -32,8 +27,21 @@ export function PublicMenuPage() {
       }
 
       try {
-        const data = await api.getPublicMenu(userId);
-        setMenuByCategory(data);
+        // Fetch both menu items and establishment settings
+        const [menuData, settings] = await Promise.all([
+          api.getPublicMenu(userId),
+          api.getPublicEstablishmentSettings(userId),
+        ]);
+
+        setMenuByCategory(menuData);
+        setEstablishmentSettings(settings);
+
+        // Flatten menu items for MenuBook component
+        const allItems: MenuItem[] = [];
+        Object.values(menuData).forEach((items) => {
+          allItems.push(...items);
+        });
+        setMenuItems(allItems);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to load menu');
       } finally {
@@ -43,6 +51,11 @@ export function PublicMenuPage() {
 
     fetchMenu();
   }, [userId]);
+
+  const handleToggleView = () => {
+    const newView = viewMode === 'book' ? 'list' : 'book';
+    setSearchParams({ view: newView });
+  };
 
   const categoryIcons: Record<MenuCategory, any> = {
     'Appetizers': Apple,
@@ -99,8 +112,65 @@ export function PublicMenuPage() {
     );
   }
 
+  // Default establishment settings if none provided
+  const defaultSettings: EstablishmentSettings = {
+    id: '',
+    userId: userId || '',
+    establishmentName: 'Menu',
+    tagline: null,
+    logoUrl: null,
+    coverStyle: 'classic',
+    accentColor: '#C85A54',
+    fontFamily: 'serif',
+    itemsPerPage: 8,
+    showPageNumbers: true,
+    showEstablishmentOnEveryPage: false,
+    createdAt: null,
+    updatedAt: null,
+  };
+
+  const settings = { ...defaultSettings, ...establishmentSettings };
+
+  // Show MenuBook view
+  if (viewMode === 'book') {
+    return (
+      <>
+        {/* View Toggle Button (Floating) */}
+        <motion.button
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ delay: 0.5 }}
+          onClick={handleToggleView}
+          className="fixed top-6 right-6 z-40 p-3 bg-charcoal text-white rounded-full shadow-2xl hover:bg-charcoal/90 transition-all"
+          title="Switch to list view"
+        >
+          <List className="w-5 h-5" />
+        </motion.button>
+
+        <MenuBook
+          menuItems={menuItems}
+          settings={settings}
+          onToggleView={handleToggleView}
+        />
+      </>
+    );
+  }
+
+  // Show traditional list view
   return (
     <div className="min-h-screen bg-cream py-12 px-4 sm:px-6 lg:px-8">
+      {/* View Toggle Button (Floating) */}
+      <motion.button
+        initial={{ opacity: 0, scale: 0.9 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ delay: 0.5 }}
+        onClick={handleToggleView}
+        className="fixed top-6 right-6 z-40 p-3 bg-charcoal text-white rounded-full shadow-2xl hover:bg-charcoal/90 transition-all"
+        title="Switch to book view"
+      >
+        <BookOpen className="w-5 h-5" />
+      </motion.button>
+
       <div className="max-w-5xl mx-auto">
         {/* Header */}
         <motion.div
@@ -109,8 +179,13 @@ export function PublicMenuPage() {
           transition={{ duration: 0.5 }}
           className="text-center mb-16"
         >
-          <h1 className="text-5xl font-bold text-charcoal mb-4">Menu</h1>
-          <div className="w-24 h-1 bg-gradient-to-r from-saffron-600 to-saffron-400 mx-auto rounded-full" />
+          <h1 className="text-5xl font-bold text-charcoal mb-4">
+            {settings.establishmentName}
+          </h1>
+          {settings.tagline && (
+            <p className="text-lg text-gray-600 italic mt-2">{settings.tagline}</p>
+          )}
+          <div className="w-24 h-1 bg-gradient-to-r from-saffron-600 to-saffron-400 mx-auto rounded-full mt-4" />
         </motion.div>
 
         {/* Categories */}

@@ -2,7 +2,7 @@ import { motion } from 'framer-motion';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 import { Link } from 'react-router-dom';
-import { Sparkles, Image as ImageIcon, TrendingUp, Package, Trash2, Share2, Leaf, Flame, Coffee, Soup, Salad, UtensilsCrossed, Cookie, Wine, Apple, GripVertical, QrCode, X, Download, FileText } from 'lucide-react';
+import { Sparkles, Image as ImageIcon, TrendingUp, Package, Trash2, Share2, Leaf, Flame, Coffee, Soup, Salad, UtensilsCrossed, Cookie, Wine, Apple, GripVertical, QrCode, X, Download, FileText, BookOpen } from 'lucide-react';
 import { useState, useEffect, useMemo } from 'react';
 import type { MenuItem, MenuCategory, DietaryOption } from '@/types';
 import QRCode from 'qrcode';
@@ -572,6 +572,13 @@ export function DashboardPage() {
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-2xl font-bold text-gray-900">Your Menu</h2>
             <div className="flex items-center gap-3">
+              <Link
+                to={`/menu/${queryClient.getQueryData<{ id: string }>(['user'])?.id || ''}`}
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-saffron-600 text-white font-semibold hover:shadow-lg hover:bg-saffron-700 transition-all"
+              >
+                <BookOpen className="w-4 h-4" />
+                View Menu Book
+              </Link>
               <button
                 onClick={handleExportPDF}
                 className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-charcoal text-white font-semibold hover:shadow-lg transition-all"
