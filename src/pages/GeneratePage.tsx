@@ -1,7 +1,7 @@
 import { useMemo, useState, useEffect } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Link, useSearchParams } from 'react-router-dom';
+import { Link, useSearchParams, useNavigate } from 'react-router-dom';
 import {
   Sparkles,
   Image as ImageIcon,
@@ -51,7 +51,9 @@ const variationLabels = ['Centered plating', 'Angled view', 'Close-up detail'];
 export function GeneratePage() {
   const [searchParams] = useSearchParams();
   const editId = searchParams.get('id');
-  
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
+
   const { data: usageInfo } = useQuery({
     queryKey: ['usage'],
     queryFn: () => api.getCurrentUsage(),
@@ -370,9 +372,13 @@ export function GeneratePage() {
       setIsSaved(true);
       setHighResMessage('Dish saved to your menu!');
 
-      // Refresh usage info
+      // Invalidate queries to refresh data
+      await queryClient.invalidateQueries({ queryKey: ['menuItems'] });
+      await queryClient.invalidateQueries({ queryKey: ['usage'] });
+
+      // Navigate to dashboard with a small delay for UX
       setTimeout(() => {
-        window.location.href = '/dashboard';
+        navigate('/dashboard', { replace: true });
       }, 1500);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to save to menu');
