@@ -154,6 +154,13 @@ class ApiClient {
     images: string[];
     selectedStyle: string;
     action: 'save' | 'download';
+    name?: string;
+    description?: string | null;
+    ingredients?: string[] | null;
+    category?: string;
+    price?: string | null;
+    dietaryInfo?: string[] | null;
+    allergens?: string[] | null;
   }): Promise<{ menuItem: MenuItem; action: string; success: boolean }> {
     return this.request(`/menu-items/${menuItemId}/finalize`, {
       method: 'POST',

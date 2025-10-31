@@ -355,6 +355,16 @@ export function GeneratePage() {
         images,
         selectedStyle: generatedStyle,
         action: 'save',
+        // Include all form data to ensure everything is saved
+        name: formData.name,
+        description: formData.description || null,
+        ingredients: formData.ingredients
+          ? formData.ingredients.split(',').map((i) => i.trim())
+          : null,
+        category: formData.category,
+        price: formData.price || null,
+        dietaryInfo: formData.dietaryInfo.length > 0 ? formData.dietaryInfo : null,
+        allergens: formData.allergens.length > 0 ? formData.allergens : null,
       });
 
       setIsSaved(true);
@@ -386,6 +396,16 @@ export function GeneratePage() {
           images,
           selectedStyle: generatedStyle,
           action: 'download',
+          // Include form data for potential future use
+          name: formData.name,
+          description: formData.description || null,
+          ingredients: formData.ingredients
+            ? formData.ingredients.split(',').map((i) => i.trim())
+            : null,
+          category: formData.category,
+          price: formData.price || null,
+          dietaryInfo: formData.dietaryInfo.length > 0 ? formData.dietaryInfo : null,
+          allergens: formData.allergens.length > 0 ? formData.allergens : null,
         });
         setDownloadTracked(true);
       } catch (err) {
