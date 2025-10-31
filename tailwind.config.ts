@@ -11,6 +11,22 @@ export default {
         display: ['Playfair Display', 'Georgia', 'serif'],
       },
       colors: {
+        // Primary color (maps to saffron for consistency)
+        primary: {
+          DEFAULT: '#FF8C42',
+          50: '#FFF5ED',
+          100: '#FFE8D6',
+          200: '#FFD4AD',
+          300: '#FFBE84',
+          400: '#FFA55B',
+          500: '#FF8C42',
+          600: '#FF6B0A',
+          700: '#D15400',
+          800: '#A04200',
+          900: '#6F2E00',
+          border: '#FFD4AD',
+          foreground: '#FFFFFF',
+        },
         // Primary Brand Colors
         saffron: {
           DEFAULT: '#FF8C42',
@@ -65,6 +81,37 @@ export default {
         // Neutrals
         slate: '#636E72',
         'light-gray': '#DFE6E9',
+        // UI Component Colors (for shadcn/ui compatibility)
+        background: '#FFF8F0', // cream
+        foreground: '#2D3436', // charcoal
+        muted: {
+          DEFAULT: '#F5F6F6',
+          foreground: '#636E72',
+        },
+        accent: {
+          DEFAULT: '#FFE8D6',
+          foreground: '#2D3436',
+        },
+        destructive: {
+          DEFAULT: '#DC2626',
+          foreground: '#FFFFFF',
+        },
+        border: '#D1D5D7',
+        input: '#D1D5D7',
+        ring: '#FF8C42', // saffron for focus states
+        secondary: {
+          DEFAULT: '#E8EAEB',
+          foreground: '#2D3436',
+          border: '#D1D5D7',
+        },
+        sidebar: {
+          DEFAULT: '#FFFFFF',
+          foreground: '#2D3436',
+          accent: '#FFE8D6',
+          'accent-foreground': '#2D3436',
+          border: '#D1D5D7',
+          ring: '#FF8C42',
+        },
       },
       animation: {
         'fade-in': 'fadeIn 0.5s ease-in-out',
