@@ -71,27 +71,31 @@ function SortableMenuItem({
               className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
             />
             {/* Drag Handle */}
-            <button
+            <div
               {...attributes}
               {...listeners}
               className="absolute top-1 left-1 p-1.5 rounded-md bg-white/90 backdrop-blur-sm shadow-lg hover:bg-white cursor-grab active:cursor-grabbing transition-colors"
               aria-label="Drag to reorder"
+              role="button"
+              tabIndex={0}
             >
               <GripVertical className="w-3 h-3 text-gray-600" />
-            </button>
+            </div>
           </div>
         ) : (
           <div className="w-24 h-24 flex-shrink-0 bg-gradient-to-br from-gray-100 to-gray-200 rounded-lg flex items-center justify-center relative">
             <ImageIcon className="w-8 h-8 text-gray-400" />
             {/* Drag Handle */}
-            <button
+            <div
               {...attributes}
               {...listeners}
               className="absolute top-1 left-1 p-1.5 rounded-md bg-white/90 backdrop-blur-sm shadow-lg hover:bg-white cursor-grab active:cursor-grabbing transition-colors"
               aria-label="Drag to reorder"
+              role="button"
+              tabIndex={0}
             >
               <GripVertical className="w-3 h-3 text-gray-600" />
-            </button>
+            </div>
           </div>
         )}
 
@@ -241,7 +245,11 @@ export function DashboardPage() {
   };
 
   const sensors = useSensors(
-    useSensor(PointerSensor),
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8,
+      },
+    }),
     useSensor(KeyboardSensor, {
       coordinateGetter: sortableKeyboardCoordinates,
     })
@@ -249,7 +257,7 @@ export function DashboardPage() {
 
   const handleGenerateQRCode = async () => {
     try {
-      const { data: user } = await queryClient.ensureQueryData({
+      const user = await queryClient.ensureQueryData({
         queryKey: ['user'],
         queryFn: () => api.getCurrentUser(),
       });
@@ -304,7 +312,7 @@ export function DashboardPage() {
     yPosition += 15;
 
     // Iterate through categories
-    Object.entries(menuByCategory).forEach(([category, items], categoryIndex) => {
+    Object.entries(menuByCategory).forEach(([category, items]) => {
       // Check if we need a new page
       if (yPosition > pdf.internal.pageSize.getHeight() - 40) {
         pdf.addPage();
@@ -325,7 +333,7 @@ export function DashboardPage() {
       yPosition += 10;
 
       // Items
-      items.forEach((item) => {
+      items.forEach((item: MenuItem) => {
         // Check if we need a new page for the item
         if (yPosition > pdf.internal.pageSize.getHeight() - 50) {
           pdf.addPage();
@@ -612,11 +620,11 @@ export function DashboardPage() {
                     onDragEnd={(event) => handleDragEnd(event, category as MenuCategory)}
                   >
                     <SortableContext
-                      items={items.map((item) => item.id)}
+                      items={items.map((item: MenuItem) => item.id)}
                       strategy={verticalListSortingStrategy}
                     >
                       <div className="space-y-3">
-                        {items.map((item) => (
+                        {items.map((item: MenuItem) => (
                           <SortableMenuItem
                             key={item.id}
                             item={item}
