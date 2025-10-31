@@ -1,8 +1,16 @@
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
-import { Sparkles, Zap, Shield, TrendingUp, Camera, Palette, Clock, Settings, LayoutDashboard, Image as ImageIcon } from 'lucide-react';
+import { Sparkles, Zap, Shield, TrendingUp, Camera, Palette, Clock, Settings, LayoutDashboard, Image as ImageIcon, ArrowUp, DollarSign, Eye, Brain, ShoppingCart } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '@/lib/api';
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+  CarouselNext,
+  CarouselPrevious,
+} from "@/components/ui/carousel";
+import Autoplay from "embla-carousel-autoplay";
 
 const features = [
   {
@@ -59,6 +67,49 @@ const sampleImages = [
   {
     style: 'Delivery App',
     description: 'Optimized for mobile ordering platforms',
+  },
+];
+
+const statistics = [
+  {
+    icon: ShoppingCart,
+    value: '35%+',
+    label: 'Increase in Total Orders',
+    description: 'High-quality food photos boost orders by over 35%',
+    source: 'Snappr, Grubhub',
+    gradient: 'from-emerald-500 to-green-500',
+  },
+  {
+    icon: TrendingUp,
+    value: '40%',
+    label: 'Sales Increase',
+    description: 'Restaurants using digital menus with great visuals see 40% sales growth',
+    source: 'EvergreenHQ',
+    gradient: 'from-blue-500 to-cyan-500',
+  },
+  {
+    icon: ArrowUp,
+    value: '25%',
+    label: 'Higher Average Order Value',
+    description: 'Strategic visuals increase customer spend per order by 25%',
+    source: 'WebDiner',
+    gradient: 'from-purple-500 to-pink-500',
+  },
+  {
+    icon: Brain,
+    value: '90%',
+    label: 'Visual Information Processing',
+    description: 'Of all information transmitted to the brain is visual',
+    source: 'Cognitive Science',
+    gradient: 'from-orange-500 to-red-500',
+  },
+  {
+    icon: DollarSign,
+    value: 'AED 15,000',
+    label: 'Cost Savings',
+    description: 'Average amount saved per photo shoot with AI generation',
+    source: 'Market Research',
+    gradient: 'from-yellow-500 to-amber-500',
   },
 ];
 
@@ -194,6 +245,95 @@ export function HomePage() {
               </motion.p>
             )}
           </div>
+        </div>
+      </section>
+
+      {/* Statistics Carousel */}
+      <section className="py-16 px-4 sm:px-6 lg:px-8 bg-gradient-to-br from-gray-50 to-white border-y border-gray-100">
+        <div className="max-w-7xl mx-auto">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6 }}
+            className="text-center mb-12"
+          >
+            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-3">
+              Proven Results That Drive Growth
+            </h2>
+            <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+              Data-backed insights showing the power of professional food imagery
+            </p>
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6, delay: 0.2 }}
+          >
+            <Carousel
+              opts={{
+                align: "start",
+                loop: true,
+              }}
+              plugins={[
+                Autoplay({
+                  delay: 4000,
+                }),
+              ]}
+              className="w-full max-w-6xl mx-auto"
+            >
+              <CarouselContent>
+                {statistics.map((stat, index) => (
+                  <CarouselItem key={index} className="md:basis-1/2 lg:basis-1/3">
+                    <div className="p-1">
+                      <motion.div
+                        initial={{ opacity: 0, scale: 0.95 }}
+                        whileInView={{ opacity: 1, scale: 1 }}
+                        viewport={{ once: true }}
+                        transition={{ duration: 0.5, delay: index * 0.05 }}
+                        className="group relative p-6 rounded-2xl bg-white border border-gray-200 hover:border-transparent hover:shadow-xl transition-all h-full"
+                      >
+                        <div
+                          className={`absolute inset-0 rounded-2xl bg-gradient-to-br ${stat.gradient} opacity-0 group-hover:opacity-5 transition-opacity`}
+                        />
+
+                        <div className="relative z-10">
+                          <div
+                            className={`inline-flex p-3 rounded-xl bg-gradient-to-br ${stat.gradient} text-white mb-4`}
+                          >
+                            <stat.icon className="w-5 h-5" />
+                          </div>
+
+                          <div className="mb-3">
+                            <div className={`text-4xl font-bold bg-gradient-to-br ${stat.gradient} bg-clip-text text-transparent mb-1`}>
+                              {stat.value}
+                            </div>
+                            <h3 className="text-lg font-semibold text-gray-900">
+                              {stat.label}
+                            </h3>
+                          </div>
+
+                          <p className="text-sm text-gray-600 mb-3">
+                            {stat.description}
+                          </p>
+
+                          <div className="pt-3 border-t border-gray-100">
+                            <p className="text-xs text-gray-500">
+                              Source: {stat.source}
+                            </p>
+                          </div>
+                        </div>
+                      </motion.div>
+                    </div>
+                  </CarouselItem>
+                ))}
+              </CarouselContent>
+              <CarouselPrevious className="hidden md:flex" />
+              <CarouselNext className="hidden md:flex" />
+            </Carousel>
+          </motion.div>
         </div>
       </section>
 
