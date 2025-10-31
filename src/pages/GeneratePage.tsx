@@ -114,6 +114,12 @@ export function GeneratePage() {
   const trialProgress = trialLimit > 0 ? Math.min((trialUsed / trialLimit) * 100, 100) : 0;
   const showTrialBanner = isTrial && usageInfo && trialLimit > 0;
 
+  // Edit count tracking (max 2 edits)
+  const MAX_EDITS = 2;
+  const currentEditCount = menuItem?.editCount ?? 0;
+  const editsRemaining = Math.max(0, MAX_EDITS - currentEditCount);
+  const hasReachedEditLimit = currentEditCount >= MAX_EDITS;
+
   const toggleImageSelection = (index: number) => {
     setSelectedPreview((prev) => {
       if (!prev.length) return prev;
@@ -414,6 +420,56 @@ export function GeneratePage() {
           </motion.div>
         )}
 
+        {editId && menuItem && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4 }}
+            className={`mb-8 rounded-2xl border px-6 py-4 shadow-sm ${
+              hasReachedEditLimit
+                ? 'border-red-200 bg-gradient-to-br from-red-50 to-red-100'
+                : editsRemaining === 1
+                ? 'border-amber-200 bg-gradient-to-br from-amber-50 to-amber-100'
+                : 'border-blue-200 bg-gradient-to-br from-blue-50 to-blue-100'
+            }`}
+          >
+            <div className="flex items-center gap-3">
+              <div className={`rounded-xl p-2 ${
+                hasReachedEditLimit
+                  ? 'bg-red-100 text-red-600'
+                  : editsRemaining === 1
+                  ? 'bg-amber-100 text-amber-600'
+                  : 'bg-blue-100 text-blue-600'
+              }`}>
+                <Sparkles className="h-4 w-4" />
+              </div>
+              <div className="flex-1">
+                <h2 className={`text-sm font-semibold uppercase tracking-wide ${
+                  hasReachedEditLimit
+                    ? 'text-red-800'
+                    : editsRemaining === 1
+                    ? 'text-amber-800'
+                    : 'text-blue-800'
+                }`}>
+                  {hasReachedEditLimit ? 'Edit limit reached' : 'Image regenerations'}
+                </h2>
+                <p className={`text-sm ${
+                  hasReachedEditLimit
+                    ? 'text-red-700'
+                    : editsRemaining === 1
+                    ? 'text-amber-700'
+                    : 'text-blue-700'
+                }`}>
+                  {hasReachedEditLimit
+                    ? `You've regenerated images ${MAX_EDITS} times for this dish. No more regenerations are allowed.`
+                    : `You can regenerate images ${editsRemaining} more ${editsRemaining === 1 ? 'time' : 'times'} for this dish (${currentEditCount}/${MAX_EDITS} used).`
+                  }
+                </p>
+              </div>
+            </div>
+          </motion.div>
+        )}
+
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           <motion.div
             initial={{ opacity: 0, x: -20 }}
@@ -598,13 +654,18 @@ export function GeneratePage() {
               <div className="space-y-3">
                 <button
                   type="submit"
-                  disabled={loading || saveOnlyLoading}
+                  disabled={loading || saveOnlyLoading || hasReachedEditLimit}
                   className="w-full py-3 rounded-lg gradient-saffron text-white font-semibold hover:shadow-lg hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 transition-all flex items-center justify-center gap-2"
                 >
                   {loading ? (
                     <>
                       <Loader2 className="w-5 h-5 animate-spin" />
                       {editId ? 'Updating...' : 'Generating previews...'}
+                    </>
+                  ) : hasReachedEditLimit ? (
+                    <>
+                      <X className="w-5 h-5" />
+                      Edit Limit Reached
                     </>
                   ) : (
                     <>

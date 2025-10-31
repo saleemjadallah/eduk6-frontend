@@ -58,6 +58,7 @@ export interface MenuItem {
   isAvailable: boolean;
   generatedImages: string[] | null;
   selectedStyle: string | null;
+  editCount?: number; // Track number of times images have been regenerated
   createdAt: Date | null;
 }
 
