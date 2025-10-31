@@ -21,7 +21,7 @@ import {
 import { api } from '@/lib/api';
 import type { StyleOption, MenuCategory, DietaryOption } from '@/types';
 
-const styles: { value: StyleOption; label: string; description: string }[] = [
+const styles: { value: StyleOption; label: string; description: string; downloadOnly?: boolean }[] = [
   {
     value: 'Rustic/Dark',
     label: 'Rustic Dark',
@@ -36,11 +36,13 @@ const styles: { value: StyleOption; label: string; description: string }[] = [
     value: 'Social Media',
     label: 'Social Media',
     description: 'Instagram-ready flat lay',
+    downloadOnly: true,
   },
   {
     value: 'Delivery App',
     label: 'Delivery App',
     description: 'Optimized for mobile apps',
+    downloadOnly: true,
   },
 ];
 
@@ -86,15 +88,20 @@ export function GeneratePage() {
   const [generatedStyle, setGeneratedStyle] = useState<StyleOption>('Bright/Modern');
   const [zoomedIndex, setZoomedIndex] = useState<number | null>(null);
   const [zoomScale, setZoomScale] = useState(1);
+  const [isDownloadOnly, setIsDownloadOnly] = useState(false);
 
   // Load existing menu item data when editing
   useEffect(() => {
     if (menuItem) {
+      // Check if the selected style is download-only, if so default to 'Bright/Modern'
+      const selectedStyle = (menuItem.selectedStyle as StyleOption) || 'Bright/Modern';
+      const isDownloadOnly = selectedStyle === 'Social Media' || selectedStyle === 'Delivery App';
+
       setFormData({
         name: menuItem.name || '',
         description: menuItem.description || '',
         ingredients: menuItem.ingredients?.join(', ') || '',
-        style: menuItem.selectedStyle || 'Bright/Modern',
+        style: (isDownloadOnly ? 'Bright/Modern' : selectedStyle) as StyleOption,
         category: menuItem.category || 'Mains',
         price: menuItem.price || '',
         dietaryInfo: menuItem.dietaryInfo || [],
@@ -286,6 +293,7 @@ export function GeneratePage() {
       setSelectedImage(0);
       setMenuItemId(result.menuItem.id);
       setGeneratedStyle(formData.style);
+      setIsDownloadOnly(result.downloadOnly || false);
       setSelectedPreview(new Array(result.images.length).fill(true));
     } catch (err) {
       console.error('Error in handleSubmit:', err);
@@ -420,7 +428,7 @@ export function GeneratePage() {
           </motion.div>
         )}
 
-        {editId && menuItem && (
+        {editId && menuItem && !['Social Media', 'Delivery App'].includes(formData.style) && (
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
@@ -621,11 +629,23 @@ export function GeneratePage() {
                       <div className="flex items-center justify-between mb-1">
                         <span className="font-semibold text-sm">{style.label}</span>
                         {formData.style === style.value && <Check className="w-4 h-4 text-saffron-600" />}
+                        {style.downloadOnly && (
+                          <span className="inline-flex items-center gap-1 rounded-full bg-blue-100 px-2 py-0.5 text-[10px] font-semibold text-blue-700">
+                            <Download className="h-3 w-3" />
+                          </span>
+                        )}
                       </div>
                       <p className="text-xs text-gray-600">{style.description}</p>
                     </button>
                   ))}
                 </div>
+                <p className="mt-2 text-xs text-gray-500">
+                  <span className="inline-flex items-center gap-1 font-medium">
+                    <Download className="h-3 w-3" />
+                    Download only:
+                  </span>
+                  {' '}Social Media and Delivery App styles can be downloaded but won't be saved to your menu items.
+                </p>
               </div>
 
               {error && (
@@ -654,7 +674,7 @@ export function GeneratePage() {
               <div className="space-y-3">
                 <button
                   type="submit"
-                  disabled={loading || saveOnlyLoading || hasReachedEditLimit}
+                  disabled={loading || saveOnlyLoading || (hasReachedEditLimit && !['Social Media', 'Delivery App'].includes(formData.style))}
                   className="w-full py-3 rounded-lg gradient-saffron text-white font-semibold hover:shadow-lg hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 transition-all flex items-center justify-center gap-2"
                 >
                   {loading ? (
@@ -662,7 +682,7 @@ export function GeneratePage() {
                       <Loader2 className="w-5 h-5 animate-spin" />
                       {editId ? 'Updating...' : 'Generating previews...'}
                     </>
-                  ) : hasReachedEditLimit ? (
+                  ) : (hasReachedEditLimit && !['Social Media', 'Delivery App'].includes(formData.style)) ? (
                     <>
                       <X className="w-5 h-5" />
                       Edit Limit Reached
@@ -670,7 +690,7 @@ export function GeneratePage() {
                   ) : (
                     <>
                       <Sparkles className="w-5 h-5" />
-                      {editId ? 'Update Dish & Generate Images' : 'Generate Preview Images'}
+                      {['Social Media', 'Delivery App'].includes(formData.style) ? 'Generate for Download' : editId ? 'Update Dish & Generate Images' : 'Generate Preview Images'}
                     </>
                   )}
                 </button>
@@ -786,6 +806,19 @@ export function GeneratePage() {
                   </div>
 
                   <div className="mt-6 space-y-3">
+                    {isDownloadOnly && (
+                      <div className="rounded-lg border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-800">
+                        <div className="flex items-start gap-2">
+                          <Download className="h-4 w-4 mt-0.5 flex-shrink-0" />
+                          <div>
+                            <p className="font-medium">Download-only style</p>
+                            <p className="text-xs mt-1">
+                              These images are for downloads only and will not be saved to your menu items.
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    )}
                     {highResMessage && (
                       <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
                         {highResMessage}
