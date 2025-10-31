@@ -150,6 +150,17 @@ class ApiClient {
     });
   }
 
+  async finalizeDish(menuItemId: string, data: {
+    images: string[];
+    selectedStyle: string;
+    action: 'save' | 'download';
+  }): Promise<{ menuItem: MenuItem; action: string; success: boolean }> {
+    return this.request(`/menu-items/${menuItemId}/finalize`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
   // Subscriptions
   async getCurrentSubscription(): Promise<Subscription | null> {
     return this.request<Subscription | null>('/subscriptions/current');

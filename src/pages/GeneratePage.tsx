@@ -89,6 +89,9 @@ export function GeneratePage() {
   const [zoomedIndex, setZoomedIndex] = useState<number | null>(null);
   const [zoomScale, setZoomScale] = useState(1);
   const [isDownloadOnly, setIsDownloadOnly] = useState(false);
+  const [isSaved, setIsSaved] = useState(false);
+  const [saveLoading, setSaveLoading] = useState(false);
+  const [downloadTracked, setDownloadTracked] = useState(false);
 
   // Load existing menu item data when editing
   useEffect(() => {
@@ -341,13 +344,54 @@ export function GeneratePage() {
     }
   };
 
-  const downloadImage = (imageUrl: string, index: number) => {
+  const handleSaveToMenu = async () => {
+    if (!menuItemId || !images.length) return;
+
+    setSaveLoading(true);
+    setError('');
+
+    try {
+      await api.finalizeDish(menuItemId, {
+        images,
+        selectedStyle: generatedStyle,
+        action: 'save',
+      });
+
+      setIsSaved(true);
+      setHighResMessage('Dish saved to your menu!');
+
+      // Refresh usage info
+      setTimeout(() => {
+        window.location.href = '/dashboard';
+      }, 1500);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to save to menu');
+    } finally {
+      setSaveLoading(false);
+    }
+  };
+
+  const downloadImage = async (imageUrl: string, index: number) => {
     const link = document.createElement('a');
     link.href = imageUrl;
     link.download = `${formData.name.replace(/\s+/g, '-')}-${index + 1}.png`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+
+    // Track download usage only once per session
+    if (!downloadTracked && menuItemId) {
+      try {
+        await api.finalizeDish(menuItemId, {
+          images,
+          selectedStyle: generatedStyle,
+          action: 'download',
+        });
+        setDownloadTracked(true);
+      } catch (err) {
+        console.error('Failed to track download:', err);
+      }
+    }
   };
 
   const canRequestHighRes = Boolean(menuItemId && images.length);
@@ -377,6 +421,11 @@ export function GeneratePage() {
           <p className="text-gray-600">
             {editId ? 'Update your dish details and generate new images' : 'Create stunning AI-generated photography for your dishes.'}
           </p>
+          <div className="mt-4 rounded-lg border border-blue-200 bg-blue-50 px-4 py-3">
+            <p className="text-sm text-blue-800">
+              <span className="font-semibold">Tip:</span> Generate and regenerate as many times as you want! Images only count against your plan when you click "Save to Menu" or download them.
+            </p>
+          </div>
         </motion.div>
 
         {showTrialBanner && (
@@ -822,6 +871,34 @@ export function GeneratePage() {
                     {highResMessage && (
                       <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
                         {highResMessage}
+                      </div>
+                    )}
+                    {!isSaved && !isDownloadOnly && (
+                      <button
+                        type="button"
+                        onClick={handleSaveToMenu}
+                        disabled={saveLoading || !canRequestHighRes}
+                        className="w-full py-3 rounded-lg gradient-saffron text-white font-semibold hover:shadow-lg hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 transition-all flex items-center justify-center gap-2"
+                      >
+                        {saveLoading ? (
+                          <>
+                            <Loader2 className="h-5 w-5 animate-spin" />
+                            Saving to menu...
+                          </>
+                        ) : (
+                          <>
+                            <Save className="h-5 w-5" />
+                            Save to Menu
+                          </>
+                        )}
+                      </button>
+                    )}
+                    {isSaved && (
+                      <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
+                        <div className="flex items-center gap-2">
+                          <Check className="h-4 w-4" />
+                          <span className="font-medium">Saved to menu! Redirecting to dashboard...</span>
+                        </div>
                       </div>
                     )}
                     <button
