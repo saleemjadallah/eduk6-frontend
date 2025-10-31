@@ -89,44 +89,33 @@ export function MenuBookPage({ page, settings, isActive, direction }: MenuBookPa
             )}
 
             {/* Menu Items */}
-            <div className="flex-1 space-y-4 overflow-y-auto">
-              {(() => {
-                // Group items by category
-                const itemsByCategory: Record<string, typeof page.items> = {};
-                page.items.forEach(item => {
-                  const category = item.category || 'Mains';
-                  if (!itemsByCategory[category]) {
-                    itemsByCategory[category] = [];
-                  }
-                  itemsByCategory[category].push(item);
-                });
+            <div className="flex-1 space-y-3 overflow-y-auto">
+              {page.items.map((item, index) => {
+                const prevItem = index > 0 ? page.items[index - 1] : null;
+                const showCategoryHeader = !prevItem || prevItem.category !== item.category;
+                const category = item.category || 'Mains';
+                const Icon = categoryIcons[category as MenuCategory] || UtensilsCrossed;
 
-                return Object.entries(itemsByCategory).map(([category, items], categoryIdx) => {
-                  const Icon = categoryIcons[category as MenuCategory] || UtensilsCrossed;
-                  return (
-                    <div key={category} className={categoryIdx > 0 ? 'pt-4' : ''}>
-                      {/* Category Header */}
-                      <div className="flex items-center gap-2 mb-3 pb-2 border-b-2" style={{ borderColor: settings.accentColor }}>
+                return (
+                  <div key={item.id}>
+                    {/* Category Header - only show when category changes */}
+                    {showCategoryHeader && (
+                      <div className={`flex items-center gap-2 mb-3 pb-2 border-b-2 ${index > 0 ? 'mt-4' : ''}`} style={{ borderColor: settings.accentColor }}>
                         <Icon className="w-5 h-5" style={{ color: settings.accentColor }} />
                         <h3 className="text-lg font-semibold text-charcoal">{category}</h3>
                       </div>
+                    )}
 
-                      {/* Items in Category */}
-                      <div className="space-y-3">
-                        {items.map((item, index) => (
-                          <div key={item.id}>
-                            <MenuBookItem item={item} accentColor={settings.accentColor} variant="compact" />
-                            {/* Divider between items */}
-                            {index < items.length - 1 && (
-                              <div className="mt-3 border-b border-dashed border-gray-300" />
-                            )}
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  );
-                });
-              })()}
+                    {/* Menu Item */}
+                    <MenuBookItem item={item} accentColor={settings.accentColor} variant="compact" />
+
+                    {/* Divider between items (but not before a new category header) */}
+                    {index < page.items.length - 1 && page.items[index + 1].category === item.category && (
+                      <div className="mt-3 border-b border-dashed border-gray-300" />
+                    )}
+                  </div>
+                );
+              })}
             </div>
 
             {/* Page Number */}

@@ -36,6 +36,17 @@ export function useMenuPagination({
     const sortedItems = [...finalizedItems].sort((a, b) => a.displayOrder - b.displayOrder);
 
     if (maintainCategoryOrder) {
+      // Define category order
+      const categoryOrder: MenuCategory[] = [
+        'Appetizers',
+        'Soups',
+        'Salads',
+        'Mains',
+        'Sides',
+        'Desserts',
+        'Beverages',
+      ];
+
       // Group by category first
       const categoryGroups: Record<MenuCategory, MenuItem[]> = {
         'Appetizers': [],
@@ -54,12 +65,14 @@ export function useMenuPagination({
         }
       });
 
-      // Paginate while keeping categories together
+      // Paginate while keeping categories together in proper order
       const pages: MenuPage[] = [];
       let currentPage: MenuItem[] = [];
       let pageNumber = 1;
 
-      Object.entries(categoryGroups).forEach(([_, items]) => {
+      // Iterate categories in the defined order
+      categoryOrder.forEach((category) => {
+        const items = categoryGroups[category];
         if (items.length === 0) return;
 
         for (const item of items) {
