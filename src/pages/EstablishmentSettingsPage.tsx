@@ -207,20 +207,20 @@ export function EstablishmentSettingsPage() {
                 {/* Items Per Page */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Items Per Page: {currentData.itemsPerPage || 8}
+                    Items Per Page: {currentData.itemsPerPage || 12}
                   </label>
                   <input
                     type="range"
-                    min="4"
-                    max="12"
+                    min="6"
+                    max="16"
                     step="2"
-                    value={currentData.itemsPerPage || 8}
+                    value={currentData.itemsPerPage || 12}
                     onChange={(e) => handleChange('itemsPerPage', parseInt(e.target.value))}
                     className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-saffron-600"
                   />
                   <div className="flex justify-between text-xs text-gray-500 mt-1">
-                    <span>4 items</span>
-                    <span>12 items</span>
+                    <span>6 items</span>
+                    <span>16 items</span>
                   </div>
                 </div>
 

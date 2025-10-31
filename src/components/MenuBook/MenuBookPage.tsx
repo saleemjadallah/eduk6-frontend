@@ -1,6 +1,7 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import { MenuBookItem } from './MenuBookItem';
-import type { MenuPage, EstablishmentSettings } from '@/types';
+import { Coffee, Soup, Salad, UtensilsCrossed, Package, Cookie, Apple } from 'lucide-react';
+import type { MenuPage, EstablishmentSettings, MenuCategory } from '@/types';
 
 interface MenuBookPageProps {
   page: MenuPage;
@@ -8,6 +9,16 @@ interface MenuBookPageProps {
   isActive: boolean;
   direction: 'forward' | 'backward';
 }
+
+const categoryIcons: Record<MenuCategory, any> = {
+  'Appetizers': Apple,
+  'Soups': Soup,
+  'Salads': Salad,
+  'Mains': UtensilsCrossed,
+  'Sides': Package,
+  'Desserts': Cookie,
+  'Beverages': Coffee,
+};
 
 const pageVariants = {
   enter: (direction: 'forward' | 'backward') => ({
@@ -78,16 +89,44 @@ export function MenuBookPage({ page, settings, isActive, direction }: MenuBookPa
             )}
 
             {/* Menu Items */}
-            <div className="flex-1 space-y-6 overflow-y-auto">
-              {page.items.map((item, index) => (
-                <div key={item.id}>
-                  <MenuBookItem item={item} accentColor={settings.accentColor} />
-                  {/* Divider between items */}
-                  {index < page.items.length - 1 && (
-                    <div className="mt-6 border-b border-dashed border-gray-300" />
-                  )}
-                </div>
-              ))}
+            <div className="flex-1 space-y-4 overflow-y-auto">
+              {(() => {
+                // Group items by category
+                const itemsByCategory: Record<string, typeof page.items> = {};
+                page.items.forEach(item => {
+                  const category = item.category || 'Mains';
+                  if (!itemsByCategory[category]) {
+                    itemsByCategory[category] = [];
+                  }
+                  itemsByCategory[category].push(item);
+                });
+
+                return Object.entries(itemsByCategory).map(([category, items], categoryIdx) => {
+                  const Icon = categoryIcons[category as MenuCategory] || UtensilsCrossed;
+                  return (
+                    <div key={category} className={categoryIdx > 0 ? 'pt-4' : ''}>
+                      {/* Category Header */}
+                      <div className="flex items-center gap-2 mb-3 pb-2 border-b-2" style={{ borderColor: settings.accentColor }}>
+                        <Icon className="w-5 h-5" style={{ color: settings.accentColor }} />
+                        <h3 className="text-lg font-semibold text-charcoal">{category}</h3>
+                      </div>
+
+                      {/* Items in Category */}
+                      <div className="space-y-3">
+                        {items.map((item, index) => (
+                          <div key={item.id}>
+                            <MenuBookItem item={item} accentColor={settings.accentColor} variant="compact" />
+                            {/* Divider between items */}
+                            {index < items.length - 1 && (
+                              <div className="mt-3 border-b border-dashed border-gray-300" />
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                });
+              })()}
             </div>
 
             {/* Page Number */}

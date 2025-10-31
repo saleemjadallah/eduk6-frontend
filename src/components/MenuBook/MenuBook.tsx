@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
+import { X } from 'lucide-react';
 import { MenuBookCover } from './MenuBookCover';
 import { MenuBookPage } from './MenuBookPage';
 import { MenuBookControls } from './MenuBookControls';
@@ -10,6 +11,7 @@ interface MenuBookProps {
   menuItems: MenuItem[];
   settings: EstablishmentSettings;
   onToggleView?: () => void;
+  onClose?: () => void;
   enableAnimations?: boolean;
 }
 
@@ -23,6 +25,7 @@ export function MenuBook({
   menuItems,
   settings,
   onToggleView,
+  onClose,
   enableAnimations = true,
 }: MenuBookProps) {
   const [currentPage, setCurrentPage] = useState(0); // 0 = cover
@@ -103,6 +106,23 @@ export function MenuBook({
 
   return (
     <div className="menu-book-container relative w-full min-h-screen flex items-center justify-center bg-gradient-to-br from-stone-100 to-stone-200 p-4 md:p-8">
+      {/* Back Button */}
+      {onClose && (
+        <motion.button
+          initial={{ opacity: 0, x: -20 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ delay: 0.3 }}
+          onClick={onClose}
+          className="fixed top-4 left-4 z-50 flex items-center gap-2 px-4 py-2 bg-white/90 backdrop-blur-sm rounded-full shadow-lg hover:bg-white hover:shadow-xl transition-all group"
+          aria-label="Close menu book"
+        >
+          <X className="w-5 h-5 text-gray-700 group-hover:text-gray-900 transition-colors" />
+          <span className="text-sm font-medium text-gray-700 group-hover:text-gray-900 transition-colors">
+            Close
+          </span>
+        </motion.button>
+      )}
+
       {/* Menu Book */}
       <motion.div
         initial={{ opacity: 0, scale: 0.95 }}

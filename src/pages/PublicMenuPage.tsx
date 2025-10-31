@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useParams, useSearchParams } from 'react-router-dom';
+import { useParams, useSearchParams, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Leaf, Flame, Package, Image as ImageIcon, Coffee, Soup, Salad, UtensilsCrossed, Cookie, Apple, BookOpen, List } from 'lucide-react';
 import { api } from '@/lib/api';
@@ -9,6 +9,7 @@ import type { DietaryOption, MenuCategory, MenuItem, EstablishmentSettings } fro
 export function PublicMenuPage() {
   const { userId } = useParams<{ userId: string }>();
   const [searchParams, setSearchParams] = useSearchParams();
+  const navigate = useNavigate();
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
   const [menuByCategory, setMenuByCategory] = useState<Record<string, MenuItem[]>>({});
   const [establishmentSettings, setEstablishmentSettings] = useState<Partial<EstablishmentSettings> | null>(null);
@@ -55,6 +56,15 @@ export function PublicMenuPage() {
   const handleToggleView = () => {
     const newView = viewMode === 'book' ? 'list' : 'book';
     setSearchParams({ view: newView });
+  };
+
+  const handleClose = () => {
+    // If there's history, go back. Otherwise go to dashboard
+    if (window.history.length > 1) {
+      navigate(-1);
+    } else {
+      navigate('/dashboard');
+    }
   };
 
   const categoryIcons: Record<MenuCategory, any> = {
@@ -151,6 +161,7 @@ export function PublicMenuPage() {
           menuItems={menuItems}
           settings={settings}
           onToggleView={handleToggleView}
+          onClose={handleClose}
         />
       </>
     );
