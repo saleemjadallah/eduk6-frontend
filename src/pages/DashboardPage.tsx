@@ -404,7 +404,10 @@ export function DashboardPage() {
       'Beverages': [],
     };
 
-    menuItems.forEach((item) => {
+    // Only show items that have been finalized (have images)
+    const finalizedItems = menuItems.filter(item => item.generatedImages && item.generatedImages.length > 0);
+
+    finalizedItems.forEach((item) => {
       const category = item.category || 'Mains';
       if (categories[category]) {
         categories[category].push(item);
