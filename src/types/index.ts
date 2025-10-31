@@ -58,8 +58,39 @@ export interface MenuItem {
   isAvailable: boolean;
   generatedImages: string[] | null;
   selectedStyle: string | null;
-  editCount?: number; // Track number of times images have been regenerated
+  editCount?: number;
   createdAt: Date | null;
+}
+
+// Menu Book Types
+export type CoverStyle = "classic" | "modern" | "rustic";
+export type FontFamily = "serif" | "sans-serif" | "modern";
+
+export interface EstablishmentSettings {
+  id: string;
+  userId: string;
+  establishmentName: string;
+  tagline: string | null;
+  logoUrl: string | null;
+  coverStyle: CoverStyle;
+  accentColor: string;
+  fontFamily: FontFamily;
+  itemsPerPage: number;
+  showPageNumbers: boolean;
+  showEstablishmentOnEveryPage: boolean;
+  createdAt: Date | null;
+  updatedAt: Date | null;
+}
+
+export interface MenuPage {
+  pageNumber: number;
+  items: MenuItem[];
+}
+
+export interface PaginatedMenu {
+  totalPages: number;
+  pages: MenuPage[];
+  establishmentSettings: EstablishmentSettings;
 }
 
 export interface TierLimits {

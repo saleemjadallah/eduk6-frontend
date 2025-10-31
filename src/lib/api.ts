@@ -1,4 +1,4 @@
-import type { MenuItem, Subscription, UsageInfo, User } from '@/types';
+import type { MenuItem, Subscription, UsageInfo, User, EstablishmentSettings } from '@/types';
 
 const API_BASE =
   (import.meta.env.VITE_API_URL as string | undefined)?.replace(/\/$/, '') || '';
@@ -224,6 +224,22 @@ class ApiClient {
       method: 'PATCH',
       body: JSON.stringify(data),
     });
+  }
+
+  // Establishment Settings
+  async getEstablishmentSettings(): Promise<EstablishmentSettings> {
+    return this.request<EstablishmentSettings>('/establishment-settings');
+  }
+
+  async updateEstablishmentSettings(data: Partial<EstablishmentSettings>): Promise<EstablishmentSettings> {
+    return this.request<EstablishmentSettings>('/establishment-settings', {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async getPublicEstablishmentSettings(userId: string): Promise<Partial<EstablishmentSettings>> {
+    return this.request<Partial<EstablishmentSettings>>(`/establishment-settings/public/${userId}`);
   }
 }
 
