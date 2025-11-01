@@ -18,12 +18,6 @@ const coverVariants = {
   },
 };
 
-const coverStyleClasses = {
-  classic: 'bg-gradient-to-br from-amber-900 via-amber-800 to-amber-900',
-  modern: 'bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900',
-  rustic: 'bg-gradient-to-br from-stone-800 via-stone-700 to-stone-800',
-};
-
 /**
  * MenuBookCover Component
  *
@@ -31,7 +25,23 @@ const coverStyleClasses = {
  * Animates with 3D rotation when opened.
  */
 export function MenuBookCover({ settings, onOpen, isOpen }: MenuBookCoverProps) {
-  const coverClass = coverStyleClasses[settings.coverStyle] || coverStyleClasses.classic;
+  // Convert hex color to RGB for gradient generation
+  const hexToRgb = (hex: string) => {
+    const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+    return result ? {
+      r: parseInt(result[1], 16),
+      g: parseInt(result[2], 16),
+      b: parseInt(result[3], 16)
+    } : { r: 200, g: 90, b: 84 }; // Default to saffron if parse fails
+  };
+
+  const rgb = hexToRgb(settings.accentColor);
+
+  // Create gradient background based on accent color
+  const coverGradient = `linear-gradient(135deg,
+    rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 1) 0%,
+    rgba(${rgb.r * 0.8}, ${rgb.g * 0.8}, ${rgb.b * 0.8}, 1) 50%,
+    rgba(${rgb.r * 0.6}, ${rgb.g * 0.6}, ${rgb.b * 0.6}, 1) 100%)`;
 
   return (
     <motion.div
@@ -48,7 +58,8 @@ export function MenuBookCover({ settings, onOpen, isOpen }: MenuBookCoverProps) 
       <button
         onClick={onOpen}
         disabled={isOpen}
-        className={`relative w-full h-full ${coverClass} cursor-pointer disabled:cursor-default overflow-hidden shadow-2xl rounded-r-lg group`}
+        className="relative w-full h-full cursor-pointer disabled:cursor-default overflow-hidden shadow-2xl rounded-r-lg group"
+        style={{ background: coverGradient }}
         aria-label="Open menu"
       >
         {/* Texture Overlay */}
