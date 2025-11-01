@@ -276,7 +276,7 @@ export function GeneratePage() {
           dietaryInfo: formData.dietaryInfo.length > 0 ? formData.dietaryInfo : null,
           allergens: formData.allergens.length > 0 ? formData.allergens : null,
           displayOrder: 0,
-          isAvailable: true,
+          isAvailable: 1,
           generatedImages: null,
           selectedStyle: null,
         });

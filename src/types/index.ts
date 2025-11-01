@@ -55,7 +55,7 @@ export interface MenuItem {
   dietaryInfo: DietaryOption[] | null;
   price: string | null;
   displayOrder: number;
-  isAvailable: boolean;
+  isAvailable: number; // 0 = false, 1 = true (matches backend schema)
   generatedImages: string[] | null;
   selectedStyle: string | null;
   editCount?: number;
@@ -76,8 +76,8 @@ export interface EstablishmentSettings {
   accentColor: string;
   fontFamily: FontFamily;
   itemsPerPage: number;
-  showPageNumbers: boolean;
-  showEstablishmentOnEveryPage: boolean;
+  showPageNumbers: number; // 0 = false, 1 = true (matches backend schema)
+  showEstablishmentOnEveryPage: number; // 0 = false, 1 = true (matches backend schema)
   createdAt: Date | null;
   updatedAt: Date | null;
 }
