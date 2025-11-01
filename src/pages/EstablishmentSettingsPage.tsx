@@ -231,7 +231,7 @@ export function EstablishmentSettingsPage() {
                     <p className="text-xs text-gray-500 mt-1">Display page numbers at the bottom of each page</p>
                   </div>
                   <button
-                    onClick={() => handleChange('showPageNumbers', !currentData.showPageNumbers)}
+                    onClick={() => handleChange('showPageNumbers', currentData.showPageNumbers ? 0 : 1)}
                     className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
                       currentData.showPageNumbers ? 'bg-saffron-600' : 'bg-gray-300'
                     }`}
@@ -252,7 +252,7 @@ export function EstablishmentSettingsPage() {
                   </div>
                   <button
                     onClick={() =>
-                      handleChange('showEstablishmentOnEveryPage', !currentData.showEstablishmentOnEveryPage)
+                      handleChange('showEstablishmentOnEveryPage', currentData.showEstablishmentOnEveryPage ? 0 : 1)
                     }
                     className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
                       currentData.showEstablishmentOnEveryPage ? 'bg-saffron-600' : 'bg-gray-300'
