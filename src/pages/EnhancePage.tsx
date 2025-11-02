@@ -135,39 +135,88 @@ export function EnhancePage() {
       return;
     }
 
-    const newImages: EnhancedImage[] = selectedFiles.map(file => ({
-      id: Math.random().toString(36).substr(2, 9),
-      originalUrl: URL.createObjectURL(file),
-      enhancedUrl: '',
-      name: file.name,
-      status: 'processing' as const
-    }));
+    // Get auth token
+    const token = localStorage.getItem('authToken');
+    if (!token) {
+      toast({
+        title: "Authentication required",
+        description: "Please log in to enhance images",
+        variant: "destructive",
+      });
+      return;
+    }
 
-    setEnhancedImages(prev => [...prev, ...newImages]);
+    const newImages: EnhancedImage[] = [];
+
+    // Process each file
+    for (const file of selectedFiles) {
+      const imageId = Math.random().toString(36).substr(2, 9);
+
+      // Add to UI in processing state
+      const processingImage: EnhancedImage = {
+        id: imageId,
+        originalUrl: URL.createObjectURL(file),
+        enhancedUrl: '',
+        name: file.name,
+        status: 'processing'
+      };
+
+      setEnhancedImages(prev => [...prev, processingImage]);
+
+      try {
+        // Create FormData for upload
+        const formData = new FormData();
+        formData.append('image', file);
+        formData.append('enhancementType', 'vibrant'); // Use vibrant preset
+
+        // Call backend API
+        const response = await fetch('https://api.mydscvr.ai/api/enhance-image', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+          },
+          body: formData,
+        });
+
+        if (!response.ok) {
+          throw new Error(`Enhancement failed: ${response.statusText}`);
+        }
+
+        const result = await response.json();
+
+        // Update image with enhanced URL from R2
+        setEnhancedImages(prev => prev.map(img =>
+          img.id === imageId
+            ? {
+                ...img,
+                originalUrl: result.originalUrl,
+                enhancedUrl: result.enhancedUrl,
+                status: 'completed'
+              }
+            : img
+        ));
+      } catch (error) {
+        console.error('Enhancement error:', error);
+        setEnhancedImages(prev => prev.map(img =>
+          img.id === imageId
+            ? { ...img, status: 'error' }
+            : img
+        ));
+
+        toast({
+          title: "Enhancement failed",
+          description: `Failed to enhance ${file.name}`,
+          variant: "destructive",
+        });
+      }
+    }
+
     setSelectedFiles([]);
 
-    // Simulate enhancement process
-    for (const image of newImages) {
-      setTimeout(async () => {
-        try {
-          const file = selectedFiles.find(f => f.name === image.name);
-          if (file) {
-            const enhanced = await simulateEnhancement(file);
-            setEnhancedImages(prev => prev.map(img =>
-              img.id === image.id
-                ? { ...img, enhancedUrl: enhanced, status: 'completed' }
-                : img
-            ));
-          }
-        } catch (error) {
-          setEnhancedImages(prev => prev.map(img =>
-            img.id === image.id
-              ? { ...img, status: 'error' }
-              : img
-          ));
-        }
-      }, Math.random() * 3000 + 2000); // Random delay between 2-5 seconds
-    }
+    toast({
+      title: "Enhancement complete",
+      description: `Successfully processed ${selectedFiles.length} image(s)`,
+    });
   };
 
   const handleCompareMove = (e: React.MouseEvent<HTMLDivElement>) => {
@@ -353,9 +402,6 @@ export function EnhancePage() {
                               src={image.enhancedUrl}
                               alt={image.name}
                               className="w-full h-full object-cover"
-                              style={{
-                                filter: 'brightness(1.12) contrast(1.18) saturate(1.3)',
-                              }}
                             />
                             <div className="absolute top-2 right-2 bg-green-500 text-white px-2 py-1 rounded-full text-xs flex items-center gap-1">
                               <Check className="w-3 h-3" />
@@ -452,9 +498,6 @@ export function EnhancePage() {
                         src={selectedImage.enhancedUrl}
                         alt="Enhanced"
                         className="absolute inset-0 w-full h-full object-contain"
-                        style={{
-                          filter: 'brightness(1.12) contrast(1.18) saturate(1.3)',
-                        }}
                       />
                     </div>
 
