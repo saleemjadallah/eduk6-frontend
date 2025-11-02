@@ -34,6 +34,44 @@ export function EnhancePage() {
   const [isComparing, setIsComparing] = useState(false);
   const [comparePosition, setComparePosition] = useState(50);
 
+  // Convert image to JPEG using canvas
+  const convertToJpeg = async (file: File): Promise<File> => {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+
+      img.onload = () => {
+        canvas.width = img.width;
+        canvas.height = img.height;
+        ctx?.drawImage(img, 0, 0);
+
+        canvas.toBlob(
+          (blob) => {
+            if (blob) {
+              const newFileName = file.name.replace(/\.(heic|heif)$/i, '.jpg');
+              const newFile = new File([blob], newFileName, {
+                type: 'image/jpeg',
+                lastModified: Date.now(),
+              });
+              resolve(newFile);
+            } else {
+              reject(new Error('Failed to convert image'));
+            }
+          },
+          'image/jpeg',
+          0.95
+        );
+      };
+
+      img.onerror = () => {
+        reject(new Error('Failed to load image for conversion'));
+      };
+
+      img.src = URL.createObjectURL(file);
+    });
+  };
+
   const handleDragOver = useCallback((e: React.DragEvent) => {
     e.preventDefault();
     setIsDragging(true);
@@ -44,67 +82,101 @@ export function EnhancePage() {
     setIsDragging(false);
   }, []);
 
-  const handleDrop = useCallback((e: React.DragEvent) => {
+  const handleDrop = useCallback(async (e: React.DragEvent) => {
     e.preventDefault();
     setIsDragging(false);
 
-    const files = Array.from(e.dataTransfer.files).filter(file => {
-      // Filter out HEIC files
-      if (file.name.toLowerCase().endsWith('.heic') || file.name.toLowerCase().endsWith('.heif')) {
-        toast({
-          title: "Unsupported format",
-          description: `${file.name} is in HEIC format. Please convert to JPG or PNG first.`,
-          variant: "destructive",
-        });
-        return false;
+    const rawFiles = Array.from(e.dataTransfer.files);
+    const processedFiles: File[] = [];
+
+    for (const file of rawFiles) {
+      // Check if it's a HEIC/HEIF file
+      const isHeic = file.name.toLowerCase().endsWith('.heic') ||
+                     file.name.toLowerCase().endsWith('.heif') ||
+                     file.type === 'image/heic' ||
+                     file.type === 'image/heif';
+
+      if (isHeic) {
+        try {
+          toast({
+            title: "Converting HEIC image",
+            description: `Converting ${file.name} to JPEG...`,
+          });
+          const convertedFile = await convertToJpeg(file);
+          processedFiles.push(convertedFile);
+          toast({
+            title: "Conversion successful",
+            description: `${file.name} has been converted to JPEG`,
+          });
+        } catch (error) {
+          console.error('Failed to convert HEIC:', error);
+          toast({
+            title: "Conversion failed",
+            description: `Failed to convert ${file.name}. Please use an online converter.`,
+            variant: "destructive",
+          });
+        }
+      } else if (file.type.startsWith('image/')) {
+        processedFiles.push(file);
       }
+    }
 
-      // Check for valid image types
-      const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif'];
-      if (!validTypes.includes(file.type.toLowerCase()) && !file.type.startsWith('image/')) {
-        return false;
-      }
-
-      return true;
-    });
-
-    if (files.length === 0) {
+    if (processedFiles.length === 0) {
       toast({
         title: "No valid files",
-        description: "Please upload JPG, PNG, or WEBP images only",
+        description: "Please upload valid image files",
         variant: "destructive",
       });
       return;
     }
 
-    setSelectedFiles(prev => [...prev, ...files]);
+    setSelectedFiles(prev => [...prev, ...processedFiles]);
   }, [toast]);
 
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(e.target.files || []).filter(file => {
-      // Filter out HEIC files and show a warning
-      if (file.name.toLowerCase().endsWith('.heic') || file.name.toLowerCase().endsWith('.heif')) {
-        toast({
-          title: "Unsupported format",
-          description: `${file.name} is in HEIC format. Please convert to JPG or PNG first.`,
-          variant: "destructive",
-        });
-        return false;
-      }
-      // Check if it's a valid image format
-      if (!file.type.startsWith('image/') || file.type === 'image/heic' || file.type === 'image/heif') {
+  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const rawFiles = Array.from(e.target.files || []);
+    const processedFiles: File[] = [];
+
+    for (const file of rawFiles) {
+      // Check if it's a HEIC/HEIF file
+      const isHeic = file.name.toLowerCase().endsWith('.heic') ||
+                     file.name.toLowerCase().endsWith('.heif') ||
+                     file.type === 'image/heic' ||
+                     file.type === 'image/heif';
+
+      if (isHeic) {
+        try {
+          toast({
+            title: "Converting HEIC image",
+            description: `Converting ${file.name} to JPEG...`,
+          });
+          const convertedFile = await convertToJpeg(file);
+          processedFiles.push(convertedFile);
+          toast({
+            title: "Conversion successful",
+            description: `${file.name} has been converted to JPEG`,
+          });
+        } catch (error) {
+          console.error('Failed to convert HEIC:', error);
+          toast({
+            title: "Conversion failed",
+            description: `Failed to convert ${file.name}. Please use an online converter or your phone's photo app to export as JPEG.`,
+            variant: "destructive",
+          });
+        }
+      } else if (file.type.startsWith('image/')) {
+        processedFiles.push(file);
+      } else {
         toast({
           title: "Invalid file",
           description: `${file.name} is not a supported image format`,
           variant: "destructive",
         });
-        return false;
       }
-      return true;
-    });
+    }
 
-    if (files.length > 0) {
-      setSelectedFiles(prev => [...prev, ...files]);
+    if (processedFiles.length > 0) {
+      setSelectedFiles(prev => [...prev, ...processedFiles]);
     }
   };
 
