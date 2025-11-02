@@ -146,7 +146,15 @@ export function EnhancePage() {
       return;
     }
 
-    const newImages: EnhancedImage[] = [];
+    const totalFiles = selectedFiles.length;
+    let successCount = 0;
+    let errorCount = 0;
+
+    // Show starting toast
+    toast({
+      title: "Starting enhancement",
+      description: `Processing ${totalFiles} image(s)...`,
+    });
 
     // Process each file
     for (const file of selectedFiles) {
@@ -179,7 +187,9 @@ export function EnhancePage() {
         });
 
         if (!response.ok) {
-          throw new Error(`Enhancement failed: ${response.statusText}`);
+          const errorText = await response.text();
+          console.error('API Error:', errorText);
+          throw new Error(`Enhancement failed: ${response.status} ${response.statusText}`);
         }
 
         const result = await response.json();
@@ -195,8 +205,12 @@ export function EnhancePage() {
               }
             : img
         ));
+
+        successCount++;
       } catch (error) {
-        console.error('Enhancement error:', error);
+        console.error('Enhancement error for', file.name, ':', error);
+        errorCount++;
+
         setEnhancedImages(prev => prev.map(img =>
           img.id === imageId
             ? { ...img, status: 'error' }
@@ -205,18 +219,28 @@ export function EnhancePage() {
 
         toast({
           title: "Enhancement failed",
-          description: `Failed to enhance ${file.name}`,
+          description: `Failed to enhance ${file.name}: ${error instanceof Error ? error.message : 'Unknown error'}`,
           variant: "destructive",
         });
       }
     }
 
+    // Clear selected files
     setSelectedFiles([]);
 
-    toast({
-      title: "Enhancement complete",
-      description: `Successfully processed ${selectedFiles.length} image(s)`,
-    });
+    // Show final result
+    if (successCount > 0) {
+      toast({
+        title: "Enhancement complete",
+        description: `Successfully enhanced ${successCount} of ${totalFiles} image(s)`,
+      });
+    } else if (errorCount > 0) {
+      toast({
+        title: "Enhancement failed",
+        description: `Failed to enhance all images. Please check your connection and try again.`,
+        variant: "destructive",
+      });
+    }
   };
 
   const handleCompareMove = (e: React.MouseEvent<HTMLDivElement>) => {
