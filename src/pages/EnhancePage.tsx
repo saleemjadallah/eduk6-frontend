@@ -354,7 +354,7 @@ export function EnhancePage() {
                 <input
                   type="file"
                   multiple
-                  accept="image/jpeg,image/jpg,image/png,image/webp,image/gif"
+                  accept="image/jpeg,image/jpg,image/png,image/webp,image/gif,image/heic,image/heif,.heic,.heif"
                   onChange={handleFileSelect}
                   className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
                 />
@@ -364,10 +364,10 @@ export function EnhancePage() {
                   Drop your images here or click to browse
                 </p>
                 <p className="text-sm text-gray-500">
-                  Supports JPG, PNG, WEBP, GIF up to 10MB each
+                  Supports JPG, PNG, WEBP, GIF, HEIC/HEIF up to 10MB each
                 </p>
-                <p className="text-xs text-orange-600 mt-1">
-                  Note: HEIC files need to be converted to JPG first
+                <p className="text-xs text-green-600 mt-1">
+                  ✓ HEIC files will be automatically converted to JPG
                 </p>
               </div>
 
