@@ -1,0 +1,492 @@
+import { useState, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { motion, AnimatePresence } from 'framer-motion';
+import {
+  Upload,
+  Sparkles,
+  Download,
+  X,
+  ChevronLeft,
+  ChevronRight,
+  Wand2,
+  Image as ImageIcon,
+  Loader2,
+  Check,
+  AlertCircle
+} from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
+
+interface EnhancedImage {
+  id: string;
+  originalUrl: string;
+  enhancedUrl: string;
+  name: string;
+  status: 'processing' | 'completed' | 'error';
+}
+
+export function EnhancePage() {
+  const navigate = useNavigate();
+  const { toast } = useToast();
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+  const [enhancedImages, setEnhancedImages] = useState<EnhancedImage[]>([]);
+  const [isDragging, setIsDragging] = useState(false);
+  const [selectedImage, setSelectedImage] = useState<EnhancedImage | null>(null);
+  const [isComparing, setIsComparing] = useState(false);
+  const [comparePosition, setComparePosition] = useState(50);
+
+  const handleDragOver = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(true);
+  }, []);
+
+  const handleDragLeave = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+  }, []);
+
+  const handleDrop = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+
+    const files = Array.from(e.dataTransfer.files).filter(file => {
+      // Filter out HEIC files
+      if (file.name.toLowerCase().endsWith('.heic') || file.name.toLowerCase().endsWith('.heif')) {
+        toast({
+          title: "Unsupported format",
+          description: `${file.name} is in HEIC format. Please convert to JPG or PNG first.`,
+          variant: "destructive",
+        });
+        return false;
+      }
+
+      // Check for valid image types
+      const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif'];
+      if (!validTypes.includes(file.type.toLowerCase()) && !file.type.startsWith('image/')) {
+        return false;
+      }
+
+      return true;
+    });
+
+    if (files.length === 0) {
+      toast({
+        title: "No valid files",
+        description: "Please upload JPG, PNG, or WEBP images only",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setSelectedFiles(prev => [...prev, ...files]);
+  }, [toast]);
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []).filter(file => {
+      // Filter out HEIC files and show a warning
+      if (file.name.toLowerCase().endsWith('.heic') || file.name.toLowerCase().endsWith('.heif')) {
+        toast({
+          title: "Unsupported format",
+          description: `${file.name} is in HEIC format. Please convert to JPG or PNG first.`,
+          variant: "destructive",
+        });
+        return false;
+      }
+      // Check if it's a valid image format
+      if (!file.type.startsWith('image/') || file.type === 'image/heic' || file.type === 'image/heif') {
+        toast({
+          title: "Invalid file",
+          description: `${file.name} is not a supported image format`,
+          variant: "destructive",
+        });
+        return false;
+      }
+      return true;
+    });
+
+    if (files.length > 0) {
+      setSelectedFiles(prev => [...prev, ...files]);
+    }
+  };
+
+  const removeFile = (index: number) => {
+    setSelectedFiles(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const simulateEnhancement = async (file: File): Promise<string> => {
+    // This simulates AI enhancement by applying CSS filters
+    // In production, this would call your AI API
+    return new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        // For demo, we'll return the same image with a note that it's "enhanced"
+        resolve(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    });
+  };
+
+  const handleEnhance = async () => {
+    if (selectedFiles.length === 0) {
+      toast({
+        title: "No images selected",
+        description: "Please upload at least one image to enhance",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const newImages: EnhancedImage[] = selectedFiles.map(file => ({
+      id: Math.random().toString(36).substr(2, 9),
+      originalUrl: URL.createObjectURL(file),
+      enhancedUrl: '',
+      name: file.name,
+      status: 'processing' as const
+    }));
+
+    setEnhancedImages(prev => [...prev, ...newImages]);
+    setSelectedFiles([]);
+
+    // Simulate enhancement process
+    for (const image of newImages) {
+      setTimeout(async () => {
+        try {
+          const file = selectedFiles.find(f => f.name === image.name);
+          if (file) {
+            const enhanced = await simulateEnhancement(file);
+            setEnhancedImages(prev => prev.map(img =>
+              img.id === image.id
+                ? { ...img, enhancedUrl: enhanced, status: 'completed' }
+                : img
+            ));
+          }
+        } catch (error) {
+          setEnhancedImages(prev => prev.map(img =>
+            img.id === image.id
+              ? { ...img, status: 'error' }
+              : img
+          ));
+        }
+      }, Math.random() * 3000 + 2000); // Random delay between 2-5 seconds
+    }
+  };
+
+  const handleCompareMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const percentage = (x / rect.width) * 100;
+    setComparePosition(Math.max(0, Math.min(100, percentage)));
+  };
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-stone-50 via-white to-stone-50 p-4 md:p-6">
+      <div className="max-w-7xl mx-auto">
+        {/* Header */}
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="mb-8"
+        >
+          <button
+            onClick={() => navigate('/dashboard')}
+            className="inline-flex items-center gap-2 text-gray-600 hover:text-gray-800 mb-4 transition-colors"
+          >
+            <ChevronLeft className="w-4 h-4" />
+            Back to Dashboard
+          </button>
+
+          <div className="bg-white rounded-2xl shadow-sm p-6">
+            <div className="flex items-center gap-3 mb-2">
+              <div className="w-12 h-12 rounded-xl gradient-saffron flex items-center justify-center">
+                <Wand2 className="w-6 h-6 text-white" />
+              </div>
+              <div>
+                <h1 className="text-3xl font-bold text-gray-800">AI Photo Enhance</h1>
+                <p className="text-gray-600">Upload your dish photos and let AI enhance them to professional quality</p>
+              </div>
+            </div>
+          </div>
+        </motion.div>
+
+        <div className="grid lg:grid-cols-2 gap-6">
+          {/* Upload Section */}
+          <motion.div
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 0.1 }}
+          >
+            <div className="bg-white rounded-2xl shadow-sm p-6">
+              <h2 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                <Upload className="w-5 h-5 text-saffron-600" />
+                Upload Images
+              </h2>
+
+              {/* Dropzone */}
+              <div
+                onDragOver={handleDragOver}
+                onDragLeave={handleDragLeave}
+                onDrop={handleDrop}
+                className={`relative border-2 border-dashed rounded-xl p-8 text-center transition-all ${
+                  isDragging
+                    ? 'border-saffron-500 bg-saffron-50'
+                    : 'border-gray-300 hover:border-gray-400 bg-gray-50'
+                }`}
+              >
+                <input
+                  type="file"
+                  multiple
+                  accept="image/jpeg,image/jpg,image/png,image/webp,image/gif"
+                  onChange={handleFileSelect}
+                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                />
+
+                <ImageIcon className="w-12 h-12 text-gray-400 mx-auto mb-3" />
+                <p className="text-gray-600 font-medium mb-1">
+                  Drop your images here or click to browse
+                </p>
+                <p className="text-sm text-gray-500">
+                  Supports JPG, PNG, WEBP, GIF up to 10MB each
+                </p>
+                <p className="text-xs text-orange-600 mt-1">
+                  Note: HEIC files need to be converted to JPG first
+                </p>
+              </div>
+
+              {/* Selected Files */}
+              {selectedFiles.length > 0 && (
+                <div className="mt-4 space-y-2">
+                  <p className="text-sm font-medium text-gray-700">
+                    Selected files ({selectedFiles.length})
+                  </p>
+                  <div className="space-y-2 max-h-48 overflow-y-auto">
+                    {selectedFiles.map((file, index) => (
+                      <div
+                        key={index}
+                        className="flex items-center justify-between p-2 bg-gray-50 rounded-lg"
+                      >
+                        <div className="flex items-center gap-2 min-w-0">
+                          <ImageIcon className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                          <span className="text-sm text-gray-700 truncate">
+                            {file.name}
+                          </span>
+                          <span className="text-xs text-gray-500">
+                            ({(file.size / 1024 / 1024).toFixed(2)} MB)
+                          </span>
+                        </div>
+                        <button
+                          onClick={() => removeFile(index)}
+                          className="p-1 hover:bg-gray-200 rounded transition-colors"
+                        >
+                          <X className="w-4 h-4 text-gray-500" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Enhance Button */}
+              <button
+                onClick={handleEnhance}
+                disabled={selectedFiles.length === 0}
+                className="mt-4 w-full py-3 px-4 rounded-lg gradient-saffron text-white font-semibold
+                         disabled:opacity-50 disabled:cursor-not-allowed hover:shadow-lg transition-all
+                         flex items-center justify-center gap-2"
+              >
+                <Sparkles className="w-5 h-5" />
+                Enhance {selectedFiles.length > 0 && `(${selectedFiles.length})`} Images
+              </button>
+            </div>
+
+            {/* Tips */}
+            <div className="mt-6 bg-blue-50 rounded-xl p-4 border border-blue-100">
+              <h3 className="font-semibold text-blue-900 mb-2 flex items-center gap-2">
+                <AlertCircle className="w-4 h-4" />
+                Tips for Best Results
+              </h3>
+              <ul className="text-sm text-blue-800 space-y-1">
+                <li>• Use well-lit photos with the dish clearly visible</li>
+                <li>• Avoid blurry or heavily filtered images</li>
+                <li>• Center the dish in the frame</li>
+                <li>• Upload images at least 800x800 pixels</li>
+              </ul>
+            </div>
+          </motion.div>
+
+          {/* Results Section */}
+          <motion.div
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 0.2 }}
+          >
+            <div className="bg-white rounded-2xl shadow-sm p-6">
+              <h2 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                <Sparkles className="w-5 h-5 text-saffron-600" />
+                Enhanced Results
+              </h2>
+
+              {enhancedImages.length === 0 ? (
+                <div className="text-center py-12">
+                  <ImageIcon className="w-16 h-16 text-gray-300 mx-auto mb-3" />
+                  <p className="text-gray-500">No enhanced images yet</p>
+                  <p className="text-sm text-gray-400 mt-1">
+                    Upload and enhance images to see them here
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {enhancedImages.map((image) => (
+                    <div
+                      key={image.id}
+                      className="relative group border border-gray-200 rounded-lg overflow-hidden hover:shadow-md transition-all"
+                    >
+                      <div className="aspect-video relative bg-gray-100">
+                        {image.status === 'processing' ? (
+                          <div className="absolute inset-0 flex items-center justify-center">
+                            <div className="text-center">
+                              <Loader2 className="w-8 h-8 text-saffron-600 animate-spin mx-auto mb-2" />
+                              <p className="text-sm text-gray-600">Enhancing image...</p>
+                            </div>
+                          </div>
+                        ) : image.status === 'completed' ? (
+                          <>
+                            <img
+                              src={image.enhancedUrl}
+                              alt={image.name}
+                              className="w-full h-full object-cover"
+                              style={{
+                                filter: 'brightness(1.12) contrast(1.18) saturate(1.3)',
+                              }}
+                            />
+                            <div className="absolute top-2 right-2 bg-green-500 text-white px-2 py-1 rounded-full text-xs flex items-center gap-1">
+                              <Check className="w-3 h-3" />
+                              Enhanced
+                            </div>
+                          </>
+                        ) : (
+                          <div className="absolute inset-0 flex items-center justify-center">
+                            <div className="text-center">
+                              <X className="w-8 h-8 text-red-500 mx-auto mb-2" />
+                              <p className="text-sm text-gray-600">Enhancement failed</p>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="p-3 bg-white">
+                        <p className="text-sm font-medium text-gray-700 truncate">{image.name}</p>
+
+                        {image.status === 'completed' && (
+                          <div className="flex gap-2 mt-2">
+                            <button
+                              onClick={() => {
+                                setSelectedImage(image);
+                                setIsComparing(true);
+                              }}
+                              className="flex-1 py-1.5 px-3 bg-gray-100 hover:bg-gray-200 rounded-lg text-sm font-medium transition-colors"
+                            >
+                              Compare
+                            </button>
+                            <a
+                              href={image.enhancedUrl}
+                              download={`enhanced-${image.name}`}
+                              className="flex-1 py-1.5 px-3 bg-saffron-100 hover:bg-saffron-200 text-saffron-700 rounded-lg text-sm font-medium transition-colors text-center"
+                            >
+                              Download
+                            </a>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </motion.div>
+        </div>
+
+        {/* Comparison Modal */}
+        <AnimatePresence>
+          {isComparing && selectedImage && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4"
+              onClick={() => setIsComparing(false)}
+            >
+              <motion.div
+                initial={{ scale: 0.9 }}
+                animate={{ scale: 1 }}
+                exit={{ scale: 0.9 }}
+                className="bg-white rounded-2xl max-w-5xl w-full max-h-[90vh] overflow-hidden"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <div className="p-4 border-b border-gray-200 flex items-center justify-between">
+                  <h3 className="text-lg font-semibold">Before & After Comparison</h3>
+                  <button
+                    onClick={() => setIsComparing(false)}
+                    className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
+
+                <div className="p-4">
+                  <div
+                    className="relative aspect-video bg-gray-100 rounded-lg overflow-hidden cursor-ew-resize"
+                    onMouseMove={handleCompareMove}
+                  >
+                    {/* Original Image */}
+                    <img
+                      src={selectedImage.originalUrl}
+                      alt="Original"
+                      className="absolute inset-0 w-full h-full object-contain"
+                    />
+
+                    {/* Enhanced Image with Clip */}
+                    <div
+                      className="absolute inset-0 overflow-hidden"
+                      style={{ clipPath: `inset(0 ${100 - comparePosition}% 0 0)` }}
+                    >
+                      <img
+                        src={selectedImage.enhancedUrl}
+                        alt="Enhanced"
+                        className="absolute inset-0 w-full h-full object-contain"
+                        style={{
+                          filter: 'brightness(1.12) contrast(1.18) saturate(1.3)',
+                        }}
+                      />
+                    </div>
+
+                    {/* Slider Line */}
+                    <div
+                      className="absolute top-0 bottom-0 w-0.5 bg-white shadow-lg"
+                      style={{ left: `${comparePosition}%` }}
+                    >
+                      <div className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-8 h-8 bg-white rounded-full shadow-lg flex items-center justify-center">
+                        <ChevronLeft className="w-3 h-3 text-gray-600 absolute -left-0.5" />
+                        <ChevronRight className="w-3 h-3 text-gray-600 absolute -right-0.5" />
+                      </div>
+                    </div>
+
+                    {/* Labels */}
+                    <div className="absolute top-4 left-4 bg-black/50 text-white px-2 py-1 rounded text-sm">
+                      Original
+                    </div>
+                    <div className="absolute top-4 right-4 bg-saffron-600/90 text-white px-2 py-1 rounded text-sm">
+                      Enhanced
+                    </div>
+                  </div>
+
+                  <p className="text-center text-sm text-gray-500 mt-4">
+                    Drag the slider to compare original and enhanced versions
+                  </p>
+                </div>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
+    </div>
+  );
+}

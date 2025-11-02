@@ -11,6 +11,7 @@ import { CheckoutPage } from './pages/CheckoutPage';
 import { PublicMenuPage } from './pages/PublicMenuPage';
 import { SettingsPage } from './pages/SettingsPage';
 import { EstablishmentSettingsPage } from './pages/EstablishmentSettingsPage';
+import { EnhancePage } from './pages/EnhancePage';
 
 function App() {
   return (
@@ -24,6 +25,7 @@ function App() {
         <Route path="checkout" element={<CheckoutPage />} />
         <Route path="dashboard" element={<DashboardPage />} />
         <Route path="generate" element={<GeneratePage />} />
+        <Route path="enhance" element={<EnhancePage />} />
         <Route path="settings" element={<SettingsPage />} />
         <Route path="settings/establishment" element={<EstablishmentSettingsPage />} />
         <Route path="menu/:userId" element={<PublicMenuPage />} />

@@ -2,7 +2,7 @@ import { motion } from 'framer-motion';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 import { Link } from 'react-router-dom';
-import { Sparkles, Image as ImageIcon, TrendingUp, Package, Trash2, Share2, Leaf, Flame, Coffee, Soup, Salad, UtensilsCrossed, Cookie, Wine, Apple, GripVertical, QrCode, X, Download, FileText, BookOpen } from 'lucide-react';
+import { Sparkles, Image as ImageIcon, TrendingUp, Package, Trash2, Share2, Leaf, Flame, Coffee, Soup, Salad, UtensilsCrossed, Cookie, Wine, Apple, GripVertical, QrCode, X, Download, FileText, BookOpen, Wand2 } from 'lucide-react';
 import { useState, useEffect, useMemo } from 'react';
 import type { MenuItem, MenuCategory, DietaryOption } from '@/types';
 import QRCode from 'qrcode';
@@ -495,13 +495,22 @@ export function DashboardPage() {
                 Manage your dishes and track your usage
               </p>
             </div>
-            <Link
-              to="/generate"
-              className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-full gradient-saffron text-white font-semibold hover:shadow-lg hover:scale-105 transition-all"
-            >
-              <Sparkles className="w-5 h-5" />
-              Create New Dish
-            </Link>
+            <div className="flex gap-3">
+              <Link
+                to="/generate"
+                className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-full gradient-saffron text-white font-semibold hover:shadow-lg hover:scale-105 transition-all"
+              >
+                <Sparkles className="w-5 h-5" />
+                Generate
+              </Link>
+              <Link
+                to="/enhance"
+                className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-full bg-gradient-to-r from-purple-600 to-purple-700 text-white font-semibold hover:shadow-lg hover:scale-105 transition-all"
+              >
+                <Wand2 className="w-5 h-5" />
+                Enhance
+              </Link>
+            </div>
           </div>
         </motion.div>
 
