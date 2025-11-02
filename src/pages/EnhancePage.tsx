@@ -135,17 +135,6 @@ export function EnhancePage() {
       return;
     }
 
-    // Get auth token
-    const token = localStorage.getItem('authToken');
-    if (!token) {
-      toast({
-        title: "Authentication required",
-        description: "Please log in to enhance images",
-        variant: "destructive",
-      });
-      return;
-    }
-
     const totalFiles = selectedFiles.length;
     let successCount = 0;
     let errorCount = 0;
@@ -177,12 +166,10 @@ export function EnhancePage() {
         formData.append('image', file);
         formData.append('enhancementType', 'vibrant'); // Use vibrant preset
 
-        // Call backend API
+        // Call backend API with session cookie authentication
         const response = await fetch('https://api.mydscvr.ai/api/enhance-image', {
           method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${token}`,
-          },
+          credentials: 'include', // Include session cookies
           body: formData,
         });
 
