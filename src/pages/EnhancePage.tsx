@@ -15,6 +15,7 @@ import {
   AlertCircle
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import heic2any from 'heic2any';
 
 interface EnhancedImage {
   id: string;
@@ -34,42 +35,29 @@ export function EnhancePage() {
   const [isComparing, setIsComparing] = useState(false);
   const [comparePosition, setComparePosition] = useState(50);
 
-  // Convert image to JPEG using canvas
+  // Convert HEIC/HEIF to JPEG using heic2any library
   const convertToJpeg = async (file: File): Promise<File> => {
-    return new Promise((resolve, reject) => {
-      const img = new Image();
-      const canvas = document.createElement('canvas');
-      const ctx = canvas.getContext('2d');
+    try {
+      const convertedBlob = await heic2any({
+        blob: file,
+        toType: 'image/jpeg',
+        quality: 0.95,
+      });
 
-      img.onload = () => {
-        canvas.width = img.width;
-        canvas.height = img.height;
-        ctx?.drawImage(img, 0, 0);
+      // heic2any can return a Blob or Blob[] - handle both cases
+      const blob = Array.isArray(convertedBlob) ? convertedBlob[0] : convertedBlob;
 
-        canvas.toBlob(
-          (blob) => {
-            if (blob) {
-              const newFileName = file.name.replace(/\.(heic|heif)$/i, '.jpg');
-              const newFile = new File([blob], newFileName, {
-                type: 'image/jpeg',
-                lastModified: Date.now(),
-              });
-              resolve(newFile);
-            } else {
-              reject(new Error('Failed to convert image'));
-            }
-          },
-          'image/jpeg',
-          0.95
-        );
-      };
+      const newFileName = file.name.replace(/\.(heic|heif)$/i, '.jpg');
+      const newFile = new File([blob], newFileName, {
+        type: 'image/jpeg',
+        lastModified: Date.now(),
+      });
 
-      img.onerror = () => {
-        reject(new Error('Failed to load image for conversion'));
-      };
-
-      img.src = URL.createObjectURL(file);
-    });
+      return newFile;
+    } catch (error) {
+      console.error('HEIC conversion error:', error);
+      throw new Error('Failed to convert HEIC/HEIF image');
+    }
   };
 
   const handleDragOver = useCallback((e: React.DragEvent) => {
