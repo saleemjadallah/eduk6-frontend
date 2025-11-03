@@ -262,7 +262,7 @@ export function Layout() {
             </div>
           </div>
           <div className="mt-8 pt-8 border-t border-charcoal/10 text-center text-sm text-slate">
-            <p>&copy; 2025 Mydscvr. All rights reserved.</p>
+            <p>&copy; 2025 Jasmine Entertainment FZE. All rights reserved.</p>
           </div>
         </div>
       </footer>

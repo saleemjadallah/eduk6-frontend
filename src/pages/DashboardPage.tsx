@@ -578,29 +578,32 @@ export function DashboardPage() {
 
         {/* Menu by Category */}
         <div>
-          <div className="flex items-center justify-between mb-6">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
             <h2 className="text-2xl font-bold text-gray-900">Your Menu</h2>
-            <div className="flex items-center gap-3">
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3 w-full sm:w-auto">
               <Link
                 to={`/menu/${queryClient.getQueryData<{ id: string }>(['user'])?.id || ''}`}
-                className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-saffron-600 text-white font-semibold hover:shadow-lg hover:bg-saffron-700 transition-all"
+                className="inline-flex items-center justify-center gap-2 px-4 py-2.5 sm:py-2 rounded-lg bg-saffron-600 text-white text-sm sm:text-base font-semibold hover:shadow-lg hover:bg-saffron-700 transition-all whitespace-nowrap"
               >
-                <BookOpen className="w-4 h-4" />
-                View Menu Book
+                <BookOpen className="w-4 h-4 flex-shrink-0" />
+                <span className="hidden sm:inline">View Menu Book</span>
+                <span className="sm:hidden">Menu Book</span>
               </Link>
               <button
                 onClick={handleExportPDF}
-                className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-charcoal text-white font-semibold hover:shadow-lg transition-all"
+                className="inline-flex items-center justify-center gap-2 px-4 py-2.5 sm:py-2 rounded-lg bg-charcoal text-white text-sm sm:text-base font-semibold hover:shadow-lg transition-all whitespace-nowrap"
               >
-                <FileText className="w-4 h-4" />
-                Export PDF
+                <FileText className="w-4 h-4 flex-shrink-0" />
+                <span className="hidden sm:inline">Export PDF</span>
+                <span className="sm:hidden">PDF</span>
               </button>
               <button
                 onClick={handleGenerateQRCode}
-                className="inline-flex items-center gap-2 px-4 py-2 rounded-lg gradient-saffron text-white font-semibold hover:shadow-lg transition-all"
+                className="inline-flex items-center justify-center gap-2 px-4 py-2.5 sm:py-2 rounded-lg gradient-saffron text-white text-sm sm:text-base font-semibold hover:shadow-lg transition-all whitespace-nowrap"
               >
-                <QrCode className="w-4 h-4" />
-                Get QR Code
+                <QrCode className="w-4 h-4 flex-shrink-0" />
+                <span className="hidden sm:inline">Get QR Code</span>
+                <span className="sm:hidden">QR Code</span>
               </button>
             </div>
           </div>
