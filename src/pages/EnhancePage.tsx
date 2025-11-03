@@ -35,6 +35,25 @@ export function EnhancePage() {
   const [isComparing, setIsComparing] = useState(false);
   const [comparePosition, setComparePosition] = useState(50);
 
+  // Check if file is actually HEIC/HEIF by reading magic bytes
+  const isActuallyHeic = async (file: File): Promise<boolean> => {
+    try {
+      const buffer = await file.slice(0, 12).arrayBuffer();
+      const bytes = new Uint8Array(buffer);
+      const header = Array.from(bytes.slice(4, 12))
+        .map(b => b.toString(16).padStart(2, '0'))
+        .join('');
+
+      // Check for HEIF/HEIC magic bytes
+      return header.includes('667479706865') ||    // 'ftyphe' for HEIF
+             header.includes('6674797068656963') || // 'ftypheic' for HEIC
+             header.includes('6674797068656978');   // 'ftypheix' for HEIC variants
+    } catch (error) {
+      console.error('Error reading file header:', error);
+      return false;
+    }
+  };
+
   // Convert HEIC/HEIF to JPEG using heic2any library
   const convertToJpeg = async (file: File): Promise<File> => {
     try {
@@ -78,11 +97,14 @@ export function EnhancePage() {
     const processedFiles: File[] = [];
 
     for (const file of rawFiles) {
-      // Check if it's a HEIC/HEIF file
-      const isHeic = file.name.toLowerCase().endsWith('.heic') ||
-                     file.name.toLowerCase().endsWith('.heif') ||
-                     file.type === 'image/heic' ||
-                     file.type === 'image/heif';
+      // Check if it's a HEIC/HEIF file by extension, MIME type, or magic bytes
+      const isHeicByName = file.name.toLowerCase().endsWith('.heic') ||
+                           file.name.toLowerCase().endsWith('.heif');
+      const isHeicByMime = file.type === 'image/heic' ||
+                           file.type === 'image/heif';
+      const isHeicByContent = await isActuallyHeic(file);
+
+      const isHeic = isHeicByName || isHeicByMime || isHeicByContent;
 
       if (isHeic) {
         try {
@@ -126,11 +148,14 @@ export function EnhancePage() {
     const processedFiles: File[] = [];
 
     for (const file of rawFiles) {
-      // Check if it's a HEIC/HEIF file
-      const isHeic = file.name.toLowerCase().endsWith('.heic') ||
-                     file.name.toLowerCase().endsWith('.heif') ||
-                     file.type === 'image/heic' ||
-                     file.type === 'image/heif';
+      // Check if it's a HEIC/HEIF file by extension, MIME type, or magic bytes
+      const isHeicByName = file.name.toLowerCase().endsWith('.heic') ||
+                           file.name.toLowerCase().endsWith('.heif');
+      const isHeicByMime = file.type === 'image/heic' ||
+                           file.type === 'image/heif';
+      const isHeicByContent = await isActuallyHeic(file);
+
+      const isHeic = isHeicByName || isHeicByMime || isHeicByContent;
 
       if (isHeic) {
         try {
