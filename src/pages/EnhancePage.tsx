@@ -34,6 +34,7 @@ export function EnhancePage() {
   const [selectedImage, setSelectedImage] = useState<EnhancedImage | null>(null);
   const [isComparing, setIsComparing] = useState(false);
   const [comparePosition, setComparePosition] = useState(50);
+  const [enhancementType, setEnhancementType] = useState<'vibrant' | 'natural' | 'dramatic'>('vibrant');
 
   // Check if file is actually HEIC/HEIF by reading magic bytes
   const isActuallyHeic = async (file: File): Promise<boolean> => {
@@ -253,7 +254,7 @@ export function EnhancePage() {
         // Create FormData for upload
         const formData = new FormData();
         formData.append('image', file);
-        formData.append('enhancementType', 'vibrant'); // Use vibrant preset
+        formData.append('enhancementType', enhancementType);
 
         // Call backend API with session cookie authentication
         const response = await fetch('https://api.mydscvr.ai/api/enhance-image', {
@@ -486,6 +487,62 @@ export function EnhancePage() {
                   </div>
                 </div>
               )}
+
+              {/* Enhancement Style Selector */}
+              <div className="mt-4">
+                <label className="block text-sm font-medium text-gray-700 mb-3">
+                  Enhancement Style
+                </label>
+                <div className="grid grid-cols-3 gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setEnhancementType('vibrant')}
+                    className={`p-3 rounded-lg border-2 text-left transition-all ${
+                      enhancementType === 'vibrant'
+                        ? 'border-saffron-600 bg-saffron-50'
+                        : 'border-gray-200 hover:border-gray-300'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="font-semibold text-sm">🌈 Vibrant</span>
+                      {enhancementType === 'vibrant' && <Check className="w-4 h-4 text-saffron-600" />}
+                    </div>
+                    <p className="text-xs text-gray-600">Rich colors, social media ready</p>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setEnhancementType('natural')}
+                    className={`p-3 rounded-lg border-2 text-left transition-all ${
+                      enhancementType === 'natural'
+                        ? 'border-saffron-600 bg-saffron-50'
+                        : 'border-gray-200 hover:border-gray-300'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="font-semibold text-sm">🍃 Natural</span>
+                      {enhancementType === 'natural' && <Check className="w-4 h-4 text-saffron-600" />}
+                    </div>
+                    <p className="text-xs text-gray-600">Authentic, true-to-life tones</p>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setEnhancementType('dramatic')}
+                    className={`p-3 rounded-lg border-2 text-left transition-all ${
+                      enhancementType === 'dramatic'
+                        ? 'border-saffron-600 bg-saffron-50'
+                        : 'border-gray-200 hover:border-gray-300'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="font-semibold text-sm">🎬 Dramatic</span>
+                      {enhancementType === 'dramatic' && <Check className="w-4 h-4 text-saffron-600" />}
+                    </div>
+                    <p className="text-xs text-gray-600">Bold contrast, cinematic</p>
+                  </button>
+                </div>
+              </div>
 
               {/* Enhance Button */}
               <button
