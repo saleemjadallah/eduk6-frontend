@@ -121,9 +121,10 @@ export function EnhancePage() {
         } catch (error) {
           console.error('Failed to convert HEIC:', error);
           toast({
-            title: "Conversion failed",
-            description: `Failed to convert ${file.name}. Please use an online converter.`,
+            title: "HEIC Conversion Failed",
+            description: `Unable to convert ${file.name}. This can happen with some HEIC variants. Try: 1) Export as JPEG from your Photos app, or 2) Use an online converter like heictojpg.com`,
             variant: "destructive",
+            duration: 8000,
           });
         }
       } else if (file.type.startsWith('image/')) {
@@ -172,9 +173,10 @@ export function EnhancePage() {
         } catch (error) {
           console.error('Failed to convert HEIC:', error);
           toast({
-            title: "Conversion failed",
-            description: `Failed to convert ${file.name}. Please use an online converter or your phone's photo app to export as JPEG.`,
+            title: "HEIC Conversion Failed",
+            description: `Unable to convert ${file.name}. This can happen with some HEIC variants. Try: 1) Export as JPEG from your Photos app, or 2) Use an online converter like heictojpg.com`,
             variant: "destructive",
+            duration: 8000,
           });
         }
       } else if (file.type.startsWith('image/')) {
@@ -259,9 +261,45 @@ export function EnhancePage() {
         });
 
         if (!response.ok) {
-          const errorText = await response.text();
-          console.error('API Error:', errorText);
-          throw new Error(`Enhancement failed: ${response.status} ${response.statusText}`);
+          let errorMessage = 'Enhancement failed';
+          let errorDetails = '';
+
+          try {
+            const errorData = await response.json();
+            console.error('API Error:', errorData);
+
+            // Parse specific error types and provide helpful messages
+            if (errorData.error?.includes('HEIF') || errorData.error?.includes('HEIC')) {
+              errorMessage = 'HEIC/HEIF format detected';
+              errorDetails = 'This image appears to be in HEIC format. It should have been converted automatically. Please try again or use an online converter.';
+            } else if (errorData.error?.includes('format') || errorData.details?.includes('format')) {
+              errorMessage = 'Unsupported image format';
+              errorDetails = errorData.details || 'Please use JPEG, PNG, or WebP format. If you have a HEIC file, our app will convert it automatically.';
+            } else if (response.status === 401 || response.status === 403) {
+              errorMessage = 'Authentication required';
+              errorDetails = 'Please log in again to continue enhancing images.';
+            } else if (response.status === 413) {
+              errorMessage = 'File too large';
+              errorDetails = 'Please use an image smaller than 10MB.';
+            } else if (response.status === 429) {
+              errorMessage = 'Too many requests';
+              errorDetails = 'Please wait a moment before trying again.';
+            } else if (response.status >= 500) {
+              errorMessage = 'Server error';
+              errorDetails = 'Our servers are experiencing issues. Please try again in a few moments.';
+            } else {
+              errorMessage = errorData.error || 'Enhancement failed';
+              errorDetails = errorData.details || `Status: ${response.status}`;
+            }
+          } catch (parseError) {
+            // If we can't parse JSON, use generic error
+            const errorText = await response.text();
+            console.error('API Error (text):', errorText);
+            errorMessage = 'Enhancement failed';
+            errorDetails = `Server returned status ${response.status}. Please try again.`;
+          }
+
+          throw new Error(JSON.stringify({ message: errorMessage, details: errorDetails }));
         }
 
         const result = await response.json();
@@ -289,10 +327,28 @@ export function EnhancePage() {
             : img
         ));
 
+        // Parse error message
+        let errorTitle = 'Enhancement failed';
+        let errorDescription = `Failed to enhance ${file.name}`;
+
+        if (error instanceof Error) {
+          try {
+            // Try to parse structured error
+            const errorData = JSON.parse(error.message);
+            errorTitle = errorData.message || errorTitle;
+            errorDescription = `${file.name}: ${errorData.details || 'Unknown error'}`;
+          } catch {
+            // If not JSON, use the error message directly
+            errorTitle = 'Enhancement failed';
+            errorDescription = `${file.name}: ${error.message}`;
+          }
+        }
+
         toast({
-          title: "Enhancement failed",
-          description: `Failed to enhance ${file.name}: ${error instanceof Error ? error.message : 'Unknown error'}`,
+          title: errorTitle,
+          description: errorDescription,
           variant: "destructive",
+          duration: 7000, // Show for 7 seconds so user can read it
         });
       }
     }
