@@ -16,7 +16,7 @@ import {
   AlertCircle
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { apiClient } from '@/lib/api';
+import { api } from '@/lib/api';
 import heic2any from 'heic2any';
 
 interface EnhancedImage {
@@ -41,7 +41,7 @@ export function EnhancePage() {
   // Fetch current usage
   const { data: usageInfo, refetch: refetchUsage } = useQuery({
     queryKey: ['usage'],
-    queryFn: () => apiClient.getCurrentUsage(),
+    queryFn: () => api.getCurrentUsage(),
   });
 
   // Check if file is actually HEIC/HEIF by reading magic bytes
