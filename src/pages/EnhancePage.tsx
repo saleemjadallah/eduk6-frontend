@@ -5,7 +5,6 @@ import { useQuery } from '@tanstack/react-query';
 import {
   Upload,
   Sparkles,
-  Download,
   X,
   ChevronLeft,
   ChevronRight,
@@ -208,19 +207,6 @@ export function EnhancePage() {
 
   const removeFile = (index: number) => {
     setSelectedFiles(prev => prev.filter((_, i) => i !== index));
-  };
-
-  const simulateEnhancement = async (file: File): Promise<string> => {
-    // This simulates AI enhancement by applying CSS filters
-    // In production, this would call your AI API
-    return new Promise((resolve) => {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        // For demo, we'll return the same image with a note that it's "enhanced"
-        resolve(reader.result as string);
-      };
-      reader.readAsDataURL(file);
-    });
   };
 
   const handleEnhance = async () => {

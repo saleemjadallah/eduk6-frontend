@@ -1,4 +1,5 @@
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, cubicBezier } from 'framer-motion';
+import type { Variants } from 'framer-motion';
 import { MenuBookItem } from './MenuBookItem';
 import { Coffee, Soup, Salad, UtensilsCrossed, Package, Cookie, Apple } from 'lucide-react';
 import type { MenuPage, EstablishmentSettings, MenuCategory } from '@/types';
@@ -20,7 +21,9 @@ const categoryIcons: Record<MenuCategory, any> = {
   'Beverages': Coffee,
 };
 
-const pageVariants = {
+const pageEase = cubicBezier(0.43, 0.13, 0.23, 0.96);
+
+const pageVariants: Variants = {
   enter: (direction: 'forward' | 'backward') => ({
     rotateY: direction === 'forward' ? 180 : -180,
     opacity: 0,
@@ -32,7 +35,7 @@ const pageVariants = {
     scale: 1,
     transition: {
       duration: 0.6,
-      ease: [0.43, 0.13, 0.23, 0.96],
+      ease: pageEase,
     },
   },
   exit: (direction: 'forward' | 'backward') => ({
@@ -41,7 +44,7 @@ const pageVariants = {
     scale: 0.95,
     transition: {
       duration: 0.6,
-      ease: [0.43, 0.13, 0.23, 0.96],
+      ease: pageEase,
     },
   }),
 };

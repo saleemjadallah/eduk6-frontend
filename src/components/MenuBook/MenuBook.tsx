@@ -12,7 +12,6 @@ interface MenuBookProps {
   settings: EstablishmentSettings;
   onToggleView?: () => void;
   onClose?: () => void;
-  enableAnimations?: boolean;
 }
 
 /**
@@ -26,7 +25,6 @@ export function MenuBook({
   settings,
   onToggleView,
   onClose,
-  enableAnimations = true,
 }: MenuBookProps) {
   const [currentPage, setCurrentPage] = useState(0); // 0 = cover
   const [isOpen, setIsOpen] = useState(false);

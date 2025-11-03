@@ -2,7 +2,7 @@ import { motion } from 'framer-motion';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 import { Link } from 'react-router-dom';
-import { Sparkles, Image as ImageIcon, TrendingUp, Package, Trash2, Share2, Leaf, Flame, Coffee, Soup, Salad, UtensilsCrossed, Cookie, Wine, Apple, GripVertical, QrCode, X, Download, FileText, BookOpen, Wand2 } from 'lucide-react';
+import { Sparkles, Image as ImageIcon, TrendingUp, Package, Trash2, Leaf, Flame, Coffee, Soup, Salad, UtensilsCrossed, Cookie, Apple, GripVertical, QrCode, X, Download, FileText, BookOpen, Wand2 } from 'lucide-react';
 import { useState, useEffect, useMemo } from 'react';
 import type { MenuItem, MenuCategory, DietaryOption } from '@/types';
 import QRCode from 'qrcode';
@@ -175,7 +175,7 @@ export function DashboardPage() {
     queryFn: () => api.getMenuItems(),
   });
 
-  const { data: usage, refetch: refetchUsage } = useQuery({
+  const { data: usage } = useQuery({
     queryKey: ['usage'],
     queryFn: () => api.getCurrentUsage(),
   });
@@ -223,6 +223,7 @@ export function DashboardPage() {
     if (!over || active.id === over.id) return;
 
     const items = menuByCategory[category];
+    if (!items) return;
     const oldIndex = items.findIndex((item) => item.id === active.id);
     const newIndex = items.findIndex((item) => item.id === over.id);
 
@@ -312,7 +313,10 @@ export function DashboardPage() {
     yPosition += 15;
 
     // Iterate through categories
-    Object.entries(menuByCategory).forEach(([category, items]) => {
+    (Object.entries(menuByCategory) as Array<[MenuCategory, MenuItem[]]>).forEach(([category, items]) => {
+      if (!items || items.length === 0) {
+        return;
+      }
       // Check if we need a new page
       if (yPosition > pdf.internal.pageSize.getHeight() - 40) {
         pdf.addPage();
@@ -399,43 +403,29 @@ export function DashboardPage() {
   };
 
   // Group menu items by category
-  const menuByCategory = useMemo(() => {
+  const menuByCategory = useMemo<Partial<Record<MenuCategory, MenuItem[]>>>(() => {
     if (!menuItems) return {};
 
-    const categories: Record<MenuCategory, MenuItem[]> = {
-      'Appetizers': [],
-      'Soups': [],
-      'Salads': [],
-      'Mains': [],
-      'Sides': [],
-      'Desserts': [],
-      'Beverages': [],
-    };
+    const categories: Partial<Record<MenuCategory, MenuItem[]>> = {};
 
     // Only show items that have been finalized (have images)
-    const finalizedItems = menuItems.filter(item => item.generatedImages && item.generatedImages.length > 0);
+    const finalizedItems = menuItems.filter(
+      (item) => item.generatedImages && item.generatedImages.length > 0
+    );
 
     finalizedItems.forEach((item) => {
-      const category = item.category || 'Mains';
-      if (categories[category]) {
-        categories[category].push(item);
+      const category = (item.category || 'Mains') as MenuCategory;
+      if (!categories[category]) {
+        categories[category] = [];
       }
+      categories[category]!.push(item);
     });
 
-    // Sort items within each category by displayOrder
-    Object.keys(categories).forEach((category) => {
-      categories[category as MenuCategory].sort((a, b) => a.displayOrder - b.displayOrder);
+    (Object.entries(categories) as Array<[MenuCategory, MenuItem[]]>).forEach(([, items]) => {
+      items.sort((a, b) => a.displayOrder - b.displayOrder);
     });
 
-    // Filter out empty categories
-    const filteredCategories = Object.entries(categories).reduce((acc, [category, items]) => {
-      if (items.length > 0) {
-        acc[category as MenuCategory] = items;
-      }
-      return acc;
-    }, {} as Record<MenuCategory, MenuItem[]>);
-
-    return filteredCategories;
+    return categories;
   }, [menuItems]);
 
   const categoryIcons: Record<MenuCategory, any> = {
@@ -616,7 +606,7 @@ export function DashboardPage() {
             </div>
           ) : menuItems && menuItems.length > 0 ? (
             <div className="space-y-12">
-              {Object.entries(menuByCategory).map(([category, items]) => (
+              {(Object.entries(menuByCategory) as Array<[MenuCategory, MenuItem[]]>).map(([category, items]) => (
                 <motion.div
                   key={category}
                   initial={{ opacity: 0, y: 20 }}
@@ -639,11 +629,11 @@ export function DashboardPage() {
                     onDragEnd={(event) => handleDragEnd(event, category as MenuCategory)}
                   >
                     <SortableContext
-                      items={items.map((item: MenuItem) => item.id)}
+                      items={items.map((item) => item.id)}
                       strategy={verticalListSortingStrategy}
                     >
                       <div className="space-y-3">
-                        {items.map((item: MenuItem) => (
+                        {items.map((item) => (
                           <SortableMenuItem
                             key={item.id}
                             item={item}

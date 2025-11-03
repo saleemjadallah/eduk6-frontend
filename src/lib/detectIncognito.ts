@@ -15,11 +15,14 @@ export async function detectIncognito(): Promise<boolean> {
       
       // In incognito, filesystem quota is often reduced
       if ('storage' in navigator && 'estimate' in navigator.storage) {
-        navigator.storage.estimate().then(({ quota }) => {
-          // Incognito often has less than 120MB quota
-          const isIncognito = quota && quota < 120000000;
-          resolve(isIncognito);
-        }).catch(() => resolve(false));
+        navigator.storage
+          .estimate()
+          .then(({ quota }) => {
+            // Incognito often has less than 120MB quota
+            const isIncognito = typeof quota === 'number' && quota < 120000000;
+            resolve(isIncognito);
+          })
+          .catch(() => resolve(false));
       } else {
         resolve(!cookieSet);
       }

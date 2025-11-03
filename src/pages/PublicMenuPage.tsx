@@ -6,12 +6,22 @@ import { api } from '@/lib/api';
 import { MenuBook } from '@/components/MenuBook';
 import type { DietaryOption, MenuCategory, MenuItem, EstablishmentSettings } from '@/types';
 
+const CATEGORY_ORDER: MenuCategory[] = ['Appetizers', 'Soups', 'Salads', 'Mains', 'Sides', 'Desserts', 'Beverages'];
+const DEFAULT_CATEGORY: MenuCategory = 'Mains';
+const isValidCategory = (value: unknown): value is MenuCategory =>
+  typeof value === 'string' && CATEGORY_ORDER.includes(value as MenuCategory);
+
 export function PublicMenuPage() {
   const { userId } = useParams<{ userId: string }>();
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
-  const [menuByCategory, setMenuByCategory] = useState<Record<string, MenuItem[]>>({});
+  const [menuByCategory, setMenuByCategory] = useState<Record<MenuCategory, MenuItem[]>>(() =>
+    CATEGORY_ORDER.reduce((acc, category) => {
+      acc[category] = [];
+      return acc;
+    }, {} as Record<MenuCategory, MenuItem[]>)
+  );
   const [establishmentSettings, setEstablishmentSettings] = useState<Partial<EstablishmentSettings> | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -34,12 +44,34 @@ export function PublicMenuPage() {
           api.getPublicEstablishmentSettings(userId),
         ]);
 
-        setMenuByCategory(menuData);
+        const sanitizedMenu = CATEGORY_ORDER.reduce((acc, category) => {
+          acc[category] = [];
+          return acc;
+        }, {} as Record<MenuCategory, MenuItem[]>);
+
+        (Object.entries(menuData) as Array<[string, MenuItem[]]>).forEach(([categoryKey, items]) => {
+          const categoryKeyNormalized = isValidCategory(categoryKey) ? (categoryKey as MenuCategory) : DEFAULT_CATEGORY;
+
+          items.forEach((item) => {
+            const normalizedCategory = isValidCategory(item.category)
+              ? item.category
+              : isValidCategory(categoryKey)
+              ? (categoryKey as MenuCategory)
+              : categoryKeyNormalized;
+
+            sanitizedMenu[normalizedCategory].push({
+              ...item,
+              category: normalizedCategory,
+            } as MenuItem);
+          });
+        });
+
+        setMenuByCategory(sanitizedMenu);
         setEstablishmentSettings(settings);
 
         // Flatten menu items for MenuBook component
         const allItems: MenuItem[] = [];
-        Object.values(menuData).forEach((items) => {
+        Object.values(sanitizedMenu).forEach((items) => {
           allItems.push(...items);
         });
         setMenuItems(allItems);
@@ -133,8 +165,8 @@ export function PublicMenuPage() {
     accentColor: '#C85A54',
     fontFamily: 'serif',
     itemsPerPage: 8,
-    showPageNumbers: true,
-    showEstablishmentOnEveryPage: false,
+    showPageNumbers: 1,
+    showEstablishmentOnEveryPage: 0,
     createdAt: null,
     updatedAt: null,
   };
@@ -201,98 +233,101 @@ export function PublicMenuPage() {
 
         {/* Categories */}
         <div className="space-y-16">
-          {Object.entries(menuByCategory).map(([category, items], categoryIndex) => (
-            <motion.section
-              key={category}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: categoryIndex * 0.1 }}
-            >
-              {/* Category Header */}
-              <div className="mb-8 text-center">
-                <div className="flex items-center justify-center gap-3 mb-2">
-                  {(() => {
-                    const Icon = categoryIcons[category as MenuCategory] || UtensilsCrossed;
-                    return <Icon className="w-8 h-8 text-saffron-600" />;
-                  })()}
-                  <h2 className="text-3xl font-serif font-bold text-charcoal">{category}</h2>
+          {CATEGORY_ORDER.filter((category) => menuByCategory[category].length > 0).map((category, categoryIndex) => {
+            const items = menuByCategory[category];
+            return (
+              <motion.section
+                key={category}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: categoryIndex * 0.1 }}
+              >
+                {/* Category Header */}
+                <div className="mb-8 text-center">
+                  <div className="flex items-center justify-center gap-3 mb-2">
+                    {(() => {
+                      const Icon = categoryIcons[category as MenuCategory] || UtensilsCrossed;
+                      return <Icon className="w-8 h-8 text-saffron-600" />;
+                    })()}
+                    <h2 className="text-3xl font-serif font-bold text-charcoal">{category}</h2>
+                  </div>
+                  <div className="w-16 h-0.5 bg-saffron-600 mx-auto" />
                 </div>
-                <div className="w-16 h-0.5 bg-saffron-600 mx-auto" />
-              </div>
 
-              {/* Menu Items */}
-              <div className="space-y-8">
-                {items.map((item, index) => (
-                  <motion.div
-                    key={item.id}
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ duration: 0.4, delay: index * 0.05 }}
-                    className="group"
-                  >
-                    <div className="flex gap-6">
-                      {/* Image */}
-                      {item.generatedImages && item.generatedImages.length > 0 && (
-                        <div className="w-32 h-32 rounded-xl overflow-hidden shadow-lg flex-shrink-0">
-                          <img
-                            src={item.generatedImages[0]}
-                            alt={item.name}
-                            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
-                          />
-                        </div>
-                      )}
-
-                      {/* Content */}
-                      <div className="flex-1 min-w-0">
-                        {/* Name and Price */}
-                        <div className="flex items-baseline justify-between gap-4 mb-2">
-                          <h3 className="text-xl font-semibold flex-1 text-charcoal">
-                            {item.name}
-                          </h3>
-                          {item.price && (
-                            <span className="text-lg font-bold whitespace-nowrap text-saffron-700">
-                              AED {parseFloat(item.price).toFixed(2)}
-                            </span>
-                          )}
-                        </div>
-
-                        {/* Description */}
-                        {item.description && (
-                          <p className="text-gray-600 leading-relaxed mb-3">
-                            {item.description}
-                          </p>
-                        )}
-
-                        {/* Dietary Info */}
-                        {item.dietaryInfo && item.dietaryInfo.length > 0 && (
-                          <div className="flex flex-wrap gap-2">
-                            {item.dietaryInfo.map((dietary) => {
-                              const Icon = dietaryIcons[dietary] || Package;
-                              return (
-                                <span
-                                  key={dietary}
-                                  className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-emerald-100 text-emerald-700 text-xs font-medium"
-                                  title={dietary}
-                                >
-                                  <Icon className="w-3 h-3" />
-                                  {dietary}
-                                </span>
-                              );
-                            })}
+                {/* Menu Items */}
+                <div className="space-y-8">
+                  {items.map((item, index) => (
+                    <motion.div
+                      key={item.id}
+                      initial={{ opacity: 0, x: -20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ duration: 0.4, delay: index * 0.05 }}
+                      className="group"
+                    >
+                      <div className="flex gap-6">
+                        {/* Image */}
+                        {item.generatedImages && item.generatedImages.length > 0 && (
+                          <div className="w-32 h-32 rounded-xl overflow-hidden shadow-lg flex-shrink-0">
+                            <img
+                              src={item.generatedImages[0]}
+                              alt={item.name}
+                              className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+                            />
                           </div>
                         )}
-                      </div>
-                    </div>
 
-                    {/* Divider */}
-                    {index < items.length - 1 && (
-                      <div className="mt-6 border-b border-dashed border-gray-300" />
-                    )}
-                  </motion.div>
-                ))}
-              </div>
-            </motion.section>
-          ))}
+                        {/* Content */}
+                        <div className="flex-1 min-w-0">
+                          {/* Name and Price */}
+                          <div className="flex items-baseline justify-between gap-4 mb-2">
+                            <h3 className="text-xl font-semibold flex-1 text-charcoal">
+                              {item.name}
+                            </h3>
+                            {item.price && (
+                              <span className="text-lg font-bold whitespace-nowrap text-saffron-700">
+                                AED {parseFloat(item.price).toFixed(2)}
+                              </span>
+                            )}
+                          </div>
+
+                          {/* Description */}
+                          {item.description && (
+                            <p className="text-gray-600 leading-relaxed mb-3">
+                              {item.description}
+                            </p>
+                          )}
+
+                          {/* Dietary Info */}
+                          {item.dietaryInfo && item.dietaryInfo.length > 0 && (
+                            <div className="flex flex-wrap gap-2">
+                              {item.dietaryInfo.map((dietary) => {
+                                const Icon = dietaryIcons[dietary] || Package;
+                                return (
+                                  <span
+                                    key={dietary}
+                                    className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-emerald-100 text-emerald-700 text-xs font-medium"
+                                    title={dietary}
+                                  >
+                                    <Icon className="w-3 h-3" />
+                                    {dietary}
+                                  </span>
+                                );
+                              })}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Divider */}
+                      {index < items.length - 1 && (
+                        <div className="mt-6 border-b border-dashed border-gray-300" />
+                      )}
+                    </motion.div>
+                  ))}
+                </div>
+              </motion.section>
+            );
+          })}
         </div>
 
         {/* Footer */}

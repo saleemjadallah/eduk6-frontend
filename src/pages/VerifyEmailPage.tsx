@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Mail, AlertCircle, Sparkles, CheckCircle } from 'lucide-react';
+import { Mail, AlertCircle, CheckCircle } from 'lucide-react';
 import { api } from '@/lib/api';
 import { useQueryClient } from '@tanstack/react-query';
 

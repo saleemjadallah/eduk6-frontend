@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
-import { Sparkles, Zap, Shield, TrendingUp, Camera, Palette, Clock, Settings, LayoutDashboard, Image as ImageIcon, ArrowUp, DollarSign, Eye, Brain, ShoppingCart } from 'lucide-react';
+import { Sparkles, Zap, Shield, TrendingUp, Camera, Palette, Clock, Settings, LayoutDashboard, Image as ImageIcon, ArrowUp, DollarSign, Brain, ShoppingCart } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 import {

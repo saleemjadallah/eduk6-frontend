@@ -1,4 +1,5 @@
-import { motion } from 'framer-motion';
+import { motion, cubicBezier } from 'framer-motion';
+import type { Variants } from 'framer-motion';
 import type { EstablishmentSettings } from '@/types';
 
 interface MenuBookCoverProps {
@@ -7,14 +8,16 @@ interface MenuBookCoverProps {
   isOpen: boolean;
 }
 
-const coverVariants = {
+const bookEase = cubicBezier(0.43, 0.13, 0.23, 0.96);
+
+const coverVariants: Variants = {
   closed: {
     rotateY: 0,
-    transition: { duration: 0.6, ease: [0.43, 0.13, 0.23, 0.96] },
+    transition: { duration: 0.6, ease: bookEase },
   },
   open: {
     rotateY: -160,
-    transition: { duration: 0.6, ease: [0.43, 0.13, 0.23, 0.96] },
+    transition: { duration: 0.6, ease: bookEase },
   },
 };
 

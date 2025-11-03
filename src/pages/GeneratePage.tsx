@@ -298,7 +298,8 @@ export function GeneratePage() {
       setSelectedImage(0);
       setMenuItemId(result.menuItem.id);
       setGeneratedStyle(formData.style);
-      setIsDownloadOnly(result.downloadOnly || false);
+      const selectedStyleMeta = styles.find((style) => style.value === formData.style);
+      setIsDownloadOnly(selectedStyleMeta?.downloadOnly ?? false);
       setSelectedPreview(new Array(result.images.length).fill(true));
     } catch (err) {
       console.error('Error in handleSubmit:', err);
