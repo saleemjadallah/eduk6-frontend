@@ -33,6 +33,7 @@ export interface UsageRecord {
   subscriptionId: string | null;
   dishesGenerated: number;
   imagesGenerated: number;
+  enhancementsUsed: number;
   billingPeriodStart: Date;
   billingPeriodEnd: Date;
   createdAt: Date | null;
@@ -96,6 +97,7 @@ export interface PaginatedMenu {
 export interface TierLimits {
   dishesPerMonth: number;
   imagesPerDish: number;
+  enhancementsPerMonth: number;
   priceAED: number;
   overagePricePerDish: number;
 }
@@ -106,8 +108,11 @@ export interface UsageInfo {
   tier: SubscriptionTier;
   dishesUsed: number;
   imagesUsed: number;
+  enhancementsUsed: number;
   dishesRemaining: number;
+  enhancementsRemaining: number;
   hasReachedLimit: boolean;
+  hasReachedEnhancementLimit: boolean;
   limitType: 'trial' | 'plan';
   trialLimit?: number;
 }

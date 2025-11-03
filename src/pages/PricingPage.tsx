@@ -157,8 +157,12 @@ export function PricingPage() {
                 a: 'Yes! You can upgrade or downgrade your plan at any time. Changes take effect immediately.',
               },
               {
-                q: 'Do unused dishes roll over?',
-                a: 'No, unused dishes reset at the start of each billing period. We recommend choosing a plan that matches your monthly needs.',
+                q: 'What are AI photo enhancements?',
+                a: 'Our AI enhancement feature transforms your existing dish photos into professional-quality images. Upload any photo and choose from vibrant, natural, or dramatic enhancement styles - perfect for elevating photos taken on your phone or improving older menu images.',
+              },
+              {
+                q: 'Do unused dishes and enhancements roll over?',
+                a: 'No, unused dishes and enhancements reset at the start of each billing period. We recommend choosing a plan that matches your monthly needs.',
               },
               {
                 q: 'What are commercial usage rights?',

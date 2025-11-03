@@ -26,6 +26,7 @@ export const subscriptionPlans: Record<PlanTier, PlanDetails> = {
     description: 'Perfect for small restaurants and cafes',
     features: [
       '30 dishes per month',
+      '50 AI photo enhancements',
       '3 image variations per dish',
       'All 4 photography styles',
       'High-resolution downloads',
@@ -43,6 +44,7 @@ export const subscriptionPlans: Record<PlanTier, PlanDetails> = {
     description: 'For growing food businesses',
     features: [
       '150 dishes per month',
+      '200 AI photo enhancements',
       '3 image variations per dish',
       'All 4 photography styles',
       'High-resolution downloads',
@@ -62,6 +64,7 @@ export const subscriptionPlans: Record<PlanTier, PlanDetails> = {
     description: 'For large chains and franchises',
     features: [
       'Unlimited dishes',
+      'Unlimited AI enhancements',
       '3+ image variations',
       'Custom photography styles',
       'API access',

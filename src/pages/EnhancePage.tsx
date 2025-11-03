@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useQuery } from '@tanstack/react-query';
 import {
   Upload,
   Sparkles,
@@ -15,6 +16,7 @@ import {
   AlertCircle
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { apiClient } from '@/lib/api';
 import heic2any from 'heic2any';
 
 interface EnhancedImage {
@@ -35,6 +37,12 @@ export function EnhancePage() {
   const [isComparing, setIsComparing] = useState(false);
   const [comparePosition, setComparePosition] = useState(50);
   const [enhancementType, setEnhancementType] = useState<'vibrant' | 'natural' | 'dramatic'>('vibrant');
+
+  // Fetch current usage
+  const { data: usageInfo, refetch: refetchUsage } = useQuery({
+    queryKey: ['usage'],
+    queryFn: () => apiClient.getCurrentUsage(),
+  });
 
   // Check if file is actually HEIC/HEIF by reading magic bytes
   const isActuallyHeic = async (file: File): Promise<boolean> => {
@@ -225,6 +233,19 @@ export function EnhancePage() {
       return;
     }
 
+    // Check enhancement limits
+    if (usageInfo?.hasReachedEnhancementLimit) {
+      toast({
+        title: "Enhancement limit reached",
+        description: usageInfo.limitType === 'trial'
+          ? "You've used all 5 free trial enhancements. Subscribe to continue enhancing images."
+          : `You've used all ${usageInfo.limits.enhancementsPerMonth} enhancements for this billing period. Upgrade for more enhancements.`,
+        variant: "destructive",
+        duration: 7000,
+      });
+      return;
+    }
+
     const totalFiles = selectedFiles.length;
     let successCount = 0;
     let errorCount = 0;
@@ -359,6 +380,11 @@ export function EnhancePage() {
     // Clear selected files
     setSelectedFiles([]);
 
+    // Refetch usage to update counter
+    if (successCount > 0) {
+      refetchUsage();
+    }
+
     // Show final result
     if (successCount > 0) {
       toast({
@@ -399,14 +425,41 @@ export function EnhancePage() {
           </button>
 
           <div className="bg-white rounded-2xl shadow-sm p-6">
-            <div className="flex items-center gap-3 mb-2">
-              <div className="w-12 h-12 rounded-xl gradient-saffron flex items-center justify-center">
-                <Wand2 className="w-6 h-6 text-white" />
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3 mb-2">
+                <div className="w-12 h-12 rounded-xl gradient-saffron flex items-center justify-center">
+                  <Wand2 className="w-6 h-6 text-white" />
+                </div>
+                <div>
+                  <h1 className="text-3xl font-bold text-gray-800">AI Photo Enhance</h1>
+                  <p className="text-gray-600">Upload your dish photos and let AI enhance them to professional quality</p>
+                </div>
               </div>
-              <div>
-                <h1 className="text-3xl font-bold text-gray-800">AI Photo Enhance</h1>
-                <p className="text-gray-600">Upload your dish photos and let AI enhance them to professional quality</p>
-              </div>
+              {usageInfo && (
+                <div className="bg-gradient-to-br from-saffron-50 to-saffron-100 border border-saffron-200 rounded-xl p-4 min-w-[200px]">
+                  <div className="text-sm font-medium text-saffron-900 mb-1">
+                    Enhancements This {usageInfo.limitType === 'trial' ? 'Trial' : 'Month'}
+                  </div>
+                  <div className="flex items-baseline gap-2">
+                    <span className="text-3xl font-bold text-saffron-600">
+                      {usageInfo.enhancementsUsed}
+                    </span>
+                    <span className="text-lg text-saffron-700">
+                      / {usageInfo.limits.enhancementsPerMonth === 999999 ? '∞' : usageInfo.limits.enhancementsPerMonth}
+                    </span>
+                  </div>
+                  {!usageInfo.hasReachedEnhancementLimit && usageInfo.enhancementsRemaining <= 5 && usageInfo.enhancementsRemaining > 0 && (
+                    <div className="mt-2 text-xs text-saffron-700">
+                      {usageInfo.enhancementsRemaining} enhancements remaining
+                    </div>
+                  )}
+                  {usageInfo.hasReachedEnhancementLimit && (
+                    <div className="mt-2 text-xs text-red-600 font-medium">
+                      Limit reached - Upgrade to continue
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           </div>
         </motion.div>
