@@ -168,6 +168,13 @@ class ApiClient {
     });
   }
 
+  // Maintenance
+  async fixMenuCategories(): Promise<{ success: boolean; message: string; fixedItems: any[] }> {
+    return this.request('/maintenance/fix-menu-categories', {
+      method: 'POST',
+    });
+  }
+
   // Subscriptions
   async getCurrentSubscription(): Promise<Subscription | null> {
     return this.request<Subscription | null>('/subscriptions/current');

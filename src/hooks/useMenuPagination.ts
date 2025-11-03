@@ -59,9 +59,13 @@ export function useMenuPagination({
       };
 
       sortedItems.forEach((item) => {
-        const category = item.category || 'Mains';
-        if (categoryGroups[category]) {
+        // Use the actual category from the item, no fallback
+        const category = item.category;
+        if (category && categoryGroups[category]) {
           categoryGroups[category].push(item);
+        } else {
+          // Log warning for items without proper categories
+          console.warn(`Menu item "${item.name}" has invalid or missing category: ${category}`);
         }
       });
 
