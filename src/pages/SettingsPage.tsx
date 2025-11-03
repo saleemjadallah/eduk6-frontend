@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/lib/api';
-import { User, Mail, CreditCard, LogOut, Loader2, BookOpen } from 'lucide-react';
+import { User, Mail, CreditCard, LogOut, Loader2, BookOpen, Wrench, CheckCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -38,7 +38,7 @@ export function SettingsPage() {
   }, [user]);
 
   const updateProfileMutation = useMutation({
-    mutationFn: (data: { firstName: string; lastName: string }) => 
+    mutationFn: (data: { firstName: string; lastName: string }) =>
       api.updateProfile(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['user'] });
@@ -52,6 +52,24 @@ export function SettingsPage() {
       toast({
         title: 'Error',
         description: 'Failed to update profile. Please try again.',
+        variant: 'destructive',
+      });
+    },
+  });
+
+  const fixCategoriesMutation = useMutation({
+    mutationFn: () => api.fixMenuCategories(),
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['menuItems'] });
+      toast({
+        title: 'Categories Fixed',
+        description: data.message || 'Menu item categories have been fixed successfully.',
+      });
+    },
+    onError: () => {
+      toast({
+        title: 'Error',
+        description: 'Failed to fix categories. Please try again.',
         variant: 'destructive',
       });
     },
@@ -273,6 +291,46 @@ export function SettingsPage() {
                 >
                   Manage Establishment
                 </Button>
+              </CardContent>
+            </Card>
+
+            <Separator />
+
+            {/* Maintenance Tools */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Wrench className="w-5 h-5 text-saffron" />
+                  Maintenance Tools
+                </CardTitle>
+                <CardDescription>
+                  Fix data issues and maintain your menu items
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <h3 className="font-medium">Fix Menu Categories</h3>
+                  <p className="text-sm text-slate">
+                    Some of your menu items may not have categories assigned. Click the button below to automatically assign default categories to these items.
+                  </p>
+                  <Button
+                    onClick={() => fixCategoriesMutation.mutate()}
+                    disabled={fixCategoriesMutation.isPending}
+                    className="mt-2"
+                  >
+                    {fixCategoriesMutation.isPending ? (
+                      <>
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        Fixing Categories...
+                      </>
+                    ) : (
+                      <>
+                        <CheckCircle className="w-4 h-4 mr-2" />
+                        Fix Categories
+                      </>
+                    )}
+                  </Button>
+                </div>
               </CardContent>
             </Card>
 
