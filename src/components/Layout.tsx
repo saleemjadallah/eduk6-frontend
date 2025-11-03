@@ -257,7 +257,16 @@ export function Layout() {
               <ul className="space-y-2 text-sm text-slate">
                 <li><a href="#" className="hover:text-saffron">About</a></li>
                 <li><a href="#" className="hover:text-saffron">Contact</a></li>
-                <li><a href="#" className="hover:text-saffron">Privacy Policy</a></li>
+                <li>
+                  <Link to="/privacy" className="hover:text-saffron">
+                    Privacy Policy
+                  </Link>
+                </li>
+                <li>
+                  <Link to="/terms" className="hover:text-saffron">
+                    Terms & Conditions
+                  </Link>
+                </li>
               </ul>
             </div>
           </div>

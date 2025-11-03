@@ -12,6 +12,8 @@ import { PublicMenuPage } from './pages/PublicMenuPage';
 import { SettingsPage } from './pages/SettingsPage';
 import { EstablishmentSettingsPage } from './pages/EstablishmentSettingsPage';
 import { EnhancePage } from './pages/EnhancePage';
+import { TermsPage } from './pages/TermsPage';
+import { PrivacyPage } from './pages/PrivacyPage';
 
 function App() {
   return (
@@ -29,6 +31,8 @@ function App() {
         <Route path="settings" element={<SettingsPage />} />
         <Route path="settings/establishment" element={<EstablishmentSettingsPage />} />
         <Route path="menu/:userId" element={<PublicMenuPage />} />
+        <Route path="terms" element={<TermsPage />} />
+        <Route path="privacy" element={<PrivacyPage />} />
       </Route>
     </Routes>
   );
