@@ -120,10 +120,11 @@ export function EnhancePage() {
           });
         } catch (error) {
           console.error('Failed to convert HEIC:', error);
+          // Fallback: upload original so backend conversion can handle it
+          processedFiles.push(file);
           toast({
-            title: "HEIC Conversion Failed",
-            description: `Unable to convert ${file.name}. This can happen with some HEIC variants. Try: 1) Export as JPEG from your Photos app, or 2) Use an online converter like heictojpg.com`,
-            variant: "destructive",
+            title: "Using original HEIC image",
+            description: `Browser conversion failed for ${file.name}. We'll upload it as-is and convert it on the server.`,
             duration: 8000,
           });
         }
@@ -172,10 +173,11 @@ export function EnhancePage() {
           });
         } catch (error) {
           console.error('Failed to convert HEIC:', error);
+          // Fallback: upload original so backend conversion can handle it
+          processedFiles.push(file);
           toast({
-            title: "HEIC Conversion Failed",
-            description: `Unable to convert ${file.name}. This can happen with some HEIC variants. Try: 1) Export as JPEG from your Photos app, or 2) Use an online converter like heictojpg.com`,
-            variant: "destructive",
+            title: "Using original HEIC image",
+            description: `Browser conversion failed for ${file.name}. We'll upload it as-is and convert it on the server.`,
             duration: 8000,
           });
         }
