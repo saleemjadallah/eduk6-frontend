@@ -2,9 +2,9 @@ import { motion } from 'framer-motion';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 import { Link } from 'react-router-dom';
-import { Sparkles, Image as ImageIcon, TrendingUp, Package, Trash2, Leaf, Flame, Coffee, Soup, Salad, UtensilsCrossed, Cookie, Apple, GripVertical, QrCode, X, Download, FileText, BookOpen, Wand2 } from 'lucide-react';
+import { Sparkles, Image as ImageIcon, TrendingUp, Package, Trash2, Leaf, Flame, Coffee, Soup, Salad, UtensilsCrossed, Cookie, Apple, GripVertical, QrCode, X, Download, FileText, BookOpen, Wand2, Copy } from 'lucide-react';
 import { useState, useEffect, useMemo } from 'react';
-import type { MenuItem, MenuCategory, DietaryOption } from '@/types';
+import type { MenuItem, MenuCategory, DietaryOption, User } from '@/types';
 import QRCode from 'qrcode';
 import { jsPDF } from 'jspdf';
 import {
@@ -178,7 +178,10 @@ export function DashboardPage() {
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [showQRModal, setShowQRModal] = useState(false);
   const [qrCodeUrl, setQrCodeUrl] = useState('');
+  const [menuLink, setMenuLink] = useState('');
   const queryClient = useQueryClient();
+  const cachedUser = queryClient.getQueryData<User | null>(['user']);
+  const publicMenuPath = cachedUser?.id ? `/menu/${cachedUser.id}` : '/menu';
 
   const { data: menuItems, isLoading: itemsLoading, refetch } = useQuery({
     queryKey: ['menuItems'],
@@ -279,6 +282,7 @@ export function DashboardPage() {
       }
 
       const menuUrl = `${window.location.origin}/menu/${user.id}`;
+      setMenuLink(menuUrl);
       const qrDataUrl = await QRCode.toDataURL(menuUrl, {
         width: 512,
         margin: 2,
@@ -297,6 +301,7 @@ export function DashboardPage() {
   };
 
   const handleDownloadQR = () => {
+    if (!qrCodeUrl) return;
     const link = document.createElement('a');
     link.href = qrCodeUrl;
     link.download = 'menu-qr-code.png';
@@ -583,7 +588,7 @@ export function DashboardPage() {
             <h2 className="text-2xl font-bold text-gray-900">Your Menu</h2>
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3 w-full sm:w-auto">
               <Link
-                to={`/menu/${queryClient.getQueryData<{ id: string }>(['user'])?.id || ''}`}
+                to={publicMenuPath}
                 className="inline-flex items-center justify-center gap-2 px-4 py-2.5 sm:py-2 rounded-lg bg-saffron-600 text-white text-sm sm:text-base font-semibold hover:shadow-lg hover:bg-saffron-700 transition-all whitespace-nowrap"
               >
                 <BookOpen className="w-4 h-4 flex-shrink-0" />
@@ -712,13 +717,29 @@ export function DashboardPage() {
                       <img src={qrCodeUrl} alt="Menu QR Code" className="w-64 h-64" />
                     </div>
 
-                    <div className="space-y-2">
+                    <div className="space-y-3">
                       <p className="text-sm text-gray-600">
                         Customers can scan this QR code to view your menu
                       </p>
-                      <p className="text-xs text-gray-500 font-mono bg-gray-100 p-2 rounded">
-                        {window.location.origin}/menu/{'{userId}'}
-                      </p>
+                      {menuLink && (
+                        <div className="flex flex-col items-center gap-2">
+                          <a
+                            href={menuLink}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-xs text-saffron-700 font-medium underline break-all"
+                          >
+                            {menuLink}
+                          </a>
+                          <button
+                            onClick={handleCopyMenuLink}
+                            className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg border border-gray-300 text-sm text-gray-700 hover:border-saffron-600 hover:text-saffron-600 transition-all"
+                          >
+                            <Copy className="w-4 h-4" />
+                            Copy link
+                          </button>
+                        </div>
+                      )}
                     </div>
 
                     <button
@@ -738,3 +759,16 @@ export function DashboardPage() {
     </div>
   );
 }
+  const handleCopyMenuLink = () => {
+    if (!menuLink) return;
+    if (navigator.clipboard?.writeText) {
+      navigator.clipboard.writeText(menuLink).then(
+        () => {
+          alert('Menu link copied to clipboard');
+        },
+        () => alert('Failed to copy link')
+      );
+    } else {
+      alert('Copying is not supported in this browser');
+    }
+  };
