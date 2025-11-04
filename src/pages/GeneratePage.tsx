@@ -294,6 +294,14 @@ export function GeneratePage() {
           : undefined,
       });
 
+      // Track Lead event for content generation
+      if (typeof window !== 'undefined' && (window as any).fbq) {
+        (window as any).fbq('track', 'Lead', {
+          content_name: formData.name,
+          content_category: formData.category
+        });
+      }
+
       setImages(result.images);
       setSelectedImage(0);
       setMenuItemId(result.menuItem.id);
@@ -369,6 +377,15 @@ export function GeneratePage() {
         dietaryInfo: formData.dietaryInfo.length > 0 ? formData.dietaryInfo : null,
         allergens: formData.allergens.length > 0 ? formData.allergens : null,
       });
+
+      // Track AddToCart equivalent event when saving to menu
+      if (typeof window !== 'undefined' && (window as any).fbq) {
+        (window as any).fbq('track', 'AddToCart', {
+          content_name: formData.name,
+          content_category: formData.category,
+          content_type: 'product'
+        });
+      }
 
       setIsSaved(true);
       setHighResMessage('Dish saved to your menu!');

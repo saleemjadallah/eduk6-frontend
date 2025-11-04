@@ -4,11 +4,22 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { pricingPlans, type PlanTier } from '@/data/plans';
 import { api } from '@/lib/api';
+import { useEffect } from 'react';
 
 type CheckoutTier = Extract<PlanTier, 'starter' | 'pro'>;
 
 export function PricingPage() {
   const navigate = useNavigate();
+
+  // Track ViewContent event when pricing page loads
+  useEffect(() => {
+    if (typeof window !== 'undefined' && (window as any).fbq) {
+      (window as any).fbq('track', 'ViewContent', {
+        content_name: 'Pricing Page',
+        content_category: 'pricing'
+      });
+    }
+  }, []);
 
   const { data: user } = useQuery({
     queryKey: ['user'],
@@ -22,6 +33,17 @@ export function PricingPage() {
   });
 
   const handleSelectPlan = (tier: CheckoutTier) => {
+    // Track InitiateCheckout event when user selects a plan
+    if (typeof window !== 'undefined' && (window as any).fbq) {
+      const plan = pricingPlans.find(p => p.tier === tier);
+      (window as any).fbq('track', 'InitiateCheckout', {
+        content_name: plan?.name,
+        content_category: 'subscription',
+        value: plan?.price || 0,
+        currency: 'AED'
+      });
+    }
+
     if (!user) {
       navigate('/register', { state: { redirectTo: `/checkout?tier=${tier}` } });
       return;

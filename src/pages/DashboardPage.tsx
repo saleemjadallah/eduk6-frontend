@@ -292,6 +292,14 @@ export function DashboardPage() {
         },
       });
 
+      // Track ViewContent event when QR code is generated
+      if (typeof window !== 'undefined' && (window as any).fbq) {
+        (window as any).fbq('track', 'ViewContent', {
+          content_name: 'QR Code',
+          content_category: 'menu'
+        });
+      }
+
       setQrCodeUrl(qrDataUrl);
       setShowQRModal(true);
     } catch (error) {

@@ -314,6 +314,14 @@ export function EnhancePage() {
 
         const result = await response.json();
 
+        // Track CustomizeProduct event for image enhancement
+        if (typeof window !== 'undefined' && (window as any).fbq) {
+          (window as any).fbq('track', 'CustomizeProduct', {
+            content_name: file.name,
+            content_category: 'image_enhancement'
+          });
+        }
+
         // Update image with enhanced URL from R2
         setEnhancedImages(prev => prev.map(img =>
           img.id === imageId

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, useCallback } from 'react';
+import { useEffect, useMemo, useState, useCallback, useRef } from 'react';
 import { Elements, PaymentElement, useElements, useStripe } from '@stripe/react-stripe-js';
 import type { StripeElementsOptions } from '@stripe/stripe-js';
 import { motion } from 'framer-motion';
@@ -27,6 +27,7 @@ function CheckoutForm({ tier }: CheckoutFormProps) {
 
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const addPaymentInfoTracked = useRef(false);
 
   const handleSubmit = useCallback(
     async (event: React.FormEvent) => {
@@ -60,6 +61,25 @@ function CheckoutForm({ tier }: CheckoutFormProps) {
       }
 
       if (result.paymentIntent?.status === 'succeeded' || result.paymentIntent?.status === 'processing') {
+        // Track Purchase and Subscribe events
+        if (typeof window !== 'undefined' && (window as any).fbq) {
+          const plan = subscriptionPlans[tier];
+          const planValue = plan.price || 0;
+
+          (window as any).fbq('track', 'Purchase', {
+            value: planValue,
+            currency: 'AED',
+            content_name: plan.name,
+            content_type: 'subscription'
+          });
+
+          (window as any).fbq('track', 'Subscribe', {
+            value: planValue.toFixed(2),
+            currency: 'AED',
+            predicted_ltv: (planValue * 12).toFixed(2)
+          });
+        }
+
         await queryClient.invalidateQueries({ queryKey: ['subscription'] });
         await queryClient.invalidateQueries({ queryKey: ['usage'] });
         navigate('/dashboard', { replace: true });
@@ -75,7 +95,18 @@ function CheckoutForm({ tier }: CheckoutFormProps) {
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
       <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
-        <PaymentElement options={{ layout: 'tabs' }} />
+        <PaymentElement
+          options={{ layout: 'tabs' }}
+          onChange={(e) => {
+            // Track AddPaymentInfo when payment details are complete
+            if (e.complete && !addPaymentInfoTracked.current) {
+              if (typeof window !== 'undefined' && (window as any).fbq) {
+                (window as any).fbq('track', 'AddPaymentInfo');
+                addPaymentInfoTracked.current = true;
+              }
+            }
+          }}
+        />
         <p className="mt-4 flex items-center gap-2 text-xs text-gray-500">
           <ShieldCheck className="h-4 w-4" />
           Payments are securely processed in Stripe&apos;s sandbox environment.

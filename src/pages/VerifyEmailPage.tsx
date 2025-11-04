@@ -39,6 +39,12 @@ export function VerifyEmailPage() {
     try {
       await api.verifyRegistration(email, code);
       await queryClient.invalidateQueries({ queryKey: ['user'] });
+
+      // Track CompleteRegistration event
+      if (typeof window !== 'undefined' && (window as any).fbq) {
+        (window as any).fbq('track', 'CompleteRegistration');
+      }
+
       // Redirect to pricing page after successful verification
       navigate(redirectTo ?? '/pricing', { replace: true });
     } catch (err) {
