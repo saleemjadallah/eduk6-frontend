@@ -173,6 +173,7 @@ function SortableMenuItem({
     </motion.div>
   );
 }
+}
 
 export function DashboardPage() {
   const [deleteId, setDeleteId] = useState<string | null>(null);
