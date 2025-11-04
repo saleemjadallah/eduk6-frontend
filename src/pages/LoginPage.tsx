@@ -101,9 +101,13 @@ export function LoginPage() {
             initial={{ scale: 0 }}
             animate={{ scale: 1 }}
             transition={{ type: 'spring', stiffness: 200, delay: 0.1 }}
-            className="inline-flex p-3 rounded-2xl gradient-saffron text-white mb-4"
+            className="inline-flex mb-4"
           >
-            <Sparkles className="w-8 h-8" />
+            <img
+              src="/logo-transparent.png"
+              alt="MyDscvr Logo"
+              className="w-24 h-24 object-contain"
+            />
           </motion.div>
           <h1 className="text-3xl font-bold text-gray-900 mb-2">Welcome back</h1>
           <p className="text-gray-600">Sign in to continue creating stunning food photos</p>
