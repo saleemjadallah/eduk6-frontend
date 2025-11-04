@@ -4,11 +4,13 @@ import { Sparkles, User, LogOut, Menu, X } from 'lucide-react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 import { useState } from 'react';
+import { useToast } from '@/hooks/use-toast';
 
 export function Layout() {
   const location = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const queryClient = useQueryClient();
+  const { toast } = useToast();
 
   const { data: user } = useQuery({
     queryKey: ['user'],
@@ -19,6 +21,35 @@ export function Layout() {
     await api.logout();
     await queryClient.invalidateQueries({ queryKey: ['user'] });
     window.location.href = '/';
+  };
+
+  const handleContactClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
+    e.preventDefault();
+    const email = 'support@mydscvr.ai';
+
+    if (navigator.clipboard?.writeText) {
+      navigator.clipboard.writeText(email).then(
+        () => {
+          toast({
+            title: "Email copied!",
+            description: `${email} has been copied to your clipboard`,
+          });
+        },
+        () => {
+          toast({
+            title: "Copy failed",
+            description: "Please copy manually: support@mydscvr.ai",
+            variant: "destructive",
+          });
+        }
+      );
+    } else {
+      toast({
+        title: "Copy not supported",
+        description: "Please copy manually: support@mydscvr.ai",
+        variant: "destructive",
+      });
+    }
   };
 
   const navLinks = [
@@ -256,7 +287,16 @@ export function Layout() {
               <h3 className="font-semibold text-charcoal mb-4">Company</h3>
               <ul className="space-y-2 text-sm text-slate">
                 <li><a href="#" className="hover:text-saffron">About</a></li>
-                <li><a href="#" className="hover:text-saffron">Contact</a></li>
+                <li>
+                  <a
+                    href="#"
+                    onClick={handleContactClick}
+                    className="hover:text-saffron cursor-pointer"
+                    title="Click to copy email address"
+                  >
+                    Contact
+                  </a>
+                </li>
                 <li>
                   <Link to="/privacy" className="hover:text-saffron">
                     Privacy Policy
