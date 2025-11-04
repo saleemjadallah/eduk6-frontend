@@ -345,27 +345,75 @@ export function DashboardPage() {
       return false;
     };
 
-    const loadImageAsDataUrl = async (url: string): Promise<string | null> => {
-      try {
-        const response = await fetch(url, { mode: 'cors' });
-        if (!response.ok) throw new Error(`Failed to fetch image: ${response.status}`);
-        const blob = await response.blob();
-        return await new Promise((resolve, reject) => {
-          const reader = new FileReader();
-          reader.onloadend = () => {
-            if (typeof reader.result === 'string') {
-              resolve(reader.result);
-            } else {
-              reject(new Error('Invalid image data'));
+    const loadImageForPdf = async (
+      url: string,
+      maxWidthMm: number,
+      maxHeightMm: number
+    ): Promise<{ dataUrl: string; widthMm: number; heightMm: number } | null> => {
+      return new Promise((resolve) => {
+        const img = new Image();
+        img.crossOrigin = 'anonymous';
+
+        const cleanup = () => {
+          img.onload = null;
+          img.onerror = null;
+        };
+
+        img.onload = () => {
+          try {
+            let displayWidthMm = maxWidthMm;
+            let displayHeightMm = displayWidthMm * (img.height / img.width);
+
+            if (displayHeightMm > maxHeightMm) {
+              displayHeightMm = maxHeightMm;
+              displayWidthMm = displayHeightMm / (img.height / img.width);
+
+              if (displayWidthMm > maxWidthMm) {
+                displayWidthMm = maxWidthMm;
+                displayHeightMm = displayWidthMm * (img.height / img.width);
+              }
             }
-          };
-          reader.onerror = () => reject(new Error('Failed to read image data'));
-          reader.readAsDataURL(blob);
-        });
-      } catch (error) {
-        console.warn('Skipping image for PDF export:', error);
-        return null;
-      }
+
+            const dpi = 150; // Reasonable balance for print quality
+            const mmToPx = (valueMm: number) =>
+              Math.max(1, Math.round((valueMm / 25.4) * dpi));
+
+            const canvasWidthPx = mmToPx(displayWidthMm);
+            const canvasHeightPx = mmToPx(displayHeightMm);
+
+            const canvas = document.createElement('canvas');
+            canvas.width = canvasWidthPx;
+            canvas.height = canvasHeightPx;
+            const ctx = canvas.getContext('2d');
+
+            if (!ctx) {
+              resolve(null);
+              return;
+            }
+
+            ctx.drawImage(img, 0, 0, canvasWidthPx, canvasHeightPx);
+            const dataUrl = canvas.toDataURL('image/jpeg', 0.9);
+            resolve({
+              dataUrl,
+              widthMm: displayWidthMm,
+              heightMm: displayHeightMm,
+            });
+          } catch (error) {
+            console.warn('Failed to prepare image for PDF:', error);
+            resolve(null);
+          } finally {
+            cleanup();
+          }
+        };
+
+        img.onerror = () => {
+          console.warn('Skipping image for PDF export: failed to load', url);
+          cleanup();
+          resolve(null);
+        };
+
+        img.src = url;
+      });
     };
 
     // Title
@@ -399,14 +447,17 @@ export function DashboardPage() {
 
       // Items
       for (const item of items) {
+        const maxImageWidthMm = pageWidth - margin * 2;
+        const maxImageHeightMm = 80;
+
         const descLines = item.description
           ? pdf.splitTextToSize(item.description, pageWidth - 2 * margin)
           : null;
         const descHeight = descLines ? descLines.length * 5 : 0;
         const dietaryHeight = item.dietaryInfo && item.dietaryInfo.length > 0 ? 5 : 0;
         const hasImage = Boolean(item.generatedImages?.[0]);
-        const imageHeight = hasImage ? 60 : 0;
-        const baseHeight = 12 + descHeight + dietaryHeight + imageHeight + 8;
+        const imagePlaceholderHeight = hasImage ? maxImageHeightMm : 0;
+        const baseHeight = 12 + descHeight + dietaryHeight + imagePlaceholderHeight + 8;
 
         while (ensureSpace(baseHeight)) {
           renderCategoryHeader(category);
@@ -447,16 +498,14 @@ export function DashboardPage() {
         // Item image
         const imageUrl = item.generatedImages?.[0];
         if (imageUrl) {
-          const imageData = await loadImageAsDataUrl(imageUrl);
+          const imageData = await loadImageForPdf(imageUrl, maxImageWidthMm, maxImageHeightMm);
           if (imageData) {
-            const imageTypeMatch = /^data:image\/([a-zA-Z0-9+]+);/i.exec(imageData);
-            let imageType = imageTypeMatch ? imageTypeMatch[1].toUpperCase() : 'JPEG';
-            if (imageType === 'JPG') {
-              imageType = 'JPEG';
+            const { dataUrl, widthMm: imageWidth, heightMm: imageHeight } = imageData;
+            if (ensureSpace(imageHeight + 6)) {
+              renderCategoryHeader(category);
             }
-            const maxImageWidth = pageWidth - margin * 2;
             try {
-              pdf.addImage(imageData, imageType as any, margin, yPosition, maxImageWidth, imageHeight, undefined, 'FAST');
+              pdf.addImage(dataUrl, 'JPEG', margin, yPosition, imageWidth, imageHeight, undefined, 'FAST');
               yPosition += imageHeight;
             } catch (error) {
               console.warn('Failed to add image to PDF:', error);
