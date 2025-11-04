@@ -34,8 +34,14 @@ const GoogleSignInButton: React.FC<GoogleSignInButtonProps> = ({
       // Get ID token to send to backend
       const idToken = await user.getIdToken();
 
+      const rawApiBase = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+      const apiBase = rawApiBase.replace(/\/$/, '');
+      const authEndpoint = apiBase.endsWith('/api')
+        ? `${apiBase}/auth/google`
+        : `${apiBase}/api/auth/google`;
+
       // Send token to our backend for verification and user creation/login
-      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:3001'}/auth/google`, {
+      const response = await fetch(authEndpoint, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -45,8 +51,17 @@ const GoogleSignInButton: React.FC<GoogleSignInButtonProps> = ({
       });
 
       if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || 'Failed to authenticate with backend');
+        let message = 'Failed to authenticate with backend';
+        try {
+          const error = await response.json();
+          message = error?.message || error?.error || message;
+        } catch {
+          const text = await response.text();
+          if (text) {
+            message = text;
+          }
+        }
+        throw new Error(message);
       }
 
       const backendUser = await response.json();
