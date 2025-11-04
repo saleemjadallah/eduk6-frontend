@@ -4,12 +4,13 @@ import { auth, googleProvider } from '@/config/firebase';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
+import { api } from '@/lib/api';
 
 interface GoogleSignInButtonProps {
   className?: string;
   variant?: 'default' | 'outline' | 'ghost';
   size?: 'default' | 'sm' | 'lg' | 'icon';
-  onSuccess?: (user: any) => void;
+  onSuccess?: (user: any) => void | boolean | Promise<void | boolean>;
   redirectTo?: string;
 }
 
@@ -26,26 +27,49 @@ const GoogleSignInButton: React.FC<GoogleSignInButtonProps> = ({
   const handleGoogleSignIn = async () => {
     setIsLoading(true);
     try {
+      // Sign in with Firebase
       const result = await signInWithPopup(auth, googleProvider);
       const user = result.user;
 
-      // Get ID token to send to backend if needed
+      // Get ID token to send to backend
       const idToken = await user.getIdToken();
 
-      // Store user info in localStorage or state management
-      localStorage.setItem('firebaseUser', JSON.stringify({
-        uid: user.uid,
-        email: user.email,
-        displayName: user.displayName,
-        photoURL: user.photoURL,
-        idToken
-      }));
+      // Send token to our backend for verification and user creation/login
+      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:3001'}/auth/google`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include', // Important for session cookies
+        body: JSON.stringify({ idToken }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to authenticate with backend');
+      }
+
+      const backendUser = await response.json();
+
+      // Store user info in localStorage
+      localStorage.setItem('user', JSON.stringify(backendUser));
 
       toast.success(`Welcome, ${user.displayName || user.email}!`);
 
+      let shouldNavigate = true;
+
       if (onSuccess) {
-        onSuccess(user);
-      } else {
+        try {
+          const result = await onSuccess(backendUser);
+          if (result === false) {
+            shouldNavigate = false;
+          }
+        } catch (callbackError) {
+          console.error('Error running onSuccess callback:', callbackError);
+        }
+      }
+
+      if (shouldNavigate) {
         navigate(redirectTo);
       }
     } catch (error: any) {
