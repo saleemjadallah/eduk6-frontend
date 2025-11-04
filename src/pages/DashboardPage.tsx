@@ -310,6 +310,20 @@ export function DashboardPage() {
     document.body.removeChild(link);
   };
 
+  const handleCopyMenuLink = () => {
+    if (!menuLink) return;
+    if (navigator.clipboard?.writeText) {
+      navigator.clipboard.writeText(menuLink).then(
+        () => {
+          alert('Menu link copied to clipboard');
+        },
+        () => alert('Failed to copy link')
+      );
+    } else {
+      alert('Copying is not supported in this browser');
+    }
+  };
+
   const handleExportPDF = async () => {
     if (!menuItems || menuItems.length === 0) {
       alert('No menu items to export');
@@ -320,6 +334,39 @@ export function DashboardPage() {
     const pageWidth = pdf.internal.pageSize.getWidth();
     const margin = 20;
     let yPosition = 20;
+    const maxHeight = pdf.internal.pageSize.getHeight();
+
+    const ensureSpace = (height: number): boolean => {
+      if (yPosition + height > maxHeight - margin) {
+        pdf.addPage();
+        yPosition = margin;
+        return true;
+      }
+      return false;
+    };
+
+    const loadImageAsDataUrl = async (url: string): Promise<string | null> => {
+      try {
+        const response = await fetch(url, { mode: 'cors' });
+        if (!response.ok) throw new Error(`Failed to fetch image: ${response.status}`);
+        const blob = await response.blob();
+        return await new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onloadend = () => {
+            if (typeof reader.result === 'string') {
+              resolve(reader.result);
+            } else {
+              reject(new Error('Invalid image data'));
+            }
+          };
+          reader.onerror = () => reject(new Error('Failed to read image data'));
+          reader.readAsDataURL(blob);
+        });
+      } catch (error) {
+        console.warn('Skipping image for PDF export:', error);
+        return null;
+      }
+    };
 
     // Title
     pdf.setFontSize(24);
@@ -327,37 +374,42 @@ export function DashboardPage() {
     pdf.text('Menu', pageWidth / 2, yPosition, { align: 'center' });
     yPosition += 15;
 
-    // Iterate through categories in defined order
-    CATEGORY_ORDER.forEach((category) => {
-      const items = menuByCategory[category];
-      if (!items.length) {
-        return;
-      }
-      // Check if we need a new page
-      if (yPosition > pdf.internal.pageSize.getHeight() - 40) {
-        pdf.addPage();
-        yPosition = 20;
-      }
-
-      // Category Header
+    const renderCategoryHeader = (categoryLabel: MenuCategory) => {
       pdf.setFontSize(16);
       pdf.setFont('helvetica', 'bold');
       pdf.setTextColor(200, 90, 84); // Saffron color
-      pdf.text(category, margin, yPosition);
+      pdf.text(categoryLabel, margin, yPosition);
       yPosition += 8;
 
-      // Category line
       pdf.setDrawColor(200, 90, 84);
       pdf.setLineWidth(0.5);
       pdf.line(margin, yPosition, pageWidth - margin, yPosition);
       yPosition += 10;
+    };
+
+    // Iterate through categories in defined order
+    for (const category of CATEGORY_ORDER) {
+      const items = menuByCategory[category];
+      if (!items.length) {
+        continue;
+      }
+
+      ensureSpace(30);
+      renderCategoryHeader(category);
 
       // Items
-      items.forEach((item) => {
-        // Check if we need a new page for the item
-        if (yPosition > pdf.internal.pageSize.getHeight() - 50) {
-          pdf.addPage();
-          yPosition = 20;
+      for (const item of items) {
+        const descLines = item.description
+          ? pdf.splitTextToSize(item.description, pageWidth - 2 * margin)
+          : null;
+        const descHeight = descLines ? descLines.length * 5 : 0;
+        const dietaryHeight = item.dietaryInfo && item.dietaryInfo.length > 0 ? 5 : 0;
+        const hasImage = Boolean(item.generatedImages?.[0]);
+        const imageHeight = hasImage ? 60 : 0;
+        const baseHeight = 12 + descHeight + dietaryHeight + imageHeight + 8;
+
+        while (ensureSpace(baseHeight)) {
+          renderCategoryHeader(category);
         }
 
         // Item name and price
@@ -375,14 +427,12 @@ export function DashboardPage() {
         yPosition += 6;
 
         // Description
-        if (item.description) {
+        if (descLines) {
           pdf.setFontSize(10);
           pdf.setFont('helvetica', 'normal');
           pdf.setTextColor(100, 100, 100);
-
-          const descLines = pdf.splitTextToSize(item.description, pageWidth - 2 * margin);
           pdf.text(descLines, margin, yPosition);
-          yPosition += descLines.length * 5;
+          yPosition += descHeight;
         }
 
         // Dietary info
@@ -394,11 +444,31 @@ export function DashboardPage() {
           yPosition += 5;
         }
 
+        // Item image
+        const imageUrl = item.generatedImages?.[0];
+        if (imageUrl) {
+          const imageData = await loadImageAsDataUrl(imageUrl);
+          if (imageData) {
+            const imageTypeMatch = /^data:image\/([a-zA-Z0-9+]+);/i.exec(imageData);
+            let imageType = imageTypeMatch ? imageTypeMatch[1].toUpperCase() : 'JPEG';
+            if (imageType === 'JPG') {
+              imageType = 'JPEG';
+            }
+            const maxImageWidth = pageWidth - margin * 2;
+            try {
+              pdf.addImage(imageData, imageType as any, margin, yPosition, maxImageWidth, imageHeight, undefined, 'FAST');
+              yPosition += imageHeight;
+            } catch (error) {
+              console.warn('Failed to add image to PDF:', error);
+            }
+          }
+        }
+
         yPosition += 8; // Space between items
-      });
+      }
 
       yPosition += 5; // Space between categories
-    });
+    }
 
     // Footer
     const pageCount = pdf.getNumberOfPages();
@@ -758,17 +828,3 @@ export function DashboardPage() {
       </div>
     </div>
   );
-}
-  const handleCopyMenuLink = () => {
-    if (!menuLink) return;
-    if (navigator.clipboard?.writeText) {
-      navigator.clipboard.writeText(menuLink).then(
-        () => {
-          alert('Menu link copied to clipboard');
-        },
-        () => alert('Failed to copy link')
-      );
-    } else {
-      alert('Copying is not supported in this browser');
-    }
-  };
