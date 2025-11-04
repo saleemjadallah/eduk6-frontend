@@ -1,4 +1,11 @@
-import type { MenuItem, Subscription, UsageInfo, User, EstablishmentSettings } from '@/types';
+import type {
+  MenuItem,
+  Subscription,
+  UsageInfo,
+  User,
+  EstablishmentSettings,
+  UserImageLibrary,
+} from '@/types';
 
 const API_BASE =
   (import.meta.env.VITE_API_URL as string | undefined)?.replace(/\/$/, '') || '';
@@ -173,6 +180,10 @@ class ApiClient {
     return this.request('/maintenance/fix-menu-categories', {
       method: 'POST',
     });
+  }
+
+  async getUserImageLibrary(): Promise<UserImageLibrary> {
+    return this.request<UserImageLibrary>('/user/images');
   }
 
   // Subscriptions

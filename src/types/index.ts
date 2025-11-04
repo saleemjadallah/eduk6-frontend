@@ -63,6 +63,30 @@ export interface MenuItem {
   createdAt: Date | null;
 }
 
+export interface MenuImageAsset {
+  type: 'menu';
+  menuItemId: string;
+  menuItemName: string;
+  category: MenuCategory;
+  url: string;
+  imageIndex: number;
+  createdAt: string | null;
+  displayOrder: number;
+}
+
+export interface EnhancedImageAsset {
+  type: 'enhanced';
+  key: string;
+  url: string;
+  size: number;
+  lastModified: string | null;
+}
+
+export interface UserImageLibrary {
+  menuImages: MenuImageAsset[];
+  enhancedImages: EnhancedImageAsset[];
+}
+
 // Menu Book Types
 export type CoverStyle = "classic" | "modern" | "rustic";
 export type FontFamily = "serif" | "sans-serif" | "modern";
