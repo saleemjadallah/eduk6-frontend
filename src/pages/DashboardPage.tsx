@@ -25,6 +25,16 @@ import {
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 
+const CATEGORY_ORDER: MenuCategory[] = [
+  'Appetizers',
+  'Soups',
+  'Salads',
+  'Mains',
+  'Sides',
+  'Desserts',
+  'Beverages',
+];
+
 // Sortable Menu Item Component
 function SortableMenuItem({
   item,
@@ -312,9 +322,10 @@ export function DashboardPage() {
     pdf.text('Menu', pageWidth / 2, yPosition, { align: 'center' });
     yPosition += 15;
 
-    // Iterate through categories
-    (Object.entries(menuByCategory) as Array<[MenuCategory, MenuItem[]]>).forEach(([category, items]) => {
-      if (!items || items.length === 0) {
+    // Iterate through categories in defined order
+    CATEGORY_ORDER.forEach((category) => {
+      const items = menuByCategory[category];
+      if (!items.length) {
         return;
       }
       // Check if we need a new page
@@ -337,7 +348,7 @@ export function DashboardPage() {
       yPosition += 10;
 
       // Items
-      items.forEach((item: MenuItem) => {
+      items.forEach((item) => {
         // Check if we need a new page for the item
         if (yPosition > pdf.internal.pageSize.getHeight() - 50) {
           pdf.addPage();
@@ -403,10 +414,13 @@ export function DashboardPage() {
   };
 
   // Group menu items by category
-  const menuByCategory = useMemo<Partial<Record<MenuCategory, MenuItem[]>>>(() => {
-    if (!menuItems) return {};
+  const menuByCategory = useMemo<Record<MenuCategory, MenuItem[]>>(() => {
+    const categories = CATEGORY_ORDER.reduce((acc, category) => {
+      acc[category] = [];
+      return acc;
+    }, {} as Record<MenuCategory, MenuItem[]>);
 
-    const categories: Partial<Record<MenuCategory, MenuItem[]>> = {};
+    if (!menuItems) return categories;
 
     // Only show items that have been finalized (have images)
     const finalizedItems = menuItems.filter(
@@ -415,14 +429,11 @@ export function DashboardPage() {
 
     finalizedItems.forEach((item) => {
       const category = (item.category || 'Mains') as MenuCategory;
-      if (!categories[category]) {
-        categories[category] = [];
-      }
-      categories[category]!.push(item);
+      categories[category].push(item);
     });
 
-    (Object.entries(categories) as Array<[MenuCategory, MenuItem[]]>).forEach(([, items]) => {
-      items.sort((a, b) => a.displayOrder - b.displayOrder);
+    CATEGORY_ORDER.forEach((category) => {
+      categories[category].sort((a, b) => a.displayOrder - b.displayOrder);
     });
 
     return categories;
@@ -606,7 +617,9 @@ export function DashboardPage() {
             </div>
           ) : menuItems && menuItems.length > 0 ? (
             <div className="space-y-12">
-              {(Object.entries(menuByCategory) as Array<[MenuCategory, MenuItem[]]>).map(([category, items]) => (
+              {CATEGORY_ORDER.filter((category) => menuByCategory[category].length > 0).map((category) => {
+                const items = menuByCategory[category];
+                return (
                 <motion.div
                   key={category}
                   initial={{ opacity: 0, y: 20 }}
@@ -615,7 +628,7 @@ export function DashboardPage() {
                 >
                   <div className="flex items-center gap-3 mb-4 pb-2 border-b-2 border-saffron-600">
                     {(() => {
-                      const Icon = categoryIcons[category as MenuCategory] || UtensilsCrossed;
+                      const Icon = categoryIcons[category] || UtensilsCrossed;
                       return <Icon className="w-6 h-6 text-saffron-600" />;
                     })()}
                     <h3 className="text-xl font-semibold text-gray-900">{category}</h3>
@@ -626,7 +639,7 @@ export function DashboardPage() {
                   <DndContext
                     sensors={sensors}
                     collisionDetection={closestCenter}
-                    onDragEnd={(event) => handleDragEnd(event, category as MenuCategory)}
+                    onDragEnd={(event) => handleDragEnd(event, category)}
                   >
                     <SortableContext
                       items={items.map((item) => item.id)}
@@ -647,7 +660,8 @@ export function DashboardPage() {
                     </SortableContext>
                   </DndContext>
                 </motion.div>
-              ))}
+              );
+              })}
             </div>
           ) : (
             <motion.div
