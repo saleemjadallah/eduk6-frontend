@@ -28,12 +28,19 @@
     <link rel="alternate" hreflang="ar" href="https://ar.mydscvr.ai">
     <script type="text/javascript" src="https://cdn.weglot.com/weglot.min.js"></script>
     <script>
-      Weglot.initialize({
-        api_key: 'wg_6f9d0c26aab18d5ea227b8aadc29fd311',
-        wait_transition: true,
-        dynamic: 'body',
-        auto_switch: true,
-        cache: false
+      // Delay Weglot initialization to avoid React conflicts
+      window.addEventListener('load', function() {
+        setTimeout(function() {
+          Weglot.initialize({
+            api_key: 'wg_6f9d0c26aab18d5ea227b8aadc29fd311',
+            wait_transition: true,
+            dynamic: 'body',
+            auto_switch: true,
+            cache: false,
+            translate_images: false,
+            translate_search: false
+          });
+        }, 100);
       });
     </script>
   </head>
