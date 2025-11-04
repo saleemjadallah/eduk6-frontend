@@ -5,6 +5,9 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import App from './App';
 import './index.css';
 
+// Initialize Firebase (this will run the configuration automatically)
+import './config/firebase';
+
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
