@@ -286,7 +286,11 @@ export function Layout() {
             <div>
               <h3 className="font-semibold text-charcoal mb-4">Company</h3>
               <ul className="space-y-2 text-sm text-slate">
-                <li><a href="#" className="hover:text-saffron">About</a></li>
+                <li>
+                  <Link to="/about" className="hover:text-saffron">
+                    About
+                  </Link>
+                </li>
                 <li>
                   <a
                     href="#"
