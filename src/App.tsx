@@ -1,4 +1,5 @@
 import { Routes, Route } from 'react-router-dom';
+import { Toaster } from 'sonner';
 import { Layout } from './components/Layout';
 import { HomePage } from './pages/HomePage';
 import { DashboardPage } from './pages/DashboardPage';
@@ -17,7 +18,9 @@ import { PrivacyPage } from './pages/PrivacyPage';
 
 function App() {
   return (
-    <Routes>
+    <>
+      <Toaster position="top-center" richColors />
+      <Routes>
       <Route path="/" element={<Layout />}>
         <Route index element={<HomePage />} />
         <Route path="login" element={<LoginPage />} />
@@ -35,6 +38,7 @@ function App() {
         <Route path="privacy" element={<PrivacyPage />} />
       </Route>
     </Routes>
+    </>
   );
 }
 

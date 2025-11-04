@@ -5,6 +5,7 @@ import { Mail, Lock, AlertCircle, Sparkles, Fingerprint, Shield } from 'lucide-r
 import { api } from '@/lib/api';
 import { useQueryClient } from '@tanstack/react-query';
 import { detectIncognito } from '@/lib/detectIncognito';
+import GoogleSignInButton from '@/components/auth/GoogleSignInButton';
 
 export function LoginPage() {
   const navigate = useNavigate();
@@ -276,6 +277,27 @@ export function LoginPage() {
               </>
             )}
           </form>
+
+          {/* Divider */}
+          <div className="relative my-6">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-gray-300"></div>
+            </div>
+            <div className="relative flex justify-center text-sm">
+              <span className="px-4 bg-white text-gray-500">Or continue with</span>
+            </div>
+          </div>
+
+          {/* Google Sign In */}
+          <GoogleSignInButton
+            className="w-full"
+            variant="outline"
+            size="lg"
+            redirectTo={redirectTo || '/dashboard'}
+            onSuccess={async () => {
+              await queryClient.invalidateQueries({ queryKey: ['user'] });
+            }}
+          />
 
           <div className="mt-6 text-center">
             <p className="text-sm text-gray-600">
