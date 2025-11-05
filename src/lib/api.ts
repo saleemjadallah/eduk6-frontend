@@ -198,7 +198,7 @@ class ApiClient {
     });
   }
 
-  async createSubscriptionIntent(tier: string): Promise<{
+  async createSubscriptionIntent(tier: string, currency?: string): Promise<{
     subscriptionId: string;
     clientSecret: string;
     tier: string;
@@ -206,7 +206,7 @@ class ApiClient {
   }> {
     return this.request('/create-subscription-intent', {
       method: 'POST',
-      body: JSON.stringify({ tier }),
+      body: JSON.stringify({ tier, currency: currency || 'AED' }),
     });
   }
 

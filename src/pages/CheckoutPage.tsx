@@ -8,6 +8,7 @@ import { AlertTriangle, ArrowLeft, CreditCard, Loader2, ShieldCheck } from 'luci
 import { api } from '@/lib/api';
 import { stripePromise } from '@/lib/stripe';
 import { subscriptionPlans, type PlanTier } from '@/data/plans';
+import { useCurrency } from '@/contexts/CurrencyContext';
 
 type CheckoutTier = Extract<PlanTier, 'starter' | 'pro'>;
 
@@ -68,14 +69,14 @@ function CheckoutForm({ tier }: CheckoutFormProps) {
 
           (window as any).fbq('track', 'Purchase', {
             value: planValue,
-            currency: 'AED',
+            currency: 'AED', // Always report in AED for consistency
             content_name: plan.name,
             content_type: 'subscription'
           });
 
           (window as any).fbq('track', 'Subscribe', {
             value: planValue.toFixed(2),
-            currency: 'AED',
+            currency: 'AED', // Always report in AED for consistency
             predicted_ltv: (planValue * 12).toFixed(2)
           });
         }
@@ -146,6 +147,7 @@ export function CheckoutPage() {
   const [searchParams] = useSearchParams();
   const tierParam = (searchParams.get('tier') || '').toLowerCase();
   const tier = isCheckoutTier(tierParam) ? (tierParam as CheckoutTier) : null;
+  const { formatPrice, currency } = useCurrency();
 
   const plan = tier ? subscriptionPlans[tier] : null;
 
@@ -201,7 +203,7 @@ export function CheckoutPage() {
     setIntentError(null);
 
     api
-      .createSubscriptionIntent(tier)
+      .createSubscriptionIntent(tier, currency)
       .then((intent) => {
         if (!cancelled) {
           setClientSecret(intent.clientSecret);
@@ -274,7 +276,7 @@ export function CheckoutPage() {
   }
 
   const priceDisplay =
-    plan.price !== null ? `AED ${plan.price.toLocaleString()} / ${plan.period}` : 'Contact sales';
+    plan.price !== null ? `${formatPrice(plan.price)} / ${plan.period}` : 'Contact sales';
 
   const elementsOptions = useMemo<StripeElementsOptions | undefined>(() => {
     if (!clientSecret) {
