@@ -21,7 +21,7 @@ export const subscriptionPlans: Record<PlanTier, PlanDetails> = {
   starter: {
     tier: 'starter',
     name: 'Starter',
-    price: 99,
+    price: 27, // USD price for US market test (was 99 AED)
     period: 'month',
     description: 'Perfect for small restaurants and cafes',
     features: [
@@ -39,7 +39,7 @@ export const subscriptionPlans: Record<PlanTier, PlanDetails> = {
   pro: {
     tier: 'pro',
     name: 'Pro',
-    price: 299,
+    price: 81, // USD price for US market test (was 299 AED)
     period: 'month',
     description: 'For growing food businesses',
     features: [
