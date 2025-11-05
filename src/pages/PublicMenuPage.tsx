@@ -4,7 +4,7 @@ import { motion } from 'framer-motion';
 import { Leaf, Flame, Package, Image as ImageIcon, Coffee, Soup, Salad, UtensilsCrossed, Cookie, Apple, BookOpen, List } from 'lucide-react';
 import { api } from '@/lib/api';
 import { MenuBook } from '@/components/MenuBook';
-import { useCurrency } from '@/contexts/CurrencyContext';
+// import { useCurrency } from '@/contexts/CurrencyContext'; // DISABLED FOR US MARKET TEST
 import type { DietaryOption, MenuCategory, MenuItem, EstablishmentSettings } from '@/types';
 
 const CATEGORY_ORDER: MenuCategory[] = ['Appetizers', 'Soups', 'Salads', 'Mains', 'Sides', 'Desserts', 'Beverages'];
@@ -16,7 +16,8 @@ export function PublicMenuPage() {
   const { userId } = useParams<{ userId: string }>();
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
-  const { formatPrice } = useCurrency();
+  // const { formatPrice } = useCurrency(); // DISABLED FOR US MARKET TEST
+  const formatPrice = (price: number) => `$${price.toFixed(2)}`; // Simple USD formatter
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
   const [menuByCategory, setMenuByCategory] = useState<Record<MenuCategory, MenuItem[]>>(() =>
     CATEGORY_ORDER.reduce((acc, category) => {

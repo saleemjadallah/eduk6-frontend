@@ -4,14 +4,16 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { pricingPlans, type PlanTier } from '@/data/plans';
 import { api } from '@/lib/api';
-import { useCurrency } from '@/contexts/CurrencyContext';
+// import { useCurrency } from '@/contexts/CurrencyContext'; // DISABLED FOR US MARKET TEST
 import { useEffect } from 'react';
 
 type CheckoutTier = Extract<PlanTier, 'starter' | 'pro'>;
 
 export function PricingPage() {
   const navigate = useNavigate();
-  const { formatPrice, currency } = useCurrency();
+  // const { formatPrice, currency } = useCurrency(); // DISABLED FOR US MARKET TEST
+  const currency = 'USD'; // FIXED TO USD FOR US MARKET TEST
+  const formatPrice = (price: number) => `$${price.toFixed(2)}`; // Simple USD formatter
 
   // Track ViewContent event when pricing page loads
   useEffect(() => {

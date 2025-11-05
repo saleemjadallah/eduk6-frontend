@@ -8,7 +8,7 @@ import { AlertTriangle, ArrowLeft, CreditCard, Loader2, ShieldCheck } from 'luci
 import { api } from '@/lib/api';
 import { stripePromise } from '@/lib/stripe';
 import { subscriptionPlans, type PlanTier } from '@/data/plans';
-import { useCurrency } from '@/contexts/CurrencyContext';
+// import { useCurrency } from '@/contexts/CurrencyContext'; // DISABLED FOR US MARKET TEST
 
 type CheckoutTier = Extract<PlanTier, 'starter' | 'pro'>;
 
@@ -147,7 +147,9 @@ export function CheckoutPage() {
   const [searchParams] = useSearchParams();
   const tierParam = (searchParams.get('tier') || '').toLowerCase();
   const tier = isCheckoutTier(tierParam) ? (tierParam as CheckoutTier) : null;
-  const { formatPrice, currency } = useCurrency();
+  // const { formatPrice, currency } = useCurrency(); // DISABLED FOR US MARKET TEST
+  const currency = 'USD'; // FIXED TO USD FOR US MARKET TEST
+  const formatPrice = (price: number) => `$${price.toFixed(2)}`; // Simple USD formatter
 
   const plan = tier ? subscriptionPlans[tier] : null;
 

@@ -198,6 +198,10 @@ export function formatCurrency(
  * Get user's preferred currency from localStorage
  */
 export function getPreferredCurrency(): Currency {
+  // TEMPORARILY FIXED TO USD FOR US MARKET TEST
+  return 'USD';
+
+  /* Original code - commented out for US market test
   try {
     const stored = localStorage.getItem('preferred_currency');
     if (stored && ['AED', 'USD', 'SAR', 'QAR', 'BHD'].includes(stored)) {
@@ -207,6 +211,7 @@ export function getPreferredCurrency(): Currency {
     console.error('Error reading preferred currency:', error);
   }
   return 'AED'; // Default to AED
+  */
 }
 
 /**

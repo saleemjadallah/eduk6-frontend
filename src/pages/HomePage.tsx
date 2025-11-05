@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { Sparkles, Zap, Shield, TrendingUp, Camera, Palette, Clock, Settings, LayoutDashboard, Image as ImageIcon, ArrowUp, DollarSign, Brain, ShoppingCart } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '@/lib/api';
-import { useCurrency } from '@/contexts/CurrencyContext';
+// import { useCurrency } from '@/contexts/CurrencyContext'; // DISABLED FOR US MARKET TEST
 import {
   Carousel,
   CarouselContent,
@@ -77,10 +77,11 @@ export function HomePage() {
     queryFn: () => api.getCurrentUser(),
   });
 
-  const { formatPrice } = useCurrency();
+  // const { formatPrice } = useCurrency(); // DISABLED FOR US MARKET TEST
+  const formatPrice = (price: number) => `$${price.toFixed(2)}`; // Simple USD formatter
 
-  // Base amount in AED for cost savings statistic
-  const costSavingsInAED = 15000;
+  // Base amount in USD for cost savings statistic (converted from AED)
+  const costSavingsInAED = 4050; // ~15000 AED in USD
 
   const statistics = [
     {

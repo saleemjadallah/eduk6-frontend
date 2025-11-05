@@ -5,7 +5,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 import { useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
-import { CurrencySelector } from '@/components/CurrencySelector';
+// import { CurrencySelector } from '@/components/CurrencySelector'; // DISABLED FOR US MARKET TEST
 
 export function Layout() {
   const location = useLocation();
@@ -106,7 +106,7 @@ export function Layout() {
 
             {/* User Actions */}
             <div className="hidden md:flex items-center gap-4">
-              <CurrencySelector />
+              {/* <CurrencySelector /> */} {/* DISABLED FOR US MARKET TEST */}
               {user ? (
                 <>
                   <Link
@@ -180,9 +180,9 @@ export function Layout() {
             className="md:hidden border-t border-charcoal/10 bg-white"
           >
             <div className="px-4 py-4 space-y-3">
-              <div className="pb-3 border-b border-charcoal/10">
+              {/* <div className="pb-3 border-b border-charcoal/10">
                 <CurrencySelector />
-              </div>
+              </div> */} {/* DISABLED FOR US MARKET TEST */}
               {navLinks.map((link) => (
                 <Link
                   key={link.to}
