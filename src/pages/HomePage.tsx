@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { Sparkles, Zap, Shield, TrendingUp, Camera, Palette, Clock, Settings, LayoutDashboard, Image as ImageIcon, ArrowUp, DollarSign, Brain, ShoppingCart } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '@/lib/api';
+import { useCurrency } from '@/contexts/CurrencyContext';
 import {
   Carousel,
   CarouselContent,
@@ -70,54 +71,59 @@ const sampleImages = [
   },
 ];
 
-const statistics = [
-  {
-    icon: ShoppingCart,
-    value: '35%+',
-    label: 'Increase in Total Orders',
-    description: 'High-quality food photos boost orders by over 35%',
-    source: 'Snappr, Grubhub',
-    gradient: 'from-emerald-500 to-green-500',
-  },
-  {
-    icon: TrendingUp,
-    value: '40%',
-    label: 'Sales Increase',
-    description: 'Restaurants using digital menus with great visuals see 40% sales growth',
-    source: 'EvergreenHQ',
-    gradient: 'from-blue-500 to-cyan-500',
-  },
-  {
-    icon: ArrowUp,
-    value: '25%',
-    label: 'Higher Average Order Value',
-    description: 'Strategic visuals increase customer spend per order by 25%',
-    source: 'WebDiner',
-    gradient: 'from-purple-500 to-pink-500',
-  },
-  {
-    icon: Brain,
-    value: '90%',
-    label: 'Visual Information Processing',
-    description: 'Of all information transmitted to the brain is visual',
-    source: 'Cognitive Science',
-    gradient: 'from-orange-500 to-red-500',
-  },
-  {
-    icon: DollarSign,
-    value: 'AED 15,000',
-    label: 'Cost Savings',
-    description: 'Average amount saved per photo shoot with AI generation',
-    source: 'Market Research',
-    gradient: 'from-yellow-500 to-amber-500',
-  },
-];
-
 export function HomePage() {
   const { data: user } = useQuery({
     queryKey: ['user'],
     queryFn: () => api.getCurrentUser(),
   });
+
+  const { formatPrice } = useCurrency();
+
+  // Base amount in AED for cost savings statistic
+  const costSavingsInAED = 15000;
+
+  const statistics = [
+    {
+      icon: ShoppingCart,
+      value: '35%+',
+      label: 'Increase in Total Orders',
+      description: 'High-quality food photos boost orders by over 35%',
+      source: 'Snappr, Grubhub',
+      gradient: 'from-emerald-500 to-green-500',
+    },
+    {
+      icon: TrendingUp,
+      value: '40%',
+      label: 'Sales Increase',
+      description: 'Restaurants using digital menus with great visuals see 40% sales growth',
+      source: 'EvergreenHQ',
+      gradient: 'from-blue-500 to-cyan-500',
+    },
+    {
+      icon: ArrowUp,
+      value: '25%',
+      label: 'Higher Average Order Value',
+      description: 'Strategic visuals increase customer spend per order by 25%',
+      source: 'WebDiner',
+      gradient: 'from-purple-500 to-pink-500',
+    },
+    {
+      icon: Brain,
+      value: '90%',
+      label: 'Visual Information Processing',
+      description: 'Of all information transmitted to the brain is visual',
+      source: 'Cognitive Science',
+      gradient: 'from-orange-500 to-red-500',
+    },
+    {
+      icon: DollarSign,
+      value: formatPrice(costSavingsInAED),
+      label: 'Cost Savings',
+      description: 'Average amount saved per photo shoot with AI generation',
+      source: 'Market Research',
+      gradient: 'from-yellow-500 to-amber-500',
+    },
+  ];
 
   const heroTitle = user
     ? 'Welcome back — ready to create your next hero dish?'
