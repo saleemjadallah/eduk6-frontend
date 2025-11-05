@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion';
 import { Leaf, Flame, Package } from 'lucide-react';
 import type { MenuItem, DietaryOption } from '@/types';
+import { useCurrency } from '@/contexts/CurrencyContext';
 
 interface MenuBookItemProps {
   item: MenuItem;
@@ -28,6 +29,7 @@ export function MenuBookItem({
   accentColor = '#C85A54',
   variant = 'standard',
 }: MenuBookItemProps) {
+  const { formatPrice } = useCurrency();
   const imageSize = variant === 'featured' ? 'w-40 h-40' : variant === 'compact' ? 'w-20 h-20' : 'w-28 h-28';
   const spacing = variant === 'featured' ? 'gap-6' : variant === 'compact' ? 'gap-3' : 'gap-4';
 
@@ -69,7 +71,7 @@ export function MenuBookItem({
                 }`}
                 style={{ color: accentColor }}
               >
-                AED {parseFloat(item.price).toFixed(2)}
+                {formatPrice(parseFloat(item.price))}
               </span>
             )}
           </div>

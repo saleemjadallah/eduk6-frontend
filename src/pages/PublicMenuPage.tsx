@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import { Leaf, Flame, Package, Image as ImageIcon, Coffee, Soup, Salad, UtensilsCrossed, Cookie, Apple, BookOpen, List } from 'lucide-react';
 import { api } from '@/lib/api';
 import { MenuBook } from '@/components/MenuBook';
+import { useCurrency } from '@/contexts/CurrencyContext';
 import type { DietaryOption, MenuCategory, MenuItem, EstablishmentSettings } from '@/types';
 
 const CATEGORY_ORDER: MenuCategory[] = ['Appetizers', 'Soups', 'Salads', 'Mains', 'Sides', 'Desserts', 'Beverages'];
@@ -15,6 +16,7 @@ export function PublicMenuPage() {
   const { userId } = useParams<{ userId: string }>();
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
+  const { formatPrice } = useCurrency();
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
   const [menuByCategory, setMenuByCategory] = useState<Record<MenuCategory, MenuItem[]>>(() =>
     CATEGORY_ORDER.reduce((acc, category) => {
@@ -285,7 +287,7 @@ export function PublicMenuPage() {
                             </h3>
                             {item.price && (
                               <span className="text-lg font-bold whitespace-nowrap text-saffron-700">
-                                AED {parseFloat(item.price).toFixed(2)}
+                                {formatPrice(parseFloat(item.price))}
                               </span>
                             )}
                           </div>
