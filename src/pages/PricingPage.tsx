@@ -112,14 +112,14 @@ export function PricingPage() {
                   {plan.price ? (
                     <>
                       <div className="flex items-baseline gap-2">
-                        <span className="text-5xl font-bold text-gray-900">{formatPrice(plan.price)}</span>
+                        <span className="text-4xl font-bold text-gray-900 whitespace-nowrap">{formatPrice(plan.price)}</span>
                         <span className="text-gray-600">/{plan.period}</span>
                       </div>
                       <p className="text-sm text-gray-500 mt-1">Billed monthly</p>
                     </>
                   ) : (
                     <div className="flex items-baseline gap-2">
-                      <span className="text-5xl font-bold text-gray-900">Custom</span>
+                      <span className="text-4xl font-bold text-gray-900">Custom</span>
                     </div>
                   )}
                 </div>
