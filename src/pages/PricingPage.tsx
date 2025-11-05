@@ -4,12 +4,14 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { pricingPlans, type PlanTier } from '@/data/plans';
 import { api } from '@/lib/api';
+import { useCurrency } from '@/contexts/CurrencyContext';
 import { useEffect } from 'react';
 
 type CheckoutTier = Extract<PlanTier, 'starter' | 'pro'>;
 
 export function PricingPage() {
   const navigate = useNavigate();
+  const { formatPrice, currency } = useCurrency();
 
   // Track ViewContent event when pricing page loads
   useEffect(() => {
@@ -110,7 +112,7 @@ export function PricingPage() {
                   {plan.price ? (
                     <>
                       <div className="flex items-baseline gap-2">
-                        <span className="text-5xl font-bold text-gray-900">AED {plan.price}</span>
+                        <span className="text-5xl font-bold text-gray-900">{formatPrice(plan.price)}</span>
                         <span className="text-gray-600">/{plan.period}</span>
                       </div>
                       <p className="text-sm text-gray-500 mt-1">Billed monthly</p>
