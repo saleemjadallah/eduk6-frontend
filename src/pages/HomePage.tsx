@@ -309,7 +309,7 @@ export function HomePage() {
       </section>
 
       {/* AI-Generated Food Carousel - HeadshotPro Style */}
-      <section className="py-16 px-4 sm:px-6 lg:px-8 bg-gradient-to-b from-gray-50 to-white border-y border-gray-100">
+      <section className="py-16 px-4 sm:px-6 lg:px-8 bg-cream border-y border-gray-100">
         <div className="max-w-7xl mx-auto">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -410,7 +410,7 @@ export function HomePage() {
       </section>
 
       {/* Statistics Carousel */}
-      <section className="py-16 px-4 sm:px-6 lg:px-8 bg-white border-y border-gray-100">
+      <section className="py-16 px-4 sm:px-6 lg:px-8 bg-saffron-50 border-y border-gray-100">
         <div className="max-w-7xl mx-auto">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -543,7 +543,7 @@ export function HomePage() {
       )}
 
       {/* Style Showcase */}
-      <section className="py-20 px-4 sm:px-6 lg:px-8 bg-white">
+      <section className="py-20 px-4 sm:px-6 lg:px-8 bg-cream">
         <div className="max-w-7xl mx-auto">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -599,7 +599,7 @@ export function HomePage() {
       </section>
 
       {/* Features Grid */}
-      <section className="py-20 px-4 sm:px-6 lg:px-8 mesh-gradient">
+      <section className="py-20 px-4 sm:px-6 lg:px-8 bg-saffron-50">
         <div className="max-w-7xl mx-auto">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
