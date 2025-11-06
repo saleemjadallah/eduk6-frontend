@@ -71,6 +71,59 @@ const sampleImages = [
   },
 ];
 
+const carouselImages = [
+  {
+    src: '/carousel-images/rustic-dark-steak.jpg',
+    style: 'Rustic Dark',
+    foodItem: 'Grilled Ribeye Steak',
+  },
+  {
+    src: '/carousel-images/bright-modern-avocado-toast.jpg',
+    style: 'Bright Modern',
+    foodItem: 'Avocado Toast',
+  },
+  {
+    src: '/carousel-images/social-media-acai-bowl.jpg',
+    style: 'Social Media',
+    foodItem: 'Acai Bowl',
+  },
+  {
+    src: '/carousel-images/delivery-app-burger.jpg',
+    style: 'Delivery App',
+    foodItem: 'Gourmet Burger',
+  },
+  {
+    src: '/carousel-images/rustic-dark-pasta.jpg',
+    style: 'Rustic Dark',
+    foodItem: 'Pasta Carbonara',
+  },
+  {
+    src: '/carousel-images/bright-modern-poke-bowl.jpg',
+    style: 'Bright Modern',
+    foodItem: 'Poke Bowl',
+  },
+  {
+    src: '/carousel-images/social-media-matcha-latte.jpg',
+    style: 'Social Media',
+    foodItem: 'Matcha Latte',
+  },
+  {
+    src: '/carousel-images/delivery-app-sushi.jpg',
+    style: 'Delivery App',
+    foodItem: 'Sushi Platter',
+  },
+  {
+    src: '/carousel-images/rustic-dark-ribs.jpg',
+    style: 'Rustic Dark',
+    foodItem: 'BBQ Ribs',
+  },
+  {
+    src: '/carousel-images/bright-modern-greek-salad.jpg',
+    style: 'Bright Modern',
+    foodItem: 'Greek Salad',
+  },
+];
+
 export function HomePage() {
   const { data: user } = useQuery({
     queryKey: ['user'],
@@ -252,6 +305,107 @@ export function HomePage() {
               </motion.p>
             )}
           </div>
+        </div>
+      </section>
+
+      {/* AI-Generated Food Carousel - HeadshotPro Style */}
+      <section className="py-16 px-4 sm:px-6 lg:px-8 bg-gradient-to-b from-gray-50 to-white border-y border-gray-100">
+        <div className="max-w-7xl mx-auto">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6 }}
+            className="text-center mb-12"
+          >
+            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-3">
+              Professional Food Photography, AI-Generated
+            </h2>
+            <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+              Real examples created with our AI. All we need are a few images of your dishes.
+            </p>
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6, delay: 0.2 }}
+          >
+            <Carousel
+              opts={{
+                align: "start",
+                loop: true,
+              }}
+              plugins={[
+                Autoplay({
+                  delay: 3000,
+                }),
+              ]}
+              className="w-full max-w-6xl mx-auto"
+            >
+              <CarouselContent>
+                {carouselImages.map((image, index) => (
+                  <CarouselItem key={index} className="md:basis-1/2 lg:basis-1/3">
+                    <div className="p-2">
+                      <motion.div
+                        initial={{ opacity: 0, scale: 0.95 }}
+                        whileInView={{ opacity: 1, scale: 1 }}
+                        viewport={{ once: true }}
+                        transition={{ duration: 0.5, delay: index * 0.05 }}
+                        className="group relative aspect-square rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl transition-shadow"
+                      >
+                        <img
+                          src={image.src}
+                          alt={`AI-generated ${image.foodItem} in ${image.style} style`}
+                          className="w-full h-full object-cover"
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+
+                        {/* Top badge - Always visible */}
+                        <div className="absolute top-3 left-3 px-3 py-1.5 rounded-full bg-white/95 backdrop-blur-sm text-gray-900 text-xs font-semibold shadow-lg flex items-center gap-1.5">
+                          <Sparkles className="w-3.5 h-3.5 text-saffron-500" />
+                          AI Generated
+                        </div>
+
+                        {/* Bottom info - Visible on hover */}
+                        <div className="absolute bottom-0 left-0 right-0 p-4 text-white translate-y-full group-hover:translate-y-0 transition-transform">
+                          <div className="mb-1">
+                            <span className="inline-block px-2 py-0.5 rounded-md bg-saffron-500/90 text-xs font-medium">
+                              {image.style}
+                            </span>
+                          </div>
+                          <h3 className="text-lg font-bold">{image.foodItem}</h3>
+                        </div>
+                      </motion.div>
+                    </div>
+                  </CarouselItem>
+                ))}
+              </CarouselContent>
+              <CarouselPrevious className="hidden md:flex -left-12" />
+              <CarouselNext className="hidden md:flex -right-12" />
+            </Carousel>
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0 }}
+            whileInView={{ opacity: 1 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6, delay: 0.4 }}
+            className="text-center mt-10"
+          >
+            <p className="text-gray-600 mb-6">
+              <span className="font-semibold text-gray-900">10 images created</span> for{' '}
+              <span className="font-semibold text-gray-900">thousands</span> of happy restaurant owners
+            </p>
+            <Link
+              to={user ? '/generate' : '/register'}
+              className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-saffron-500 text-white font-semibold hover:bg-saffron-600 hover:shadow-lg transition-all"
+            >
+              <Camera className="w-4 h-4" />
+              {user ? 'Create Your Food Photos' : 'Start Creating Free'}
+            </Link>
+          </motion.div>
         </div>
       </section>
 
