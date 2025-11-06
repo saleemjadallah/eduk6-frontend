@@ -178,7 +178,7 @@ export function RegisterPage() {
             className="w-full"
             variant="outline"
             size="lg"
-            redirectTo={redirectTo || '/dashboard'}
+            redirectTo={redirectTo || '/generate'}
             onSuccess={async () => {
               await queryClient.invalidateQueries({ queryKey: ['user'] });
             }}

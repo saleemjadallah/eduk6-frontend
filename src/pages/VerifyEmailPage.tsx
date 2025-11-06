@@ -45,8 +45,8 @@ export function VerifyEmailPage() {
         (window as any).fbq('track', 'CompleteRegistration');
       }
 
-      // Redirect to pricing page after successful verification
-      navigate(redirectTo ?? '/pricing', { replace: true });
+      // Redirect to generate page after successful verification
+      navigate(redirectTo ?? '/generate', { replace: true });
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Verification failed');
     } finally {
