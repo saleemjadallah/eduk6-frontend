@@ -322,7 +322,7 @@ export function HomePage() {
               Professional Food Photography, AI-Generated
             </h2>
             <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-              Real examples created with our AI. All we need are a few images of your dishes.
+              Real examples created with our AI. Use text descriptions or enhance your existing images.
             </p>
           </motion.div>
 
