@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
 import { User } from '@/types';
-import { Button, Card, Badge } from '../components/ui';
+import Button from '../components/ui/Button';
+import Card from '../components/ui/Card';
+import Badge from '../components/ui/Badge';
 import { Download, Grid3x3, LayoutList, Star, Heart, Check, Filter, Search, X } from 'lucide-react';
 
 interface BatchViewPageProps {
