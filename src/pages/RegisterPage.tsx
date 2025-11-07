@@ -1,7 +1,9 @@
 import { useState, FormEvent } from 'react';
 import { Link } from 'react-router-dom';
 import { User } from '@/types';
-import { Button, Input, Card } from '../components/ui';
+import Button from '../components/ui/Button';
+import Input from '../components/ui/Input';
+import Card from '../components/ui/Card';
 import { ArrowRight, Check } from 'lucide-react';
 
 interface RegisterPageProps {

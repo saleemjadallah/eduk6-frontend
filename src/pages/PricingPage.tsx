@@ -1,5 +1,7 @@
 import { Link } from 'react-router-dom';
-import { Button, Card, Badge } from '../components/ui';
+import Button from '../components/ui/Button';
+import Card from '../components/ui/Card';
+import Badge from '../components/ui/Badge';
 import { Check, Sparkles, Zap, Crown } from 'lucide-react';
 
 const pricingPlans = [
