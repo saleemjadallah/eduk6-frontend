@@ -1,11 +1,15 @@
-export { default as Button } from './Button';
-export type { ButtonProps } from './Button';
+// Re-export components with explicit imports
+import Button from './Button';
+import type { ButtonProps } from './Button';
 
-export { default as Card } from './Card';
-export type { CardProps } from './Card';
+import Card from './Card';
+import type { CardProps } from './Card';
 
-export { default as Input } from './Input';
-export type { InputProps } from './Input';
+import Input from './Input';
+import type { InputProps } from './Input';
 
-export { default as Badge } from './Badge';
-export type { BadgeProps } from './Badge';
+import Badge from './Badge';
+import type { BadgeProps } from './Badge';
+
+export { Button, Card, Input, Badge };
+export type { ButtonProps, CardProps, InputProps, BadgeProps };
