@@ -1,8 +1,8 @@
 import { Link } from 'react-router-dom';
 import { User } from '@/types';
-import Button from '../components/ui/Button';
-import Card from '../components/ui/Card';
-import Badge from '../components/ui/Badge';
+import Button from '../components/ui/button';
+import Card from '../components/ui/card';
+import Badge from '../components/ui/badge';
 import { Plus, Image, Clock, Check, Eye, Download, Trash2, Calendar } from 'lucide-react';
 
 interface DashboardPageProps {
