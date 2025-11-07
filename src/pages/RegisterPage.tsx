@@ -79,7 +79,7 @@ export default function RegisterPage({ onRegister }: RegisterPageProps) {
                 label="Full Name"
                 placeholder="John Doe"
                 value={name}
-                onChange={(e) => setName(e.target.value)}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setName(e.target.value)}
                 required
                 error={!!error}
               />
@@ -92,7 +92,7 @@ export default function RegisterPage({ onRegister }: RegisterPageProps) {
                 label="Email Address"
                 placeholder="you@example.com"
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEmail(e.target.value)}
                 required
                 error={!!error}
               />
@@ -105,7 +105,7 @@ export default function RegisterPage({ onRegister }: RegisterPageProps) {
                 label="Password"
                 placeholder="••••••••"
                 value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setPassword(e.target.value)}
                 required
                 error={!!error}
                 helperText="Must be at least 8 characters"
@@ -119,7 +119,7 @@ export default function RegisterPage({ onRegister }: RegisterPageProps) {
                 label="Confirm Password"
                 placeholder="••••••••"
                 value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setConfirmPassword(e.target.value)}
                 required
                 error={!!error}
               />

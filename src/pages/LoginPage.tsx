@@ -113,7 +113,7 @@ export default function LoginPage({ onLogin }: LoginPageProps) {
                 label="Email Address"
                 placeholder="you@example.com"
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEmail(e.target.value)}
                 required
                 error={!!error}
               />
@@ -126,7 +126,7 @@ export default function LoginPage({ onLogin }: LoginPageProps) {
                 label="Password"
                 placeholder="••••••••"
                 value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setPassword(e.target.value)}
                 required
                 error={!!error}
               />

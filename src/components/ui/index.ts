@@ -1,11 +1,11 @@
-export { default as Button } from './Button';
-export type { ButtonProps } from './Button';
+export { default as Button } from './Button.tsx';
+export type { ButtonProps } from './Button.tsx';
 
-export { default as Card } from './Card';
-export type { CardProps } from './Card';
+export { default as Card } from './Card.tsx';
+export type { CardProps } from './Card.tsx';
 
-export { default as Input } from './Input';
-export type { InputProps } from './Input';
+export { default as Input } from './Input.tsx';
+export type { InputProps } from './Input.tsx';
 
-export { default as Badge } from './Badge';
-export type { BadgeProps } from './Badge';
+export { default as Badge } from './Badge.tsx';
+export type { BadgeProps } from './Badge.tsx';
