@@ -1,326 +1,189 @@
-import { Outlet, Link, useLocation } from 'react-router-dom';
-import { motion } from 'framer-motion';
-import { Sparkles, User, LogOut, Menu, X } from 'lucide-react';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { api } from '@/lib/api';
-import { useState } from 'react';
-import { useToast } from '@/hooks/use-toast';
-// import { CurrencySelector } from '@/components/CurrencySelector'; // DISABLED FOR US MARKET TEST
+import { Link } from 'react-router-dom';
+import { User } from '@/types';
+import { authApi } from '@/lib/api';
 
-export function Layout() {
-  const location = useLocation();
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const queryClient = useQueryClient();
-  const { toast } = useToast();
+interface LayoutProps {
+  children: React.ReactNode;
+  user: User | null;
+}
 
-  const { data: user } = useQuery({
-    queryKey: ['user'],
-    queryFn: () => api.getCurrentUser(),
-  });
+export default function Layout({ children, user }: LayoutProps) {
 
   const handleLogout = async () => {
-    await api.logout();
-    await queryClient.invalidateQueries({ queryKey: ['user'] });
-    window.location.href = '/';
-  };
-
-  const handleContactClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
-    e.preventDefault();
-    const email = 'support@mydscvr.ai';
-
-    if (navigator.clipboard?.writeText) {
-      navigator.clipboard.writeText(email).then(
-        () => {
-          toast({
-            title: "Email copied!",
-            description: `${email} has been copied to your clipboard`,
-          });
-        },
-        () => {
-          toast({
-            title: "Copy failed",
-            description: "Please copy manually: support@mydscvr.ai",
-            variant: "destructive",
-          });
-        }
-      );
-    } else {
-      toast({
-        title: "Copy not supported",
-        description: "Please copy manually: support@mydscvr.ai",
-        variant: "destructive",
-      });
+    try {
+      await authApi.logout();
+      window.location.href = '/';
+    } catch (error) {
+      console.error('Logout failed:', error);
     }
   };
 
-  const navLinks = [
-    { to: '/', label: 'Home' },
-    { to: '/pricing', label: 'Pricing' },
-    ...(user ? [{ to: '/dashboard', label: 'Dashboard' }] : []),
-  ];
-
   return (
-    <div className="min-h-screen bg-cream">
-      {/* Navigation */}
-      <nav className="sticky top-0 z-50 glass border-b border-charcoal/10">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
+    <div className="min-h-screen flex flex-col">
+      {/* Header - Sticky with backdrop blur */}
+      <header className="sticky top-0 z-50 border-b bg-white/80 backdrop-blur-lg shadow-sm">
+        <div className="container mx-auto px-4">
+          <div className="flex items-center justify-between h-16 md:h-20">
             {/* Logo */}
-            <Link to="/" className="flex items-center gap-3 group">
-              <motion.img
-                src="/logo-icon.png"
-                alt="Mydscvr - AI-Powered Food Photography"
-                className="h-12 w-12"
-                whileHover={{ rotate: 5, scale: 1.05 }}
-                transition={{ type: 'spring', stiffness: 400 }}
-              />
-              <div className="flex flex-col leading-snug">
-                <span className="text-2xl font-bold text-charcoal lowercase tracking-tight">
-                  mydscvr
-                </span>
-                <span className="hidden text-xs text-slate md:block">
-                  AI-Powered Food Photography
-                </span>
+            <Link to="/" className="flex items-center space-x-2 group">
+              <div className="w-10 h-10 bg-gradient-to-br from-primary-500 to-primary-600 rounded-xl flex items-center justify-center shadow-md group-hover:shadow-lg transition-shadow">
+                <span className="text-white font-bold text-xl">H</span>
               </div>
+              <span className="font-bold text-xl md:text-2xl text-gray-900">HeadShotHub</span>
             </Link>
 
-            {/* Desktop Navigation */}
-            <div className="hidden md:flex items-center gap-8">
-              {navLinks.map((link) => (
-                <Link
-                  key={link.to}
-                  to={link.to}
-                  className="relative px-3 py-2 text-sm font-medium text-charcoal hover:text-saffron transition-colors"
-                >
-                  {location.pathname === link.to && (
-                    <motion.div
-                      layoutId="navbar-indicator"
-                      className="absolute inset-0 bg-saffron-50 rounded-md -z-10"
-                      transition={{ type: 'spring', bounce: 0.2, duration: 0.6 }}
-                    />
-                  )}
-                  {link.label}
+            {/* Navigation */}
+            <nav className="hidden md:flex items-center space-x-8">
+              <Link to="/" className="text-gray-700 hover:text-primary-500 font-medium transition-colors">
+                Home
+              </Link>
+              <Link to="/pricing" className="text-gray-700 hover:text-primary-500 font-medium transition-colors">
+                Pricing
+              </Link>
+              {user && (
+                <Link to="/dashboard" className="text-gray-700 hover:text-primary-500 font-medium transition-colors">
+                  Dashboard
                 </Link>
-              ))}
-            </div>
+              )}
+            </nav>
 
-            {/* User Actions */}
-            <div className="hidden md:flex items-center gap-4">
-              {/* <CurrencySelector /> */} {/* DISABLED FOR US MARKET TEST */}
+            {/* Auth buttons */}
+            <div className="flex items-center space-x-3 md:space-x-4">
               {user ? (
                 <>
-                  <Link
-                    to="/generate"
-                    className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-saffron text-white text-sm font-medium hover:bg-saffron-600 hover:shadow-lg transition-all"
-                  >
-                    <Sparkles className="w-4 h-4" />
-                    Generate
-                  </Link>
-                  <Link
-                    to="/settings"
-                    className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-cream-200 hover:bg-cream-300 transition-colors cursor-pointer"
-                    title="Account settings"
-                  >
-                    <User className="w-4 h-4 text-charcoal" />
-                    <span className="text-sm text-charcoal">
-                      {user.firstName || user.email}
-                    </span>
-                  </Link>
-                  <motion.button
+                  <span className="text-sm text-gray-600 hidden lg:inline max-w-[150px] truncate">
+                    {user.email}
+                  </span>
+                  <button
                     onClick={handleLogout}
-                    className="p-3 rounded-lg hover:bg-berry/10 hover:text-berry active:bg-berry/20 transition-colors group cursor-pointer"
-                    title="Sign out"
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                    transition={{ type: 'spring', stiffness: 400, damping: 17 }}
+                    className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-gray-900 transition-colors"
                   >
-                    <LogOut className="w-5 h-5 text-charcoal group-hover:text-berry transition-colors" />
-                  </motion.button>
+                    Logout
+                  </button>
+                  <Link
+                    to="/upload"
+                    className="px-4 md:px-6 py-2 md:py-2.5 text-sm font-semibold text-white bg-gradient-to-r from-primary-500 to-primary-600 rounded-xl hover:from-primary-600 hover:to-primary-700 shadow-md hover:shadow-lg transition-all"
+                  >
+                    Create Headshots
+                  </Link>
                 </>
               ) : (
                 <>
                   <Link
                     to="/login"
-                    className="px-4 py-2 text-sm font-medium text-charcoal hover:text-saffron transition-colors"
-                  >
-                    Login
-                  </Link>
-                  <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                    <Link
-                      to="/register"
-                      className="inline-flex items-center px-5 py-2.5 rounded-lg gradient-saffron text-white text-sm font-semibold hover:shadow-xl shadow-saffron-300/50 transition-all"
-                    >
-                      Get Started
-                    </Link>
-                  </motion.div>
-                </>
-              )}
-            </div>
-
-            {/* Mobile Menu Button */}
-            <button
-              className="md:hidden p-2 rounded-lg hover:bg-cream-200"
-              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            >
-              {mobileMenuOpen ? (
-                <X className="w-6 h-6 text-charcoal" />
-              ) : (
-                <Menu className="w-6 h-6 text-charcoal" />
-              )}
-            </button>
-          </div>
-        </div>
-
-        {/* Mobile Menu */}
-        {mobileMenuOpen && (
-          <motion.div
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            className="md:hidden border-t border-charcoal/10 bg-white"
-          >
-            <div className="px-4 py-4 space-y-3">
-              {/* <div className="pb-3 border-b border-charcoal/10">
-                <CurrencySelector />
-              </div> */} {/* DISABLED FOR US MARKET TEST */}
-              {navLinks.map((link) => (
-                <Link
-                  key={link.to}
-                  to={link.to}
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="block px-3 py-2 rounded-lg text-base font-medium text-charcoal hover:bg-cream-200"
-                >
-                  {link.label}
-                </Link>
-              ))}
-              {user ? (
-                <>
-                  <Link
-                    to="/generate"
-                    onClick={() => setMobileMenuOpen(false)}
-                    className="block px-3 py-2 rounded-lg bg-saffron text-white text-center font-medium"
-                  >
-                    Generate Images
-                  </Link>
-                  <Link
-                    to="/settings"
-                    onClick={() => setMobileMenuOpen(false)}
-                    className="flex items-center gap-2 px-4 py-3 rounded-lg text-base font-medium text-charcoal hover:bg-cream-200 transition-colors"
-                  >
-                    <User className="w-5 h-5" />
-                    Account Settings
-                  </Link>
-                  <motion.button
-                    onClick={() => {
-                      handleLogout();
-                      setMobileMenuOpen(false);
-                    }}
-                    className="w-full text-left px-4 py-3 rounded-lg text-base font-medium text-berry hover:bg-berry/10 active:bg-berry/20 transition-colors flex items-center gap-2 cursor-pointer"
-                    whileTap={{ scale: 0.98 }}
-                    transition={{ type: 'spring', stiffness: 400, damping: 17 }}
-                  >
-                    <LogOut className="w-5 h-5" />
-                    Sign out
-                  </motion.button>
-                </>
-              ) : (
-                <>
-                  <Link
-                    to="/login"
-                    onClick={() => setMobileMenuOpen(false)}
-                    className="block px-3 py-2 rounded-lg text-base font-medium text-charcoal hover:bg-cream-200"
+                    className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-gray-900 transition-colors"
                   >
                     Login
                   </Link>
                   <Link
                     to="/register"
-                    onClick={() => setMobileMenuOpen(false)}
-                    className="block px-4 py-3 rounded-lg gradient-saffron text-white text-center font-semibold shadow-lg"
+                    className="px-4 md:px-6 py-2 md:py-2.5 text-sm font-semibold text-white bg-gradient-to-r from-primary-500 to-primary-600 rounded-xl hover:from-primary-600 hover:to-primary-700 shadow-md hover:shadow-lg transition-all"
                   >
                     Get Started
                   </Link>
                 </>
               )}
             </div>
-          </motion.div>
-        )}
-      </nav>
+          </div>
+        </div>
+      </header>
 
-      {/* Main Content */}
-      <main>
-        <Outlet />
-      </main>
+      {/* Main content */}
+      <main className="flex-1">{children}</main>
 
-      {/* Footer */}
-      <footer className="border-t border-charcoal/10 bg-white mt-20">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div>
-              <div className="flex items-center gap-3 mb-4">
-                <img
-                  src="/logo-icon.png"
-                  alt="Mydscvr - AI-Powered Food Photography"
-                  className="h-16 w-16"
-                />
-                <div className="flex flex-col">
-                  <span className="text-2xl font-bold text-charcoal lowercase">mydscvr</span>
-                  <span className="text-xs text-slate tracking-wide">
-                    AI-Powered Food Photography
-                  </span>
+      {/* Footer - Modern Design */}
+      <footer className="border-t bg-gradient-to-b from-gray-50 to-gray-100">
+        <div className="container mx-auto px-4 py-12 md:py-16">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-8 md:gap-12">
+            <div className="md:col-span-1">
+              <div className="flex items-center space-x-2 mb-4">
+                <div className="w-10 h-10 bg-gradient-to-br from-primary-500 to-primary-600 rounded-xl flex items-center justify-center shadow-md">
+                  <span className="text-white font-bold text-xl">H</span>
                 </div>
+                <span className="font-bold text-xl text-gray-900">HeadShotHub</span>
               </div>
-              <p className="text-sm text-slate leading-relaxed">
-                Transform your menu into stunning visuals with AI. Professional food photography for restaurants, delivery apps, and social media.
+              <p className="text-sm text-gray-600 leading-relaxed mb-4">
+                Professional AI headshots in minutes. No photographer needed.
               </p>
+              <div className="flex space-x-4">
+                <span className="text-2xl">⭐</span>
+                <span className="text-2xl">⭐</span>
+                <span className="text-2xl">⭐</span>
+                <span className="text-2xl">⭐</span>
+                <span className="text-2xl">⭐</span>
+              </div>
+              <p className="text-xs text-gray-500 mt-2">4.9/5 from 10,000+ reviews</p>
             </div>
             <div>
-              <h3 className="font-semibold text-charcoal mb-4">Product</h3>
-              <ul className="space-y-2 text-sm text-slate">
+              <h4 className="font-bold text-gray-900 mb-4">Product</h4>
+              <ul className="space-y-3 text-sm text-gray-600">
                 <li>
-                  <Link to="/pricing" className="hover:text-saffron">
+                  <Link to="/pricing" className="hover:text-primary-500 transition-colors">
                     Pricing
                   </Link>
                 </li>
                 <li>
-                  <Link to="/dashboard" className="hover:text-saffron">
-                    Dashboard
-                  </Link>
+                  <a href="#features" className="hover:text-primary-500 transition-colors">
+                    Features
+                  </a>
+                </li>
+                <li>
+                  <a href="#examples" className="hover:text-primary-500 transition-colors">
+                    Examples
+                  </a>
                 </li>
               </ul>
             </div>
             <div>
-              <h3 className="font-semibold text-charcoal mb-4">Company</h3>
-              <ul className="space-y-2 text-sm text-slate">
+              <h4 className="font-bold text-gray-900 mb-4">Company</h4>
+              <ul className="space-y-3 text-sm text-gray-600">
                 <li>
-                  <Link to="/about" className="hover:text-saffron">
+                  <a href="#about" className="hover:text-primary-500 transition-colors">
                     About
-                  </Link>
+                  </a>
                 </li>
                 <li>
-                  <a
-                    href="#"
-                    onClick={handleContactClick}
-                    className="hover:text-saffron cursor-pointer"
-                    title="Click to copy email address"
-                  >
+                  <a href="#contact" className="hover:text-primary-500 transition-colors">
                     Contact
                   </a>
                 </li>
                 <li>
-                  <Link to="/privacy" className="hover:text-saffron">
+                  <a href="#blog" className="hover:text-primary-500 transition-colors">
+                    Blog
+                  </a>
+                </li>
+              </ul>
+            </div>
+            <div>
+              <h4 className="font-bold text-gray-900 mb-4">Legal</h4>
+              <ul className="space-y-3 text-sm text-gray-600">
+                <li>
+                  <a href="#privacy" className="hover:text-primary-500 transition-colors">
                     Privacy Policy
-                  </Link>
+                  </a>
                 </li>
                 <li>
-                  <Link to="/terms" className="hover:text-saffron">
-                    Terms & Conditions
-                  </Link>
+                  <a href="#terms" className="hover:text-primary-500 transition-colors">
+                    Terms of Service
+                  </a>
+                </li>
+                <li>
+                  <a href="#refund" className="hover:text-primary-500 transition-colors">
+                    Refund Policy
+                  </a>
                 </li>
               </ul>
             </div>
           </div>
-          <div className="mt-8 pt-8 border-t border-charcoal/10 text-center text-sm text-slate">
-            <p>&copy; 2025 Jasmine Entertainment FZE. All rights reserved.</p>
+          <div className="mt-12 pt-8 border-t border-gray-300">
+            <div className="flex flex-col md:flex-row justify-between items-center gap-4">
+              <p className="text-sm text-gray-600">
+                © 2025 HeadShotHub. All rights reserved.
+              </p>
+              <div className="flex items-center gap-6 text-sm text-gray-600">
+                <span>Made with ❤️ for professionals</span>
+              </div>
+            </div>
           </div>
         </div>
       </footer>

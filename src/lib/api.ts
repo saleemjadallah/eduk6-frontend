@@ -1,264 +1,189 @@
-import type {
-  MenuItem,
-  Subscription,
-  UsageInfo,
-  User,
-  EstablishmentSettings,
-  UserImageLibrary,
-} from '@/types';
+import axios, { AxiosInstance } from 'axios';
+import type { User, HeadshotBatch, ApiResponse } from '@/types';
 
-const API_BASE =
-  (import.meta.env.VITE_API_URL as string | undefined)?.replace(/\/$/, '') || '';
-const API_URL = `${API_BASE}/api`;
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
-class ApiClient {
-  private async request<T>(
-    endpoint: string,
-    options?: RequestInit
-  ): Promise<T> {
-    const response = await fetch(`${API_URL}${endpoint}`, {
-      credentials: 'include',
+// Create axios instance
+const api: AxiosInstance = axios.create({
+  baseURL: `${API_URL}/api`,
+  withCredentials: true,
+  headers: {
+    'Content-Type': 'application/json',
+  },
+});
+
+// Auth API
+export const authApi = {
+  // Register with email/password
+  register: async (data: {
+    email: string;
+    password: string;
+    firstName: string;
+    lastName?: string;
+  }): Promise<{ message: string; userId: string; email: string }> => {
+    const response = await api.post('/auth/register', data);
+    return response.data;
+  },
+
+  // Verify registration with OTP code
+  verifyRegistration: async (email: string, code: string): Promise<User> => {
+    const response = await api.post('/auth/verify-registration', { email, code });
+    return response.data;
+  },
+
+  // Login with email/password
+  login: async (email: string, password: string): Promise<User> => {
+    const response = await api.post('/auth/login', { email, password });
+    return response.data;
+  },
+
+  // Request OTP for passwordless login
+  requestOtp: async (email: string): Promise<{ message: string }> => {
+    const response = await api.post('/auth/request-otp', { email });
+    return response.data;
+  },
+
+  // Login with OTP code
+  loginWithOtp: async (email: string, code: string): Promise<User> => {
+    const response = await api.post('/auth/login-otp', { email, code });
+    return response.data;
+  },
+
+  // Login/register with Google (Firebase ID token)
+  googleAuth: async (idToken: string): Promise<User> => {
+    const response = await api.post('/auth/google', { idToken });
+    return response.data;
+  },
+
+  // Logout
+  logout: async (): Promise<{ message: string }> => {
+    const response = await api.post('/auth/logout');
+    return response.data;
+  },
+
+  // Get current user
+  me: async (): Promise<User> => {
+    const response = await api.get('/auth/me');
+    return response.data;
+  },
+};
+
+// Batch API
+export const batchApi = {
+  // Upload photos to R2
+  uploadPhotos: async (files: File[], onProgress?: (progress: number) => void): Promise<ApiResponse<string[]>> => {
+    const formData = new FormData();
+    files.forEach((file) => {
+      formData.append('photos', file);
+    });
+
+    const response = await api.post('/batches/upload', formData, {
       headers: {
-        'Content-Type': 'application/json',
-        ...options?.headers,
+        'Content-Type': 'multipart/form-data',
       },
-      ...options,
+      onUploadProgress: (progressEvent) => {
+        if (onProgress && progressEvent.total) {
+          const percentage = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+          onProgress(percentage);
+        }
+      },
     });
+    return response.data;
+  },
 
-    if (!response.ok) {
-      const error = await response.json().catch(() => null);
-      const message =
-        (error && (error.message || error.error)) || response.statusText || 'Request failed';
-      throw new Error(message);
-    }
+  // Create new batch (after payment)
+  createBatch: async (data: {
+    uploadedPhotos: string[];
+    plan: string;
+    styleTemplates: string[];
+    backgrounds?: string[];
+    outfits?: string[];
+    stripeSessionId: string;
+  }): Promise<ApiResponse<HeadshotBatch>> => {
+    const response = await api.post('/batches/create', data);
+    return response.data;
+  },
 
-    if (response.status === 204) {
-      return undefined as T;
-    }
+  // Get user's batches
+  getBatches: async (): Promise<ApiResponse<HeadshotBatch[]>> => {
+    const response = await api.get('/batches');
+    return response.data;
+  },
 
-    return response.json();
-  }
+  // Get specific batch
+  getBatch: async (id: number): Promise<ApiResponse<HeadshotBatch>> => {
+    const response = await api.get(`/batches/${id}`);
+    return response.data;
+  },
 
-  // Auth endpoints
-  async getCurrentUser(): Promise<User | null> {
-    try {
-      return await this.request<User>('/auth/me');
-    } catch {
-      return null;
-    }
-  }
+  // Delete batch
+  deleteBatch: async (id: number): Promise<ApiResponse<void>> => {
+    const response = await api.delete(`/batches/${id}`);
+    return response.data;
+  },
 
-  async register(email: string, password: string, firstName: string, lastName: string): Promise<{ message: string; email: string }> {
-    return this.request<{ message: string; email: string }>('/auth/register', {
-      method: 'POST',
-      body: JSON.stringify({ email, password, firstName, lastName }),
+  // Get batch status
+  getBatchStatus: async (id: number): Promise<ApiResponse<{ status: string; progress?: number }>> => {
+    const response = await api.get(`/batches/${id}/status`);
+    return response.data;
+  },
+
+  // Request edit on specific headshot
+  requestEdit: async (
+    batchId: number,
+    headshotId: string,
+    editType: string
+  ): Promise<ApiResponse<any>> => {
+    const response = await api.post(`/batches/${batchId}/edit`, {
+      headshotId,
+      editType,
     });
-  }
+    return response.data;
+  },
 
-  async verifyRegistration(email: string, code: string): Promise<User> {
-    return this.request<User>('/auth/verify-registration', {
-      method: 'POST',
-      body: JSON.stringify({ email, code }),
+  // Get edit history
+  getEdits: async (batchId: number): Promise<ApiResponse<any[]>> => {
+    const response = await api.get(`/batches/${batchId}/edits`);
+    return response.data;
+  },
+
+  // Download single headshot
+  downloadHeadshot: async (batchId: number, headshotId: string): Promise<Blob> => {
+    const response = await api.get(`/batches/${batchId}/download/${headshotId}`, {
+      responseType: 'blob',
     });
-  }
+    return response.data;
+  },
 
-  async login(email: string, password: string): Promise<User> {
-    return this.request<User>('/auth/login', {
-      method: 'POST',
-      body: JSON.stringify({ email, password }),
+  // Download all as ZIP
+  downloadAll: async (batchId: number): Promise<Blob> => {
+    const response = await api.get(`/batches/${batchId}/download-all`, {
+      responseType: 'blob',
     });
-  }
+    return response.data;
+  },
+};
 
-  async logout(): Promise<void> {
-    await this.request('/auth/logout', { method: 'POST' });
-  }
+// Checkout API
+export const checkoutApi = {
+  // Create Stripe checkout session
+  createSession: async (data: {
+    plan: string;
+    uploadedPhotos: string[];
+    styleTemplates: string[];
+    preferences?: any;
+  }): Promise<ApiResponse<{ sessionId: string; url: string }>> => {
+    const response = await api.post('/checkout/create-session', data);
+    return response.data;
+  },
 
-  async requestLoginOtp(email: string): Promise<void> {
-    await this.request('/auth/request-otp', {
-      method: 'POST',
-      body: JSON.stringify({ email }),
-    });
-  }
+  // Verify payment success
+  verifySession: async (sessionId: string): Promise<ApiResponse<{ paid: boolean; batchId?: number }>> => {
+    const response = await api.get(`/checkout/verify/${sessionId}`);
+    return response.data;
+  },
+};
 
-  async loginWithOtp(email: string, code: string): Promise<User> {
-    return this.request<User>('/auth/login-otp', {
-      method: 'POST',
-      body: JSON.stringify({ email, code }),
-    });
-  }
-
-  // Menu Items
-  async getMenuItems(): Promise<MenuItem[]> {
-    return this.request<MenuItem[]>('/menu-items');
-  }
-
-  async getMenuItem(id: string): Promise<MenuItem> {
-    return this.request<MenuItem>(`/menu-items/${id}`);
-  }
-
-  async createMenuItem(item: Omit<MenuItem, 'id' | 'createdAt' | 'userId'>): Promise<MenuItem> {
-    return this.request<MenuItem>('/menu-items', {
-      method: 'POST',
-      body: JSON.stringify(item),
-    });
-  }
-
-  async updateMenuItem(id: string, updates: Partial<MenuItem>): Promise<MenuItem> {
-    return this.request<MenuItem>(`/menu-items/${id}`, {
-      method: 'PATCH',
-      body: JSON.stringify(updates),
-    });
-  }
-
-  async deleteMenuItem(id: string): Promise<void> {
-    await this.request(`/menu-items/${id}`, { method: 'DELETE' });
-  }
-
-  async generateDescription(data: {
-    name: string;
-    ingredients?: string[];
-    description?: string;
-  }): Promise<{ description: string }> {
-    return this.request('/menu-items/generate-description', {
-      method: 'POST',
-      body: JSON.stringify(data),
-    });
-  }
-
-  async getPublicMenu(userId: string): Promise<Record<string, any[]>> {
-    return this.request(`/menu-items/public/${userId}`);
-  }
-
-  // Image Generation
-  async generateImages(data: {
-    menuItemId: string;
-    style: string;
-    dishName: string;
-    description?: string;
-    ingredients?: string[];
-  }): Promise<{ images: string[]; menuItem: MenuItem }> {
-    return this.request('/generate-images', {
-      method: 'POST',
-      body: JSON.stringify(data),
-    });
-  }
-
-  async generateHighResImages(data: {
-    menuItemId: string;
-    style: string;
-    dishName: string;
-    indices: number[];
-    description?: string;
-    ingredients?: string[];
-  }): Promise<{ images: string[]; menuItem: MenuItem; updatedIndices: number[] }> {
-    return this.request('/generate-images/highres', {
-      method: 'POST',
-      body: JSON.stringify(data),
-    });
-  }
-
-  async finalizeDish(menuItemId: string, data: {
-    images: string[];
-    selectedStyle: string;
-    action: 'save' | 'download';
-    name?: string;
-    description?: string | null;
-    ingredients?: string[] | null;
-    category?: string;
-    price?: string | null;
-    dietaryInfo?: string[] | null;
-    allergens?: string[] | null;
-  }): Promise<{ menuItem: MenuItem; action: string; success: boolean }> {
-    return this.request(`/menu-items/${menuItemId}/finalize`, {
-      method: 'POST',
-      body: JSON.stringify(data),
-    });
-  }
-
-  // Maintenance
-  async fixMenuCategories(): Promise<{ success: boolean; message: string; fixedItems: any[] }> {
-    return this.request('/maintenance/fix-menu-categories', {
-      method: 'POST',
-    });
-  }
-
-  async getUserImageLibrary(): Promise<UserImageLibrary> {
-    return this.request<UserImageLibrary>('/user/images');
-  }
-
-  // Subscriptions
-  async getCurrentSubscription(): Promise<Subscription | null> {
-    return this.request<Subscription | null>('/subscriptions/current');
-  }
-
-  async createSubscription(tier: string): Promise<Subscription> {
-    return this.request<Subscription>('/subscriptions', {
-      method: 'POST',
-      body: JSON.stringify({ tier }),
-    });
-  }
-
-  async createSubscriptionIntent(tier: string, currency?: string): Promise<{
-    subscriptionId: string;
-    clientSecret: string;
-    tier: string;
-    resumed?: boolean;
-  }> {
-    return this.request('/create-subscription-intent', {
-      method: 'POST',
-      body: JSON.stringify({ tier, currency: currency || 'AED' }),
-    });
-  }
-
-  async syncSubscription(): Promise<{ synced: boolean; subscription?: Subscription; message: string }> {
-    return this.request('/subscriptions/sync', {
-      method: 'POST',
-    });
-  }
-
-  // Usage
-  async getCurrentUsage(): Promise<UsageInfo> {
-    return this.request<UsageInfo>('/usage/current');
-  }
-
-  // Subscription Management
-  async getSubscription(): Promise<Subscription | null> {
-    try {
-      return await this.request<Subscription>('/subscription');
-    } catch {
-      return null;
-    }
-  }
-
-  async createPortalSession(): Promise<{ url: string }> {
-    return this.request<{ url: string }>('/create-portal-session', {
-      method: 'POST',
-    });
-  }
-
-  // User Profile
-  async updateProfile(data: { firstName: string; lastName: string }): Promise<User> {
-    return this.request<User>('/user/profile', {
-      method: 'PATCH',
-      body: JSON.stringify(data),
-    });
-  }
-
-  // Establishment Settings
-  async getEstablishmentSettings(): Promise<EstablishmentSettings> {
-    return this.request<EstablishmentSettings>('/establishment-settings');
-  }
-
-  async updateEstablishmentSettings(data: Partial<EstablishmentSettings>): Promise<EstablishmentSettings> {
-    return this.request<EstablishmentSettings>('/establishment-settings', {
-      method: 'PUT',
-      body: JSON.stringify(data),
-    });
-  }
-
-  async getPublicEstablishmentSettings(userId: string): Promise<Partial<EstablishmentSettings>> {
-    return this.request<Partial<EstablishmentSettings>>(`/establishment-settings/public/${userId}`);
-  }
-}
-
-export const api = new ApiClient();
+// Export main axios instance
+export { api };
+export default api;

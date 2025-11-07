@@ -1,142 +1,128 @@
+// User types
 export interface User {
   id: string;
-  email: string | null;
-  firstName: string | null;
-  lastName: string | null;
-  profileImageUrl: string | null;
-  stripeCustomerId: string | null;
-  stripeSubscriptionId: string | null;
-  createdAt: Date | null;
-  updatedAt: Date | null;
-}
-
-export type SubscriptionTier = "starter" | "pro" | "enterprise";
-export type SubscriptionStatus = "active" | "cancelled" | "past_due" | "trialing";
-
-export interface Subscription {
-  id: string;
-  userId: string;
-  tier: SubscriptionTier;
-  status: SubscriptionStatus;
-  stripeCustomerId: string | null;
-  stripeSubscriptionId: string | null;
-  currentPeriodStart: Date | null;
-  currentPeriodEnd: Date | null;
-  cancelAtPeriodEnd: number;
-  createdAt: Date | null;
-  updatedAt: Date | null;
-}
-
-export interface UsageRecord {
-  id: string;
-  userId: string;
-  subscriptionId: string | null;
-  dishesGenerated: number;
-  imagesGenerated: number;
-  enhancementsUsed: number;
-  billingPeriodStart: Date;
-  billingPeriodEnd: Date;
-  createdAt: Date | null;
-  updatedAt: Date | null;
-}
-
-export type StyleOption = "Rustic/Dark" | "Bright/Modern" | "Social Media" | "Delivery App";
-export type AllergenOption = "Nuts" | "Dairy" | "Gluten" | "Soy" | "Eggs" | "Shellfish" | "Fish" | "Wheat";
-export type MenuCategory = "Appetizers" | "Soups" | "Salads" | "Mains" | "Sides" | "Desserts" | "Beverages";
-export type DietaryOption = "Vegetarian" | "Vegan" | "Gluten-Free" | "Dairy-Free" | "Nut-Free" | "Spicy";
-
-export interface MenuItem {
-  id: string;
-  userId: string | null;
+  email: string;
   name: string;
-  description: string | null;
-  category: MenuCategory;
-  ingredients: string[] | null;
-  allergens: string[] | null;
-  dietaryInfo: DietaryOption[] | null;
-  price: string | null;
-  displayOrder: number;
-  isAvailable: number; // 0 = false, 1 = true (matches backend schema)
-  generatedImages: string[] | null;
-  selectedStyle: string | null;
-  editCount?: number;
-  createdAt: Date | null;
+  uploads_used: number;
+  batches_created: number;
+  totalHeadshots?: number;
+  createdAt: Date;
 }
 
-export interface MenuImageAsset {
-  type: 'menu';
-  menuItemId: string;
-  menuItemName: string;
-  category: MenuCategory;
-  url: string;
-  imageIndex: number;
-  createdAt: string | null;
-  displayOrder: number;
+// Platform specifications for each template
+export interface PlatformSpecs {
+  aspectRatio: string; // "1:1", "4:5", "16:9", etc.
+  dimensions: string; // "1024x1024", "1080x1350", etc.
+  optimizedFor: string; // "LinkedIn profile photo", "Resume", etc.
+  fileFormat: string; // "JPG", "PNG"
+  colorProfile: string; // "sRGB", "Adobe RGB"
 }
 
-export interface EnhancedImageAsset {
-  type: 'enhanced';
-  key: string;
-  url: string;
-  size: number;
-  lastModified: string | null;
-}
-
-export interface UserImageLibrary {
-  menuImages: MenuImageAsset[];
-  enhancedImages: EnhancedImageAsset[];
-}
-
-// Menu Book Types
-export type CoverStyle = "classic" | "modern" | "rustic";
-export type FontFamily = "serif" | "sans-serif" | "modern";
-
-export interface EstablishmentSettings {
+// Style template definition
+export interface StyleTemplate {
   id: string;
+  name: string;
+  description: string;
+  popular?: boolean;
+  icon: string; // Lucide icon name
+
+  // Generation parameters
+  background: string;
+  outfit: string;
+  lighting: string;
+  expression: string;
+  pose: string;
+
+  // Platform specifications
+  platformSpecs: PlatformSpecs;
+
+  // Gemini prompt
+  geminiPrompt: string;
+}
+
+// Headshot types
+export interface GeneratedHeadshot {
+  url: string;
+  template: string; // Template ID
+  background: string;
+  outfit: string;
+  thumbnail: string;
+  platformSpecs: PlatformSpecs;
+}
+
+// Batch status
+export type BatchStatus = 'processing' | 'completed' | 'failed';
+
+// Headshot batch
+export interface HeadshotBatch {
+  id: number;
   userId: string;
-  establishmentName: string;
-  tagline: string | null;
-  logoUrl: string | null;
-  coverStyle: CoverStyle;
-  accentColor: string;
-  fontFamily: FontFamily;
-  itemsPerPage: number;
-  showPageNumbers: number; // 0 = false, 1 = true (matches backend schema)
-  showEstablishmentOnEveryPage: number; // 0 = false, 1 = true (matches backend schema)
-  createdAt: Date | null;
-  updatedAt: Date | null;
+  status: BatchStatus;
+
+  // Input photos
+  uploadedPhotos: string[]; // R2 URLs
+  photoCount: number;
+
+  // Generation settings
+  plan: 'basic' | 'professional' | 'executive';
+  styleTemplates: string[]; // Template IDs
+  backgrounds?: string[];
+  outfits?: string[];
+
+  // Results
+  generatedHeadshots: GeneratedHeadshot[];
+  headshotCount: number;
+  headshotsByTemplate: { [templateId: string]: number };
+
+  // Metadata
+  createdAt: Date;
+  completedAt?: Date;
+  processingTimeMinutes?: number;
+
+  // Pricing
+  amountPaid: number; // In cents
+  stripePaymentId?: string;
 }
 
-export interface MenuPage {
-  pageNumber: number;
-  items: MenuItem[];
+// Plan configuration
+export interface PlanConfig {
+  id: 'basic' | 'professional' | 'executive';
+  name: string;
+  price: number; // In cents
+  headshots: number;
+  backgrounds: number;
+  outfits: number;
+  editCredits: number;
+  turnaroundHours: number;
+  stripePriceId: string;
+  popular?: boolean;
+  features: string[];
 }
 
-export interface PaginatedMenu {
-  totalPages: number;
-  pages: MenuPage[];
-  establishmentSettings: EstablishmentSettings;
+// Edit request
+export interface EditRequest {
+  id: number;
+  batchId: number;
+  userId: string;
+  headshotId: string;
+  editType: 'background_change' | 'outfit_change' | 'regenerate';
+  status: 'pending' | 'completed' | 'failed';
+  resultUrl?: string;
+  createdAt: Date;
+  completedAt?: Date;
 }
 
-export interface TierLimits {
-  dishesPerMonth: number;
-  imagesPerDish: number;
-  enhancementsPerMonth: number;
-  priceAED: number;
-  overagePricePerDish: number;
+// API response types
+export interface ApiResponse<T> {
+  success: boolean;
+  data?: T;
+  error?: string;
+  message?: string;
 }
 
-export interface UsageInfo {
-  usage: UsageRecord | null;
-  limits: TierLimits;
-  tier: SubscriptionTier;
-  dishesUsed: number;
-  imagesUsed: number;
-  enhancementsUsed: number;
-  dishesRemaining: number;
-  enhancementsRemaining: number;
-  hasReachedLimit: boolean;
-  hasReachedEnhancementLimit: boolean;
-  limitType: 'trial' | 'plan';
-  trialLimit?: number;
+// Upload progress
+export interface UploadProgress {
+  loaded: number;
+  total: number;
+  percentage: number;
 }
