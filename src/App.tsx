@@ -24,10 +24,8 @@ function App() {
 
   const checkAuth = async () => {
     try {
-      const response = await authApi.me();
-      if (response.success && response.data) {
-        setUser(response.data);
-      }
+      const user = await authApi.me();
+      setUser(user);
     } catch (error) {
       console.error('Auth check failed:', error);
     } finally {
