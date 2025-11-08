@@ -23,13 +23,15 @@ export default function Layout({ children, user }: LayoutProps) {
       {/* Header - Sticky with backdrop blur */}
       <header className="sticky top-0 z-50 border-b bg-white/80 backdrop-blur-lg shadow-sm">
         <div className="container mx-auto px-4">
-          <div className="flex items-center justify-between h-16 md:h-20">
+          <div className="flex items-center justify-between h-20 md:h-24">
             {/* Logo */}
-            <Link to="/" className="flex items-center space-x-2 group">
-              <div className="w-10 h-10 bg-gradient-to-br from-primary-500 to-primary-600 rounded-xl flex items-center justify-center shadow-md group-hover:shadow-lg transition-shadow">
-                <span className="text-white font-bold text-xl">H</span>
-              </div>
-              <span className="font-bold text-xl md:text-2xl text-gray-900">HeadShotHub</span>
+            <Link to="/" className="flex items-center space-x-3 group">
+              <img
+                src="/logo.png"
+                alt="HeadShotHub Logo"
+                className="h-16 md:h-20 w-auto transition-transform group-hover:scale-105"
+              />
+              <span className="font-bold text-xl md:text-2xl text-gray-900 hidden sm:inline">HeadShotHub</span>
             </Link>
 
             {/* Navigation */}

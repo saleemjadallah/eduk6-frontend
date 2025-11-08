@@ -24,10 +24,15 @@ function App() {
 
   const checkAuth = async () => {
     try {
-      const user = await authApi.me();
-      setUser(user);
+      const currentUser = await authApi.me();
+      if (currentUser) {
+        setUser(currentUser);
+      } else {
+        setUser(null);
+      }
     } catch (error) {
       console.error('Auth check failed:', error);
+      setUser(null);
     } finally {
       setLoading(false);
     }

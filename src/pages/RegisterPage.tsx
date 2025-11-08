@@ -1,9 +1,7 @@
 import { useState, FormEvent } from 'react';
 import { Link } from 'react-router-dom';
 import { User } from '@/types';
-import Button from '../components/ui/button';
-import Input from '../components/ui/input';
-import Card from '../components/ui/card';
+import { Button, Input, Card } from '../components/ui';
 import { ArrowRight, Check } from 'lucide-react';
 
 interface RegisterPageProps {
@@ -81,7 +79,7 @@ export default function RegisterPage({ onRegister }: RegisterPageProps) {
                 label="Full Name"
                 placeholder="John Doe"
                 value={name}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setName(e.target.value)}
+                onChange={(e) => setName(e.target.value)}
                 required
                 error={!!error}
               />
@@ -94,7 +92,7 @@ export default function RegisterPage({ onRegister }: RegisterPageProps) {
                 label="Email Address"
                 placeholder="you@example.com"
                 value={email}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEmail(e.target.value)}
+                onChange={(e) => setEmail(e.target.value)}
                 required
                 error={!!error}
               />
@@ -107,7 +105,7 @@ export default function RegisterPage({ onRegister }: RegisterPageProps) {
                 label="Password"
                 placeholder="••••••••"
                 value={password}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setPassword(e.target.value)}
+                onChange={(e) => setPassword(e.target.value)}
                 required
                 error={!!error}
                 helperText="Must be at least 8 characters"
@@ -121,7 +119,7 @@ export default function RegisterPage({ onRegister }: RegisterPageProps) {
                 label="Confirm Password"
                 placeholder="••••••••"
                 value={confirmPassword}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setConfirmPassword(e.target.value)}
+                onChange={(e) => setConfirmPassword(e.target.value)}
                 required
                 error={!!error}
               />
