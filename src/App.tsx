@@ -87,7 +87,7 @@ function App() {
         <Route
           path="/batches/:batchId"
           element={
-            user ? <Layout user={user}><BatchViewPage user={user} /></Layout> : <Navigate to="/login" />
+            user ? <Layout user={user}><BatchViewPage /></Layout> : <Navigate to="/login" />
           }
         />
 
