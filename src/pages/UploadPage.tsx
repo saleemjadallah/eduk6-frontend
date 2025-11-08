@@ -3,14 +3,26 @@ import { useNavigate } from 'react-router-dom';
 import { User } from '@/types';
 import { Button, Card, Badge } from '../components/ui';
 import { Upload, X, Check, AlertCircle, Image as ImageIcon, Sparkles, Zap, Crown } from 'lucide-react';
+import { batchApi } from '@/lib/api';
+
+const DEFAULT_TEMPLATE_IDS = ['linkedin', 'corporate', 'creative', 'resume', 'social', 'executive', 'casual', 'speaker'];
 
 interface UploadPageProps {
   user: User;
 }
 
-const plans = [
+const plans: Array<{
+  id: PlanId;
+  name: string;
+  price: number;
+  headshots: number;
+  templates: number;
+  icon: typeof Zap;
+  color: string;
+  popular?: boolean;
+}> = [
   {
-    id: 'starter',
+    id: 'basic',
     name: 'Starter',
     price: 29,
     headshots: 40,
@@ -29,7 +41,7 @@ const plans = [
     popular: true,
   },
   {
-    id: 'premium',
+    id: 'executive',
     name: 'Premium',
     price: 59,
     headshots: 200,
@@ -39,12 +51,16 @@ const plans = [
   },
 ];
 
+type PlanId = 'basic' | 'professional' | 'executive';
+
 export default function UploadPage({ user }: UploadPageProps) {
   const navigate = useNavigate();
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
-  const [selectedPlan, setSelectedPlan] = useState<string>('professional');
+  const [selectedPlan, setSelectedPlan] = useState<PlanId>('professional');
   const [isDragging, setIsDragging] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [uploadError, setUploadError] = useState<string | null>(null);
 
   const isTestUser = user?.email === 'test@headshotsaas.com';
   const allowSingleUpload =
@@ -93,10 +109,44 @@ export default function UploadPage({ user }: UploadPageProps) {
       return;
     }
 
-    setIsUploading(true);
-    // TODO: Implement actual upload logic
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    navigate('/processing');
+    if (!selectedPlan) {
+      alert('Please select a plan to continue');
+      return;
+    }
+
+    try {
+      setUploadError(null);
+      setIsUploading(true);
+      setUploadProgress(0);
+
+      const uploadResponse = await batchApi.uploadPhotos(selectedFiles, (progress) => {
+        setUploadProgress(progress);
+      });
+
+      if (!uploadResponse.success || !uploadResponse.data) {
+        throw new Error(uploadResponse.error || 'Failed to upload photos');
+      }
+
+      const createResponse = await batchApi.createBatch({
+        uploadedPhotos: uploadResponse.data,
+        plan: selectedPlan,
+        styleTemplates: DEFAULT_TEMPLATE_IDS,
+        stripeSessionId: 'testing-mode',
+      });
+
+      if (!createResponse.success || !createResponse.data) {
+        throw new Error(createResponse.error || 'Failed to start headshot generation');
+      }
+
+      const batchId = createResponse.data.id;
+      setSelectedFiles([]);
+      navigate(`/processing?batchId=${batchId}`, { state: { batchId } });
+    } catch (error) {
+      console.error('Upload failed', error);
+      setUploadError(error instanceof Error ? error.message : 'Failed to start generation');
+    } finally {
+      setIsUploading(false);
+    }
   };
 
   const selectedPlanData = plans.find(p => p.id === selectedPlan);
@@ -339,29 +389,34 @@ export default function UploadPage({ user }: UploadPageProps) {
                       className="w-full"
                       onClick={handleSubmit}
                       isLoading={isUploading}
-                      disabled={selectedFiles.length < minUploadCount}
+                      disabled={selectedFiles.length < minUploadCount || isUploading}
                     >
                       {!isUploading && (
                         <>
-                          {isTestUser ? (
-                            <>
-                              Start Test Generation
-                              <Sparkles className="w-5 h-5" />
-                            </>
-                          ) : (
-                            <>
-                              Continue to Payment
-                              <Check className="w-5 h-5" />
-                            </>
-                          )}
+                          <>
+                            Start Generation
+                            <Check className="w-5 h-5" />
+                          </>
                         </>
                       )}
                     </Button>
 
+                    {isUploading && (
+                      <p className="text-sm text-center text-gray-600 mt-3">
+                        Uploading photos… {uploadProgress}%
+                      </p>
+                    )}
+
+                    {uploadError && (
+                      <p className="text-sm text-center text-red-600 mt-3">
+                        {uploadError}
+                      </p>
+                    )}
+
                     <p className="text-xs text-gray-500 text-center mt-4">
                       {isTestUser
                         ? 'Demo access active • No payment required'
-                        : '100% satisfaction guaranteed • Secure payment'}
+                        : 'Uploads are encrypted and processed securely'}
                     </p>
                   </div>
                 )}
