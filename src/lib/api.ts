@@ -98,7 +98,8 @@ export const batchApi = {
     styleTemplates: string[];
     backgrounds?: string[];
     outfits?: string[];
-    stripeSessionId: string;
+    stripeSessionId?: string;
+    amountPaid?: number;
   }): Promise<ApiResponse<HeadshotBatch>> => {
     const response = await api.post('/batches/create', data);
     return response.data;
