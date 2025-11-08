@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import Card from '../components/ui/card';
-import Badge from '../components/ui/badge';
+import { Card, Badge } from '../components/ui';
 import { Sparkles, Check, Clock, Image as ImageIcon, Zap, Mail } from 'lucide-react';
 
 const processingSteps = [

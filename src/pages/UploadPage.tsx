@@ -1,9 +1,7 @@
 import { useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { User } from '@/types';
-import Button from '../components/ui/button';
-import Card from '../components/ui/card';
-import Badge from '../components/ui/badge';
+import { Button, Card, Badge } from '../components/ui';
 import { Upload, X, Check, AlertCircle, Image as ImageIcon, Sparkles, Zap, Crown } from 'lucide-react';
 
 interface UploadPageProps {

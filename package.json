@@ -1,15 +1,8 @@
 {
-  "name": "headshothub-frontend",
+  "name": "headshotsaas-frontend",
   "private": true,
   "version": "1.0.0",
-  "description": "HeadShotHub Frontend - AI-powered professional headshot generation platform",
   "type": "module",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/saleemjadallah/mydscvr.frontend.git"
-  },
-  "author": "Saleem Jadallah",
-  "license": "MIT",
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
@@ -32,17 +25,17 @@
     "clsx": "^2.1.0",
     "firebase": "^10.8.0",
     "lucide-react": "^0.344.0",
-    "react": "^18.3.1",
+    "react": "^19.0.0",
     "react-compare-slider": "^3.0.1",
-    "react-dom": "^18.3.1",
+    "react-dom": "^19.0.0",
     "react-dropzone": "^14.2.3",
     "react-router-dom": "^6.22.0",
     "tailwind-merge": "^2.2.1"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4.1.16",
-    "@types/react": "^18.3.12",
-    "@types/react-dom": "^18.3.1",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
     "@typescript-eslint/eslint-plugin": "^7.0.1",
     "@typescript-eslint/parser": "^7.0.1",
     "@vitejs/plugin-react": "^4.2.1",
