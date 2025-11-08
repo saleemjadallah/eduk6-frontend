@@ -1,11 +1,9 @@
 import { useEffect, useMemo, useState } from 'react';
-import { User } from '@/types';
+import { useParams, Link } from 'react-router-dom';
+import type { HeadshotBatch, GeneratedHeadshot } from '@/types';
 import { Button, Card, Badge } from '../components/ui';
 import { Download, Grid3x3, LayoutList, Star, Heart, Check, Filter, Search, X } from 'lucide-react';
-
-interface BatchViewPageProps {
-  user: User;
-}
+import { batchApi } from '@/lib/api';
 
 interface TemplateOption {
   id: string;
@@ -13,106 +11,144 @@ interface TemplateOption {
 }
 
 interface HeadshotItem {
-  id: number;
+  id: string;
   url: string;
   template: string;
   isFavorite?: boolean;
   backdrop?: string;
 }
 
-const defaultTemplates: TemplateOption[] = [
-  { id: 'all', name: 'All Templates' },
-  { id: 'linkedin', name: 'LinkedIn Professional' },
-  { id: 'corporate', name: 'Corporate' },
-  { id: 'creative', name: 'Creative' },
-  { id: 'casual', name: 'Smart Casual' },
-  { id: 'executive', name: 'Executive' },
-  { id: 'speaker', name: 'Speaker' },
-  { id: 'resume', name: 'Resume' },
-  { id: 'website', name: 'Website' },
-];
+type ApiHeadshot = GeneratedHeadshot & {
+  id?: string | number;
+  isFavorite?: boolean;
+  backdrop?: string;
+};
 
-// Mock data - in real app this would come from API
-const defaultHeadshots: HeadshotItem[] = Array.from({ length: 100 }, (_, i) => ({
-  id: i + 1,
-  url: `https://picsum.photos/seed/headshot-${i + 1}/500/500`,
-  template: defaultTemplates[Math.floor(Math.random() * (defaultTemplates.length - 1)) + 1].id,
-  isFavorite: Math.random() > 0.8,
-}));
+const formatTemplateName = (value: string) =>
+  value
+    .replace(/[-_]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .replace(/^\w|\s\w/g, (char) => char.toUpperCase());
 
-const testTemplates: TemplateOption[] = [
-  { id: 'all', name: 'All Templates' },
-  { id: 'linkedin', name: 'LinkedIn Professional' },
-  { id: 'executive', name: 'Executive Leadership' },
-  { id: 'creative', name: 'Creative Profile' },
-];
-
-const testHeadshots: HeadshotItem[] = [
-  {
-    id: 1,
-    url: 'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=640&q=80',
-    template: 'linkedin',
-    backdrop: 'Soft studio gray gradient',
-    isFavorite: true,
-  },
-  {
-    id: 2,
-    url: 'https://images.unsplash.com/photo-1521572267360-ee0c2909d518?auto=format&fit=crop&w=640&q=80',
-    template: 'linkedin',
-    backdrop: 'Modern office background',
-  },
-  {
-    id: 3,
-    url: 'https://images.unsplash.com/photo-1544723795-3fb6469f5b39?auto=format&fit=crop&w=640&q=80',
-    template: 'executive',
-    backdrop: 'Premium dark gradient backdrop',
-    isFavorite: true,
-  },
-  {
-    id: 4,
-    url: 'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?auto=format&fit=crop&w=640&q=80',
-    template: 'executive',
-    backdrop: 'Corporate boardroom lighting',
-  },
-  {
-    id: 5,
-    url: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=640&q=80',
-    template: 'creative',
-    backdrop: 'Warm textured studio lighting',
-  },
-];
-
-export default function BatchViewPage({ user }: BatchViewPageProps) {
+export default function BatchViewPage() {
+  const { batchId } = useParams<{ batchId: string }>();
+  const numericBatchId = batchId ? Number(batchId) : NaN;
+  const [batch, setBatch] = useState<HeadshotBatch | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [selectedTemplate, setSelectedTemplate] = useState('all');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedHeadshots, setSelectedHeadshots] = useState<number[]>([]);
-
-  const isTestUser = user?.email === 'test@headshotsaas.com';
-
-  const { templates, headshots } = useMemo(() => {
-    return isTestUser
-      ? { templates: testTemplates, headshots: testHeadshots }
-      : { templates: defaultTemplates, headshots: defaultHeadshots };
-  }, [isTestUser]);
-
-  const [favorites, setFavorites] = useState<number[]>(
-    headshots.filter(h => h.isFavorite).map(h => h.id)
-  );
+  const [selectedHeadshots, setSelectedHeadshots] = useState<string[]>([]);
+  const [favorites, setFavorites] = useState<string[]>([]);
 
   useEffect(() => {
-    setSelectedTemplate('all');
+    if (!batchId || Number.isNaN(numericBatchId)) {
+      setError('Invalid batch ID.');
+      setLoading(false);
+      setBatch(null);
+      return;
+    }
+
+    let isMounted = true;
+    const fetchBatch = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        const response = await batchApi.getBatch(numericBatchId);
+        if (!response.success || !response.data) {
+          throw new Error(response.error || 'Unable to load batch');
+        }
+        if (isMounted) {
+          setBatch(response.data);
+        }
+      } catch (err) {
+        if (isMounted) {
+          setError(err instanceof Error ? err.message : 'Failed to load batch');
+          setBatch(null);
+        }
+      } finally {
+        if (isMounted) {
+          setLoading(false);
+        }
+      }
+    };
+
+    fetchBatch();
+    return () => {
+      isMounted = false;
+    };
+  }, [batchId, numericBatchId]);
+
+  const headshots = useMemo<HeadshotItem[]>(() => {
+    if (!batch?.generatedHeadshots) return [];
+
+    return (batch.generatedHeadshots as ApiHeadshot[]).reduce<HeadshotItem[]>((acc, headshot, index) => {
+      const uniqueId = headshot.id ?? headshot.url ?? headshot.thumbnail ?? `headshot-${index + 1}`;
+      const imageUrl = headshot.url || headshot.thumbnail;
+
+      if (!imageUrl) {
+        return acc;
+      }
+
+      acc.push({
+        id: String(uniqueId),
+        url: imageUrl,
+        template: headshot.template || 'unspecified',
+        isFavorite: headshot.isFavorite,
+        backdrop: headshot.backdrop || headshot.background,
+      });
+      return acc;
+    }, []);
+  }, [batch]);
+
+  const templates = useMemo<TemplateOption[]>(() => {
+    const map = new Map<string, string>();
+
+    (batch?.styleTemplates ?? []).forEach((templateId) => {
+      if (templateId) {
+        map.set(templateId, formatTemplateName(templateId));
+      }
+    });
+
+    headshots.forEach((headshot) => {
+      if (!map.has(headshot.template)) {
+        map.set(headshot.template, formatTemplateName(headshot.template));
+      }
+    });
+
+    return [
+      { id: 'all', name: 'All Templates' },
+      ...Array.from(map.entries()).map(([id, name]) => ({ id, name })),
+    ];
+  }, [batch, headshots]);
+
+  useEffect(() => {
     setSearchQuery('');
     setSelectedHeadshots([]);
-    setFavorites(headshots.filter(h => h.isFavorite).map(h => h.id));
+    setFavorites(headshots.filter((h) => h.isFavorite).map((h) => h.id));
   }, [headshots]);
+
+  useEffect(() => {
+    if (!templates.some((template) => template.id === selectedTemplate)) {
+      setSelectedTemplate('all');
+    }
+  }, [templates, selectedTemplate]);
+
+  const templateNameMap = useMemo(() => {
+    const map: Record<string, string> = {};
+    templates.forEach((template) => {
+      map[template.id] = template.name;
+    });
+    return map;
+  }, [templates]);
 
   const templateCounts = useMemo(() => {
     const counts: Record<string, number> = { all: headshots.length };
     headshots.forEach((headshot) => {
       counts[headshot.template] = (counts[headshot.template] || 0) + 1;
     });
-    // Ensure every template id has at least 0
     templates.forEach((template) => {
       if (counts[template.id] === undefined) {
         counts[template.id] = 0;
@@ -121,20 +157,26 @@ export default function BatchViewPage({ user }: BatchViewPageProps) {
     return counts;
   }, [headshots, templates]);
 
-  const filteredHeadshots = headshots.filter(headshot => {
-    const templateMatch = selectedTemplate === 'all' || headshot.template === selectedTemplate;
-    const searchMatch = searchQuery === '' ||
-      templates.find(t => t.id === headshot.template)?.name.toLowerCase().includes(searchQuery.toLowerCase());
-    return templateMatch && searchMatch;
-  });
+  const filteredHeadshots = useMemo(
+    () =>
+      headshots.filter((headshot) => {
+        const templateMatch = selectedTemplate === 'all' || headshot.template === selectedTemplate;
+        const templateName = templateNameMap[headshot.template]?.toLowerCase() ?? headshot.template.toLowerCase();
+        const searchMatch = searchQuery === '' || templateName.includes(searchQuery.toLowerCase());
+        return templateMatch && searchMatch;
+      }),
+    [headshots, selectedTemplate, searchQuery, templateNameMap]
+  );
 
-  const toggleFavorite = (id: number) => {
+  const templateTotal = Math.max(templates.length - 1, 0);
+
+  const toggleFavorite = (id: string) => {
     setFavorites(prev =>
       prev.includes(id) ? prev.filter(fid => fid !== id) : [...prev, id]
     );
   };
 
-  const toggleSelect = (id: number) => {
+  const toggleSelect = (id: string) => {
     setSelectedHeadshots(prev =>
       prev.includes(id) ? prev.filter(sid => sid !== id) : [...prev, id]
     );
@@ -157,6 +199,43 @@ export default function BatchViewPage({ user }: BatchViewPageProps) {
     alert(`Downloading all ${filteredHeadshots.length} headshot(s)`);
     // TODO: Implement actual download logic
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white py-12">
+        <div className="container mx-auto px-4">
+          <div className="max-w-3xl mx-auto">
+            <Card variant="default" className="p-12 text-center">
+              <p className="text-xl font-semibold text-gray-900">Loading batch…</p>
+              <p className="text-gray-600 mt-2">Fetching your headshots from the server.</p>
+            </Card>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error || !batch) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white py-12">
+        <div className="container mx-auto px-4">
+          <div className="max-w-3xl mx-auto">
+            <Card variant="default" className="p-12 text-center space-y-4">
+              <p className="text-2xl font-bold text-gray-900">Unable to load batch</p>
+              <p className="text-gray-600">
+                {error || 'This batch could not be found. Please try again from the dashboard.'}
+              </p>
+              <div className="flex justify-center">
+                <Button variant="primary" size="md" asChild>
+                  <Link to="/dashboard">Back to Dashboard</Link>
+                </Button>
+              </div>
+            </Card>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white py-8">
@@ -203,7 +282,7 @@ export default function BatchViewPage({ user }: BatchViewPageProps) {
               </Card>
               <Card variant="default" className="p-4">
                 <div className="text-2xl font-bold text-gray-900 mb-1">
-                  {templates.length - 1}
+                  {templateTotal}
                 </div>
                 <div className="text-sm text-gray-600">Style Templates</div>
               </Card>

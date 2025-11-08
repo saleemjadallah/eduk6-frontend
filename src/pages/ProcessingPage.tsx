@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { Card, Badge } from '../components/ui';
 import { Sparkles, Check, Clock, Image as ImageIcon, Zap, Mail } from 'lucide-react';
 
@@ -36,18 +36,22 @@ const processingSteps = [
 
 export default function ProcessingPage() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const batchId = (location.state as { batchId?: number } | undefined)?.batchId;
   const [currentStep, setCurrentStep] = useState(0);
   const [progress, setProgress] = useState(0);
   const [estimatedTime, setEstimatedTime] = useState(120); // minutes
 
   useEffect(() => {
-    // Simulate progress
+    // Simulate progress UI so users see feedback while the real backend runs
     const progressInterval = setInterval(() => {
       setProgress((prev) => {
         if (prev >= 100) {
           clearInterval(progressInterval);
-          // Navigate to batch view after completion
-          setTimeout(() => navigate('/batches/1'), 1000);
+          if (batchId) {
+            // Only redirect when we actually know which batch finished
+            setTimeout(() => navigate(`/batches/${batchId}`), 1000);
+          }
           return 100;
         }
         return prev + 0.5;
@@ -55,7 +59,7 @@ export default function ProcessingPage() {
     }, 500);
 
     return () => clearInterval(progressInterval);
-  }, [navigate]);
+  }, [batchId, navigate]);
 
   useEffect(() => {
     // Update current step based on progress
@@ -83,6 +87,11 @@ export default function ProcessingPage() {
             </h1>
             <p className="text-xl text-gray-600 mb-2">
               Our AI is hard at work generating your professional headshots
+            </p>
+            <p className="text-sm text-gray-500 mb-4">
+              {batchId
+                ? `You'll be redirected to batch #${batchId} as soon as it's finished.`
+                : 'Leave this tab open or check your dashboard for updates.'}
             </p>
             <div className="flex items-center justify-center gap-2 text-gray-500">
               <Clock className="w-5 h-5" />
