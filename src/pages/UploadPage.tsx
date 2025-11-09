@@ -4,8 +4,19 @@ import { User } from '@/types';
 import { Button, Card, Badge } from '../components/ui';
 import { Upload, X, Check, AlertCircle, Image as ImageIcon, Sparkles, Zap, Crown } from 'lucide-react';
 import { batchApi } from '@/lib/api';
+import { STYLE_TEMPLATES } from '@/lib/templates';
 
-const DEFAULT_TEMPLATE_IDS = ['linkedin', 'corporate', 'creative', 'resume', 'social', 'executive', 'casual', 'speaker'];
+// Popular platforms users typically need
+const AVAILABLE_PLATFORMS = [
+  { id: 'linkedin', name: 'LinkedIn', description: 'Professional networking', icon: '💼' },
+  { id: 'corporate', name: 'Corporate Website', description: 'Company team pages', icon: '🏢' },
+  { id: 'social', name: 'Social Media', description: 'Instagram, Twitter, Facebook', icon: '📱' },
+  { id: 'resume', name: 'Resume/CV', description: 'Traditional headshot', icon: '📄' },
+  { id: 'creative', name: 'Creative Portfolio', description: 'Personal brand', icon: '🎨' },
+  { id: 'executive', name: 'Executive', description: 'Leadership pages', icon: '👔' },
+  { id: 'casual', name: 'Casual Professional', description: 'Approachable style', icon: '☕' },
+  { id: 'speaker', name: 'Conference Speaker', description: 'Event promotion', icon: '🎤' },
+];
 
 interface UploadPageProps {
   user: User;
@@ -16,7 +27,7 @@ const plans: Array<{
   name: string;
   price: number;
   headshots: number;
-  templates: number;
+  maxTemplates: number;
   icon: typeof Zap;
   color: string;
   popular?: boolean;
@@ -25,8 +36,8 @@ const plans: Array<{
     id: 'basic',
     name: 'Starter',
     price: 29,
-    headshots: 40,
-    templates: 2,
+    headshots: 10,
+    maxTemplates: 2,
     icon: Zap,
     color: 'from-blue-400 to-blue-600',
   },
@@ -34,8 +45,8 @@ const plans: Array<{
     id: 'professional',
     name: 'Professional',
     price: 39,
-    headshots: 100,
-    templates: 5,
+    headshots: 15,
+    maxTemplates: 3,
     icon: Sparkles,
     color: 'from-secondary-400 to-secondary-600',
     popular: true,
@@ -44,8 +55,8 @@ const plans: Array<{
     id: 'executive',
     name: 'Premium',
     price: 59,
-    headshots: 200,
-    templates: 8,
+    headshots: 20,
+    maxTemplates: 5,
     icon: Crown,
     color: 'from-amber-400 to-amber-600',
   },
@@ -57,6 +68,7 @@ export default function UploadPage({ user }: UploadPageProps) {
   const navigate = useNavigate();
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [selectedPlan, setSelectedPlan] = useState<PlanId>('professional');
+  const [selectedPlatforms, setSelectedPlatforms] = useState<string[]>(['linkedin']); // Default to LinkedIn
   const [isDragging, setIsDragging] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
@@ -103,6 +115,24 @@ export default function UploadPage({ user }: UploadPageProps) {
     setSelectedFiles(prev => prev.filter((_, i) => i !== index));
   }, []);
 
+  const togglePlatform = useCallback((platformId: string) => {
+    const currentPlan = plans.find(p => p.id === selectedPlan);
+    const maxTemplates = currentPlan?.maxTemplates || 2;
+
+    setSelectedPlatforms(prev => {
+      if (prev.includes(platformId)) {
+        // Always allow deselection unless it's the last one
+        return prev.length > 1 ? prev.filter(id => id !== platformId) : prev;
+      } else {
+        // Only allow selection if under the plan limit
+        if (prev.length < maxTemplates) {
+          return [...prev, platformId];
+        }
+        return prev;
+      }
+    });
+  }, [selectedPlan]);
+
   const handleSubmit = async () => {
     if (selectedFiles.length < minUploadCount) {
       alert(`Please upload at least ${minUploadCount} photo${minUploadCount !== 1 ? 's' : ''}`);
@@ -111,6 +141,11 @@ export default function UploadPage({ user }: UploadPageProps) {
 
     if (!selectedPlan) {
       alert('Please select a plan to continue');
+      return;
+    }
+
+    if (selectedPlatforms.length === 0) {
+      alert('Please select at least one platform');
       return;
     }
 
@@ -130,7 +165,7 @@ export default function UploadPage({ user }: UploadPageProps) {
       const createResponse = await batchApi.createBatch({
         uploadedPhotos: uploadResponse.data,
         plan: selectedPlan,
-        styleTemplates: DEFAULT_TEMPLATE_IDS,
+        styleTemplates: selectedPlatforms,
         stripeSessionId: 'testing-mode',
       });
 
@@ -343,7 +378,7 @@ export default function UploadPage({ user }: UploadPageProps) {
                                 ${plan.price}
                               </p>
                               <p className="text-sm text-gray-600">
-                                {plan.headshots} headshots • {plan.templates} templates
+                                {plan.headshots} headshots • Up to {plan.maxTemplates} platforms
                               </p>
                             </div>
                             {isSelected && (
@@ -353,6 +388,68 @@ export default function UploadPage({ user }: UploadPageProps) {
                         </button>
                       );
                     })}
+                  </div>
+                )}
+
+                {/* Platform Selection */}
+                {!isTestUser && selectedPlanData && (
+                  <div className="mt-6 pt-6 border-t border-gray-200">
+                    <div className="mb-4">
+                      <h3 className="font-semibold text-gray-900 mb-1">
+                        Select Platforms
+                      </h3>
+                      <p className="text-sm text-gray-600">
+                        Choose up to {selectedPlanData.maxTemplates} platform{selectedPlanData.maxTemplates !== 1 ? 's' : ''}
+                        {' '}({selectedPlatforms.length}/{selectedPlanData.maxTemplates} selected)
+                      </p>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-2">
+                      {AVAILABLE_PLATFORMS.map((platform) => {
+                        const isSelected = selectedPlatforms.includes(platform.id);
+                        const canSelect = selectedPlatforms.length < selectedPlanData.maxTemplates;
+                        const isDisabled = !isSelected && !canSelect;
+
+                        return (
+                          <button
+                            key={platform.id}
+                            onClick={() => togglePlatform(platform.id)}
+                            disabled={isDisabled}
+                            className={`p-3 rounded-lg border-2 text-left transition-all ${
+                              isSelected
+                                ? 'border-primary-500 bg-primary-50'
+                                : isDisabled
+                                ? 'border-gray-200 bg-gray-50 opacity-50 cursor-not-allowed'
+                                : 'border-gray-200 hover:border-primary-300 hover:bg-gray-50'
+                            }`}
+                          >
+                            <div className="flex items-start gap-2">
+                              <span className="text-lg">{platform.icon}</span>
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-2">
+                                  <p className="font-semibold text-sm text-gray-900 truncate">
+                                    {platform.name}
+                                  </p>
+                                  {isSelected && (
+                                    <Check className="w-4 h-4 text-primary-600 flex-shrink-0" />
+                                  )}
+                                </div>
+                                <p className="text-xs text-gray-600 line-clamp-1">
+                                  {platform.description}
+                                </p>
+                              </div>
+                            </div>
+                          </button>
+                        );
+                      })}
+                    </div>
+
+                    {selectedPlatforms.length === 0 && (
+                      <p className="mt-3 text-sm text-amber-600 flex items-center gap-2">
+                        <AlertCircle className="w-4 h-4" />
+                        Please select at least one platform
+                      </p>
+                    )}
                   </div>
                 )}
 
@@ -372,8 +469,8 @@ export default function UploadPage({ user }: UploadPageProps) {
                         <span className="font-semibold">{selectedPlanData.headshots}</span>
                       </div>
                       <div className="flex justify-between text-gray-700">
-                        <span>Templates</span>
-                        <span className="font-semibold">{selectedPlanData.templates}</span>
+                        <span>Platforms</span>
+                        <span className="font-semibold">{selectedPlatforms.length} selected</span>
                       </div>
                       <div className="flex justify-between text-xl font-bold text-gray-900 pt-3 border-t border-gray-200">
                         <span>Total</span>
@@ -389,7 +486,7 @@ export default function UploadPage({ user }: UploadPageProps) {
                       className="w-full"
                       onClick={handleSubmit}
                       isLoading={isUploading}
-                      disabled={selectedFiles.length < minUploadCount || isUploading}
+                      disabled={selectedFiles.length < minUploadCount || selectedPlatforms.length === 0 || isUploading}
                     >
                       {!isUploading && (
                         <>
