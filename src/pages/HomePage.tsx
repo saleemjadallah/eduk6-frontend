@@ -1,7 +1,29 @@
 import { Link } from 'react-router-dom';
 import { ArrowRight, Sparkles, Clock, DollarSign } from 'lucide-react';
+import { useState, useEffect } from 'react';
 
 export default function HomePage() {
+  const useCases = [
+    'LinkedIn Profiles',
+    'Visa Applications',
+    'Corporate Websites',
+    'Resume & CVs',
+    'Social Media',
+    'Executive Bios',
+    'Conference Speakers',
+    'Creative Portfolios',
+  ];
+
+  const [currentIndex, setCurrentIndex] = useState(0);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentIndex((prev) => (prev + 1) % useCases.length);
+    }, 2500); // Change every 2.5 seconds
+
+    return () => clearInterval(interval);
+  }, [useCases.length]);
+
   return (
     <div className="bg-gradient-to-b from-white to-gray-50">
       {/* Hero Section - Bento Grid Style */}
@@ -17,9 +39,25 @@ export default function HomePage() {
               Professional AI Headshots
               <span className="block text-primary-500">in Minutes</span>
             </h1>
-            <p className="text-xl md:text-2xl text-gray-600 mb-10 max-w-3xl mx-auto">
-              Get 40-200 studio-quality headshots for $29-59. No photographer needed.
-              Perfect for LinkedIn, resumes, and professional profiles.
+
+            {/* Animated Carousel Subheader */}
+            <div className="mb-8">
+              <p className="text-xl md:text-2xl text-gray-700 font-medium">
+                Perfect for{' '}
+                <span className="relative inline-block min-w-[280px] text-left">
+                  <span
+                    key={currentIndex}
+                    className="inline-block bg-gradient-to-r from-secondary-500 to-secondary-600 text-white px-4 py-1 rounded-lg font-bold animate-fadeIn"
+                  >
+                    {useCases[currentIndex]}
+                  </span>
+                </span>
+              </p>
+            </div>
+
+            <p className="text-lg md:text-xl text-gray-600 mb-10 max-w-3xl mx-auto">
+              Get 10-20 studio-quality headshots for $29-59. No photographer needed.
+              AI-powered generation with multiple professional styles.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center mb-8">
               <Link
@@ -59,8 +97,8 @@ export default function HomePage() {
               <div className="w-12 h-12 bg-gradient-to-br from-secondary-400 to-secondary-600 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
                 <Sparkles className="w-6 h-6 text-white" />
               </div>
-              <h3 className="text-2xl font-bold text-gray-900 mb-2">8 Styles</h3>
-              <p className="text-gray-600">From LinkedIn to Creative - optimized for every platform.</p>
+              <h3 className="text-2xl font-bold text-gray-900 mb-2">9 Styles</h3>
+              <p className="text-gray-600">From LinkedIn to Visa Photos - optimized for every need.</p>
             </div>
           </div>
         </div>
