@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { User } from '@/types';
+import { User, HeadshotBatch } from '@/types';
 import { Button, Card, Badge } from '../components/ui';
 import { Plus, Image, Clock, Check, Eye, Download, Trash2, Calendar, AlertCircle } from 'lucide-react';
 import { useState, useEffect } from 'react';
@@ -9,21 +9,15 @@ interface DashboardPageProps {
   user: User;
 }
 
-interface Batch {
-  id: number;
+// Extend HeadshotBatch with optional UI fields
+interface DashboardBatch extends Omit<HeadshotBatch, 'status'> {
   name?: string;
-  status: 'pending' | 'processing' | 'completed' | 'failed';
-  createdAt: string;
-  completedAt?: string | null;
-  plan: string;
-  totalHeadshots?: number;
-  styleTemplates: string[];
-  generatedHeadshots?: Array<{ url: string; thumbnail: string }>;
   progress?: number;
+  status: 'pending' | 'processing' | 'completed' | 'failed';
 }
 
 export default function DashboardPage({ user }: DashboardPageProps) {
-  const [batches, setBatches] = useState<Batch[]>([]);
+  const [batches, setBatches] = useState<DashboardBatch[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
