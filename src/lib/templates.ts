@@ -256,8 +256,8 @@ export const STYLE_TEMPLATES: { [key: string]: StyleTemplate } = {
     pose: 'Dynamic confident stance, speaker positioning',
 
     platformSpecs: {
-      aspectRatio: '16:9',
-      dimensions: '1920x1080',
+      aspectRatio: '1:1',
+      dimensions: '1200x1200',
       optimizedFor: 'Conference websites and speaker promotion',
       fileFormat: 'JPG',
       colorProfile: 'sRGB',
@@ -269,11 +269,11 @@ export const STYLE_TEMPLATES: { [key: string]: StyleTemplate } = {
       - Attire: Presentation attire, speaker-appropriate professional wear
       - Lighting: Dynamic engaging lighting, spotlight-style illumination
       - Expression: Confident engaging smile, keynote speaker presence
-      - Framing: 16:9 landscape option or dynamic portrait
-      - Crop: Speaker promo optimized, stage-ready composition
+      - Framing: Square 1:1 format, high-resolution for versatility
+      - Crop: Speaker promo optimized, works across all conference materials
       - Style: Conference promotion photography, dynamic and engaging
       - Color: Vibrant professional colors, stage-appropriate
-      - Quality: Speaker portfolio standard, promotional-ready
+      - Quality: High-resolution (300dpi equivalent) for print and digital use
     `,
   },
 };
