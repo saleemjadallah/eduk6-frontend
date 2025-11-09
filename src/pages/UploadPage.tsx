@@ -8,6 +8,7 @@ import { batchApi } from '@/lib/api';
 // Popular platforms users typically need
 const AVAILABLE_PLATFORMS = [
   { id: 'linkedin', name: 'LinkedIn', description: 'Professional networking', icon: '💼' },
+  { id: 'visa', name: 'Visa & Passport', description: 'US, Schengen, UK, Canada', icon: '✈️', popular: true },
   { id: 'corporate', name: 'Corporate Website', description: 'Company team pages', icon: '🏢' },
   { id: 'social', name: 'Social Media', description: 'Instagram, Twitter, Facebook', icon: '📱' },
   { id: 'resume', name: 'Resume/CV', description: 'Traditional headshot', icon: '📄' },
@@ -414,14 +415,21 @@ export default function UploadPage({ user }: UploadPageProps) {
                             key={platform.id}
                             onClick={() => togglePlatform(platform.id)}
                             disabled={isDisabled}
-                            className={`p-3 rounded-lg border-2 text-left transition-all ${
+                            className={`p-3 rounded-lg border-2 text-left transition-all relative ${
                               isSelected
                                 ? 'border-primary-500 bg-primary-50'
                                 : isDisabled
                                 ? 'border-gray-200 bg-gray-50 opacity-50 cursor-not-allowed'
+                                : platform.popular
+                                ? 'border-secondary-300 bg-secondary-50 hover:border-secondary-400'
                                 : 'border-gray-200 hover:border-primary-300 hover:bg-gray-50'
                             }`}
                           >
+                            {platform.popular && !isSelected && (
+                              <Badge variant="popular" size="sm" className="absolute top-1 right-1">
+                                Popular
+                              </Badge>
+                            )}
                             <div className="flex items-start gap-2">
                               <span className="text-lg">{platform.icon}</span>
                               <div className="flex-1 min-w-0">
