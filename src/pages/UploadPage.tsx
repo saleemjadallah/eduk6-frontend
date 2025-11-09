@@ -4,7 +4,6 @@ import { User } from '@/types';
 import { Button, Card, Badge } from '../components/ui';
 import { Upload, X, Check, AlertCircle, Image as ImageIcon, Sparkles, Zap, Crown } from 'lucide-react';
 import { batchApi } from '@/lib/api';
-import { STYLE_TEMPLATES } from '@/lib/templates';
 
 // Popular platforms users typically need
 const AVAILABLE_PLATFORMS = [
