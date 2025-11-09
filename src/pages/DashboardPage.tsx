@@ -1,64 +1,58 @@
 import { Link } from 'react-router-dom';
 import { User } from '@/types';
 import { Button, Card, Badge } from '../components/ui';
-import { Plus, Image, Clock, Check, Eye, Download, Trash2, Calendar } from 'lucide-react';
+import { Plus, Image, Clock, Check, Eye, Download, Trash2, Calendar, AlertCircle } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { batchApi } from '@/lib/api';
 
 interface DashboardPageProps {
   user: User;
 }
 
-// Mock batch data
-const mockBatches = [
-  {
-    id: 1,
-    name: 'Professional Headshots - January 2025',
-    status: 'completed' as const,
-    createdAt: '2025-01-15T10:30:00Z',
-    completedAt: '2025-01-15T12:45:00Z',
-    plan: 'Professional',
-    totalHeadshots: 100,
-    templates: 5,
-    thumbnails: [
-      'https://picsum.photos/seed/b1-1/200/200',
-      'https://picsum.photos/seed/b1-2/200/200',
-      'https://picsum.photos/seed/b1-3/200/200',
-      'https://picsum.photos/seed/b1-4/200/200',
-    ],
-  },
-  {
-    id: 2,
-    name: 'LinkedIn Profile Update',
-    status: 'processing' as const,
-    createdAt: '2025-01-16T14:20:00Z',
-    completedAt: null,
-    plan: 'Starter',
-    totalHeadshots: 40,
-    templates: 2,
-    progress: 45,
-    thumbnails: [],
-  },
-  {
-    id: 3,
-    name: 'Executive Portraits - Q4',
-    status: 'completed' as const,
-    createdAt: '2024-12-10T09:15:00Z',
-    completedAt: '2024-12-10T11:30:00Z',
-    plan: 'Premium',
-    totalHeadshots: 200,
-    templates: 8,
-    thumbnails: [
-      'https://picsum.photos/seed/b3-1/200/200',
-      'https://picsum.photos/seed/b3-2/200/200',
-      'https://picsum.photos/seed/b3-3/200/200',
-      'https://picsum.photos/seed/b3-4/200/200',
-    ],
-  },
-];
+interface Batch {
+  id: number;
+  name?: string;
+  status: 'pending' | 'processing' | 'completed' | 'failed';
+  createdAt: string;
+  completedAt?: string | null;
+  plan: string;
+  totalHeadshots?: number;
+  styleTemplates: string[];
+  generatedHeadshots?: Array<{ url: string; thumbnail: string }>;
+  progress?: number;
+}
 
 export default function DashboardPage({ user }: DashboardPageProps) {
-  const completedBatches = mockBatches.filter(b => b.status === 'completed');
-  const processingBatches = mockBatches.filter(b => b.status === 'processing');
-  const totalHeadshots = completedBatches.reduce((sum, b) => sum + b.totalHeadshots, 0);
+  const [batches, setBatches] = useState<Batch[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetchBatches();
+  }, []);
+
+  const fetchBatches = async () => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      const response = await batchApi.getBatches();
+
+      if (response.success && response.data) {
+        setBatches(response.data);
+      } else {
+        setError(response.error || 'Failed to fetch batches');
+      }
+    } catch (err) {
+      console.error('Error fetching batches:', err);
+      setError('Failed to load your batches');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const completedBatches = batches.filter(b => b.status === 'completed');
+  const processingBatches = batches.filter(b => b.status === 'processing' || b.status === 'pending');
+  const totalHeadshots = completedBatches.reduce((sum, b) => sum + (b.generatedHeadshots?.length || 0), 0);
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white py-12">
@@ -82,8 +76,36 @@ export default function DashboardPage({ user }: DashboardPageProps) {
             </Button>
           </div>
 
-          {/* Stats Overview */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-12">
+          {/* Error State */}
+          {error && (
+            <Card variant="default" className="p-6 mb-8 bg-red-50 border-red-200">
+              <div className="flex items-start gap-4">
+                <div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center flex-shrink-0">
+                  <AlertCircle className="w-5 h-5 text-red-600" />
+                </div>
+                <div className="flex-1">
+                  <h3 className="text-lg font-semibold text-red-900 mb-1">Error Loading Batches</h3>
+                  <p className="text-red-700 mb-4">{error}</p>
+                  <Button variant="primary" size="sm" onClick={fetchBatches}>
+                    Try Again
+                  </Button>
+                </div>
+              </div>
+            </Card>
+          )}
+
+          {/* Loading State */}
+          {isLoading ? (
+            <div className="flex items-center justify-center py-20">
+              <div className="text-center">
+                <div className="w-16 h-16 border-4 border-primary-200 border-t-primary-600 rounded-full animate-spin mx-auto mb-4"></div>
+                <p className="text-gray-600">Loading your batches...</p>
+              </div>
+            </div>
+          ) : (
+            <>
+              {/* Stats Overview */}
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-12">
             <Card variant="default" className="p-6">
               <div className="flex items-start justify-between mb-4">
                 <div className="w-12 h-12 bg-gradient-to-br from-primary-400 to-primary-600 rounded-xl flex items-center justify-center">
@@ -153,7 +175,7 @@ export default function DashboardPage({ user }: DashboardPageProps) {
                         <div className="flex items-start justify-between gap-4 mb-3">
                           <div>
                             <h3 className="text-xl font-bold text-gray-900 mb-1">
-                              {batch.name}
+                              {batch.name || `Batch #${batch.id}`}
                             </h3>
                             <div className="flex items-center gap-3 text-sm text-gray-600">
                               <span className="flex items-center gap-1">
@@ -161,12 +183,12 @@ export default function DashboardPage({ user }: DashboardPageProps) {
                                 {new Date(batch.createdAt).toLocaleDateString()}
                               </span>
                               <span>•</span>
-                              <span>{batch.plan} Plan</span>
+                              <span className="capitalize">{batch.plan} Plan</span>
                               <span>•</span>
-                              <span>{batch.totalHeadshots} headshots</span>
+                              <span>{batch.styleTemplates.length} platform{batch.styleTemplates.length !== 1 ? 's' : ''}</span>
                             </div>
                           </div>
-                          <Badge variant="processing">Processing</Badge>
+                          <Badge variant="processing">{batch.status === 'pending' ? 'Pending' : 'Processing'}</Badge>
                         </div>
 
                         {/* Progress Bar */}
@@ -225,42 +247,58 @@ export default function DashboardPage({ user }: DashboardPageProps) {
               </Card>
             ) : (
               <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {completedBatches.map((batch) => (
-                  <Card key={batch.id} variant="default" className="overflow-hidden group">
-                    {/* Thumbnail Grid */}
-                    <div className="grid grid-cols-2 gap-1 aspect-square bg-gray-100">
-                      {batch.thumbnails.map((thumb, idx) => (
-                        <div key={idx} className="relative overflow-hidden bg-gray-200">
-                          <img
-                            src={thumb}
-                            alt={`Thumbnail ${idx + 1}`}
-                            className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
-                          />
-                        </div>
-                      ))}
-                    </div>
+                {completedBatches.map((batch) => {
+                  const thumbnails = batch.generatedHeadshots?.slice(0, 4).map(h => h.thumbnail) || [];
+                  const headshotCount = batch.generatedHeadshots?.length || 0;
 
-                    {/* Content */}
-                    <div className="p-5">
-                      <div className="flex items-start justify-between gap-2 mb-3">
-                        <h3 className="font-bold text-gray-900 leading-tight line-clamp-2">
-                          {batch.name}
-                        </h3>
-                        <Badge variant="success" size="sm">
-                          <Check className="w-3 h-3" />
-                        </Badge>
+                  return (
+                    <Card key={batch.id} variant="default" className="overflow-hidden group">
+                      {/* Thumbnail Grid */}
+                      <div className="grid grid-cols-2 gap-1 aspect-square bg-gray-100">
+                        {thumbnails.length > 0 ? (
+                          thumbnails.map((thumb, idx) => (
+                            <div key={idx} className="relative overflow-hidden bg-gray-200">
+                              <img
+                                src={thumb}
+                                alt={`Thumbnail ${idx + 1}`}
+                                className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
+                                onError={(e) => {
+                                  e.currentTarget.src = 'https://via.placeholder.com/200x200?text=Headshot';
+                                }}
+                              />
+                            </div>
+                          ))
+                        ) : (
+                          // Placeholder if no thumbnails
+                          Array.from({ length: 4 }).map((_, idx) => (
+                            <div key={idx} className="relative overflow-hidden bg-gray-200 flex items-center justify-center">
+                              <Image className="w-8 h-8 text-gray-400" />
+                            </div>
+                          ))
+                        )}
                       </div>
 
-                      <div className="space-y-2 mb-4 text-sm text-gray-600">
-                        <div className="flex items-center gap-2">
-                          <Image className="w-4 h-4" />
-                          <span>{batch.totalHeadshots} headshots</span>
+                      {/* Content */}
+                      <div className="p-5">
+                        <div className="flex items-start justify-between gap-2 mb-3">
+                          <h3 className="font-bold text-gray-900 leading-tight line-clamp-2">
+                            {batch.name || `Batch #${batch.id}`}
+                          </h3>
+                          <Badge variant="success" size="sm">
+                            <Check className="w-3 h-3" />
+                          </Badge>
                         </div>
-                        <div className="flex items-center gap-2">
-                          <Calendar className="w-4 h-4" />
-                          <span>{new Date(batch.createdAt).toLocaleDateString()}</span>
+
+                        <div className="space-y-2 mb-4 text-sm text-gray-600">
+                          <div className="flex items-center gap-2">
+                            <Image className="w-4 h-4" />
+                            <span>{headshotCount} headshot{headshotCount !== 1 ? 's' : ''}</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Calendar className="w-4 h-4" />
+                            <span>{new Date(batch.createdAt).toLocaleDateString()}</span>
+                          </div>
                         </div>
-                      </div>
 
                       <div className="flex items-center gap-2">
                         <Button variant="primary" size="sm" className="flex-1" asChild>
@@ -286,12 +324,16 @@ export default function DashboardPage({ user }: DashboardPageProps) {
                       </div>
                     </div>
                   </Card>
-                ))}
+                  );
+                })}
               </div>
             )}
           </div>
+            </>
+          )}
 
           {/* Quick Actions */}
+          {!isLoading && (
           <div className="mt-12 p-8 bg-gradient-to-r from-primary-50 to-secondary-50 border border-primary-200 rounded-xl">
             <div className="flex flex-col md:flex-row items-center justify-between gap-6">
               <div>
@@ -299,7 +341,7 @@ export default function DashboardPage({ user }: DashboardPageProps) {
                   Need more professional headshots?
                 </h3>
                 <p className="text-gray-600">
-                  Create a new batch and get 40-200 AI-generated headshots in just 1-3 hours
+                  Create a new batch and get 10-20 AI-generated headshots in just 1-3 hours
                 </p>
               </div>
               <Button variant="primary" size="lg" asChild className="flex-shrink-0">
@@ -310,6 +352,7 @@ export default function DashboardPage({ user }: DashboardPageProps) {
               </Button>
             </div>
           </div>
+          )}
         </div>
       </div>
     </div>
