@@ -53,4 +53,49 @@ googleProvider.setCustomParameters({
 // Optional: Add additional scopes if needed
 // googleProvider.addScope('https://www.googleapis.com/auth/userinfo.profile');
 
+/**
+ * Sign in with Google using popup
+ * Returns the Firebase ID token for backend authentication
+ */
+export async function signInWithGoogle(): Promise<string> {
+  const { signInWithPopup } = await import('firebase/auth');
+
+  try {
+    const result = await signInWithPopup(auth, googleProvider);
+    const idToken = await result.user.getIdToken();
+
+    console.log('[Firebase] Google sign-in successful:', result.user.email);
+
+    return idToken;
+  } catch (error: any) {
+    console.error('[Firebase] Google sign-in error:', error);
+
+    // Handle specific error codes
+    if (error.code === 'auth/popup-closed-by-user') {
+      throw new Error('Sign-in popup was closed. Please try again.');
+    } else if (error.code === 'auth/popup-blocked') {
+      throw new Error('Sign-in popup was blocked by your browser. Please allow popups for this site.');
+    } else if (error.code === 'auth/cancelled-popup-request') {
+      throw new Error('Another sign-in popup is already open.');
+    } else if (error.code === 'auth/account-exists-with-different-credential') {
+      throw new Error('An account already exists with the same email address but different sign-in credentials.');
+    }
+
+    throw new Error(error.message || 'Failed to sign in with Google');
+  }
+}
+
+/**
+ * Sign out from Firebase
+ */
+export async function signOutFromFirebase(): Promise<void> {
+  try {
+    await auth.signOut();
+    console.log('[Firebase] Sign-out successful');
+  } catch (error) {
+    console.error('[Firebase] Sign-out error:', error);
+    throw new Error('Failed to sign out from Firebase');
+  }
+}
+
 export default app;
