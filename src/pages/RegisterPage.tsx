@@ -1,15 +1,18 @@
 import { useState, FormEvent } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { User } from '@/types';
 import { Button, Input, Card } from '../components/ui';
 import { ArrowRight, Check } from 'lucide-react';
+import { authApi } from '@/lib/api';
 
 interface RegisterPageProps {
   onRegister: (user: User) => void;
 }
 
-export default function RegisterPage({ onRegister }: RegisterPageProps) {
-  const [name, setName] = useState('');
+export default function RegisterPage({ onRegister: _onRegister }: RegisterPageProps) {
+  const navigate = useNavigate();
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -34,20 +37,21 @@ export default function RegisterPage({ onRegister }: RegisterPageProps) {
     setIsLoading(true);
 
     try {
-      // TODO: Implement actual registration logic
-      await new Promise(resolve => setTimeout(resolve, 1000));
-
-      // Mock user for now
-      onRegister({
-        id: '1',
+      // Call real registration API
+      const response = await authApi.register({
         email,
-        name,
-        uploads_used: 0,
-        batches_created: 0,
-        createdAt: new Date(),
+        password,
+        firstName,
+        lastName,
       });
-    } catch (err) {
-      setError('Registration failed. Please try again.');
+
+      console.log('[Register] Success:', response);
+
+      // Redirect to verification page with email
+      navigate(`/verify-email?email=${encodeURIComponent(email)}`);
+    } catch (err: any) {
+      console.error('[Register] Error:', err);
+      setError(err.response?.data?.error || 'Registration failed. Please try again.');
     } finally {
       setIsLoading(false);
     }
@@ -72,15 +76,27 @@ export default function RegisterPage({ onRegister }: RegisterPageProps) {
               </div>
             )}
 
-            {/* Name Input */}
+            {/* First Name Input */}
             <div>
               <Input
                 type="text"
-                label="Full Name"
-                placeholder="John Doe"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
+                label="First Name"
+                placeholder="John"
+                value={firstName}
+                onChange={(e) => setFirstName(e.target.value)}
                 required
+                error={!!error}
+              />
+            </div>
+
+            {/* Last Name Input */}
+            <div>
+              <Input
+                type="text"
+                label="Last Name (Optional)"
+                placeholder="Doe"
+                value={lastName}
+                onChange={(e) => setLastName(e.target.value)}
                 error={!!error}
               />
             </div>

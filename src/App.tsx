@@ -8,6 +8,7 @@ import HomePage from './pages/HomePage';
 import PricingPage from './pages/PricingPage';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
+import VerifyEmailPage from './pages/VerifyEmailPage';
 import DashboardPage from './pages/DashboardPage';
 import UploadPage from './pages/UploadPage';
 import ProcessingPage from './pages/ProcessingPage';
@@ -63,6 +64,10 @@ function App() {
           element={
             user ? <Navigate to="/dashboard" /> : <Layout user={user}><RegisterPage onRegister={setUser} /></Layout>
           }
+        />
+        <Route
+          path="/verify-email"
+          element={<VerifyEmailPage />}
         />
 
         {/* Protected routes */}
