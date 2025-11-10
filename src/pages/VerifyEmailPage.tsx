@@ -1,8 +1,13 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { authApi } from '../lib/api';
+import { User } from '@/types';
 
-export default function VerifyEmailPage() {
+interface VerifyEmailPageProps {
+  onVerifySuccess?: (user: User) => void;
+}
+
+export default function VerifyEmailPage({ onVerifySuccess }: VerifyEmailPageProps) {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
 
@@ -90,6 +95,11 @@ export default function VerifyEmailPage() {
       console.log('[VerifyEmail] Verification successful:', user);
 
       setSuccess(true);
+
+      // Update parent component's user state
+      if (onVerifySuccess) {
+        onVerifySuccess(user);
+      }
 
       // Redirect to dashboard after 1 second
       setTimeout(() => {

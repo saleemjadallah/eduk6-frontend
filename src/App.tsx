@@ -67,7 +67,7 @@ function App() {
         />
         <Route
           path="/verify-email"
-          element={<VerifyEmailPage />}
+          element={<VerifyEmailPage onVerifySuccess={setUser} />}
         />
 
         {/* Protected routes */}
