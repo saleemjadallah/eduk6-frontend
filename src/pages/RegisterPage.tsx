@@ -46,6 +46,7 @@ export default function RegisterPage({ onRegister: _onRegister }: RegisterPagePr
       });
 
       console.log('[Register] Success:', response);
+      console.log('[Register] Redirecting to verify-email with:', email);
 
       // Redirect to verification page with email
       navigate(`/verify-email?email=${encodeURIComponent(email)}`);

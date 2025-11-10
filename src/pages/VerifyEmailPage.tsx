@@ -22,9 +22,12 @@ export default function VerifyEmailPage({ onVerifySuccess }: VerifyEmailPageProp
   useEffect(() => {
     // Redirect if no email provided
     if (!email) {
+      console.log('[VerifyEmail] No email in URL, redirecting to register');
       navigate('/register');
+      return;
     }
 
+    console.log('[VerifyEmail] Ready to verify email:', email);
     // Focus first input on mount
     inputRefs.current[0]?.focus();
   }, [email, navigate]);
