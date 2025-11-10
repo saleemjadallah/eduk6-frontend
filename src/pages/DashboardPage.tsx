@@ -60,7 +60,7 @@ export default function DashboardPage({ user }: DashboardPageProps) {
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-12">
             <div>
               <h1 className="text-4xl font-bold text-gray-900 mb-2">
-                Welcome back, {user.firstName}!
+                Welcome back, {user.name}!
               </h1>
               <p className="text-lg text-gray-600">
                 Manage your AI headshot batches and downloads
