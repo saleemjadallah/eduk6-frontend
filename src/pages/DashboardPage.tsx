@@ -33,23 +33,16 @@ export default function DashboardPage({ user }: DashboardPageProps) {
 
       if (response.success && response.data) {
         setBatches(response.data);
-      } else if (response.success && !response.data) {
-        // No batches yet, that's okay for new users
-        setBatches([]);
       } else {
-        // Only show error for actual failures, not empty results
-        setError(null);
+        // No batches yet, that's okay for new users
         setBatches([]);
       }
     } catch (err: any) {
-      console.error('Error fetching batches:', err);
-      // Don't show error for 401 after registration - it's a session issue
-      if (err.response?.status === 401) {
-        // Try to reload the page to refresh the session
-        window.location.reload();
-      } else {
-        setError('Unable to load batches at this time');
-      }
+      // Silently handle errors for new users without batches
+      // The UI will show the "No batches yet" state
+      console.log('No batches found for user');
+      setBatches([]);
+      setError(null);
     } finally {
       setIsLoading(false);
     }
@@ -234,21 +227,31 @@ export default function DashboardPage({ user }: DashboardPageProps) {
               </div>
             </div>
 
-            {completedBatches.length === 0 ? (
+            {batches.length === 0 ? (
               <Card variant="default" className="p-12 text-center">
                 <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
                   <Image className="w-8 h-8 text-gray-400" />
                 </div>
-                <h3 className="text-xl font-bold text-gray-900 mb-2">No batches yet</h3>
+                <h3 className="text-xl font-bold text-gray-900 mb-2">No headshots yet</h3>
                 <p className="text-gray-600 mb-6">
-                  Create your first batch to get started with AI headshots
+                  Upload your photos to create your first batch of AI-generated professional headshots
                 </p>
                 <Button variant="primary" size="lg" asChild>
                   <Link to="/upload">
                     <Plus className="w-5 h-5" />
-                    Create Your First Batch
+                    Upload Photos
                   </Link>
                 </Button>
+              </Card>
+            ) : completedBatches.length === 0 ? (
+              <Card variant="default" className="p-12 text-center">
+                <div className="w-16 h-16 bg-amber-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Clock className="w-8 h-8 text-amber-600" />
+                </div>
+                <h3 className="text-xl font-bold text-gray-900 mb-2">No completed headshots yet</h3>
+                <p className="text-gray-600 mb-6">
+                  Your batches are currently being processed. Check back soon!
+                </p>
               </Card>
             ) : (
               <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
