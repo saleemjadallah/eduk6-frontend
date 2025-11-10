@@ -1,5 +1,5 @@
 import { useState, FormEvent } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { User } from '@/types';
 import { Button, Input, Card } from '../components/ui';
 import { ArrowRight, Check } from 'lucide-react';
@@ -16,14 +16,21 @@ export default function RegisterPage({ onRegister: _onRegister }: RegisterPagePr
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [termsAccepted, setTermsAccepted] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
+    console.log('[Register] Form submitted');
     setError('');
 
     // Validation
+    if (!termsAccepted) {
+      setError('Please accept the Terms of Service and Privacy Policy');
+      return;
+    }
+
     if (password !== confirmPassword) {
       setError('Passwords do not match');
       return;
@@ -147,18 +154,27 @@ export default function RegisterPage({ onRegister: _onRegister }: RegisterPagePr
               <input
                 type="checkbox"
                 id="terms"
-                required
+                checked={termsAccepted}
+                onChange={(e) => setTermsAccepted(e.target.checked)}
                 className="mt-1 w-4 h-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500"
               />
               <label htmlFor="terms" className="text-sm text-gray-600">
                 I agree to the{' '}
-                <Link to="/terms" className="text-primary-600 hover:text-primary-700 font-medium">
+                <a
+                  href="#"
+                  onClick={(e) => e.preventDefault()}
+                  className="text-primary-600 hover:text-primary-700 font-medium"
+                >
                   Terms of Service
-                </Link>{' '}
+                </a>{' '}
                 and{' '}
-                <Link to="/privacy" className="text-primary-600 hover:text-primary-700 font-medium">
+                <a
+                  href="#"
+                  onClick={(e) => e.preventDefault()}
+                  className="text-primary-600 hover:text-primary-700 font-medium"
+                >
                   Privacy Policy
-                </Link>
+                </a>
               </label>
             </div>
 
@@ -219,12 +235,12 @@ export default function RegisterPage({ onRegister: _onRegister }: RegisterPagePr
         <div className="mt-6 text-center">
           <p className="text-gray-600">
             Already have an account?{' '}
-            <Link
-              to="/login"
+            <a
+              href="/login"
               className="font-semibold text-primary-600 hover:text-primary-700 transition-colors"
             >
               Sign in
-            </Link>
+            </a>
           </p>
         </div>
 
