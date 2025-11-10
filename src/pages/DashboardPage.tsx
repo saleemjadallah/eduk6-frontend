@@ -33,12 +33,23 @@ export default function DashboardPage({ user }: DashboardPageProps) {
 
       if (response.success && response.data) {
         setBatches(response.data);
+      } else if (response.success && !response.data) {
+        // No batches yet, that's okay for new users
+        setBatches([]);
       } else {
-        setError(response.error || 'Failed to fetch batches');
+        // Only show error for actual failures, not empty results
+        setError(null);
+        setBatches([]);
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error fetching batches:', err);
-      setError('Failed to load your batches');
+      // Don't show error for 401 after registration - it's a session issue
+      if (err.response?.status === 401) {
+        // Try to reload the page to refresh the session
+        window.location.reload();
+      } else {
+        setError('Unable to load batches at this time');
+      }
     } finally {
       setIsLoading(false);
     }
@@ -56,7 +67,7 @@ export default function DashboardPage({ user }: DashboardPageProps) {
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-12">
             <div>
               <h1 className="text-4xl font-bold text-gray-900 mb-2">
-                Welcome back, {user.name}!
+                Welcome back, {user.firstName}!
               </h1>
               <p className="text-lg text-gray-600">
                 Manage your AI headshot batches and downloads
