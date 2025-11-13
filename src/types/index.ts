@@ -2,11 +2,19 @@
 export interface User {
   id: string;
   email: string;
+  firstName: string;
+  lastName?: string | null;
+  /**
+   * Convenience display name synthesized from first/last name when not provided by the API.
+   */
   name: string;
   uploads_used: number;
   batches_created: number;
   totalHeadshots?: number;
-  createdAt: Date;
+  profileImageUrl?: string | null;
+  isFreeUser?: boolean;
+  createdAt: string;
+  updatedAt?: string;
 }
 
 // Platform specifications for each template

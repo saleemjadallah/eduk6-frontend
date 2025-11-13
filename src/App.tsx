@@ -1,6 +1,7 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import { authApi } from './lib/api';
+import { normalizeUser } from './lib/user';
 import type { User } from './types';
 
 // Pages
@@ -27,7 +28,7 @@ function App() {
     try {
       const currentUser = await authApi.me();
       if (currentUser) {
-        setUser(currentUser);
+        setUser(normalizeUser(currentUser));
       } else {
         setUser(null);
       }
