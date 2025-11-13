@@ -10,7 +10,7 @@ export const HEADSHOT_PLANS: { [key: string]: PlanConfig } = {
     outfits: 2,
     editCredits: 2,
     turnaroundHours: 3,
-    stripePriceId: 'price_basic_xxx', // Replace with actual Stripe price ID
+    stripePriceId: 'price_1SSshHFWxz5KcBumXJYDPGKR',
     features: [
       '10 professional headshots',
       '2 unique backgrounds',
@@ -30,7 +30,7 @@ export const HEADSHOT_PLANS: { [key: string]: PlanConfig } = {
     outfits: 3,
     editCredits: 5,
     turnaroundHours: 2,
-    stripePriceId: 'price_pro_xxx',
+    stripePriceId: 'price_1SSshnFWxz5KcBum7txi7fbR',
     popular: true, // Show "Most Popular" badge
     features: [
       '15 professional headshots',
@@ -52,7 +52,7 @@ export const HEADSHOT_PLANS: { [key: string]: PlanConfig } = {
     outfits: 5,
     editCredits: 10,
     turnaroundHours: 1,
-    stripePriceId: 'price_exec_xxx',
+    stripePriceId: 'price_1SSsiUFWxz5KcBumOYWig3AR',
     features: [
       '20 professional headshots',
       '5 unique backgrounds',
