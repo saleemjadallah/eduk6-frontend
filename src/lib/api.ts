@@ -72,14 +72,14 @@ export const authApi = {
 
 // Batch API
 export const batchApi = {
-  // Upload photos to R2
+  // Upload photos to R2 - Using direct upload endpoint
   uploadPhotos: async (files: File[], onProgress?: (progress: number) => void): Promise<ApiResponse<string[]>> => {
     const formData = new FormData();
     files.forEach((file) => {
       formData.append('photos', file);
     });
 
-    const response = await api.post('/batches/upload', formData, {
+    const response = await api.post('/upload', formData, {
       headers: {
         'Content-Type': 'multipart/form-data',
       },
