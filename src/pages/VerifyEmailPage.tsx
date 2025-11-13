@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { authApi } from '../lib/api';
 import { User } from '@/types';
+import { normalizeUser } from '@/lib/user';
 
 interface VerifyEmailPageProps {
   onVerifySuccess?: (user: User) => void;
@@ -96,12 +97,13 @@ export default function VerifyEmailPage({ onVerifySuccess }: VerifyEmailPageProp
     try {
       const user = await authApi.verifyRegistration(email, codeString);
       console.log('[VerifyEmail] Verification successful:', user);
+      const normalizedUser = normalizeUser(user);
 
       setSuccess(true);
 
       // Update parent component's user state
       if (onVerifySuccess) {
-        onVerifySuccess(user);
+        onVerifySuccess(normalizedUser);
       }
 
       // Redirect to dashboard after 1 second
