@@ -21,7 +21,7 @@
     "axios": "^1.6.7",
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.0",
-    "firebase": "^10.8.0",
+    "firebase": "^10.14.1",
     "lucide-react": "^0.344.0",
     "react": "^19.0.0",
     "react-compare-slider": "^3.0.1",

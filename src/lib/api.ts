@@ -1,11 +1,13 @@
 import axios, { AxiosInstance } from 'axios';
 import type { User, HeadshotBatch, ApiResponse } from '@/types';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+const RAW_API_URL = (import.meta.env.VITE_API_URL || 'http://localhost:3000').trim();
+const NORMALIZED_API_URL = RAW_API_URL.replace(/\/+$/, '');
+const API_BASE_URL = NORMALIZED_API_URL.endsWith('/api') ? NORMALIZED_API_URL : `${NORMALIZED_API_URL}/api`;
 
 // Create axios instance
 const api: AxiosInstance = axios.create({
-  baseURL: `${API_URL}/api`,
+  baseURL: API_BASE_URL,
   withCredentials: true,
   headers: {
     'Content-Type': 'application/json',
