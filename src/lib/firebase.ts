@@ -5,15 +5,15 @@ import { getStorage } from 'firebase/storage';
 import { getAnalytics } from 'firebase/analytics';
 
 // Firebase configuration from environment variables
-// New Firebase project: headshots-9f6d7
+// Project: headshots-9f6d7 (credentials stored in .env file)
 const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || "AIzaSyD2fhurnntHZVNXoirkShm1_mjDqQSSJbg",
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || "headshots-9f6d7.firebaseapp.com",
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || "headshots-9f6d7",
-  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || "headshots-9f6d7.firebasestorage.app",
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || "690695804752",
-  appId: import.meta.env.VITE_FIREBASE_APP_ID || "1:690695804752:web:9464a9bde83091dae77e55",
-  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID || "G-9W9F1H8F6Y",
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+  appId: import.meta.env.VITE_FIREBASE_APP_ID,
+  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID,
 };
 
 // Validate configuration
