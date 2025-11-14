@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import type { HeadshotBatch, GeneratedHeadshot } from '@/types';
 import { Button, Card, Badge } from '../components/ui';
-import { Download, Grid3x3, LayoutList, Star, Heart, Check, Filter, Search, X } from 'lucide-react';
+import { Download, Grid3x3, LayoutList, Star, Heart, Check, Filter, Search, X, Sparkles } from 'lucide-react';
 import { batchApi } from '@/lib/api';
 
 interface TemplateOption {
@@ -33,6 +33,7 @@ const formatTemplateName = (value: string) =>
 
 export default function BatchViewPage() {
   const { batchId } = useParams<{ batchId: string }>();
+  const navigate = useNavigate();
   const numericBatchId = batchId ? Number(batchId) : NaN;
   const [batch, setBatch] = useState<HeadshotBatch | null>(null);
   const [loading, setLoading] = useState(true);
@@ -450,6 +451,16 @@ export default function BatchViewPage() {
                               )}
                             </div>
                             <div className="flex items-center gap-2">
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  navigate(`/edit-studio/${batchId}?headshot=${encodeURIComponent(headshot.url)}`);
+                                }}
+                                className="w-8 h-8 bg-purple-600 text-white rounded-full flex items-center justify-center hover:bg-purple-700 transition-colors"
+                                title="Change Outfit"
+                              >
+                                <Sparkles className="w-4 h-4" />
+                              </button>
                               <button
                                 onClick={(e) => {
                                   e.stopPropagation();

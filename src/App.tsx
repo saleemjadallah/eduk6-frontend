@@ -14,6 +14,7 @@ import DashboardPage from './pages/DashboardPage';
 import UploadPage from './pages/UploadPage';
 import ProcessingPage from './pages/ProcessingPage';
 import BatchViewPage from './pages/BatchViewPage';
+import EditStudioPage from './pages/EditStudioPage';
 import Layout from './components/Layout';
 
 function App() {
@@ -94,6 +95,12 @@ function App() {
           path="/batches/:batchId"
           element={
             user ? <Layout user={user}><BatchViewPage /></Layout> : <Navigate to="/login" />
+          }
+        />
+        <Route
+          path="/edit-studio/:batchId"
+          element={
+            user ? <Layout user={user}><EditStudioPage /></Layout> : <Navigate to="/login" />
           }
         />
 

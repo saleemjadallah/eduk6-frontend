@@ -1,5 +1,6 @@
 import axios, { AxiosInstance } from 'axios';
-import type { User, HeadshotBatch, ApiResponse } from '@/types';
+import type { User, HeadshotBatch, ApiResponse, EditRequest } from '@/types';
+import type { ProfessionalOutfit, OutfitFilter, WardrobeApiResponse } from '@/types/wardrobe.types';
 
 const RAW_API_URL = (import.meta.env.VITE_API_URL || 'http://localhost:3000').trim();
 const NORMALIZED_API_URL = RAW_API_URL.replace(/\/+$/, '');
@@ -131,22 +132,30 @@ export const batchApi = {
     return response.data;
   },
 
-  // Request edit on specific headshot
-  requestEdit: async (
+  // Request outfit change edit (costs 2 credits)
+  requestOutfitChange: async (
     batchId: number,
     headshotId: string,
-    editType: string
-  ): Promise<ApiResponse<any>> => {
+    outfitId: string,
+    colorVariant?: string
+  ): Promise<ApiResponse<{ editRequest: EditRequest; creditsRemaining: number }>> => {
     const response = await api.post(`/batches/${batchId}/edit`, {
       headshotId,
-      editType,
+      outfitId,
+      colorVariant,
     });
     return response.data;
   },
 
   // Get edit history
-  getEdits: async (batchId: number): Promise<ApiResponse<any[]>> => {
+  getEdits: async (batchId: number): Promise<ApiResponse<EditRequest[]>> => {
     const response = await api.get(`/batches/${batchId}/edits`);
+    return response.data;
+  },
+
+  // Get single edit request
+  getEdit: async (batchId: number, editId: number): Promise<ApiResponse<EditRequest>> => {
+    const response = await api.get(`/batches/${batchId}/edits/${editId}`);
     return response.data;
   },
 
@@ -183,6 +192,50 @@ export const checkoutApi = {
   // Verify payment success
   verifySession: async (sessionId: string): Promise<ApiResponse<{ paid: boolean; batchId?: number }>> => {
     const response = await api.get(`/checkout/verify/${sessionId}`);
+    return response.data;
+  },
+};
+
+// Wardrobe API
+export const wardrobeApi = {
+  // Get available professional outfits
+  getWardrobe: async (filters?: OutfitFilter): Promise<ApiResponse<WardrobeApiResponse>> => {
+    const params = new URLSearchParams();
+    if (filters?.category) params.append('category', filters.category);
+    if (filters?.gender) params.append('gender', filters.gender);
+    if (filters?.minFormality) params.append('minFormality', filters.minFormality.toString());
+    if (filters?.premiumOnly) params.append('premiumOnly', 'true');
+
+    const response = await api.get(`/batches/wardrobe?${params.toString()}`);
+    return response.data;
+  },
+
+  // Get single outfit by ID
+  getOutfit: async (outfitId: string): Promise<ApiResponse<ProfessionalOutfit>> => {
+    const response = await api.get(`/batches/wardrobe/${outfitId}`);
+    return response.data;
+  },
+
+  // Get preview of outfit on headshot (non-destructive, no credits consumed)
+  getOutfitPreview: async (
+    headshotUrl: string,
+    outfitId: string,
+    options?: {
+      templateId?: string;
+      colorVariant?: string;
+    }
+  ): Promise<ApiResponse<{ preview: string; outfit: ProfessionalOutfit }>> => {
+    const response = await api.post('/batches/wardrobe/preview', {
+      headshotUrl,
+      outfitId,
+      ...options,
+    });
+    return response.data;
+  },
+
+  // Get user's edit credits
+  getEditCredits: async (): Promise<ApiResponse<{ remaining: number; total: number }>> => {
+    const response = await api.get('/batches/edit-credits');
     return response.data;
   },
 };
