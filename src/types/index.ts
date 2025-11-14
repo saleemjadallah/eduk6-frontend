@@ -105,6 +105,10 @@ export interface PlanConfig {
   stripePriceId: string;
   popular?: boolean;
   features: string[];
+  // Virtual wardrobe features
+  canChangeOutfits: boolean;
+  virtualOutfits: number;
+  premiumOutfits: number;
 }
 
 // Edit request
@@ -112,12 +116,20 @@ export interface EditRequest {
   id: number;
   batchId: number;
   userId: string;
-  headshotId: string;
+  headshotId: string; // URL of original headshot
   editType: 'background_change' | 'outfit_change' | 'regenerate';
-  status: 'pending' | 'completed' | 'failed';
+  status: 'pending' | 'processing' | 'completed' | 'failed';
+  // Outfit change details
+  outfitId?: string;
+  colorVariant?: string;
+  costInCredits: number;
+  // Results
   resultUrl?: string;
+  thumbnailUrl?: string;
+  errorMessage?: string;
   createdAt: Date;
   completedAt?: Date;
+  processingTimeSeconds?: number;
 }
 
 // API response types
