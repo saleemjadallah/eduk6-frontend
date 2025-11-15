@@ -17,6 +17,158 @@ export interface User {
   updatedAt?: string;
 }
 
+// ============================================================================
+// VISADOCS TYPES
+// ============================================================================
+
+// Uploaded document metadata
+export interface UploadedDocument {
+  type: string; // passport, photo, bank_statement, etc.
+  originalName: string;
+  r2Url: string;
+  uploadedAt: Date;
+  status: 'pending' | 'validated' | 'rejected';
+  validationErrors?: string[];
+}
+
+// Generated visa photo
+export interface VisaPhoto {
+  country: string; // uae, schengen, usa, etc.
+  r2Url: string;
+  thumbnailUrl?: string;
+  specifications: {
+    dimensions: string;
+    background: string;
+    dpi: number;
+  };
+  generatedAt: Date;
+}
+
+// Translated document
+export interface TranslatedDocument {
+  originalUrl: string;
+  translatedUrl: string;
+  fromLanguage: string;
+  toLanguage: string;
+  translatedAt: Date;
+  status: 'pending' | 'completed' | 'failed';
+}
+
+// Filled form
+export interface FilledForm {
+  formType: string; // ds160, schengen_application, etc.
+  formUrl: string;
+  filledAt: Date;
+  status: 'pending' | 'completed' | 'failed';
+}
+
+// Visa requirement item
+export interface VisaRequirement {
+  id: string;
+  name: string;
+  description: string;
+  required: boolean;
+  status: 'missing' | 'pending' | 'completed';
+  documentType?: string;
+}
+
+// Package status
+export type VisaPackageStatus =
+  | 'in_progress'
+  | 'documents_uploaded'
+  | 'photos_generated'
+  | 'forms_filled'
+  | 'ready_for_submission'
+  | 'submitted'
+  | 'approved'
+  | 'rejected';
+
+// Visa package (main entity)
+export interface VisaPackage {
+  id: number;
+  userId: string;
+
+  // Visa details
+  visaType: string; // work_visa, tourist_visa, etc.
+  destinationCountry: string; // uae, schengen, usa, etc.
+  nationality?: string;
+  applicantName?: string;
+
+  // Uploaded content
+  uploadedDocuments: UploadedDocument[];
+  visaPhotos: VisaPhoto[];
+  translatedDocuments: TranslatedDocument[];
+  filledForms: FilledForm[];
+
+  // Requirements tracking
+  requirements: VisaRequirement[];
+  missingItems: string[];
+  completenessScore?: number; // 0-100
+
+  // Plan and pricing
+  plan: 'basic' | 'professional' | 'premium';
+  amountPaid: number; // In cents
+  stripePaymentId?: string;
+
+  // Status
+  status: VisaPackageStatus;
+
+  // Metadata
+  createdAt: Date;
+  updatedAt?: Date;
+  submittedAt?: Date;
+  completedAt?: Date;
+}
+
+// VisaDocs plan configuration
+export interface VisaDocsPlanConfig {
+  id: 'basic' | 'professional' | 'premium';
+  name: string;
+  price: number; // In cents
+  stripePriceId?: string;
+  popular?: boolean;
+  features: {
+    documentValidation: boolean;
+    formAutoFill: number; // Number of forms
+    photoGeneration: boolean;
+    translation: boolean | number; // true/false or number of docs
+    expertReview: boolean;
+    prioritySupport: boolean;
+    iterationSupport: boolean;
+    dedicatedManager?: boolean;
+  };
+  limits: {
+    maxDocuments?: number;
+    maxForms?: number;
+    maxTranslations?: number;
+  };
+}
+
+// Jeffrey chat message
+export interface JeffreyMessage {
+  role: 'user' | 'assistant';
+  content: string;
+  timestamp: Date;
+  sources?: {
+    title: string;
+    url: string;
+  }[];
+}
+
+// Chat session
+export interface ChatSession {
+  id: number;
+  userId: string;
+  packageId?: number;
+  visaContext?: {
+    country: string;
+    visaType: string;
+  };
+  messages: JeffreyMessage[];
+  createdAt: Date;
+  updatedAt: Date;
+}
+
 // Platform specifications for each template
 export interface PlatformSpecs {
   aspectRatio: string; // "1:1", "4:5", "16:9", etc.

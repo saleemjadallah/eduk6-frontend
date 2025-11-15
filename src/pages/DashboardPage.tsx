@@ -1,367 +1,328 @@
 import { Link } from 'react-router-dom';
-import { User, HeadshotBatch } from '@/types';
+import { User, VisaPackage } from '@/types';
 import { Button, Card, Badge } from '../components/ui';
-import { Plus, Image, Clock, Check, Eye, Download, Trash2, Calendar, AlertCircle } from 'lucide-react';
+import { Plus, FileText, Clock, Check, Eye, Trash2, Calendar, AlertCircle, Plane } from 'lucide-react';
 import { useState, useEffect } from 'react';
-import { batchApi } from '@/lib/api';
+import { visaDocsApi } from '@/lib/api';
 
 interface DashboardPageProps {
   user: User;
 }
 
-// Extend HeadshotBatch with optional UI fields
-interface DashboardBatch extends Omit<HeadshotBatch, 'status'> {
-  name?: string;
-  progress?: number;
-  status: 'pending' | 'processing' | 'completed' | 'failed';
-}
-
 export default function DashboardPage({ user }: DashboardPageProps) {
-  const [batches, setBatches] = useState<DashboardBatch[]>([]);
+  const [packages, setPackages] = useState<VisaPackage[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    fetchBatches();
+    fetchPackages();
   }, []);
 
-  const fetchBatches = async () => {
+  const fetchPackages = async () => {
     try {
       setIsLoading(true);
       setError(null);
-      const response = await batchApi.getBatches();
+      const response = await visaDocsApi.getPackages();
 
       if (response.success && response.data) {
-        setBatches(response.data);
+        setPackages(response.data);
       } else {
-        // No batches yet, that's okay for new users
-        setBatches([]);
+        setPackages([]);
       }
     } catch (err: any) {
-      // Silently handle errors for new users without batches
-      // The UI will show the "No batches yet" state
-      console.log('No batches found for user');
-      setBatches([]);
+      console.log('No packages found for user');
+      setPackages([]);
       setError(null);
     } finally {
       setIsLoading(false);
     }
   };
 
-  const completedBatches = batches.filter(b => b.status === 'completed');
-  const processingBatches = batches.filter(b => b.status === 'processing' || b.status === 'pending');
-  const totalHeadshots = completedBatches.reduce((sum, b) => sum + (b.generatedHeadshots?.length || 0), 0);
+  const handleDelete = async (packageId: number) => {
+    if (!confirm('Are you sure you want to delete this visa package?')) return;
+
+    try {
+      await visaDocsApi.deletePackage(packageId);
+      setPackages(packages.filter(pkg => pkg.id !== packageId));
+    } catch (err: any) {
+      alert('Failed to delete package: ' + (err.response?.data?.error || err.message));
+    }
+  };
+
+  // Calculate stats
+  const inProgressPackages = packages.filter(p =>
+    ['in_progress', 'documents_uploaded', 'photos_generated', 'forms_filled'].includes(p.status)
+  );
+  const readyPackages = packages.filter(p => p.status === 'ready_for_submission');
+  const submittedPackages = packages.filter(p => ['submitted', 'approved', 'rejected'].includes(p.status));
+  const totalDocuments = packages.reduce((sum, p) => sum + (p.uploadedDocuments?.length || 0), 0);
+
+  // Status display helpers
+  const getStatusBadge = (status: string) => {
+    const statusMap: Record<string, { label: string; variant: 'popular' | 'ai' | 'success' | 'processing' | 'completed' | 'info' }> = {
+      'in_progress': { label: 'In Progress', variant: 'processing' },
+      'documents_uploaded': { label: 'Documents Uploaded', variant: 'processing' },
+      'photos_generated': { label: 'Photos Generated', variant: 'processing' },
+      'forms_filled': { label: 'Forms Filled', variant: 'processing' },
+      'ready_for_submission': { label: 'Ready', variant: 'success' },
+      'submitted': { label: 'Submitted', variant: 'info' },
+      'approved': { label: 'Approved', variant: 'completed' },
+      'rejected': { label: 'Rejected', variant: 'info' },
+    };
+
+    const config = statusMap[status] || { label: status, variant: 'info' as const };
+    return <Badge variant={config.variant}>{config.label}</Badge>;
+  };
+
+  const getCountryFlag = (country: string) => {
+    const flags: Record<string, string> = {
+      'uae': '🇦🇪',
+      'saudi': '🇸🇦',
+      'qatar': '🇶🇦',
+      'kuwait': '🇰🇼',
+      'bahrain': '🇧🇭',
+      'oman': '🇴🇲',
+      'schengen': '🇪🇺',
+      'usa': '🇺🇸',
+      'uk': '🇬🇧',
+      'canada': '🇨🇦',
+    };
+    return flags[country.toLowerCase()] || '🌍';
+  };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white py-12">
-      <div className="container mx-auto px-4">
-        <div className="max-w-7xl mx-auto">
-          {/* Header */}
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-12">
-            <div>
-              <h1 className="text-4xl font-bold text-gray-900 mb-2">
-                Welcome back, {user.name}!
-              </h1>
-              <p className="text-lg text-gray-600">
-                Manage your AI headshot batches and downloads
-              </p>
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Header */}
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">
+            Welcome back, {user.firstName || user.name}! ✈️
+          </h1>
+          <p className="text-gray-600">
+            Manage your visa documentation packages and track your application progress.
+          </p>
+        </div>
+
+        {/* Stats Overview */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+          <Card className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600">Total Documents</p>
+                <p className="text-3xl font-bold text-gray-900 mt-1">{totalDocuments}</p>
+              </div>
+              <FileText className="h-10 w-10 text-blue-500" />
             </div>
-            <Button variant="primary" size="lg" asChild>
-              <Link to="/upload">
-                <Plus className="w-5 h-5" />
-                Create New Batch
-              </Link>
+          </Card>
+
+          <Card className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600">In Progress</p>
+                <p className="text-3xl font-bold text-orange-600 mt-1">{inProgressPackages.length}</p>
+              </div>
+              <Clock className="h-10 w-10 text-orange-500" />
+            </div>
+          </Card>
+
+          <Card className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600">Ready to Submit</p>
+                <p className="text-3xl font-bold text-green-600 mt-1">{readyPackages.length}</p>
+              </div>
+              <Check className="h-10 w-10 text-green-500" />
+            </div>
+          </Card>
+
+          <Card className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600">Submitted</p>
+                <p className="text-3xl font-bold text-purple-600 mt-1">{submittedPackages.length}</p>
+              </div>
+              <Plane className="h-10 w-10 text-purple-500" />
+            </div>
+          </Card>
+        </div>
+
+        {/* Quick Actions */}
+        <div className="mb-8">
+          <Link to="/upload">
+            <Button size="lg" className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700">
+              <Plus className="mr-2 h-5 w-5" />
+              Start New Visa Application
             </Button>
-          </div>
+          </Link>
+        </div>
 
-          {/* Error State */}
-          {error && (
-            <Card variant="default" className="p-6 mb-8 bg-red-50 border-red-200">
-              <div className="flex items-start gap-4">
-                <div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center flex-shrink-0">
-                  <AlertCircle className="w-5 h-5 text-red-600" />
-                </div>
-                <div className="flex-1">
-                  <h3 className="text-lg font-semibold text-red-900 mb-1">Error Loading Batches</h3>
-                  <p className="text-red-700 mb-4">{error}</p>
-                  <Button variant="primary" size="sm" onClick={fetchBatches}>
-                    Try Again
-                  </Button>
-                </div>
-              </div>
-            </Card>
-          )}
+        {/* In Progress Packages */}
+        {inProgressPackages.length > 0 && (
+          <div className="mb-12">
+            <h2 className="text-2xl font-bold text-gray-900 mb-4 flex items-center">
+              <Clock className="mr-3 h-6 w-6 text-orange-500" />
+              In Progress ({inProgressPackages.length})
+            </h2>
 
-          {/* Loading State */}
-          {isLoading ? (
-            <div className="flex items-center justify-center py-20">
-              <div className="text-center">
-                <div className="w-16 h-16 border-4 border-primary-200 border-t-primary-600 rounded-full animate-spin mx-auto mb-4"></div>
-                <p className="text-gray-600">Loading your batches...</p>
-              </div>
-            </div>
-          ) : (
-            <>
-              {/* Stats Overview */}
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-12">
-            <Card variant="default" className="p-6">
-              <div className="flex items-start justify-between mb-4">
-                <div className="w-12 h-12 bg-gradient-to-br from-primary-400 to-primary-600 rounded-xl flex items-center justify-center">
-                  <Image className="w-6 h-6 text-white" />
-                </div>
-                <Badge variant="info" size="sm">Total</Badge>
-              </div>
-              <div className="text-3xl font-bold text-gray-900 mb-1">
-                {totalHeadshots}
-              </div>
-              <div className="text-sm text-gray-600">Headshots Generated</div>
-            </Card>
-
-            <Card variant="default" className="p-6">
-              <div className="flex items-start justify-between mb-4">
-                <div className="w-12 h-12 bg-gradient-to-br from-secondary-400 to-secondary-600 rounded-xl flex items-center justify-center">
-                  <Check className="w-6 h-6 text-white" />
-                </div>
-                <Badge variant="success" size="sm">Done</Badge>
-              </div>
-              <div className="text-3xl font-bold text-gray-900 mb-1">
-                {completedBatches.length}
-              </div>
-              <div className="text-sm text-gray-600">Completed Batches</div>
-            </Card>
-
-            <Card variant="default" className="p-6">
-              <div className="flex items-start justify-between mb-4">
-                <div className="w-12 h-12 bg-gradient-to-br from-amber-400 to-amber-600 rounded-xl flex items-center justify-center">
-                  <Clock className="w-6 h-6 text-white" />
-                </div>
-                <Badge variant="processing" size="sm">Active</Badge>
-              </div>
-              <div className="text-3xl font-bold text-gray-900 mb-1">
-                {processingBatches.length}
-              </div>
-              <div className="text-sm text-gray-600">In Progress</div>
-            </Card>
-
-            <Card variant="default" className="p-6">
-              <div className="flex items-start justify-between mb-4">
-                <div className="w-12 h-12 bg-gradient-to-br from-green-400 to-green-600 rounded-xl flex items-center justify-center">
-                  <Download className="w-6 h-6 text-white" />
-                </div>
-                <Badge variant="success" size="sm">Ready</Badge>
-              </div>
-              <div className="text-3xl font-bold text-gray-900 mb-1">
-                {completedBatches.length}
-              </div>
-              <div className="text-sm text-gray-600">Ready to Download</div>
-            </Card>
-          </div>
-
-          {/* Processing Batches */}
-          {processingBatches.length > 0 && (
-            <div className="mb-12">
-              <h2 className="text-2xl font-bold text-gray-900 mb-6">Currently Processing</h2>
-              <div className="space-y-4">
-                {processingBatches.map((batch) => (
-                  <Card key={batch.id} variant="default" className="p-6">
-                    <div className="flex items-start gap-6">
-                      <div className="w-20 h-20 bg-gradient-to-br from-primary-400 to-secondary-600 rounded-xl flex items-center justify-center flex-shrink-0 animate-pulse">
-                        <Clock className="w-10 h-10 text-white" />
+            <div className="space-y-4">
+              {inProgressPackages.map((pkg) => (
+                <Card key={pkg.id} className="p-6 hover:shadow-lg transition-shadow">
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      <div className="flex items-center mb-2">
+                        <span className="text-2xl mr-3">{getCountryFlag(pkg.destinationCountry)}</span>
+                        <div>
+                          <h3 className="text-xl font-semibold text-gray-900">
+                            {pkg.destinationCountry.toUpperCase()} - {pkg.visaType.replace(/_/g, ' ').toUpperCase()}
+                          </h3>
+                          <p className="text-sm text-gray-500">
+                            {pkg.applicantName && `${pkg.applicantName} • `}
+                            Plan: {pkg.plan.charAt(0).toUpperCase() + pkg.plan.slice(1)}
+                          </p>
+                        </div>
                       </div>
 
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-start justify-between gap-4 mb-3">
-                          <div>
-                            <h3 className="text-xl font-bold text-gray-900 mb-1">
-                              {batch.name || `Batch #${batch.id}`}
-                            </h3>
-                            <div className="flex items-center gap-3 text-sm text-gray-600">
-                              <span className="flex items-center gap-1">
-                                <Calendar className="w-4 h-4" />
-                                {new Date(batch.createdAt).toLocaleDateString()}
-                              </span>
-                              <span>•</span>
-                              <span className="capitalize">{batch.plan} Plan</span>
-                              <span>•</span>
-                              <span>{batch.styleTemplates.length} platform{batch.styleTemplates.length !== 1 ? 's' : ''}</span>
+                      <div className="mt-4 space-y-2">
+                        <div className="flex items-center text-sm text-gray-600">
+                          <FileText className="mr-2 h-4 w-4" />
+                          {pkg.uploadedDocuments?.length || 0} documents uploaded
+                        </div>
+                        {pkg.completenessScore !== undefined && (
+                          <div className="flex items-center text-sm text-gray-600">
+                            <div className="w-full bg-gray-200 rounded-full h-2 mr-3">
+                              <div
+                                className="bg-blue-600 h-2 rounded-full transition-all"
+                                style={{ width: `${pkg.completenessScore}%` }}
+                              />
                             </div>
+                            <span className="font-medium">{pkg.completenessScore}% complete</span>
                           </div>
-                          <Badge variant="processing">{batch.status === 'pending' ? 'Pending' : 'Processing'}</Badge>
+                        )}
+                        <div className="flex items-center text-sm text-gray-500">
+                          <Calendar className="mr-2 h-4 w-4" />
+                          Started {new Date(pkg.createdAt).toLocaleDateString()}
                         </div>
+                      </div>
 
-                        {/* Progress Bar */}
-                        <div className="mb-3">
-                          <div className="flex items-center justify-between mb-2">
-                            <span className="text-sm font-medium text-gray-700">
-                              Progress
-                            </span>
-                            <span className="text-sm font-bold text-primary-600">
-                              {batch.progress}%
-                            </span>
-                          </div>
-                          <div className="w-full h-3 bg-gray-200 rounded-full overflow-hidden">
-                            <div
-                              className="h-full bg-gradient-to-r from-primary-500 to-secondary-600 transition-all duration-500"
-                              style={{ width: `${batch.progress}%` }}
-                            />
-                          </div>
-                        </div>
+                      <div className="mt-4">
+                        {getStatusBadge(pkg.status)}
+                      </div>
+                    </div>
 
-                        <p className="text-sm text-gray-600">
-                          Estimated time remaining: {Math.round((100 - (batch.progress || 0)) * 1.2)} minutes
+                    <div className="flex gap-2 ml-4">
+                      <Link to={`/packages/${pkg.id}`}>
+                        <Button variant="outline" size="sm">
+                          <Eye className="mr-2 h-4 w-4" />
+                          View
+                        </Button>
+                      </Link>
+                    </div>
+                  </div>
+                </Card>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Ready & Submitted Packages */}
+        {(readyPackages.length > 0 || submittedPackages.length > 0) && (
+          <div className="mb-12">
+            <h2 className="text-2xl font-bold text-gray-900 mb-4 flex items-center">
+              <Check className="mr-3 h-6 w-6 text-green-500" />
+              Ready & Submitted ({readyPackages.length + submittedPackages.length})
+            </h2>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {[...readyPackages, ...submittedPackages].map((pkg) => (
+                <Card key={pkg.id} className="p-6 hover:shadow-lg transition-shadow">
+                  <div className="flex items-start justify-between mb-4">
+                    <div className="flex items-center">
+                      <span className="text-2xl mr-3">{getCountryFlag(pkg.destinationCountry)}</span>
+                      <div>
+                        <h3 className="font-semibold text-gray-900">
+                          {pkg.destinationCountry.toUpperCase()} - {pkg.visaType.replace(/_/g, ' ')}
+                        </h3>
+                        <p className="text-sm text-gray-500">
+                          {new Date(pkg.createdAt).toLocaleDateString()}
                         </p>
                       </div>
                     </div>
-                  </Card>
-                ))}
-              </div>
-            </div>
-          )}
+                    {getStatusBadge(pkg.status)}
+                  </div>
 
-          {/* Completed Batches */}
-          <div>
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-2xl font-bold text-gray-900">Your Batches</h2>
-              <div className="flex items-center gap-2 text-sm text-gray-600">
-                <span>{completedBatches.length} completed</span>
-              </div>
-            </div>
-
-            {batches.length === 0 ? (
-              <Card variant="default" className="p-12 text-center">
-                <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <Image className="w-8 h-8 text-gray-400" />
-                </div>
-                <h3 className="text-xl font-bold text-gray-900 mb-2">No headshots yet</h3>
-                <p className="text-gray-600 mb-6">
-                  Upload your photos to create your first batch of AI-generated professional headshots
-                </p>
-                <Button variant="primary" size="lg" asChild>
-                  <Link to="/upload">
-                    <Plus className="w-5 h-5" />
-                    Upload Photos
-                  </Link>
-                </Button>
-              </Card>
-            ) : completedBatches.length === 0 ? (
-              <Card variant="default" className="p-12 text-center">
-                <div className="w-16 h-16 bg-amber-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <Clock className="w-8 h-8 text-amber-600" />
-                </div>
-                <h3 className="text-xl font-bold text-gray-900 mb-2">No completed headshots yet</h3>
-                <p className="text-gray-600 mb-6">
-                  Your batches are currently being processed. Check back soon!
-                </p>
-              </Card>
-            ) : (
-              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {completedBatches.map((batch) => {
-                  const thumbnails = batch.generatedHeadshots?.slice(0, 4).map(h => h.thumbnail) || [];
-                  const headshotCount = batch.generatedHeadshots?.length || 0;
-
-                  return (
-                    <Card key={batch.id} variant="default" className="overflow-hidden group">
-                      {/* Thumbnail Grid */}
-                      <div className="grid grid-cols-2 gap-1 aspect-square bg-gray-100">
-                        {thumbnails.length > 0 ? (
-                          thumbnails.map((thumb, idx) => (
-                            <div key={idx} className="relative overflow-hidden bg-gray-200">
-                              <img
-                                src={thumb}
-                                alt={`Thumbnail ${idx + 1}`}
-                                className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
-                                onError={(e) => {
-                                  e.currentTarget.src = 'https://via.placeholder.com/200x200?text=Headshot';
-                                }}
-                              />
-                            </div>
-                          ))
-                        ) : (
-                          // Placeholder if no thumbnails
-                          Array.from({ length: 4 }).map((_, idx) => (
-                            <div key={idx} className="relative overflow-hidden bg-gray-200 flex items-center justify-center">
-                              <Image className="w-8 h-8 text-gray-400" />
-                            </div>
-                          ))
-                        )}
-                      </div>
-
-                      {/* Content */}
-                      <div className="p-5">
-                        <div className="flex items-start justify-between gap-2 mb-3">
-                          <h3 className="font-bold text-gray-900 leading-tight line-clamp-2">
-                            {batch.name || `Batch #${batch.id}`}
-                          </h3>
-                          <Badge variant="success" size="sm">
-                            <Check className="w-3 h-3" />
-                          </Badge>
-                        </div>
-
-                        <div className="space-y-2 mb-4 text-sm text-gray-600">
-                          <div className="flex items-center gap-2">
-                            <Image className="w-4 h-4" />
-                            <span>{headshotCount} headshot{headshotCount !== 1 ? 's' : ''}</span>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <Calendar className="w-4 h-4" />
-                            <span>{new Date(batch.createdAt).toLocaleDateString()}</span>
-                          </div>
-                        </div>
-
-                      <div className="flex items-center gap-2">
-                        <Button variant="primary" size="sm" className="flex-1" asChild>
-                          <Link to={`/batches/${batch.id}`}>
-                            <Eye className="w-4 h-4" />
-                            View Gallery
-                          </Link>
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => alert('Download all from batch ' + batch.id)}
-                        >
-                          <Download className="w-4 h-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => alert('Delete batch ' + batch.id)}
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
-                      </div>
+                  <div className="space-y-2 mb-4">
+                    <div className="flex items-center text-sm text-gray-600">
+                      <FileText className="mr-2 h-4 w-4" />
+                      {pkg.uploadedDocuments?.length || 0} documents
                     </div>
-                  </Card>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-            </>
-          )}
+                    {pkg.submittedAt && (
+                      <div className="flex items-center text-sm text-gray-500">
+                        <Calendar className="mr-2 h-4 w-4" />
+                        Submitted {new Date(pkg.submittedAt).toLocaleDateString()}
+                      </div>
+                    )}
+                  </div>
 
-          {/* Quick Actions */}
-          {!isLoading && (
-          <div className="mt-12 p-8 bg-gradient-to-r from-primary-50 to-secondary-50 border border-primary-200 rounded-xl">
-            <div className="flex flex-col md:flex-row items-center justify-between gap-6">
-              <div>
-                <h3 className="text-xl font-bold text-gray-900 mb-2">
-                  Need more professional headshots?
-                </h3>
-                <p className="text-gray-600">
-                  Create a new batch and get 10-20 AI-generated headshots in just 1-3 hours
-                </p>
-              </div>
-              <Button variant="primary" size="lg" asChild className="flex-shrink-0">
-                <Link to="/upload">
-                  <Plus className="w-5 h-5" />
-                  Create New Batch
-                </Link>
-              </Button>
+                  <div className="flex gap-2">
+                    <Link to={`/packages/${pkg.id}`} className="flex-1">
+                      <Button variant="outline" size="sm" className="w-full">
+                        <Eye className="mr-2 h-4 w-4" />
+                        View Details
+                      </Button>
+                    </Link>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleDelete(pkg.id)}
+                      className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </Card>
+              ))}
             </div>
           </div>
-          )}
-        </div>
+        )}
+
+        {/* Empty State */}
+        {packages.length === 0 && !isLoading && (
+          <Card className="p-12 text-center">
+            <div className="max-w-md mx-auto">
+              <div className="mb-6">
+                <Plane className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+                <h3 className="text-2xl font-bold text-gray-900 mb-2">No Visa Applications Yet</h3>
+                <p className="text-gray-600 mb-6">
+                  Start your first visa application and let our AI help you prepare all the documents you need.
+                </p>
+              </div>
+              <Link to="/upload">
+                <Button size="lg" className="bg-gradient-to-r from-blue-600 to-purple-600">
+                  <Plus className="mr-2 h-5 w-5" />
+                  Start Your First Application
+                </Button>
+              </Link>
+            </div>
+          </Card>
+        )}
+
+        {/* Loading State */}
+        {isLoading && (
+          <div className="text-center py-12">
+            <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+            <p className="mt-4 text-gray-600">Loading your visa packages...</p>
+          </div>
+        )}
+
+        {/* Error State */}
+        {error && (
+          <Card className="p-6 bg-red-50 border-red-200">
+            <div className="flex items-center">
+              <AlertCircle className="h-5 w-5 text-red-600 mr-3" />
+              <p className="text-red-800">{error}</p>
+            </div>
+          </Card>
+        )}
       </div>
     </div>
   );
