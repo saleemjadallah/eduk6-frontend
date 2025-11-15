@@ -5,7 +5,7 @@ import { normalizeUser } from './lib/user';
 import type { User } from './types';
 
 // Pages
-import HomePage from './pages/HomePage';
+import HomePage from './pages/HomePageNew';
 import PricingPage from './pages/PricingPage';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
