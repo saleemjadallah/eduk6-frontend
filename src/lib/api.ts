@@ -1,5 +1,5 @@
 import axios, { AxiosInstance } from 'axios';
-import type { User, HeadshotBatch, ApiResponse, EditRequest } from '@/types';
+import type { User, HeadshotBatch, ApiResponse, EditRequest, VisaPackage, ChatSession, JeffreyMessage } from '@/types';
 import type { ProfessionalOutfit, OutfitFilter, WardrobeApiResponse } from '@/types/wardrobe.types';
 
 const RAW_API_URL = (import.meta.env.VITE_API_URL || 'http://localhost:3000').trim();
@@ -67,6 +67,159 @@ export const authApi = {
   // Get current user
   me: async (): Promise<User> => {
     const response = await api.get('/auth/me');
+    return response.data;
+  },
+};
+
+// VisaDocs API
+export const visaDocsApi = {
+  // Packages
+  getPackages: async (): Promise<ApiResponse<VisaPackage[]>> => {
+    const response = await api.get('/visadocs/packages');
+    return response.data;
+  },
+
+  getPackage: async (id: number): Promise<ApiResponse<VisaPackage>> => {
+    const response = await api.get(`/visadocs/packages/${id}`);
+    return response.data;
+  },
+
+  createPackage: async (data: {
+    visaType: string;
+    destinationCountry: string;
+    nationality?: string;
+    applicantName?: string;
+    plan: 'basic' | 'professional' | 'premium';
+  }): Promise<ApiResponse<VisaPackage>> => {
+    const response = await api.post('/visadocs/packages', data);
+    return response.data;
+  },
+
+  updatePackage: async (id: number, data: Partial<VisaPackage>): Promise<ApiResponse<VisaPackage>> => {
+    const response = await api.patch(`/visadocs/packages/${id}`, data);
+    return response.data;
+  },
+
+  deletePackage: async (id: number): Promise<ApiResponse<{ message: string }>> => {
+    const response = await api.delete(`/visadocs/packages/${id}`);
+    return response.data;
+  },
+
+  // Document Upload
+  uploadDocuments: async (
+    packageId: number,
+    files: File[],
+    documentTypes: string[],
+    onProgress?: (progress: number) => void
+  ): Promise<ApiResponse<{ package: VisaPackage; uploadedDocuments: any[] }>> => {
+    const formData = new FormData();
+    formData.append('packageId', packageId.toString());
+    formData.append('documentTypes', JSON.stringify(documentTypes));
+    files.forEach((file) => {
+      formData.append('documents', file);
+    });
+
+    const response = await api.post('/visadocs/upload', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+      onUploadProgress: (progressEvent) => {
+        if (onProgress && progressEvent.total) {
+          const percentage = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+          onProgress(percentage);
+        }
+      },
+    });
+    return response.data;
+  },
+
+  // Photo Upload (for visa photo generation)
+  uploadPhotos: async (
+    packageId: number,
+    photos: File[],
+    onProgress?: (progress: number) => void
+  ): Promise<ApiResponse<{ uploadedPhotos: string[] }>> => {
+    const formData = new FormData();
+    formData.append('packageId', packageId.toString());
+    photos.forEach((photo) => {
+      formData.append('photos', photo);
+    });
+
+    const response = await api.post('/visadocs/upload/photo', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+      onUploadProgress: (progressEvent) => {
+        if (onProgress && progressEvent.total) {
+          const percentage = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+          onProgress(percentage);
+        }
+      },
+    });
+    return response.data;
+  },
+
+  // Jeffrey Chat
+  sendChatMessage: async (data: {
+    message: string;
+    sessionId?: number;
+    visaContext?: {
+      visaType?: string;
+      destinationCountry?: string;
+      nationality?: string;
+      stage?: string;
+      packageId?: number;
+    };
+    useSearch?: boolean;
+  }): Promise<ApiResponse<{
+    message: JeffreyMessage;
+    sessionId?: number;
+    conversationLength: number;
+  }>> => {
+    const response = await api.post('/visadocs/chat', data);
+    return response.data;
+  },
+
+  quickQuestion: async (data: {
+    question: string;
+    visaType?: string;
+    destinationCountry?: string;
+  }): Promise<ApiResponse<{ response: string }>> => {
+    const response = await api.post('/visadocs/chat/quick', data);
+    return response.data;
+  },
+
+  getSuggestions: async (params: {
+    stage?: string;
+    visaType?: string;
+    destinationCountry?: string;
+  }): Promise<ApiResponse<{ suggestions: string[] }>> => {
+    const queryParams = new URLSearchParams();
+    if (params.stage) queryParams.append('stage', params.stage);
+    if (params.visaType) queryParams.append('visaType', params.visaType);
+    if (params.destinationCountry) queryParams.append('destinationCountry', params.destinationCountry);
+
+    const response = await api.get(`/visadocs/chat/suggestions?${queryParams.toString()}`);
+    return response.data;
+  },
+
+  getChatSessions: async (): Promise<ApiResponse<ChatSession[]>> => {
+    const response = await api.get('/visadocs/chat/sessions');
+    return response.data;
+  },
+
+  getChatSession: async (id: number): Promise<ApiResponse<ChatSession>> => {
+    const response = await api.get(`/visadocs/chat/sessions/${id}`);
+    return response.data;
+  },
+
+  deleteChatSession: async (id: number): Promise<ApiResponse<{ message: string }>> => {
+    const response = await api.delete(`/visadocs/chat/sessions/${id}`);
+    return response.data;
+  },
+
+  clearChatSession: async (id: number): Promise<ApiResponse<{ message: string }>> => {
+    const response = await api.post(`/visadocs/chat/sessions/${id}/clear`);
     return response.data;
   },
 };
