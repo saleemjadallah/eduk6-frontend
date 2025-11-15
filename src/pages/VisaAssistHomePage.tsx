@@ -295,21 +295,21 @@ export default function VisaAssistHomePage() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.5 }}
-              className="lg:col-span-2 lg:row-span-2 bg-gradient-to-br from-blue-500 to-purple-600 text-white rounded-3xl p-12 shadow-2xl overflow-hidden relative group hover:scale-[1.02] transition-transform duration-500"
+              className="lg:col-span-2 bg-gradient-to-br from-blue-500 to-purple-600 text-white rounded-3xl p-8 shadow-2xl overflow-hidden relative group hover:scale-[1.02] transition-transform duration-500"
             >
               <div className="relative z-10">
-                <Badge variant="white" className="mb-6">
+                <Badge variant="white" className="mb-4">
                   <Sparkles className="w-4 h-4 mr-2" />
                   Most Popular
                 </Badge>
-                <h3 className="text-4xl font-bold mb-4">AI Form Filler</h3>
-                <p className="text-blue-100 text-lg mb-8 max-w-xl">
+                <h3 className="text-3xl font-bold mb-3">AI Form Filler</h3>
+                <p className="text-blue-100 mb-6 max-w-xl">
                   Upload your passport, CV, or existing documents. Our AI extracts data and helps auto-fill complex
                   government forms with high accuracy.
                 </p>
 
                 {/* Feature highlights */}
-                <div className="space-y-3 mb-8">
+                <div className="space-y-2 mb-6">
                   <div className="flex items-center gap-3">
                     <FileCheck className="w-5 h-5" />
                     <span>Supports UAE ICP, KSA Muqeem, and 20+ government forms</span>
@@ -414,20 +414,20 @@ export default function VisaAssistHomePage() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.5, delay: 0.3 }}
-              className="lg:col-span-2 bg-gradient-to-br from-amber-500 to-orange-600 text-white rounded-3xl p-12 shadow-2xl relative overflow-hidden group hover:scale-[1.02] transition-transform duration-500"
+              className="lg:col-span-2 bg-gradient-to-br from-amber-500 to-orange-600 text-white rounded-3xl p-8 shadow-2xl relative overflow-hidden group hover:scale-[1.02] transition-transform duration-500"
             >
               <div className="relative z-10">
-                <Badge variant="white" className="mb-6">
+                <Badge variant="white" className="mb-4">
                   <Plane className="w-4 h-4 mr-2" />
                   NEW Feature
                 </Badge>
-                <h3 className="text-4xl font-bold mb-4">AI Travel Itinerary Generator</h3>
-                <p className="text-orange-100 text-lg mb-8 max-w-2xl">
+                <h3 className="text-3xl font-bold mb-3">AI Travel Itinerary Generator</h3>
+                <p className="text-orange-100 mb-6 max-w-2xl">
                   Generates a compliant, detailed, and verifiable travel itinerary (flights, hotels, activities) that
                   aligns with your stated purpose and duration. Mandatory for Schengen and tourist visas.
                 </p>
 
-                <div className="grid grid-cols-2 gap-4 mb-8">
+                <div className="grid grid-cols-2 gap-3 mb-6">
                   <div className="flex items-center gap-2">
                     <MapPin className="w-5 h-5" />
                     <span>Realistic daily plans</span>
