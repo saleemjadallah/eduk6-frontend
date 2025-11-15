@@ -28,10 +28,15 @@ export default function Layout({ children, user }: LayoutProps) {
             <Link to="/" className="flex items-center space-x-3 group">
               <img
                 src="/headshot-logo-nobg.png"
-                alt="HeadShotHub Logo"
+                alt="MyDscvr VisaAssist Logo"
                 className="h-16 md:h-20 w-auto transition-transform group-hover:scale-105"
               />
-              <span className="font-bold text-xl md:text-2xl text-gray-900 hidden sm:inline">HeadShotHub</span>
+              <div className="hidden sm:inline">
+                <div className="font-bold text-xl md:text-2xl text-gray-900">MyDscvr</div>
+                <div className="text-xs md:text-sm font-semibold bg-gradient-to-r from-blue-600 to-green-600 bg-clip-text text-transparent">
+                  VisaAssist
+                </div>
+              </div>
             </Link>
 
             {/* Navigation */}
@@ -64,9 +69,9 @@ export default function Layout({ children, user }: LayoutProps) {
                   </button>
                   <Link
                     to="/upload"
-                    className="px-4 md:px-6 py-2 md:py-2.5 text-sm font-semibold text-white bg-gradient-to-r from-primary-500 to-primary-600 rounded-xl hover:from-primary-600 hover:to-primary-700 shadow-md hover:shadow-lg transition-all"
+                    className="px-4 md:px-6 py-2 md:py-2.5 text-sm font-semibold text-white bg-gradient-to-r from-blue-600 to-green-600 rounded-xl hover:from-blue-700 hover:to-green-700 shadow-md hover:shadow-lg transition-all"
                   >
-                    Create Headshots
+                    ✈️ Process Visa
                   </Link>
                 </>
               ) : (
@@ -79,9 +84,9 @@ export default function Layout({ children, user }: LayoutProps) {
                   </Link>
                   <Link
                     to="/register"
-                    className="px-4 md:px-6 py-2 md:py-2.5 text-sm font-semibold text-white bg-gradient-to-r from-primary-500 to-primary-600 rounded-xl hover:from-primary-600 hover:to-primary-700 shadow-md hover:shadow-lg transition-all"
+                    className="px-4 md:px-6 py-2 md:py-2.5 text-sm font-semibold text-white bg-gradient-to-r from-blue-600 to-green-600 rounded-xl hover:from-blue-700 hover:to-green-700 shadow-md hover:shadow-lg transition-all"
                   >
-                    Get Started
+                    🚀 Start Free
                   </Link>
                 </>
               )}
@@ -99,13 +104,18 @@ export default function Layout({ children, user }: LayoutProps) {
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8 md:gap-12">
             <div className="md:col-span-1">
               <div className="flex items-center space-x-2 mb-4">
-                <div className="w-10 h-10 bg-gradient-to-br from-primary-500 to-primary-600 rounded-xl flex items-center justify-center shadow-md">
-                  <span className="text-white font-bold text-xl">H</span>
+                <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-green-600 rounded-xl flex items-center justify-center shadow-md">
+                  <span className="text-white font-bold text-xl">✈️</span>
                 </div>
-                <span className="font-bold text-xl text-gray-900">HeadShotHub</span>
+                <div>
+                  <div className="font-bold text-lg text-gray-900">MyDscvr</div>
+                  <div className="text-xs font-semibold bg-gradient-to-r from-blue-600 to-green-600 bg-clip-text text-transparent">
+                    VisaAssist
+                  </div>
+                </div>
               </div>
               <p className="text-sm text-gray-600 leading-relaxed mb-4">
-                Professional AI headshots in minutes. No photographer needed.
+                AI-powered visa processing and document assistance for the GCC.
               </p>
               <div className="flex space-x-4">
                 <span className="text-2xl">⭐</span>
@@ -114,7 +124,7 @@ export default function Layout({ children, user }: LayoutProps) {
                 <span className="text-2xl">⭐</span>
                 <span className="text-2xl">⭐</span>
               </div>
-              <p className="text-xs text-gray-500 mt-2">4.9/5 from 10,000+ reviews</p>
+              <p className="text-xs text-gray-500 mt-2">99.2% visa approval rate</p>
             </div>
             <div>
               <h4 className="font-bold text-gray-900 mb-4">Product</h4>
@@ -180,10 +190,10 @@ export default function Layout({ children, user }: LayoutProps) {
           <div className="mt-12 pt-8 border-t border-gray-300">
             <div className="flex flex-col md:flex-row justify-between items-center gap-4">
               <p className="text-sm text-gray-600">
-                © 2025 HeadShotHub. All rights reserved.
+                © 2025 MyDscvr VisaAssist. All rights reserved.
               </p>
               <div className="flex items-center gap-6 text-sm text-gray-600">
-                <span>Made with ❤️ for professionals</span>
+                <span>Made with ❤️ for visa applicants worldwide</span>
               </div>
             </div>
           </div>
