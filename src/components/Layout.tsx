@@ -48,9 +48,14 @@ export default function Layout({ children, user }: LayoutProps) {
                 Pricing
               </Link>
               {user && (
-                <Link to="/dashboard" className="text-gray-700 hover:text-primary-500 font-medium transition-colors">
-                  Dashboard
-                </Link>
+                <>
+                  <Link to="/dashboard" className="text-gray-700 hover:text-primary-500 font-medium transition-colors">
+                    Dashboard
+                  </Link>
+                  <Link to="/chat" className="text-gray-700 hover:text-primary-500 font-medium transition-colors flex items-center gap-1">
+                    <span>💬</span> Jeffrey
+                  </Link>
+                </>
               )}
             </nav>
 
