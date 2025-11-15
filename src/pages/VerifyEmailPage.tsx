@@ -106,9 +106,9 @@ export default function VerifyEmailPage({ onVerifySuccess }: VerifyEmailPageProp
         onVerifySuccess(normalizedUser);
       }
 
-      // Redirect to dashboard after 1 second
+      // Redirect to Jeffrey chat after 1 second to introduce the AI assistant
       setTimeout(() => {
-        navigate('/dashboard');
+        navigate('/chat');
       }, 1000);
     } catch (err: any) {
       console.error('[VerifyEmail] Verification error:', err);

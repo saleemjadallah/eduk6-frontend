@@ -11,6 +11,7 @@ import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import VerifyEmailPage from './pages/VerifyEmailPage';
 import DashboardPage from './pages/DashboardPage';
+import JeffreyChatPage from './pages/JeffreyChatPage';
 import UploadPage from './pages/UploadPage';
 import ProcessingPage from './pages/ProcessingPage';
 import BatchViewPage from './pages/BatchViewPage';
@@ -77,6 +78,12 @@ function App() {
           path="/dashboard"
           element={
             user ? <Layout user={user}><DashboardPage user={user} /></Layout> : <Navigate to="/login" />
+          }
+        />
+        <Route
+          path="/chat"
+          element={
+            user ? <Layout user={user}><JeffreyChatPage /></Layout> : <Navigate to="/login" />
           }
         />
         <Route
