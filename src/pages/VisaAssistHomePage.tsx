@@ -84,10 +84,10 @@ export default function VisaAssistHomePage() {
             transition={{ duration: 0.6, delay: 0.1 }}
             className="text-6xl md:text-7xl lg:text-8xl font-extrabold mb-6 bg-gradient-to-br from-neutral-900 via-neutral-800 to-neutral-600 bg-clip-text text-transparent leading-tight tracking-tight"
           >
-            Never Get Your Visa
+            Reduce Your Visa
             <br />
             <span className="bg-gradient-to-r from-blue-600 via-green-600 to-amber-600 bg-clip-text text-transparent">
-              Rejected Again
+              Rejection Risk
             </span>
           </motion.h1>
 
@@ -279,11 +279,11 @@ export default function VisaAssistHomePage() {
             <h2 className="text-5xl md:text-6xl font-bold mb-6">
               Everything You Need to{' '}
               <span className="bg-gradient-to-r from-blue-600 to-amber-600 bg-clip-text text-transparent">
-                Get Approved
+                Apply Confidently
               </span>
             </h2>
             <p className="text-xl text-neutral-600 max-w-3xl mx-auto leading-relaxed">
-              AI-powered tools that eliminate errors and guarantee compliance
+              AI-powered tools that help reduce errors and improve compliance
             </p>
           </SectionHeader>
 
@@ -304,8 +304,8 @@ export default function VisaAssistHomePage() {
                 </Badge>
                 <h3 className="text-4xl font-bold mb-4">AI Form Filler</h3>
                 <p className="text-blue-100 text-lg mb-8 max-w-xl">
-                  Upload your passport, CV, or existing documents. Our AI extracts all data and auto-fills complex
-                  government forms with 100% accuracy.
+                  Upload your passport, CV, or existing documents. Our AI extracts data and helps auto-fill complex
+                  government forms with high accuracy.
                 </p>
 
                 {/* Feature highlights */}
@@ -320,7 +320,7 @@ export default function VisaAssistHomePage() {
                   </div>
                   <div className="flex items-center gap-3">
                     <Shield className="w-5 h-5" />
-                    <span>Zero errors guaranteed with AI validation</span>
+                    <span>Advanced AI validation to minimize errors</span>
                   </div>
                 </div>
 
@@ -580,7 +580,7 @@ export default function VisaAssistHomePage() {
                 </div>
 
                 <p className="text-neutral-600 text-lg leading-relaxed mb-4">
-                  Our AI extracts data, validates documents, and fills forms with 100% accuracy in seconds.
+                  Our AI extracts data, validates documents, and helps fill forms with high accuracy in seconds.
                 </p>
 
                 <ul className="space-y-2 text-neutral-600">
@@ -633,7 +633,7 @@ export default function VisaAssistHomePage() {
                   </li>
                   <li className="flex items-center gap-2">
                     <Zap className="w-5 h-5 text-amber-500" />
-                    <span>99.2% approval rate</span>
+                    <span>Improved application quality</span>
                   </li>
                 </ul>
               </motion.div>
@@ -752,7 +752,7 @@ export default function VisaAssistHomePage() {
                 </li>
                 <li className="flex items-start gap-2 text-neutral-700">
                   <Check className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
-                  <span>100% accuracy guarantee</span>
+                  <span>High accuracy AI processing</span>
                 </li>
                 <li className="flex items-start gap-2 text-neutral-700">
                   <Check className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
@@ -949,9 +949,9 @@ export default function VisaAssistHomePage() {
 
             <div className="text-center">
               <div className="text-5xl font-bold bg-gradient-to-r from-blue-600 to-amber-600 bg-clip-text text-transparent mb-2">
-                99.2%
+                24/7
               </div>
-              <div className="text-neutral-600 text-lg">Approval Rate</div>
+              <div className="text-neutral-600 text-lg">AI Support</div>
             </div>
 
             <div className="text-center">
@@ -1014,8 +1014,8 @@ export default function VisaAssistHomePage() {
                 ))}
               </div>
               <p className="text-neutral-700 mb-6 leading-relaxed">
-                "My visa was rejected twice before. Used VisaAssist for validation and got approved on the first try.
-                Game changer!"
+                "VisaAssist helped me prepare better documentation and my application was much stronger. Great support
+                throughout the process!"
               </p>
               <div className="flex items-center gap-3">
                 <div className="w-12 h-12 rounded-full bg-gradient-to-br from-green-400 to-emerald-400 flex items-center justify-center text-white font-bold">
@@ -1078,7 +1078,7 @@ export default function VisaAssistHomePage() {
               {
                 question: 'How accurate is the AI form filling?',
                 answer:
-                  'Our AI has 100% accuracy for data extraction from clear documents. We use advanced OCR and GPT-4 Vision to read passports, IDs, and certificates. Every form is validated before delivery, and we offer a money-back guarantee if any error is found in the auto-filled data.',
+                  'Our AI uses advanced OCR and GPT-4 Vision to read passports, IDs, and certificates with high accuracy. Every form is validated before delivery to help minimize errors. While we strive for the highest accuracy, we recommend users review all auto-filled information before submission.',
               },
               {
                 question: 'Which government forms are supported?',
@@ -1088,12 +1088,12 @@ export default function VisaAssistHomePage() {
               {
                 question: 'Is my personal data secure?',
                 answer:
-                  'Absolutely. All data is encrypted in transit (SSL) and at rest. Documents are automatically deleted after 30 days. Your data never leaves our servers and is never shared with third parties. We are GDPR compliant with enterprise-grade security using Cloudflare R2.',
+                  'Yes. All data is encrypted in transit (SSL) and at rest. Documents are automatically deleted after 30 days. Your data is not shared with third parties. We maintain GDPR compliance with enterprise-grade security using Cloudflare R2.',
               },
               {
                 question: 'What if my visa still gets rejected?',
                 answer:
-                  'While we cannot guarantee visa approval (final decision is with immigration authorities), we guarantee 100% accurate form filling and 100% document compliance. We offer a full refund if rejection was due to an error in our processing. Our 99.2% approval rate speaks for itself.',
+                  'We cannot guarantee visa approval as the final decision rests with immigration authorities. Our service focuses on helping you prepare accurate, compliant documentation to strengthen your application. We strive to minimize common errors that lead to rejection, but visa decisions depend on many factors beyond documentation.',
               },
             ].map((faq, index) => (
               <motion.div
