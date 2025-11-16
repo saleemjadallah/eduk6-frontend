@@ -58,18 +58,30 @@ const VISA_PHOTO_SPECS: Record<string, PhotoSpecs> = {
 export const PhotoComplianceWorkflow: React.FC = () => {
   const { updateWorkflow, addRecentAction, askJeffrey } = useJeffrey();
 
-  const [hasUploadedPhotos, setHasUploadedPhotos] = useState(true);
+  const [hasUploadedPhotos, setHasUploadedPhotos] = useState(false);
   const [selectedFormat, setSelectedFormat] = useState<string>('uae');
-  const [generatedPhotos] = useState<VisaPhoto[]>([
-    { id: '1', format: 'uae', url: '#', specifications: { width: 43, height: 55, dpi: 600, background: 'white' } },
-    { id: '2', format: 'uae', url: '#', specifications: { width: 43, height: 55, dpi: 600, background: 'white' } },
-    { id: '3', format: 'schengen', url: '#', specifications: { width: 35, height: 45, dpi: 600, background: 'white' } },
-  ]);
+  const [generatedPhotos, setGeneratedPhotos] = useState<VisaPhoto[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     updateWorkflow('photo');
     addRecentAction('Entered Photo Compliance workflow');
+    loadPhotoData();
   }, [updateWorkflow, addRecentAction]);
+
+  const loadPhotoData = async () => {
+    setIsLoading(true);
+    try {
+      // TODO: Fetch user's generated photos from API
+      // For now, start with empty state
+      setGeneratedPhotos([]);
+      setHasUploadedPhotos(false);
+    } catch (error) {
+      console.error('Failed to load photo data:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const getPhotosForFormat = (format: string) => generatedPhotos.filter((p) => p.format === format);
 
@@ -77,6 +89,17 @@ export const PhotoComplianceWorkflow: React.FC = () => {
     addRecentAction('Uploaded photos', { count: files.length });
     setHasUploadedPhotos(true);
   };
+
+  if (isLoading) {
+    return (
+      <div className="max-w-7xl mx-auto flex items-center justify-center min-h-[60vh]">
+        <div className="text-center">
+          <div className="w-16 h-16 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin mx-auto mb-4" />
+          <p className="text-neutral-600">Loading photo data...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-7xl mx-auto">
@@ -96,12 +119,45 @@ export const PhotoComplianceWorkflow: React.FC = () => {
             <div>
               <h3 className="text-2xl font-bold mb-4">Upload Your Photos</h3>
               <div
-                className="border-2 border-dashed border-neutral-300 rounded-xl p-12 text-center cursor-pointer hover:border-indigo-400"
+                className="border-2 border-dashed border-neutral-300 rounded-xl p-12 text-center cursor-pointer hover:border-indigo-400 transition-colors"
                 onClick={() => document.getElementById('photo-upload')?.click()}
               >
                 <Upload className="w-12 h-12 text-neutral-400 mx-auto mb-4" />
                 <p className="text-lg font-semibold mb-2">Drag and drop your photos here</p>
+                <p className="text-sm text-neutral-500 mb-4">or click to browse files</p>
                 <input id="photo-upload" type="file" multiple accept="image/*" className="hidden" onChange={(e) => e.target.files && handlePhotoUpload(e.target.files)} />
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    askJeffrey('What type of photos should I upload for visa compliance?');
+                  }}
+                  className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg font-semibold hover:bg-indigo-700 transition-colors"
+                >
+                  <MessageCircle className="w-4 h-4" />
+                  Ask Jeffrey for Tips
+                </button>
+              </div>
+            </div>
+          ) : generatedPhotos.length === 0 ? (
+            <div>
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-2xl font-bold">Your Visa Photos</h3>
+                <span className="bg-neutral-100 text-neutral-700 px-4 py-2 rounded-full font-semibold">No photos generated</span>
+              </div>
+
+              <div className="text-center py-12 border-2 border-dashed border-neutral-200 rounded-xl">
+                <Camera className="w-12 h-12 text-neutral-300 mx-auto mb-4" />
+                <h4 className="text-lg font-semibold text-neutral-700 mb-2">No Generated Photos Yet</h4>
+                <p className="text-neutral-500 mb-4">
+                  Your uploaded photos are being processed. Click below to generate visa-compliant photos.
+                </p>
+                <button
+                  onClick={() => askJeffrey('How do I generate visa-compliant photos from my uploads?')}
+                  className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg font-semibold hover:bg-indigo-700 transition-colors"
+                >
+                  <MessageCircle className="w-4 h-4" />
+                  Ask Jeffrey How to Generate
+                </button>
               </div>
             </div>
           ) : (
@@ -119,22 +175,30 @@ export const PhotoComplianceWorkflow: React.FC = () => {
                 ))}
               </div>
 
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                {getPhotosForFormat(selectedFormat).map((photo) => (
-                  <div key={photo.id} className="bg-neutral-50 rounded-xl border overflow-hidden group">
-                    <div className="aspect-[3/4] bg-neutral-200 relative flex items-center justify-center">
-                      <Camera className="w-12 h-12 text-neutral-400" />
-                      <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex items-center justify-center gap-2">
-                        <button className="p-2 bg-white rounded-lg"><Eye className="w-5 h-5" /></button>
-                        <button className="p-2 bg-white rounded-lg"><Download className="w-5 h-5" /></button>
+              {getPhotosForFormat(selectedFormat).length === 0 ? (
+                <div className="text-center py-8">
+                  <Camera className="w-10 h-10 text-neutral-300 mx-auto mb-3" />
+                  <p className="text-sm text-neutral-500">No photos for {VISA_PHOTO_SPECS[selectedFormat].name} format</p>
+                  <p className="text-xs text-neutral-400 mt-1">Generate photos for this format</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                  {getPhotosForFormat(selectedFormat).map((photo) => (
+                    <div key={photo.id} className="bg-neutral-50 rounded-xl border overflow-hidden group">
+                      <div className="aspect-[3/4] bg-neutral-200 relative flex items-center justify-center">
+                        <Camera className="w-12 h-12 text-neutral-400" />
+                        <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex items-center justify-center gap-2 transition-opacity">
+                          <button className="p-2 bg-white rounded-lg"><Eye className="w-5 h-5" /></button>
+                          <button className="p-2 bg-white rounded-lg"><Download className="w-5 h-5" /></button>
+                        </div>
+                      </div>
+                      <div className="p-3">
+                        <p className="text-xs font-semibold">{VISA_PHOTO_SPECS[selectedFormat].dimensions}</p>
                       </div>
                     </div>
-                    <div className="p-3">
-                      <p className="text-xs font-semibold">{VISA_PHOTO_SPECS[selectedFormat].dimensions}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              )}
             </div>
           )}
         </div>
@@ -149,20 +213,32 @@ export const PhotoComplianceWorkflow: React.FC = () => {
           <button onClick={() => askJeffrey(`Tell me about ${VISA_PHOTO_SPECS[selectedFormat].name} photo requirements`)} className="w-full px-4 py-2 rounded-lg border text-sm font-semibold text-indigo-600 hover:bg-indigo-50 flex items-center justify-center gap-2">
             <MessageCircle className="w-4 h-4" />Ask Jeffrey
           </button>
-          <div className="mt-6 p-4 bg-green-50 rounded-xl border border-green-200">
-            <p className="text-sm font-semibold text-green-700 mb-2 flex items-center gap-2"><Check className="w-4 h-4" />All Photos Meet Requirements:</p>
-            <ul className="space-y-1 text-sm text-green-600">
-              <li>• Correct dimensions</li>
-              <li>• Proper background color</li>
-              <li>• High resolution (600 DPI)</li>
-            </ul>
-          </div>
+          {generatedPhotos.length > 0 && (
+            <div className="mt-6 p-4 bg-green-50 rounded-xl border border-green-200">
+              <p className="text-sm font-semibold text-green-700 mb-2 flex items-center gap-2"><Check className="w-4 h-4" />All Photos Meet Requirements:</p>
+              <ul className="space-y-1 text-sm text-green-600">
+                <li>• Correct dimensions</li>
+                <li>• Proper background color</li>
+                <li>• High resolution (600 DPI)</li>
+              </ul>
+            </div>
+          )}
         </div>
       </div>
 
       <div className="flex items-center gap-4 mt-8">
-        <button className="inline-flex items-center gap-2 px-6 py-3 rounded-xl font-semibold bg-gradient-to-r from-indigo-500 to-purple-600 text-white hover:shadow-lg"><Camera className="w-5 h-5" />Generate More Formats</button>
-        <button className="inline-flex items-center gap-2 px-6 py-3 rounded-xl font-semibold border border-neutral-300 text-neutral-700 hover:bg-neutral-50"><Download className="w-5 h-5" />Download All Photos</button>
+        <button
+          disabled={!hasUploadedPhotos}
+          className="inline-flex items-center gap-2 px-6 py-3 rounded-xl font-semibold bg-gradient-to-r from-indigo-500 to-purple-600 text-white hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+        >
+          <Camera className="w-5 h-5" />Generate More Formats
+        </button>
+        <button
+          disabled={generatedPhotos.length === 0}
+          className="inline-flex items-center gap-2 px-6 py-3 rounded-xl font-semibold border border-neutral-300 text-neutral-700 hover:bg-neutral-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+        >
+          <Download className="w-5 h-5" />Download All Photos
+        </button>
       </div>
     </div>
   );

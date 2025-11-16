@@ -17,96 +17,99 @@ interface UnifiedDashboardHomeProps {
 export const UnifiedDashboardHome: React.FC<UnifiedDashboardHomeProps> = ({ user }) => {
   const { updateWorkflow, addRecentAction } = useJeffrey();
 
-  // Mock data for demonstration - replace with real API calls
-  const [overallCompleteness] = useState(35);
-  const [formProgress] = useState(1);
-  const [totalForms] = useState(3);
-  const [validatedDocs] = useState(4);
-  const [totalDocs] = useState(8);
-  const [photoProgress] = useState(2);
-  const [requiredPhotos] = useState(4);
-  const [travelProgress] = useState(0);
-
-  const [recentActivity] = useState<ActivityItem[]>([
-    {
-      id: '1',
-      timestamp: new Date(Date.now() - 1000 * 60 * 5), // 5 mins ago
-      type: 'document',
-      title: 'Passport uploaded',
-      description: 'Your passport has been uploaded and validated successfully',
-      status: 'completed',
-    },
-    {
-      id: '2',
-      timestamp: new Date(Date.now() - 1000 * 60 * 30), // 30 mins ago
-      type: 'photo',
-      title: 'Photo compliance check',
-      description: 'UAE visa photo requirements verified',
-      status: 'completed',
-    },
-    {
-      id: '3',
-      timestamp: new Date(Date.now() - 1000 * 60 * 60), // 1 hour ago
-      type: 'form',
-      title: 'Started form filling',
-      description: 'DS-160 visa application form in progress',
-      status: 'in_progress',
-    },
-    {
-      id: '4',
-      timestamp: new Date(Date.now() - 1000 * 60 * 60 * 2), // 2 hours ago
-      type: 'chat',
-      title: 'Asked Jeffrey about requirements',
-      description: 'Inquiry about UAE tourist visa document checklist',
-      status: 'completed',
-    },
-  ]);
-
-  const [recommendations] = useState<JeffreyRecommendation[]>([
-    {
-      id: '1',
-      priority: 'high',
-      title: 'Complete your bank statement upload',
-      description:
-        'Your bank statement is required for the UAE tourist visa. Make sure it shows 3 months of transactions.',
-      action: {
-        label: 'Upload Now',
-        href: '/app/validator',
-      },
-    },
-    {
-      id: '2',
-      priority: 'high',
-      title: 'Generate travel itinerary',
-      description:
-        'A detailed travel itinerary is required for your visa application. Let me help you create one.',
-      action: {
-        label: 'Create Itinerary',
-        href: '/app/travel-planner',
-      },
-    },
-    {
-      id: '3',
-      priority: 'medium',
-      title: 'Review photo specifications',
-      description:
-        'Make sure your photos meet the exact UAE visa requirements (4.5cm x 3.5cm, white background).',
-      action: {
-        label: 'Check Photos',
-        href: '/app/photo-compliance',
-      },
-    },
-  ]);
+  // Real data state - starts empty, will be populated from API or user actions
+  const [overallCompleteness, setOverallCompleteness] = useState(0);
+  const [formProgress, setFormProgress] = useState(0);
+  const [totalForms, setTotalForms] = useState(0);
+  const [validatedDocs, setValidatedDocs] = useState(0);
+  const [totalDocs, setTotalDocs] = useState(0);
+  const [photoProgress, setPhotoProgress] = useState(0);
+  const [requiredPhotos, setRequiredPhotos] = useState(0);
+  const [travelProgress, setTravelProgress] = useState(0);
+  const [recentActivity, setRecentActivity] = useState<ActivityItem[]>([]);
+  const [recommendations, setRecommendations] = useState<JeffreyRecommendation[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   // Update Jeffrey's context when entering dashboard
   useEffect(() => {
     updateWorkflow('dashboard');
     addRecentAction('Viewed dashboard');
+    loadDashboardData();
   }, [updateWorkflow, addRecentAction]);
+
+  const loadDashboardData = async () => {
+    setIsLoading(true);
+    try {
+      // For now, set initial empty state
+      // These will be populated as user interacts with the services
+      setTotalForms(0);
+      setFormProgress(0);
+      setTotalDocs(0);
+      setValidatedDocs(0);
+      setRequiredPhotos(0);
+      setPhotoProgress(0);
+      setTravelProgress(0);
+      setOverallCompleteness(0);
+
+      // Default recommendations for new users
+      setRecommendations([
+        {
+          id: '1',
+          priority: 'high',
+          title: 'Start with Document Validation',
+          description:
+            'Upload and validate your documents to ensure they meet visa requirements. This is the first step in your visa journey.',
+          action: {
+            label: 'Validate Documents',
+            href: '/app/validator',
+          },
+        },
+        {
+          id: '2',
+          priority: 'high',
+          title: 'Generate Visa-Compliant Photos',
+          description:
+            'Create professional photos that meet specific visa requirements for your destination country.',
+          action: {
+            label: 'Generate Photos',
+            href: '/app/photo-compliance',
+          },
+        },
+        {
+          id: '3',
+          priority: 'medium',
+          title: 'Plan Your Travel Itinerary',
+          description:
+            'A detailed travel itinerary strengthens your visa application. Let AI help you create one.',
+          action: {
+            label: 'Create Itinerary',
+            href: '/app/travel-planner',
+          },
+        },
+      ]);
+
+      setRecentActivity([]);
+    } catch (error) {
+      console.error('Failed to load dashboard data:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const handleNavigateToWorkflow = (workflow: string) => {
     addRecentAction(`Navigated to ${workflow}`);
   };
+
+  if (isLoading) {
+    return (
+      <div className="max-w-7xl mx-auto flex items-center justify-center min-h-[60vh]">
+        <div className="text-center">
+          <div className="w-16 h-16 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin mx-auto mb-4" />
+          <p className="text-neutral-600">Loading your dashboard...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-7xl mx-auto">
