@@ -25,91 +25,32 @@ export const FormFillerWorkflow: React.FC = () => {
   const { updateWorkflow, addRecentAction, askJeffrey } = useJeffrey();
 
   const [selectedForm, setSelectedForm] = useState<FormItem | null>(null);
-  const [availableForms] = useState<FormItem[]>([
-    {
-      id: '1',
-      name: 'UAE Visa Application Form',
-      originalUrl: '#',
-      completeness: 65,
-      extractedFields: {},
-      filledData: {
-        fullName: 'John Doe',
-        passportNumber: 'AB123456',
-        dateOfBirth: '1990-01-15',
-        nationality: 'United States',
-      },
-    },
-    {
-      id: '2',
-      name: 'DS-160 (US Visa Application)',
-      originalUrl: '#',
-      completeness: 30,
-      extractedFields: {},
-      filledData: {
-        fullName: 'John Doe',
-        passportNumber: 'AB123456',
-      },
-    },
-    {
-      id: '3',
-      name: 'Schengen Visa Application',
-      originalUrl: '#',
-      completeness: 0,
-      extractedFields: {},
-      filledData: {},
-    },
-  ]);
-
-  const [extractedData] = useState<ExtractedField[]>([
-    {
-      label: 'Full Name',
-      value: 'John Doe',
-      source: 'Passport',
-      confidence: 98,
-    },
-    {
-      label: 'Passport Number',
-      value: 'AB123456',
-      source: 'Passport',
-      confidence: 99,
-    },
-    {
-      label: 'Date of Birth',
-      value: '1990-01-15',
-      source: 'Passport',
-      confidence: 97,
-    },
-    {
-      label: 'Nationality',
-      value: 'United States',
-      source: 'Passport',
-      confidence: 99,
-    },
-    {
-      label: 'Address',
-      value: '123 Main St, New York, NY',
-      source: 'Bank Statement',
-      confidence: 85,
-    },
-    {
-      label: 'Phone Number',
-      value: '+1 555-123-4567',
-      source: 'User Input',
-      confidence: 100,
-    },
-  ]);
-
-  const [dataSources] = useState([
-    { id: '1', name: 'Passport Copy' },
-    { id: '2', name: 'Bank Statement' },
-    { id: '3', name: 'Employment Letter' },
-  ]);
+  const [availableForms, setAvailableForms] = useState<FormItem[]>([]);
+  const [extractedData, setExtractedData] = useState<ExtractedField[]>([]);
+  const [dataSources, setDataSources] = useState<{ id: string; name: string }[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   // Update Jeffrey's context when entering this workflow
   useEffect(() => {
     updateWorkflow('form-filler');
     addRecentAction('Entered Form Filler workflow');
+    loadFormData();
   }, [updateWorkflow, addRecentAction]);
+
+  const loadFormData = async () => {
+    setIsLoading(true);
+    try {
+      // TODO: Fetch real forms from API when backend is ready
+      // For now, start with empty state
+      setAvailableForms([]);
+      setExtractedData([]);
+      setDataSources([]);
+    } catch (error) {
+      console.error('Failed to load form data:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const handleSelectForm = (form: FormItem) => {
     setSelectedForm(form);
@@ -141,6 +82,17 @@ export const FormFillerWorkflow: React.FC = () => {
     askJeffrey(`How do I fill the "${fieldName}" field correctly?`);
   };
 
+  if (isLoading) {
+    return (
+      <div className="max-w-7xl mx-auto flex items-center justify-center min-h-[60vh]">
+        <div className="text-center">
+          <div className="w-16 h-16 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin mx-auto mb-4" />
+          <p className="text-neutral-600">Loading form data...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="max-w-7xl mx-auto">
       {/* Breadcrumb Navigation */}
@@ -165,8 +117,24 @@ export const FormFillerWorkflow: React.FC = () => {
           <div className="mb-6">
             <h3 className="text-2xl font-bold mb-4">Select Form to Fill</h3>
 
-            <div className="space-y-3">
-              {availableForms.map((form) => (
+            {availableForms.length === 0 ? (
+              <div className="text-center py-12 border-2 border-dashed border-neutral-200 rounded-xl">
+                <FileText className="w-12 h-12 text-neutral-300 mx-auto mb-4" />
+                <h4 className="text-lg font-semibold text-neutral-700 mb-2">No Forms Available Yet</h4>
+                <p className="text-neutral-500 mb-4">
+                  Upload your documents first, and we'll help you fill out visa application forms.
+                </p>
+                <button
+                  onClick={() => askJeffrey('How do I start filling visa application forms?')}
+                  className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg font-semibold hover:bg-indigo-700 transition-colors"
+                >
+                  <MessageCircle className="w-4 h-4" />
+                  Ask Jeffrey for Help
+                </button>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {availableForms.map((form) => (
                 <button
                   key={form.id}
                   onClick={() => handleSelectForm(form)}
@@ -195,7 +163,8 @@ export const FormFillerWorkflow: React.FC = () => {
                   </div>
                 </button>
               ))}
-            </div>
+              </div>
+            )}
           </div>
 
           {/* Form Preview & Editing */}
@@ -259,42 +228,52 @@ export const FormFillerWorkflow: React.FC = () => {
             Jeffrey extracted this data from your uploaded documents:
           </p>
 
-          <div className="space-y-4">
-            {extractedData.map((field, index) => (
-              <div key={index} className="p-3 bg-neutral-50 rounded-lg">
-                <div className="flex items-center justify-between mb-1">
-                  <span className="text-xs font-semibold text-neutral-500">{field.label}</span>
-                  <span
-                    className={cn(
-                      'text-xs font-medium px-2 py-0.5 rounded-full',
-                      field.confidence >= 95
-                        ? 'bg-green-100 text-green-700'
-                        : field.confidence >= 80
-                          ? 'bg-yellow-100 text-yellow-700'
-                          : 'bg-red-100 text-red-700'
-                    )}
-                  >
-                    {field.confidence}%
-                  </span>
-                </div>
-                <p className="text-sm font-medium text-neutral-900">{field.value}</p>
-                <p className="text-xs text-neutral-400 mt-1">Source: {field.source}</p>
-              </div>
-            ))}
-          </div>
-
-          {/* Data Sources */}
-          <div className="mt-6 p-4 bg-neutral-50 rounded-xl">
-            <p className="text-xs font-semibold text-neutral-500 mb-2">Data extracted from:</p>
-            <div className="space-y-2">
-              {dataSources.map((source) => (
-                <div key={source.id} className="flex items-center gap-2 text-sm">
-                  <FileText className="w-4 h-4 text-indigo-600" />
-                  <span className="text-neutral-700">{source.name}</span>
-                </div>
-              ))}
+          {extractedData.length === 0 ? (
+            <div className="text-center py-8">
+              <FileText className="w-10 h-10 text-neutral-300 mx-auto mb-3" />
+              <p className="text-sm text-neutral-500">No data extracted yet</p>
+              <p className="text-xs text-neutral-400 mt-1">Upload documents to get started</p>
             </div>
-          </div>
+          ) : (
+            <>
+              <div className="space-y-4">
+                {extractedData.map((field, index) => (
+                  <div key={index} className="p-3 bg-neutral-50 rounded-lg">
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="text-xs font-semibold text-neutral-500">{field.label}</span>
+                      <span
+                        className={cn(
+                          'text-xs font-medium px-2 py-0.5 rounded-full',
+                          field.confidence >= 95
+                            ? 'bg-green-100 text-green-700'
+                            : field.confidence >= 80
+                              ? 'bg-yellow-100 text-yellow-700'
+                              : 'bg-red-100 text-red-700'
+                        )}
+                      >
+                        {field.confidence}%
+                      </span>
+                    </div>
+                    <p className="text-sm font-medium text-neutral-900">{field.value}</p>
+                    <p className="text-xs text-neutral-400 mt-1">Source: {field.source}</p>
+                  </div>
+                ))}
+              </div>
+
+              {/* Data Sources */}
+              <div className="mt-6 p-4 bg-neutral-50 rounded-xl">
+                <p className="text-xs font-semibold text-neutral-500 mb-2">Data extracted from:</p>
+                <div className="space-y-2">
+                  {dataSources.map((source) => (
+                    <div key={source.id} className="flex items-center gap-2 text-sm">
+                      <FileText className="w-4 h-4 text-indigo-600" />
+                      <span className="text-neutral-700">{source.name}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </>
+          )}
         </div>
       </div>
 

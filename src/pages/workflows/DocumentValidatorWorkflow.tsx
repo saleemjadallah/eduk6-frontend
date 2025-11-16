@@ -34,109 +34,45 @@ interface ValidationInsight {
 export const DocumentValidatorWorkflow: React.FC = () => {
   const { updateWorkflow, addRecentAction, askJeffrey } = useJeffrey();
 
-  const [mandatoryRequirements] = useState<Requirement[]>([
-    {
-      id: '1',
-      item: 'Valid Passport',
-      description: 'Must be valid for at least 6 months from travel date',
-      mandatory: true,
-      documentId: 'doc-1',
-      status: 'validated',
-    },
-    {
-      id: '2',
-      item: 'Passport-Size Photos',
-      description: '2 recent photos (4.5cm x 3.5cm)',
-      mandatory: true,
-      documentId: 'doc-2',
-      status: 'validated',
-    },
-    {
-      id: '3',
-      item: 'Bank Statement',
-      description: 'Last 3 months showing sufficient funds',
-      mandatory: true,
-      status: 'pending',
-    },
-    {
-      id: '4',
-      item: 'Employment Letter',
-      description: 'Current employment verification',
-      mandatory: true,
-      documentId: 'doc-4',
-      status: 'uploaded',
-    },
-    {
-      id: '5',
-      item: 'Flight Reservation',
-      description: 'Round-trip flight booking',
-      mandatory: true,
-      status: 'pending',
-    },
-    {
-      id: '6',
-      item: 'Hotel Reservation',
-      description: 'Confirmed accommodation booking',
-      mandatory: true,
-      status: 'pending',
-    },
-  ]);
-
-  const [optionalRequirements] = useState<Requirement[]>([
-    {
-      id: '7',
-      item: 'Travel Insurance',
-      description: 'Recommended for medical coverage',
-      mandatory: false,
-      status: 'pending',
-    },
-    {
-      id: '8',
-      item: 'Cover Letter',
-      description: 'Personal statement for visa application',
-      mandatory: false,
-      documentId: 'doc-8',
-      status: 'validated',
-    },
-  ]);
-
-  const [validationInsights] = useState<ValidationInsight[]>([
-    {
-      type: 'success',
-      title: 'Passport verified',
-      description: 'Your passport is valid for 2 more years. No issues found.',
-    },
-    {
-      type: 'warning',
-      title: 'Bank statement needed',
-      description: 'Upload your bank statement showing minimum balance of $3,000.',
-      action: 'Upload Now',
-    },
-    {
-      type: 'error',
-      title: 'Missing flight reservation',
-      description:
-        'Flight booking is mandatory. Consider using our Travel Planner to generate one.',
-      action: 'Create Itinerary',
-    },
-  ]);
-
-  const [jeffreyRecommendation] = useState(
-    "You're making good progress! Focus on uploading your bank statement next - it's a critical document for UAE visa approval. Make sure it shows consistent income over the past 3 months."
-  );
+  const [mandatoryRequirements, setMandatoryRequirements] = useState<Requirement[]>([]);
+  const [optionalRequirements, setOptionalRequirements] = useState<Requirement[]>([]);
+  const [validationInsights, setValidationInsights] = useState<ValidationInsight[]>([]);
+  const [jeffreyRecommendation, setJeffreyRecommendation] = useState('');
+  const [isLoading, setIsLoading] = useState(true);
 
   // Calculate completeness
   const totalRequirements = mandatoryRequirements.length + optionalRequirements.length;
   const completedRequirements = [...mandatoryRequirements, ...optionalRequirements].filter(
     (r) => r.status === 'validated'
   ).length;
-  const documentCompleteness = Math.round((completedRequirements / totalRequirements) * 100);
+  const documentCompleteness = totalRequirements > 0
+    ? Math.round((completedRequirements / totalRequirements) * 100)
+    : 0;
 
   // Update Jeffrey's context when entering this workflow
   useEffect(() => {
     updateWorkflow('validator');
     addRecentAction('Entered Document Validator workflow');
+    loadValidatorData();
   }, [updateWorkflow, addRecentAction]);
+
+  const loadValidatorData = async () => {
+    setIsLoading(true);
+    try {
+      // TODO: Fetch real requirements from API based on user's visa application
+      // For now, start with empty state
+      setMandatoryRequirements([]);
+      setOptionalRequirements([]);
+      setValidationInsights([]);
+      setJeffreyRecommendation(
+        'Start by selecting your destination country and visa type. I\'ll help you understand exactly which documents you need to upload.'
+      );
+    } catch (error) {
+      console.error('Failed to load validator data:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const getStatusIcon = (status: Requirement['status']) => {
     switch (status) {
@@ -191,6 +127,17 @@ export const DocumentValidatorWorkflow: React.FC = () => {
     alert('Validation process started for all uploaded documents');
   };
 
+  if (isLoading) {
+    return (
+      <div className="max-w-7xl mx-auto flex items-center justify-center min-h-[60vh]">
+        <div className="text-center">
+          <div className="w-16 h-16 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin mx-auto mb-4" />
+          <p className="text-neutral-600">Loading document requirements...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="max-w-7xl mx-auto">
       <Breadcrumb>
@@ -214,15 +161,32 @@ export const DocumentValidatorWorkflow: React.FC = () => {
             <CompletionBadge value={documentCompleteness} className="text-lg px-4 py-2" />
           </div>
 
-          {/* Mandatory Documents */}
-          <div className="mb-8">
-            <h4 className="text-lg font-semibold text-neutral-700 mb-4 flex items-center gap-2">
-              <AlertCircle className="w-5 h-5 text-red-500" />
-              Mandatory Documents
-            </h4>
+          {mandatoryRequirements.length === 0 && optionalRequirements.length === 0 ? (
+            <div className="text-center py-12 border-2 border-dashed border-neutral-200 rounded-xl">
+              <CheckCircle className="w-12 h-12 text-neutral-300 mx-auto mb-4" />
+              <h4 className="text-lg font-semibold text-neutral-700 mb-2">No Requirements Set Yet</h4>
+              <p className="text-neutral-500 mb-4">
+                Select your destination country and visa type to see required documents.
+              </p>
+              <button
+                onClick={() => askJeffrey('What documents do I need for a tourist visa?')}
+                className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg font-semibold hover:bg-indigo-700 transition-colors"
+              >
+                <MessageCircle className="w-4 h-4" />
+                Ask Jeffrey What I Need
+              </button>
+            </div>
+          ) : (
+            <>
+              {/* Mandatory Documents */}
+              <div className="mb-8">
+                <h4 className="text-lg font-semibold text-neutral-700 mb-4 flex items-center gap-2">
+                  <AlertCircle className="w-5 h-5 text-red-500" />
+                  Mandatory Documents
+                </h4>
 
-            <div className="space-y-3">
-              {mandatoryRequirements.map((req) => (
+                <div className="space-y-3">
+                  {mandatoryRequirements.map((req) => (
                 <div
                   key={req.id}
                   className="flex items-center justify-between p-4 bg-neutral-50 rounded-xl border border-neutral-200"
@@ -279,66 +243,68 @@ export const DocumentValidatorWorkflow: React.FC = () => {
             </div>
           </div>
 
-          {/* Optional Documents */}
-          <div>
-            <h4 className="text-lg font-semibold text-neutral-700 mb-4 flex items-center gap-2">
-              <Info className="w-5 h-5 text-blue-500" />
-              Optional Documents (Recommended)
-            </h4>
+              {/* Optional Documents */}
+              <div>
+                <h4 className="text-lg font-semibold text-neutral-700 mb-4 flex items-center gap-2">
+                  <Info className="w-5 h-5 text-blue-500" />
+                  Optional Documents (Recommended)
+                </h4>
 
-            <div className="space-y-3">
-              {optionalRequirements.map((req) => (
-                <div
-                  key={req.id}
-                  className="flex items-center justify-between p-4 bg-neutral-50 rounded-xl border border-neutral-200 opacity-90"
-                >
-                  <div className="flex items-center gap-3">
-                    {getStatusIcon(req.status)}
-                    <div>
-                      <p className="font-semibold text-neutral-900">{req.item}</p>
-                      <p className="text-sm text-neutral-500">{req.description}</p>
+                <div className="space-y-3">
+                  {optionalRequirements.map((req) => (
+                    <div
+                      key={req.id}
+                      className="flex items-center justify-between p-4 bg-neutral-50 rounded-xl border border-neutral-200 opacity-90"
+                    >
+                      <div className="flex items-center gap-3">
+                        {getStatusIcon(req.status)}
+                        <div>
+                          <p className="font-semibold text-neutral-900">{req.item}</p>
+                          <p className="text-sm text-neutral-500">{req.description}</p>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        <span
+                          className={cn(
+                            'text-xs font-medium px-2 py-1 rounded-full',
+                            req.status === 'validated' && 'bg-green-100 text-green-700',
+                            req.status === 'uploaded' && 'bg-blue-100 text-blue-700',
+                            req.status === 'pending' && 'bg-neutral-100 text-neutral-600'
+                          )}
+                        >
+                          {getStatusLabel(req.status)}
+                        </span>
+
+                        {req.documentId ? (
+                          <button
+                            onClick={() => handleViewDocument(req.documentId!)}
+                            className="p-2 text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
+                          >
+                            <Eye className="w-4 h-4" />
+                          </button>
+                        ) : (
+                          <button
+                            onClick={() => handleUpload(req)}
+                            className="p-2 text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
+                          >
+                            <Upload className="w-4 h-4" />
+                          </button>
+                        )}
+
+                        <button
+                          onClick={() => askJeffrey(`Is ${req.item} important?`)}
+                          className="p-2 text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
+                        >
+                          <MessageCircle className="w-4 h-4" />
+                        </button>
+                      </div>
                     </div>
-                  </div>
-
-                  <div className="flex items-center gap-2">
-                    <span
-                      className={cn(
-                        'text-xs font-medium px-2 py-1 rounded-full',
-                        req.status === 'validated' && 'bg-green-100 text-green-700',
-                        req.status === 'uploaded' && 'bg-blue-100 text-blue-700',
-                        req.status === 'pending' && 'bg-neutral-100 text-neutral-600'
-                      )}
-                    >
-                      {getStatusLabel(req.status)}
-                    </span>
-
-                    {req.documentId ? (
-                      <button
-                        onClick={() => handleViewDocument(req.documentId!)}
-                        className="p-2 text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
-                      >
-                        <Eye className="w-4 h-4" />
-                      </button>
-                    ) : (
-                      <button
-                        onClick={() => handleUpload(req)}
-                        className="p-2 text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
-                      >
-                        <Upload className="w-4 h-4" />
-                      </button>
-                    )}
-
-                    <button
-                      onClick={() => askJeffrey(`Is ${req.item} important?`)}
-                      className="p-2 text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
-                    >
-                      <MessageCircle className="w-4 h-4" />
-                    </button>
-                  </div>
+                  ))}
                 </div>
-              ))}
-            </div>
-          </div>
+              </div>
+            </>
+          )}
         </div>
 
         {/* Right: Validation Insights */}
@@ -346,8 +312,15 @@ export const DocumentValidatorWorkflow: React.FC = () => {
           <h3 className="text-lg font-bold mb-4">Validation Insights</h3>
 
           {/* AI Validation Results */}
-          <div className="space-y-4 mb-6">
-            {validationInsights.map((insight, index) => (
+          {validationInsights.length === 0 ? (
+            <div className="text-center py-8 mb-6">
+              <Info className="w-10 h-10 text-neutral-300 mx-auto mb-3" />
+              <p className="text-sm text-neutral-500">No validation insights yet</p>
+              <p className="text-xs text-neutral-400 mt-1">Upload documents to see AI analysis</p>
+            </div>
+          ) : (
+            <div className="space-y-4 mb-6">
+              {validationInsights.map((insight, index) => (
               <div
                 key={index}
                 className={cn(
@@ -372,6 +345,7 @@ export const DocumentValidatorWorkflow: React.FC = () => {
               </div>
             ))}
           </div>
+          )}
 
           {/* Jeffrey's Recommendations */}
           <div className="p-4 bg-indigo-50 rounded-xl border border-indigo-100">
@@ -403,9 +377,10 @@ export const DocumentValidatorWorkflow: React.FC = () => {
       <div className="flex items-center gap-4 mt-8">
         <button
           onClick={handleValidateAll}
+          disabled={mandatoryRequirements.length === 0}
           className="inline-flex items-center gap-2 px-6 py-3 rounded-xl font-semibold
                      bg-gradient-to-r from-indigo-500 to-purple-600 text-white
-                     hover:shadow-lg transition-all"
+                     hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
         >
           <CheckCircle className="w-5 h-5" />
           Validate All Documents
