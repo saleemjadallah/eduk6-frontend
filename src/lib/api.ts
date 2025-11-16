@@ -222,6 +222,78 @@ export const visaDocsApi = {
     const response = await api.post(`/visadocs/chat/sessions/${id}/clear`);
     return response.data;
   },
+
+  // Helper methods for unified dashboard with Jeffrey
+  sendMessage: async (
+    message: string,
+    options?: {
+      sessionId?: string;
+      visaContext?: {
+        visaType?: string;
+        destinationCountry?: string;
+        nationality?: string;
+        stage?: string;
+      };
+    }
+  ): Promise<{
+    data?: {
+      response: string;
+      sessionId?: string;
+      sources?: { title: string; url: string }[];
+      suggestions?: string[];
+    };
+  }> => {
+    try {
+      const response = await api.post('/visadocs/chat', {
+        message,
+        sessionId: options?.sessionId ? parseInt(options.sessionId, 10) : undefined,
+        visaContext: options?.visaContext,
+        useSearch: true,
+      });
+
+      if (response.data?.success) {
+        return {
+          data: {
+            response: response.data.data.message.content,
+            sessionId: response.data.data.sessionId?.toString(),
+            sources: response.data.data.message.sources,
+            suggestions: [],
+          },
+        };
+      }
+      return { data: undefined };
+    } catch (error) {
+      console.error('Failed to send message to Jeffrey:', error);
+      throw error;
+    }
+  },
+
+  getSuggestedQuestions: async (
+    stage?: string,
+    visaType?: string,
+    destinationCountry?: string
+  ): Promise<{ data?: { questions: string[] } }> => {
+    try {
+      const queryParams = new URLSearchParams();
+      if (stage) queryParams.append('stage', stage);
+      if (visaType) queryParams.append('visaType', visaType);
+      if (destinationCountry) queryParams.append('destinationCountry', destinationCountry);
+
+      const response = await api.get(`/visadocs/chat/suggestions?${queryParams.toString()}`);
+
+      if (response.data?.success) {
+        return {
+          data: {
+            questions: response.data.data.suggestions || [],
+          },
+        };
+      }
+      return { data: { questions: [] } };
+    } catch (error) {
+      console.error('Failed to get suggestions:', error);
+      return { data: { questions: [] } };
+    }
+  },
 };
 
 // Batch API
