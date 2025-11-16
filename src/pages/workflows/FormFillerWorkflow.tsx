@@ -4,7 +4,7 @@ import { useJeffrey } from '../../contexts/JeffreyContext';
 import { Breadcrumb, BreadcrumbItem } from '../../components/ui/Breadcrumb';
 import { CompletionBadge } from '../../components/ui/CompletionBadge';
 import { cn } from '../../utils/cn';
-import { onboardingApi } from '../../lib/api';
+import { onboardingApi, visaDocsApi } from '../../lib/api';
 
 interface FormItem {
   id: string;
@@ -23,11 +23,17 @@ interface ExtractedField {
 }
 
 interface SuggestedForm {
-  id: string;
   name: string;
-  country: string;
-  downloadUrl: string;
-  officialSource: string;
+  description: string;
+  officialUrl: string;
+  source: string;
+  formType: string;
+  instructions?: string;
+}
+
+interface AdditionalResource {
+  title: string;
+  url: string;
   description: string;
 }
 
@@ -40,86 +46,6 @@ interface TravelProfile {
   };
 }
 
-// Visa form database by country
-const VISA_FORMS_DATABASE: Record<string, SuggestedForm[]> = {
-  'usa': [
-    {
-      id: 'ds160',
-      name: 'DS-160 Online Nonimmigrant Visa Application',
-      country: 'USA',
-      downloadUrl: 'https://ceac.state.gov/genniv/',
-      officialSource: 'U.S. Department of State',
-      description: 'Required for all nonimmigrant visas (B1/B2, F1, H1B, etc.)'
-    },
-    {
-      id: 'ds156',
-      name: 'DS-156 Supplemental Form (if required)',
-      country: 'USA',
-      downloadUrl: 'https://travel.state.gov/content/travel/en/us-visas/visa-information-resources/forms.html',
-      officialSource: 'U.S. Department of State',
-      description: 'Additional form for specific visa categories'
-    }
-  ],
-  'schengen': [
-    {
-      id: 'schengen-application',
-      name: 'Schengen Visa Application Form',
-      country: 'Schengen Area',
-      downloadUrl: 'https://www.schengenvisainfo.com/download-schengen-visa-application-form/',
-      officialSource: 'Official Schengen Visa Portal',
-      description: 'Standard application for all 26 Schengen countries'
-    }
-  ],
-  'uk': [
-    {
-      id: 'uk-visitor',
-      name: 'UK Standard Visitor Visa Application',
-      country: 'United Kingdom',
-      downloadUrl: 'https://www.gov.uk/standard-visitor',
-      officialSource: 'UK Government',
-      description: 'Apply online for visitor visa'
-    }
-  ],
-  'uae': [
-    {
-      id: 'uae-visa',
-      name: 'UAE Visa Application Form',
-      country: 'UAE',
-      downloadUrl: 'https://smartservices.icp.gov.ae/',
-      officialSource: 'ICP Federal Authority',
-      description: 'Online application through ICP portal'
-    }
-  ],
-  'canada': [
-    {
-      id: 'imm5257',
-      name: 'IMM 5257 - Application for Visitor Visa',
-      country: 'Canada',
-      downloadUrl: 'https://www.canada.ca/en/immigration-refugees-citizenship/services/application/application-forms-guides/application-visitor-visa-outside-canada.html',
-      officialSource: 'IRCC Canada',
-      description: 'Main visitor visa application form'
-    },
-    {
-      id: 'imm5645',
-      name: 'IMM 5645 - Family Information Form',
-      country: 'Canada',
-      downloadUrl: 'https://www.canada.ca/en/immigration-refugees-citizenship/services/application/application-forms-guides/family-information.html',
-      officialSource: 'IRCC Canada',
-      description: 'Required family details form'
-    }
-  ],
-  'australia': [
-    {
-      id: 'aus-visitor',
-      name: 'Australian Visitor Visa (subclass 600)',
-      country: 'Australia',
-      downloadUrl: 'https://immi.homeaffairs.gov.au/visas/getting-a-visa/visa-listing/visitor-600',
-      officialSource: 'Australian Government',
-      description: 'Apply online through ImmiAccount'
-    }
-  ]
-};
-
 export const FormFillerWorkflow: React.FC = () => {
   const { updateWorkflow, addRecentAction, askJeffrey } = useJeffrey();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -130,9 +56,12 @@ export const FormFillerWorkflow: React.FC = () => {
   const [dataSources, setDataSources] = useState<{ id: string; name: string }[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [suggestedForms, setSuggestedForms] = useState<SuggestedForm[]>([]);
+  const [additionalResources, setAdditionalResources] = useState<AdditionalResource[]>([]);
+  const [processingNotes, setProcessingNotes] = useState<string>('');
   const [travelProfile, setTravelProfile] = useState<TravelProfile | null>(null);
-  const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
   const [isUploading, setIsUploading] = useState(false);
+  const [isSearchingForms, setIsSearchingForms] = useState(false);
+  const [formSearchError, setFormSearchError] = useState<string | null>(null);
 
   // Update Jeffrey's context when entering this workflow
   useEffect(() => {
@@ -143,6 +72,7 @@ export const FormFillerWorkflow: React.FC = () => {
 
   const loadFormData = async () => {
     setIsLoading(true);
+    setFormSearchError(null);
     try {
       // Fetch onboarding data to get destination country
       const onboardingResponse = await onboardingApi.getStatus();
@@ -151,10 +81,30 @@ export const FormFillerWorkflow: React.FC = () => {
         const profile = onboardingResponse.data.travelProfile;
         setTravelProfile(profile);
 
-        // Get suggested forms based on destination
-        const countryKey = getCountryKey(profile.destinationCountry);
-        const forms = VISA_FORMS_DATABASE[countryKey] || [];
-        setSuggestedForms(forms);
+        // Use Perplexity AI to dynamically search for visa forms
+        setIsSearchingForms(true);
+        try {
+          const formsResponse = await visaDocsApi.searchVisaForms({
+            country: profile.destinationCountry,
+            visaType: profile.visaRequirements?.visaType,
+            purpose: profile.travelPurpose,
+            nationality: profile.nationality
+          });
+
+          if (formsResponse.success && formsResponse.data) {
+            const responseData = formsResponse.data;
+            setSuggestedForms(responseData.forms || []);
+            setAdditionalResources(responseData.additionalResources || []);
+            setProcessingNotes(responseData.processingNotes || '');
+          } else {
+            setFormSearchError('Unable to find forms. Please try again later.');
+          }
+        } catch (searchError) {
+          console.error('Failed to search visa forms:', searchError);
+          setFormSearchError('Failed to search for visa forms. Please try again.');
+        } finally {
+          setIsSearchingForms(false);
+        }
       }
 
       // TODO: Fetch real uploaded forms from API when backend is ready
@@ -168,36 +118,11 @@ export const FormFillerWorkflow: React.FC = () => {
     }
   };
 
-  const getCountryKey = (country: string): string => {
-    const lowerCountry = country.toLowerCase();
-    if (lowerCountry.includes('usa') || lowerCountry.includes('united states') || lowerCountry.includes('america')) {
-      return 'usa';
-    }
-    if (lowerCountry.includes('schengen') || lowerCountry.includes('germany') || lowerCountry.includes('france') ||
-        lowerCountry.includes('italy') || lowerCountry.includes('spain') || lowerCountry.includes('netherlands')) {
-      return 'schengen';
-    }
-    if (lowerCountry.includes('uk') || lowerCountry.includes('united kingdom') || lowerCountry.includes('britain')) {
-      return 'uk';
-    }
-    if (lowerCountry.includes('uae') || lowerCountry.includes('emirates') || lowerCountry.includes('dubai')) {
-      return 'uae';
-    }
-    if (lowerCountry.includes('canada')) {
-      return 'canada';
-    }
-    if (lowerCountry.includes('australia')) {
-      return 'australia';
-    }
-    return lowerCountry;
-  };
-
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
     if (!files) return;
 
     const newFiles = Array.from(files);
-    setUploadedFiles(prev => [...prev, ...newFiles]);
 
     // Simulate processing uploaded forms
     setIsUploading(true);
@@ -279,49 +204,125 @@ export const FormFillerWorkflow: React.FC = () => {
       </div>
 
       {/* Suggested Forms Section - Based on Onboarding */}
-      {travelProfile && suggestedForms.length > 0 && (
+      {travelProfile && (
         <div className="mb-8 p-6 bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-200 rounded-2xl">
           <div className="flex items-center gap-3 mb-4">
             <Globe className="w-6 h-6 text-blue-600" />
             <h3 className="text-xl font-bold text-gray-900">
-              Recommended Forms for {travelProfile.destinationCountry}
+              Official Visa Forms for {travelProfile.destinationCountry}
             </h3>
           </div>
           <p className="text-sm text-gray-600 mb-4">
-            Based on your {travelProfile.visaRequirements?.visaType || travelProfile.travelPurpose} visa application
+            AI-powered search for {travelProfile.visaRequirements?.visaType || travelProfile.travelPurpose} visa application forms
           </p>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {suggestedForms.map((form) => (
-              <div key={form.id} className="bg-white p-4 rounded-xl border border-blue-100 shadow-sm">
-                <div className="flex items-start justify-between">
-                  <div className="flex-1">
-                    <h4 className="font-semibold text-gray-900 mb-1">{form.name}</h4>
-                    <p className="text-xs text-gray-500 mb-2">{form.description}</p>
-                    <div className="flex items-center gap-1 text-xs text-blue-600">
-                      <AlertCircle className="w-3 h-3" />
-                      <span>Source: {form.officialSource}</span>
+          {isSearchingForms ? (
+            <div className="text-center py-8">
+              <div className="w-12 h-12 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin mx-auto mb-4" />
+              <p className="text-gray-600 font-medium">Searching for official forms...</p>
+              <p className="text-sm text-gray-500 mt-1">Using AI to find the latest official government forms</p>
+            </div>
+          ) : formSearchError ? (
+            <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
+              <p className="text-sm text-red-700">{formSearchError}</p>
+              <button
+                onClick={loadFormData}
+                className="mt-2 text-sm text-red-600 underline hover:text-red-800"
+              >
+                Try again
+              </button>
+            </div>
+          ) : suggestedForms.length > 0 ? (
+            <>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {suggestedForms.map((form, index) => (
+                  <div key={index} className="bg-white p-4 rounded-xl border border-blue-100 shadow-sm">
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-1">
+                          <h4 className="font-semibold text-gray-900">{form.name}</h4>
+                          <span className={`text-xs px-2 py-0.5 rounded-full ${
+                            form.formType === 'online' ? 'bg-green-100 text-green-700' :
+                            form.formType === 'pdf' ? 'bg-blue-100 text-blue-700' :
+                            'bg-purple-100 text-purple-700'
+                          }`}>
+                            {form.formType}
+                          </span>
+                        </div>
+                        <p className="text-xs text-gray-500 mb-2">{form.description}</p>
+                        {form.instructions && (
+                          <p className="text-xs text-gray-600 mb-2 italic">{form.instructions}</p>
+                        )}
+                        <div className="flex items-center gap-1 text-xs text-blue-600">
+                          <AlertCircle className="w-3 h-3" />
+                          <span>Source: {form.source}</span>
+                        </div>
+                      </div>
                     </div>
+                    <a
+                      href={form.officialUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="mt-3 inline-flex items-center gap-2 px-3 py-2 bg-blue-600 text-white text-sm rounded-lg font-medium hover:bg-blue-700 transition-colors w-full justify-center"
+                    >
+                      <ExternalLink className="w-4 h-4" />
+                      {form.formType === 'online' ? 'Access Online Portal' : 'Get Official Form'}
+                    </a>
+                  </div>
+                ))}
+              </div>
+
+              {/* Processing Notes */}
+              {processingNotes && (
+                <div className="mt-4 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+                  <p className="text-sm text-amber-800">
+                    <strong>Important:</strong> {processingNotes}
+                  </p>
+                </div>
+              )}
+
+              {/* Additional Resources */}
+              {additionalResources.length > 0 && (
+                <div className="mt-4">
+                  <h4 className="text-sm font-semibold text-gray-700 mb-2">Additional Resources</h4>
+                  <div className="space-y-2">
+                    {additionalResources.map((resource, index) => (
+                      <a
+                        key={index}
+                        href={resource.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="block p-3 bg-white border border-gray-200 rounded-lg hover:border-blue-300 transition-colors"
+                      >
+                        <div className="flex items-center justify-between">
+                          <span className="font-medium text-sm text-gray-900">{resource.title}</span>
+                          <ExternalLink className="w-4 h-4 text-gray-400" />
+                        </div>
+                        <p className="text-xs text-gray-500 mt-1">{resource.description}</p>
+                      </a>
+                    ))}
                   </div>
                 </div>
-                <a
-                  href={form.downloadUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="mt-3 inline-flex items-center gap-2 px-3 py-2 bg-blue-600 text-white text-sm rounded-lg font-medium hover:bg-blue-700 transition-colors w-full justify-center"
-                >
-                  <ExternalLink className="w-4 h-4" />
-                  Get Official Form
-                </a>
-              </div>
-            ))}
-          </div>
+              )}
 
-          <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
-            <p className="text-sm text-yellow-800">
-              <strong>Tip:</strong> Download the official form from the links above, then upload it here so Jeffrey can help you fill it out automatically.
-            </p>
-          </div>
+              <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                <p className="text-sm text-yellow-800">
+                  <strong>Tip:</strong> Download the official form from the links above, then upload it here so Jeffrey can help you fill it out automatically.
+                </p>
+              </div>
+            </>
+          ) : (
+            <div className="text-center py-6">
+              <FileText className="w-10 h-10 text-gray-300 mx-auto mb-3" />
+              <p className="text-sm text-gray-600">No forms found for this destination.</p>
+              <button
+                onClick={() => askJeffrey(`What visa forms do I need for ${travelProfile.destinationCountry}?`)}
+                className="mt-2 text-sm text-blue-600 underline hover:text-blue-800"
+              >
+                Ask Jeffrey for help
+              </button>
+            </div>
+          )}
         </div>
       )}
 
