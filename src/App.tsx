@@ -16,7 +16,18 @@ import UploadPage from './pages/UploadPage';
 import ProcessingPage from './pages/ProcessingPage';
 import BatchViewPage from './pages/BatchViewPage';
 import EditStudioPage from './pages/EditStudioPage';
+import DocumentValidatorPage from './pages/DocumentValidatorPage';
+import PhotoCompliancePage from './pages/PhotoCompliancePage';
+import TravelItineraryPage from './pages/TravelItineraryPage';
 import Layout from './components/Layout';
+
+// NEW: Unified Dashboard with Jeffrey
+import { DashboardLayout } from './components/DashboardLayout';
+import { UnifiedDashboardHome } from './pages/UnifiedDashboardHome';
+import { FormFillerWorkflow } from './pages/workflows/FormFillerWorkflow';
+import { DocumentValidatorWorkflow } from './pages/workflows/DocumentValidatorWorkflow';
+import { PhotoComplianceWorkflow } from './pages/workflows/PhotoComplianceWorkflow';
+import { TravelPlannerWorkflow } from './pages/workflows/TravelPlannerWorkflow';
 
 function App() {
   const [user, setUser] = useState<User | null>(null);
@@ -108,6 +119,88 @@ function App() {
           path="/edit-studio/:batchId"
           element={
             user ? <Layout user={user}><EditStudioPage /></Layout> : <Navigate to="/login" />
+          }
+        />
+
+        {/* MYDSCVR Core Features */}
+        <Route
+          path="/document-validator"
+          element={
+            user ? <Layout user={user}><DocumentValidatorPage /></Layout> : <Navigate to="/login" />
+          }
+        />
+        <Route
+          path="/photo-compliance"
+          element={
+            user ? <Layout user={user}><PhotoCompliancePage /></Layout> : <Navigate to="/login" />
+          }
+        />
+        <Route
+          path="/travel-itinerary"
+          element={
+            user ? <Layout user={user}><TravelItineraryPage /></Layout> : <Navigate to="/login" />
+          }
+        />
+
+        {/* NEW: Unified Dashboard with Persistent Jeffrey Sidebar */}
+        <Route
+          path="/app"
+          element={
+            user ? (
+              <DashboardLayout user={user} onLogout={() => setUser(null)}>
+                <UnifiedDashboardHome user={user} />
+              </DashboardLayout>
+            ) : (
+              <Navigate to="/login" />
+            )
+          }
+        />
+        <Route
+          path="/app/form-filler"
+          element={
+            user ? (
+              <DashboardLayout user={user} onLogout={() => setUser(null)}>
+                <FormFillerWorkflow />
+              </DashboardLayout>
+            ) : (
+              <Navigate to="/login" />
+            )
+          }
+        />
+        <Route
+          path="/app/validator"
+          element={
+            user ? (
+              <DashboardLayout user={user} onLogout={() => setUser(null)}>
+                <DocumentValidatorWorkflow />
+              </DashboardLayout>
+            ) : (
+              <Navigate to="/login" />
+            )
+          }
+        />
+        <Route
+          path="/app/photo-compliance"
+          element={
+            user ? (
+              <DashboardLayout user={user} onLogout={() => setUser(null)}>
+                <PhotoComplianceWorkflow />
+              </DashboardLayout>
+            ) : (
+              <Navigate to="/login" />
+            )
+          }
+        />
+        <Route
+          path="/app/travel-planner"
+          element={
+            user ? (
+              <DashboardLayout user={user} onLogout={() => setUser(null)}>
+                <TravelPlannerWorkflow />
+              </DashboardLayout>
+            ) : (
+              <Navigate to="/login" />
+            )
           }
         />
 
