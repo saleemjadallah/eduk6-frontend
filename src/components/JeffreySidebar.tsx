@@ -64,9 +64,13 @@ export const JeffreySidebar: React.FC<JeffreySidebarProps> = ({ className }) => 
             <div
               className="w-12 h-12 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600
                          flex items-center justify-center text-white text-xl font-bold
-                         shadow-lg"
+                         shadow-lg overflow-hidden"
             >
-              J
+              <img
+                src="/assets/Jeffrey.png"
+                alt="Jeffrey AI Assistant"
+                className="w-full h-full object-cover"
+              />
             </div>
             {/* Pulsing "online" indicator */}
             <div

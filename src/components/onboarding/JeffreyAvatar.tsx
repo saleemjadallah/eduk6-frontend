@@ -62,10 +62,15 @@ export default function JeffreyAvatar({
           ${animate ? moodAnimations[currentMood] : ''}
           transition-all duration-300
           transform hover:scale-105
+          overflow-hidden
         `}
       >
         {currentMood === 'neutral' ? (
-          <span className="font-bold">J</span>
+          <img
+            src="/assets/Jeffrey.png"
+            alt="Jeffrey AI Assistant"
+            className="w-full h-full object-cover"
+          />
         ) : (
           <span className="transform scale-110">{moodEmojis[currentMood]}</span>
         )}
