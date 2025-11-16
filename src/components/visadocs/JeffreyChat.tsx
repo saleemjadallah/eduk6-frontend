@@ -173,7 +173,7 @@ What would you like to know?`,
       {/* Header */}
       <div className="bg-gradient-to-r from-blue-600 to-blue-700 text-white px-6 py-4 rounded-t-lg flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center overflow-hidden">
+          <div className="w-10 h-10 rounded-full flex items-center justify-center overflow-hidden">
             <img
               src="/assets/Jeffrey.png"
               alt="Jeffrey AI Assistant"
