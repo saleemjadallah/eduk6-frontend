@@ -55,7 +55,7 @@ export default function JeffreyAvatar({
           ${sizeClasses[size]}
           relative
           rounded-full
-          bg-gradient-to-br from-indigo-500 to-purple-600
+          ${currentMood !== 'neutral' ? 'bg-gradient-to-br from-indigo-500 to-purple-600' : ''}
           flex items-center justify-center
           text-white font-bold
           shadow-xl

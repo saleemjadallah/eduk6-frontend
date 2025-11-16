@@ -62,8 +62,8 @@ export const JeffreySidebar: React.FC<JeffreySidebarProps> = ({ className }) => 
           {/* Jeffrey Avatar with AI indicator */}
           <div className="relative">
             <div
-              className="w-12 h-12 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600
-                         flex items-center justify-center text-white text-xl font-bold
+              className="w-12 h-12 rounded-full
+                         flex items-center justify-center
                          shadow-lg overflow-hidden"
             >
               <img

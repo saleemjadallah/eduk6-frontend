@@ -41,8 +41,8 @@ export const JeffreyRecommendations: React.FC<JeffreyRecommendationsProps> = ({
       <div className="flex items-start gap-4">
         {/* Jeffrey Avatar */}
         <div
-          className="w-12 h-12 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600
-                     flex items-center justify-center text-white text-xl font-bold flex-shrink-0 overflow-hidden"
+          className="w-12 h-12 rounded-full
+                     flex items-center justify-center flex-shrink-0 overflow-hidden"
         >
           <img
             src="/assets/Jeffrey.png"
