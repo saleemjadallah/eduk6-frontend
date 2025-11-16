@@ -42,9 +42,13 @@ export const JeffreyRecommendations: React.FC<JeffreyRecommendationsProps> = ({
         {/* Jeffrey Avatar */}
         <div
           className="w-12 h-12 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600
-                     flex items-center justify-center text-white text-xl font-bold flex-shrink-0"
+                     flex items-center justify-center text-white text-xl font-bold flex-shrink-0 overflow-hidden"
         >
-          J
+          <img
+            src="/assets/Jeffrey.png"
+            alt="Jeffrey AI Assistant"
+            className="w-full h-full object-cover"
+          />
         </div>
 
         <div className="flex-1">
