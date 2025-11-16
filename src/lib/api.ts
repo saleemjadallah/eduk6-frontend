@@ -223,6 +223,41 @@ export const visaDocsApi = {
     return response.data;
   },
 
+  // Visa Forms - AI-powered form discovery
+  searchVisaForms: async (params: {
+    country: string;
+    visaType?: string;
+    purpose?: string;
+    nationality?: string;
+  }): Promise<ApiResponse<{
+    country: string;
+    visaType: string;
+    forms: Array<{
+      name: string;
+      description: string;
+      officialUrl: string;
+      source: string;
+      formType: string;
+      instructions?: string;
+    }>;
+    additionalResources?: Array<{
+      title: string;
+      url: string;
+      description: string;
+    }>;
+    processingNotes?: string;
+    searchedAt: string;
+  }>> => {
+    const queryParams = new URLSearchParams();
+    queryParams.append('country', params.country);
+    if (params.visaType) queryParams.append('visaType', params.visaType);
+    if (params.purpose) queryParams.append('purpose', params.purpose);
+    if (params.nationality) queryParams.append('nationality', params.nationality);
+
+    const response = await api.get(`/visadocs/forms/search?${queryParams.toString()}`);
+    return response.data;
+  },
+
   // Helper methods for unified dashboard with Jeffrey
   sendMessage: async (
     message: string,
