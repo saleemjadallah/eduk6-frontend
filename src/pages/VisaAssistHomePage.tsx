@@ -335,87 +335,92 @@ export default function VisaAssistHomePage() {
             </motion.div>
 
             {/* Feature 2: Document Validator */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.5, delay: 0.1 }}
-              className="bg-white rounded-3xl p-8 shadow-lg hover:shadow-xl hover:-translate-y-2 transition-all duration-300"
-            >
-              <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-green-400 to-emerald-500 flex items-center justify-center mb-6 shadow-lg shadow-green-500/30">
-                <CheckCircle2 className="w-8 h-8 text-white" />
-              </div>
-              <h3 className="text-2xl font-bold mb-3 text-neutral-900">Document Validator</h3>
-              <p className="text-neutral-600 text-lg mb-6">
-                AI checks for required stamps, signatures, and formatting. Flags rejection risks before submission.
-              </p>
+            <Link to="/document-validator">
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.5, delay: 0.1 }}
+                className="bg-white rounded-3xl p-8 shadow-lg hover:shadow-xl hover:-translate-y-2 transition-all duration-300 cursor-pointer group"
+              >
+                <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-green-400 to-emerald-500 flex items-center justify-center mb-6 shadow-lg shadow-green-500/30 group-hover:scale-110 transition-transform">
+                  <CheckCircle2 className="w-8 h-8 text-white" />
+                </div>
+                <h3 className="text-2xl font-bold mb-3 text-neutral-900">Document Validator</h3>
+                <p className="text-neutral-600 text-lg mb-6">
+                  AI checks for required stamps, signatures, and formatting. Flags rejection risks before submission.
+                </p>
 
-              <ul className="space-y-2 mb-6">
-                <li className="flex items-center gap-2 text-neutral-700">
-                  <Check className="w-4 h-4 text-green-500" />
-                  Attestation verification
-                </li>
-                <li className="flex items-center gap-2 text-neutral-700">
-                  <Check className="w-4 h-4 text-green-500" />
-                  Format compliance check
-                </li>
-                <li className="flex items-center gap-2 text-neutral-700">
-                  <Check className="w-4 h-4 text-green-500" />
-                  Expiry date validation
-                </li>
-              </ul>
+                <ul className="space-y-2 mb-6">
+                  <li className="flex items-center gap-2 text-neutral-700">
+                    <Check className="w-4 h-4 text-green-500" />
+                    Attestation verification
+                  </li>
+                  <li className="flex items-center gap-2 text-neutral-700">
+                    <Check className="w-4 h-4 text-green-500" />
+                    Format compliance check
+                  </li>
+                  <li className="flex items-center gap-2 text-neutral-700">
+                    <Check className="w-4 h-4 text-green-500" />
+                    Expiry date validation
+                  </li>
+                </ul>
 
-              <div className="flex items-baseline gap-2">
-                <span className="text-xl font-bold text-neutral-900">AED 40</span>
-                <span className="text-sm text-neutral-500">per document</span>
-              </div>
-            </motion.div>
+                <div className="flex items-baseline gap-2">
+                  <span className="text-xl font-bold text-neutral-900">AED 40</span>
+                  <span className="text-sm text-neutral-500">per document</span>
+                </div>
+              </motion.div>
+            </Link>
 
             {/* Feature 3: AI Photo Compliance */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.5, delay: 0.2 }}
-              className="bg-white rounded-3xl p-8 shadow-lg hover:shadow-xl hover:-translate-y-2 transition-all duration-300"
-            >
-              <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-purple-400 to-pink-500 flex items-center justify-center mb-6 shadow-lg shadow-purple-500/30">
-                <Camera className="w-8 h-8 text-white" />
-              </div>
-              <h3 className="text-2xl font-bold mb-3 text-neutral-900">AI Photo Compliance</h3>
-              <p className="text-neutral-600 text-lg mb-6">
-                Ensures photos meet exact size, background, and facial requirements for specific GCC visa types.
-              </p>
+            <Link to="/photo-compliance">
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.5, delay: 0.2 }}
+                className="bg-white rounded-3xl p-8 shadow-lg hover:shadow-xl hover:-translate-y-2 transition-all duration-300 cursor-pointer group"
+              >
+                <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-purple-400 to-pink-500 flex items-center justify-center mb-6 shadow-lg shadow-purple-500/30 group-hover:scale-110 transition-transform">
+                  <Camera className="w-8 h-8 text-white" />
+                </div>
+                <h3 className="text-2xl font-bold mb-3 text-neutral-900">AI Photo Compliance</h3>
+                <p className="text-neutral-600 text-lg mb-6">
+                  Ensures photos meet exact size, background, and facial requirements for specific GCC visa types.
+                </p>
 
-              <ul className="space-y-2 mb-6">
-                <li className="flex items-center gap-2 text-neutral-700">
-                  <Check className="w-4 h-4 text-purple-500" />
-                  UAE, KSA, Qatar specifications
-                </li>
-                <li className="flex items-center gap-2 text-neutral-700">
-                  <Check className="w-4 h-4 text-purple-500" />
-                  Auto background correction
-                </li>
-                <li className="flex items-center gap-2 text-neutral-700">
-                  <Check className="w-4 h-4 text-purple-500" />
-                  Dimension optimization
-                </li>
-              </ul>
+                <ul className="space-y-2 mb-6">
+                  <li className="flex items-center gap-2 text-neutral-700">
+                    <Check className="w-4 h-4 text-purple-500" />
+                    UAE, KSA, Qatar specifications
+                  </li>
+                  <li className="flex items-center gap-2 text-neutral-700">
+                    <Check className="w-4 h-4 text-purple-500" />
+                    Auto background correction
+                  </li>
+                  <li className="flex items-center gap-2 text-neutral-700">
+                    <Check className="w-4 h-4 text-purple-500" />
+                    Dimension optimization
+                  </li>
+                </ul>
 
-              <div className="flex items-baseline gap-2">
-                <span className="text-xl font-bold text-neutral-900">AED 20</span>
-                <span className="text-sm text-neutral-500">per photo set</span>
-              </div>
-            </motion.div>
+                <div className="flex items-baseline gap-2">
+                  <span className="text-xl font-bold text-neutral-900">AED 20</span>
+                  <span className="text-sm text-neutral-500">per photo set</span>
+                </div>
+              </motion.div>
+            </Link>
 
             {/* Feature 4: AI Travel Itinerary Generator - LARGE FEATURED */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.5, delay: 0.3 }}
-              className="lg:col-span-2 bg-gradient-to-br from-amber-500 to-orange-600 text-white rounded-3xl p-8 shadow-2xl relative overflow-hidden group hover:scale-[1.02] transition-transform duration-500"
-            >
+            <Link to="/travel-itinerary" className="lg:col-span-2">
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.5, delay: 0.3 }}
+                className="bg-gradient-to-br from-amber-500 to-orange-600 text-white rounded-3xl p-8 shadow-2xl relative overflow-hidden group hover:scale-[1.02] transition-transform duration-500 cursor-pointer"
+              >
               <div className="relative z-10">
                 <Badge variant="white" className="mb-4">
                   <Plane className="w-4 h-4 mr-2" />
@@ -460,7 +465,8 @@ export default function VisaAssistHomePage() {
                   backgroundSize: '20px 20px',
                 }}
               />
-            </motion.div>
+              </motion.div>
+            </Link>
 
             {/* Feature 5: Smart PDF Analysis */}
             <motion.div

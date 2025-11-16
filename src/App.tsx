@@ -10,15 +10,6 @@ import PricingPage from './pages/PricingPage';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import VerifyEmailPage from './pages/VerifyEmailPage';
-import DashboardPage from './pages/DashboardPage';
-import JeffreyChatPage from './pages/JeffreyChatPage';
-import UploadPage from './pages/UploadPage';
-import ProcessingPage from './pages/ProcessingPage';
-import BatchViewPage from './pages/BatchViewPage';
-import EditStudioPage from './pages/EditStudioPage';
-import DocumentValidatorPage from './pages/DocumentValidatorPage';
-import PhotoCompliancePage from './pages/PhotoCompliancePage';
-import TravelItineraryPage from './pages/TravelItineraryPage';
 import Layout from './components/Layout';
 
 // NEW: Unified Dashboard with Jeffrey
@@ -70,13 +61,13 @@ function App() {
         <Route
           path="/login"
           element={
-            user ? <Navigate to="/dashboard" /> : <Layout user={user}><LoginPage onLogin={setUser} /></Layout>
+            user ? <Navigate to="/app" /> : <Layout user={user}><LoginPage onLogin={setUser} /></Layout>
           }
         />
         <Route
           path="/register"
           element={
-            user ? <Navigate to="/dashboard" /> : <Layout user={user}><RegisterPage onRegister={setUser} /></Layout>
+            user ? <Navigate to="/app" /> : <Layout user={user}><RegisterPage onRegister={setUser} /></Layout>
           }
         />
         <Route
@@ -84,62 +75,30 @@ function App() {
           element={<VerifyEmailPage onVerifySuccess={setUser} />}
         />
 
-        {/* Protected routes */}
+        {/* Redirect old dashboard to new unified dashboard */}
         <Route
           path="/dashboard"
-          element={
-            user ? <Layout user={user}><DashboardPage user={user} /></Layout> : <Navigate to="/login" />
-          }
+          element={<Navigate to="/app" replace />}
         />
         <Route
           path="/chat"
-          element={
-            user ? <Layout user={user}><JeffreyChatPage /></Layout> : <Navigate to="/login" />
-          }
+          element={<Navigate to="/app" replace />}
         />
         <Route
           path="/upload"
-          element={
-            user ? <Layout user={user}><UploadPage user={user} /></Layout> : <Navigate to="/login" />
-          }
+          element={<Navigate to="/app" replace />}
         />
-        <Route
-          path="/processing"
-          element={
-            user ? <Layout user={user}><ProcessingPage /></Layout> : <Navigate to="/login" />
-          }
-        />
-        <Route
-          path="/batches/:batchId"
-          element={
-            user ? <Layout user={user}><BatchViewPage /></Layout> : <Navigate to="/login" />
-          }
-        />
-        <Route
-          path="/edit-studio/:batchId"
-          element={
-            user ? <Layout user={user}><EditStudioPage /></Layout> : <Navigate to="/login" />
-          }
-        />
-
-        {/* MYDSCVR Core Features */}
         <Route
           path="/document-validator"
-          element={
-            user ? <Layout user={user}><DocumentValidatorPage /></Layout> : <Navigate to="/login" />
-          }
+          element={<Navigate to="/app/validator" replace />}
         />
         <Route
           path="/photo-compliance"
-          element={
-            user ? <Layout user={user}><PhotoCompliancePage /></Layout> : <Navigate to="/login" />
-          }
+          element={<Navigate to="/app/photo-compliance" replace />}
         />
         <Route
           path="/travel-itinerary"
-          element={
-            user ? <Layout user={user}><TravelItineraryPage /></Layout> : <Navigate to="/login" />
-          }
+          element={<Navigate to="/app/travel-planner" replace />}
         />
 
         {/* NEW: Unified Dashboard with Persistent Jeffrey Sidebar */}
