@@ -421,6 +421,93 @@ export const checkoutApi = {
   },
 };
 
+// Onboarding API
+export const onboardingApi = {
+  // Check onboarding status
+  getStatus: async (): Promise<ApiResponse<{
+    onboardingCompleted: boolean;
+    travelProfile: {
+      destinationCountry: string;
+      travelPurpose: string;
+      nationality: string;
+      travelDates: { start: string; end: string };
+      specialConcerns: string[];
+      visaRequirements?: {
+        visaType: string;
+        processingTime: string;
+        requiredDocuments: string[];
+        photoRequirements: {
+          dimensions: string;
+          background: string;
+          specifications: string[];
+        };
+        fees: string;
+        validity: string;
+        additionalNotes: string[];
+      };
+      lastUpdated: string;
+    } | null;
+  }>> => {
+    const response = await api.get('/onboarding/status');
+    return response.data;
+  },
+
+  // Complete onboarding with travel profile
+  complete: async (travelProfile: {
+    destinationCountry: string;
+    travelPurpose: string;
+    nationality: string;
+    travelDates: { start: string; end: string };
+    specialConcerns: string[];
+  }): Promise<ApiResponse<{
+    travelProfile: any;
+    recommendations: {
+      priority: 'high' | 'medium' | 'low';
+      title: string;
+      description: string;
+      action: { label: string; href: string };
+    }[];
+    message: string;
+  }>> => {
+    const response = await api.post('/onboarding/complete', travelProfile);
+    return response.data;
+  },
+
+  // Update travel profile
+  updateProfile: async (travelProfile: {
+    destinationCountry: string;
+    travelPurpose: string;
+    nationality: string;
+    travelDates: { start: string; end: string };
+    specialConcerns: string[];
+  }): Promise<ApiResponse<{
+    travelProfile: any;
+    recommendations: any[];
+  }>> => {
+    const response = await api.put('/onboarding/profile', travelProfile);
+    return response.data;
+  },
+
+  // Skip onboarding
+  skip: async (): Promise<ApiResponse<{ message: string }>> => {
+    const response = await api.post('/onboarding/skip');
+    return response.data;
+  },
+
+  // Get personalized recommendations
+  getRecommendations: async (): Promise<ApiResponse<{
+    recommendations: {
+      priority: 'high' | 'medium' | 'low';
+      title: string;
+      description: string;
+      action: { label: string; href: string };
+    }[];
+  }>> => {
+    const response = await api.get('/onboarding/recommendations');
+    return response.data;
+  },
+};
+
 // Wardrobe API
 export const wardrobeApi = {
   // Get available professional outfits

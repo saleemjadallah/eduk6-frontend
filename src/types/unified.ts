@@ -1,4 +1,5 @@
 // Unified VisaDocs Dashboard Types
+import React from 'react';
 
 export type WorkflowType = 'dashboard' | 'form-filler' | 'validator' | 'photo' | 'travel' | null;
 
@@ -112,10 +113,11 @@ export interface ServiceProgress {
 export interface ActivityItem {
   id: string;
   timestamp: Date;
-  type: 'form' | 'document' | 'photo' | 'travel' | 'chat';
+  type: 'form' | 'document' | 'photo' | 'travel' | 'chat' | 'milestone';
   title: string;
   description: string;
-  status: 'completed' | 'in_progress' | 'failed';
+  status?: 'completed' | 'in_progress' | 'failed';
+  icon?: React.ComponentType<{ className?: string }>;
 }
 
 export interface JeffreyRecommendation {
