@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { FileText, Upload, ExternalLink, Globe, AlertCircle, HelpCircle, CheckCircle2, Lightbulb, Eye, Download, ChevronRight, ArrowLeft, Sparkles, Edit3, LayoutList, FileImage } from 'lucide-react';
+import { FileText, Upload, ExternalLink, Globe, AlertCircle, HelpCircle, CheckCircle2, Lightbulb, Eye, Download, ChevronRight, ArrowLeft, Sparkles, Edit3, LayoutList, FileImage, RefreshCw } from 'lucide-react';
 import { useJeffrey } from '../../contexts/JeffreyContext';
 import { Breadcrumb, BreadcrumbItem } from '../../components/ui/Breadcrumb';
 import { cn } from '../../utils/cn';
@@ -80,6 +80,7 @@ export const FormFillerWorkflow: React.FC = () => {
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
   const [editingLabelId, setEditingLabelId] = useState<string | null>(null);
   const [tempLabel, setTempLabel] = useState<string>('');
+  const [identifyingFieldId, setIdentifyingFieldId] = useState<string | null>(null);
 
   // Update Jeffrey's context when entering this workflow
   useEffect(() => {
@@ -403,6 +404,22 @@ export const FormFillerWorkflow: React.FC = () => {
   const handleCancelEditLabel = () => {
     setEditingLabelId(null);
     setTempLabel('');
+  };
+
+  const handleIdentifyField = async (field: FormField, fieldIndex: number) => {
+    if (!currentForm) return;
+
+    setIdentifyingFieldId(field.id);
+
+    // Ask Jeffrey to identify what this field likely is based on position
+    const question = `I'm filling out a ${travelProfile?.visaRequirements?.visaType || 'visa'} application form for ${travelProfile?.destinationCountry || 'my destination'}. Field #${fieldIndex + 1} in the PDF has the internal name "${field.name}" but I can't tell what it's for. Based on common visa form layouts, what field is typically at position ${fieldIndex + 1}? Please suggest a specific field name like "Family Name", "Given Names", "Date of Birth", etc.`;
+
+    try {
+      await askJeffrey(question);
+      addRecentAction('Asked Jeffrey to identify field', { fieldNumber: fieldIndex + 1, originalName: field.name });
+    } finally {
+      setIdentifyingFieldId(null);
+    }
   };
 
   const togglePDFView = () => {
@@ -836,9 +853,24 @@ export const FormFillerWorkflow: React.FC = () => {
                               <CheckCircle2 className="w-4 h-4 text-green-500" />
                             )}
                             {(field.label.toLowerCase().includes('undefined') || field.label.length <= 2) && (
-                              <span className="text-xs bg-amber-100 text-amber-700 px-2 py-0.5 rounded">
-                                Click pencil to rename
-                              </span>
+                              <>
+                                <button
+                                  onClick={() => handleIdentifyField(field, index)}
+                                  disabled={identifyingFieldId === field.id}
+                                  className={cn(
+                                    "p-1 rounded transition-colors",
+                                    identifyingFieldId === field.id
+                                      ? "text-indigo-600 animate-spin"
+                                      : "text-amber-600 hover:text-amber-800 hover:bg-amber-50"
+                                  )}
+                                  title="Ask Jeffrey to identify this field"
+                                >
+                                  <RefreshCw className="w-3.5 h-3.5" />
+                                </button>
+                                <span className="text-xs bg-amber-100 text-amber-700 px-2 py-0.5 rounded">
+                                  Needs identification
+                                </span>
+                              </>
                             )}
                           </>
                         )}
