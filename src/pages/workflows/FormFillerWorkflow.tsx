@@ -217,8 +217,8 @@ export const FormFillerWorkflow: React.FC = () => {
       return extractedFields;
     } catch (error) {
       console.error('Error extracting PDF fields:', error);
-      // Return common visa form fields as fallback
-      return generateCommonVisaFields();
+      // No fallback - throw error to show user the PDF couldn't be processed
+      throw new Error('Unable to extract form fields from this PDF. Please ensure you upload a fillable PDF form.');
     }
   };
 
@@ -291,41 +291,6 @@ export const FormFillerWorkflow: React.FC = () => {
     return undefined;
   };
 
-  const generateCommonVisaFields = (): FormField[] => {
-    const commonFields = [
-      { name: 'surname', label: 'Family Name / Surname', type: 'text' as const },
-      { name: 'givenNames', label: 'Given Names', type: 'text' as const },
-      { name: 'dateOfBirth', label: 'Date of Birth', type: 'date' as const },
-      { name: 'placeOfBirth', label: 'Place of Birth', type: 'text' as const },
-      { name: 'nationality', label: 'Current Nationality', type: 'text' as const },
-      { name: 'passportNumber', label: 'Passport Number', type: 'text' as const },
-      { name: 'passportIssueDate', label: 'Passport Issue Date', type: 'date' as const },
-      { name: 'passportExpiryDate', label: 'Passport Expiry Date', type: 'date' as const },
-      { name: 'currentAddress', label: 'Current Residential Address', type: 'textarea' as const },
-      { name: 'email', label: 'Email Address', type: 'text' as const },
-      { name: 'phoneNumber', label: 'Phone Number', type: 'text' as const },
-      { name: 'occupation', label: 'Current Occupation', type: 'text' as const },
-      { name: 'employerName', label: 'Employer Name', type: 'text' as const },
-      { name: 'purposeOfTravel', label: 'Purpose of Travel', type: 'text' as const },
-      { name: 'intendedArrivalDate', label: 'Intended Date of Arrival', type: 'date' as const },
-      { name: 'intendedDepartureDate', label: 'Intended Date of Departure', type: 'date' as const },
-      { name: 'accommodationAddress', label: 'Address During Stay', type: 'textarea' as const },
-    ];
-
-    return commonFields.map((field, index) => ({
-      id: `field-${index}`,
-      name: field.name,
-      type: field.type,
-      label: field.label,
-      value: '',
-      hint: generateFieldHint(field.name, field.label),
-      suggestedValue: generateSuggestedValue(field.name, travelProfile),
-      source: generateSuggestedValue(field.name, travelProfile) ? 'Your Profile' : undefined,
-      required: true,
-      placeholder: `Enter ${field.label.toLowerCase()}`
-    }));
-  };
-
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
     if (!files || files.length === 0) return;
@@ -343,6 +308,12 @@ export const FormFillerWorkflow: React.FC = () => {
       const arrayBuffer = await file.arrayBuffer();
       const fields = await extractPDFFields(arrayBuffer);
 
+      if (fields.length === 0) {
+        alert('This PDF does not contain fillable form fields. Please upload a PDF with fillable fields, or download the official fillable version from the links above.');
+        setIsProcessingPDF(false);
+        return;
+      }
+
       const uploadedForm: UploadedForm = {
         id: `form-${Date.now()}`,
         fileName: file.name,
@@ -355,7 +326,8 @@ export const FormFillerWorkflow: React.FC = () => {
       setViewMode('fill');
     } catch (error) {
       console.error('Error processing PDF:', error);
-      alert('Error processing PDF. Please try again.');
+      const errorMessage = error instanceof Error ? error.message : 'Error processing PDF. Please ensure you upload a fillable PDF form.';
+      alert(errorMessage);
     } finally {
       setIsProcessingPDF(false);
     }
