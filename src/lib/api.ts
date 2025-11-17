@@ -369,6 +369,32 @@ export const visaDocsApi = {
       return { data: { questions: [] } };
     }
   },
+
+  // Analyze form validation using Gemini Vision
+  analyzeFormValidation: async (data: {
+    pageImages: string[];
+    prompt: string;
+    country: string;
+  }): Promise<ApiResponse<{
+    analysis?: string;
+    validation?: {
+      overallScore: number;
+      completedFields: number;
+      totalFields: number;
+      issues: Array<{
+        id: string;
+        fieldName: string;
+        type: 'error' | 'warning' | 'info';
+        message: string;
+        suggestion?: string;
+      }>;
+      recommendations: string[];
+      countrySpecificNotes: string[];
+    };
+  }>> => {
+    const response = await api.post('/visadocs/forms/analyze-validation', data);
+    return response.data;
+  },
 };
 
 // Batch API
