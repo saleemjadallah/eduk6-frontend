@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useCallback, useEffect, useRef } from 'react';
 import { JeffreyContextState, WorkflowType, JeffreyMessage } from '../types/unified';
 import { visaDocsApi } from '../lib/api';
+import { ChatSession } from '../types';
 
 // Cache types for form search results
 interface FormSearchCache {
@@ -73,6 +74,60 @@ export const JeffreyProvider: React.FC<JeffreyProviderProps> = ({ children }) =>
   const [formSearchCache, setFormSearchCacheState] = useState<FormSearchCache | null>(null);
 
   const lastWorkflowRef = useRef<WorkflowType>(null);
+
+  // Restore last chat session for the user (keeps chats across refresh/navigation)
+  useEffect(() => {
+    const restoreSession = async () => {
+      try {
+        const sessionsResponse = await visaDocsApi.getChatSessions();
+        if (!sessionsResponse.success || !sessionsResponse.data?.length) return;
+
+        const sessions = sessionsResponse.data as ChatSession[];
+
+        // Prefer a form-filler session, otherwise most recent
+        const preferredSession =
+          sessions.find((s) => (s as any).visaContext?.stage === 'form-filler') ||
+          sessions[0];
+
+        if (!preferredSession?.id) return;
+
+        const sessionResponse = await visaDocsApi.getChatSession(preferredSession.id);
+        if (!sessionResponse.success || !sessionResponse.data) return;
+
+        const session = sessionResponse.data as ChatSession;
+        const messages = (session.messages || []).map((m) => ({
+          ...m,
+          timestamp: new Date(m.timestamp),
+        }));
+
+        setMessages(messages);
+        setSessionId(String(session.id));
+
+        // Seed context with the stored visa context if present
+        const savedContext: JeffreyContextState['packageContext'] = {};
+        const storedContext = (session as any).visaContext as any;
+        if (storedContext) {
+          savedContext.destinationCountry =
+            storedContext.destinationCountry || storedContext.country;
+          savedContext.visaType = storedContext.visaType;
+          savedContext.nationality = storedContext.nationality;
+        }
+
+        setContext((prev) => ({
+          ...prev,
+          packageContext: {
+            ...prev.packageContext,
+            ...savedContext,
+          },
+        }));
+      } catch (error) {
+        // Swallow errors so the UI can still load
+        console.warn('[Jeffrey] Failed to restore previous session:', error);
+      }
+    };
+
+    restoreSession();
+  }, []);
 
   // Get context-aware suggestions when workflow changes
   useEffect(() => {
