@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { User, Passport, Briefcase, Users, ChevronRight, Check, Skip, Clock, Sparkles } from 'lucide-react';
+import { User, BookOpen, Briefcase, Users, ChevronRight, Check, SkipForward, Sparkles } from 'lucide-react';
 import { profileApi, UserProfile, PassportProfile } from '../lib/api-profile';
 import { cn } from '../utils/cn';
 
@@ -22,7 +22,7 @@ export const ProfileOnboardingPage: React.FC = () => {
 
   const steps = [
     { id: 'personal', label: 'Personal Info', icon: User, required: true },
-    { id: 'passport', label: 'Passport', icon: Passport, required: true },
+    { id: 'passport', label: 'Passport', icon: BookOpen, required: true },
     { id: 'employment', label: 'Employment', icon: Briefcase, required: false },
     { id: 'family', label: 'Family', icon: Users, required: false },
   ];
@@ -178,7 +178,7 @@ export const ProfileOnboardingPage: React.FC = () => {
                 onClick={handleSkipAll}
                 className="text-gray-500 hover:text-gray-700 flex items-center gap-2"
               >
-                <Skip className="w-5 h-5" />
+                <SkipForward className="w-5 h-5" />
                 Skip for now
               </button>
 

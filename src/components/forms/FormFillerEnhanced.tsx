@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import {
-  Sparkles, User, AlertCircle, CheckCircle2, Edit2, Plus,
-  ChevronRight, Shield, Clock, TrendingUp
+  Sparkles, AlertCircle, CheckCircle2, Edit2, Plus,
+  Shield, Clock, TrendingUp
 } from 'lucide-react';
 import { profileApi, CompleteProfile } from '../../lib/api-profile';
-import { validateForm, formatValidationMessage, countryValidationRules, smartFieldMapper } from '../../lib/validation-rules';
+import { validateForm } from '../../lib/validation-rules';
 import { cn } from '../../utils/cn';
 
 interface FormField {
@@ -33,7 +33,7 @@ export const FormFillerEnhanced: React.FC<FormFillerEnhancedProps> = ({
   country,
   visaType,
   onFieldChange,
-  onProfileEdit
+  onProfileEdit: _onProfileEdit
 }) => {
   const [profile, setProfile] = useState<CompleteProfile | null>(null);
   const [autoFillData, setAutoFillData] = useState<Record<string, any>>({});
@@ -128,7 +128,7 @@ export const FormFillerEnhanced: React.FC<FormFillerEnhancedProps> = ({
     }
   };
 
-  const getFieldValidationStatus = (field: FormField) => {
+  const _getFieldValidationStatus = (field: FormField) => {
     const error = validationErrors.find(e => e.fieldId === field.id);
     if (error) {
       return error.severity;

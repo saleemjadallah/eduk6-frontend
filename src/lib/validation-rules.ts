@@ -360,7 +360,7 @@ export const smartFieldMapper = {
 export const validateForm = (
   formData: Record<string, any>,
   country: string,
-  visaType: string
+  _visaType: string
 ): ValidationResult => {
   const errors: ValidationResult['errors'] = [];
   const countryRules = countryValidationRules[country.toLowerCase()] || {};

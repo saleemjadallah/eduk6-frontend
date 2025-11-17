@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { Shield, Info, Save, AlertCircle, CheckCircle2, Globe, Calendar, Phone, User } from 'lucide-react';
+import React, { useState } from 'react';
+import { Shield, Info, Save, Globe, Calendar, Phone, User } from 'lucide-react';
 import { cn } from '../../utils/cn';
 
 interface UserPreferences {
