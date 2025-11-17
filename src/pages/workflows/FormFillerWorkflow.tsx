@@ -1,11 +1,13 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { FileText, Upload, ExternalLink, Globe, AlertCircle, HelpCircle, CheckCircle2, Lightbulb, Eye, Download, ChevronRight, ArrowLeft, Sparkles, Edit3, RefreshCw, ChevronDown, ChevronUp } from 'lucide-react';
+import { FileText, Upload, ExternalLink, Globe, AlertCircle, HelpCircle, CheckCircle2, Lightbulb, Eye, Download, ChevronRight, ArrowLeft, Sparkles, Edit3, RefreshCw, ChevronDown, ChevronUp, Shield, Clock, TrendingUp, User } from 'lucide-react';
 import { useJeffrey } from '../../contexts/JeffreyContext';
 import { Breadcrumb, BreadcrumbItem } from '../../components/ui/Breadcrumb';
 import { cn } from '../../utils/cn';
 import { onboardingApi, visaDocsApi } from '../../lib/api';
 import { PDFDocument } from 'pdf-lib';
 import * as pdfjsLib from 'pdfjs-dist';
+import { profileApi, CompleteProfile } from '../../lib/api-profile';
+import { validateForm, formatValidationMessage, countryValidationRules } from '../../lib/validation-rules';
 
 // Set up PDF.js worker - use unpkg which mirrors npm directly
 // react-pdf@10.2.0 uses pdfjs-dist@5.4.296
@@ -89,12 +91,136 @@ export const FormFillerWorkflow: React.FC = () => {
   const [pageImages, setPageImages] = useState<string[]>([]); // Store PDF page images for AI analysis
   const [analyzingWithAI, setAnalyzingWithAI] = useState(false);
 
+  // Profile auto-fill state
+  const [userProfile, setUserProfile] = useState<CompleteProfile | null>(null);
+  const [profileCompleteness, setProfileCompleteness] = useState(0);
+  const [isLoadingProfile, setIsLoadingProfile] = useState(false);
+  const [isAutoFilling, setIsAutoFilling] = useState(false);
+  const [showProfilePrompt, setShowProfilePrompt] = useState(false);
+  const [autoFillData, setAutoFillData] = useState<Record<string, { value: string; confidence: number; source: string }>>({});
+  const [validationErrors, setValidationErrors] = useState<Array<{ fieldId: string; message: string; severity: 'error' | 'warning' | 'info' }>>([]);
+
   // Update Jeffrey's context when entering this workflow
   useEffect(() => {
     updateWorkflow('form-filler');
     addRecentAction('Entered Form Filler workflow');
     loadFormData();
+    loadUserProfile();
   }, [updateWorkflow, addRecentAction]);
+
+  // Load user profile for auto-fill
+  const loadUserProfile = async () => {
+    setIsLoadingProfile(true);
+    try {
+      const response = await profileApi.getProfile();
+      if (response.success && response.data) {
+        setUserProfile(response.data);
+        calculateProfileCompleteness(response.data);
+
+        // Check if profile is incomplete
+        if (!response.data.profile || !response.data.passports?.length) {
+          setShowProfilePrompt(true);
+        }
+      }
+    } catch (error) {
+      console.error('Error loading user profile:', error);
+    } finally {
+      setIsLoadingProfile(false);
+    }
+  };
+
+  const calculateProfileCompleteness = (profileData: CompleteProfile) => {
+    let score = 0;
+    let total = 4;
+
+    if (profileData.profile) score++;
+    if (profileData.passports?.length > 0) score++;
+    if (profileData.employment?.length > 0) score++;
+    if (profileData.education?.length > 0) score++;
+
+    setProfileCompleteness(Math.round((score / total) * 100));
+  };
+
+  // Auto-fill form fields from user profile
+  const handleAutoFill = async () => {
+    if (!userProfile?.profile || !currentForm) {
+      setShowProfilePrompt(true);
+      return;
+    }
+
+    setIsAutoFilling(true);
+    try {
+      const response = await profileApi.getAutoFillData({
+        country: travelProfile?.destinationCountry || '',
+        visaType: travelProfile?.visaRequirements?.visaType || '',
+        fields: currentForm.fields.map(f => ({
+          id: f.id,
+          name: f.name,
+          label: f.label
+        }))
+      });
+
+      if (response.success && response.data) {
+        setAutoFillData(response.data.autoFillData);
+
+        // Apply auto-fill data to fields
+        const updatedFields = currentForm.fields.map(field => {
+          const autoFillValue = response.data!.autoFillData[field.id];
+          if (autoFillValue) {
+            return { ...field, value: autoFillValue.value, source: autoFillValue.source };
+          }
+          return field;
+        });
+
+        setCurrentForm({ ...currentForm, fields: updatedFields });
+
+        // Show validation errors from auto-fill
+        if (response.data.validationErrors.length > 0) {
+          // Map API response format to our internal format
+          const mappedErrors = response.data.validationErrors.map(err => ({
+            fieldId: err.field,
+            message: err.error,
+            severity: err.severity
+          }));
+          setValidationErrors(mappedErrors);
+        }
+
+        addRecentAction('Auto-filled form fields from profile');
+      }
+    } catch (error) {
+      console.error('Error auto-filling:', error);
+    } finally {
+      setIsAutoFilling(false);
+    }
+  };
+
+  // Run validation when fields change
+  useEffect(() => {
+    if (currentForm && travelProfile) {
+      const formData: Record<string, string> = {};
+      currentForm.fields.forEach(field => {
+        formData[field.name] = field.value;
+      });
+
+      const validation = validateForm(
+        formData,
+        travelProfile.destinationCountry,
+        travelProfile.visaRequirements?.visaType || ''
+      );
+      setValidationErrors(validation.errors);
+    }
+  }, [currentForm?.fields, travelProfile]);
+
+  const getAutoFillStats = () => {
+    if (!currentForm) return { autoFilledCount: 0, percentage: 0 };
+    const autoFilledCount = currentForm.fields.filter(f => autoFillData[f.id]?.source === 'profile').length;
+    const percentage = currentForm.fields.length > 0 ? Math.round((autoFilledCount / currentForm.fields.length) * 100) : 0;
+    return { autoFilledCount, percentage };
+  };
+
+  const getFieldValidationError = (fieldId: string) => {
+    return validationErrors.find(e => e.fieldId === fieldId);
+  };
 
   const getCacheKey = (profile: TravelProfile): string => {
     return `${profile.destinationCountry}-${profile.visaRequirements?.visaType || 'default'}-${profile.nationality}`;
@@ -202,11 +328,12 @@ export const FormFillerWorkflow: React.FC = () => {
         canvas.height = viewport.height;
         canvas.width = viewport.width;
 
+        // Use type assertion to handle different pdfjs-dist versions
         await page.render({
           canvasContext: context,
           viewport: viewport,
           canvas: canvas
-        }).promise;
+        } as Parameters<typeof page.render>[0]).promise;
 
         // Convert to base64 PNG (remove the data:image/png;base64, prefix)
         const dataUrl = canvas.toDataURL('image/png');
@@ -994,6 +1121,168 @@ export const FormFillerWorkflow: React.FC = () => {
           </div>
         )}
 
+        {/* Profile Auto-Fill Panel */}
+        {!isLoadingProfile && (
+          <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden mb-6">
+            {/* Profile Status Card */}
+            <div className={cn(
+              "p-4 border-b",
+              profileCompleteness === 100
+                ? "bg-green-50 border-green-200"
+                : profileCompleteness > 50
+                ? "bg-amber-50 border-amber-200"
+                : "bg-red-50 border-red-200"
+            )}>
+              <div className="flex items-start justify-between">
+                <div className="flex-1">
+                  <div className="flex items-center gap-2 mb-2">
+                    {profileCompleteness === 100 ? (
+                      <CheckCircle2 className="w-5 h-5 text-green-600" />
+                    ) : (
+                      <AlertCircle className="w-5 h-5 text-amber-600" />
+                    )}
+                    <h3 className="font-semibold text-gray-900">
+                      Profile {profileCompleteness}% Complete
+                    </h3>
+                  </div>
+                  <p className="text-sm text-gray-600 mb-3">
+                    {profileCompleteness === 100
+                      ? "Your profile is complete! Auto-fill will work at maximum efficiency."
+                      : `Complete your profile to enable ${100 - profileCompleteness}% more auto-fill coverage.`}
+                  </p>
+
+                  {/* Quick Stats */}
+                  <div className="flex items-center gap-4 text-xs">
+                    <div className="flex items-center gap-1">
+                      <Clock className="w-3 h-3 text-gray-400" />
+                      <span className="text-gray-600">Saves ~15 min per form</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <Shield className="w-3 h-3 text-gray-400" />
+                      <span className="text-gray-600">Prevents rejection errors</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <TrendingUp className="w-3 h-3 text-gray-400" />
+                      <span className="text-gray-600">{getAutoFillStats().percentage}% auto-fillable</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => window.open('/app/profile-settings', '_blank')}
+                    className="px-3 py-1.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50"
+                  >
+                    <User className="w-4 h-4 inline mr-1" />
+                    Edit Profile
+                  </button>
+                  <button
+                    onClick={handleAutoFill}
+                    disabled={isAutoFilling || profileCompleteness === 0}
+                    className="px-4 py-1.5 text-sm font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                  >
+                    {isAutoFilling ? (
+                      <>
+                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                        Auto-filling...
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles className="w-4 h-4" />
+                        Auto-fill Form
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Profile Setup Prompt for New Users */}
+            {showProfilePrompt && (
+              <div className="bg-gradient-to-r from-indigo-500 to-purple-600 text-white p-6">
+                <div className="flex items-start justify-between">
+                  <div>
+                    <h3 className="text-xl font-bold mb-2">Set Up Your Profile for Auto-fill</h3>
+                    <p className="text-indigo-100 mb-4">
+                      Save your information once and auto-fill any visa form in seconds.
+                      No more typing the same data repeatedly!
+                    </p>
+                    <ul className="space-y-1 text-sm text-indigo-100 mb-4">
+                      <li>✓ Auto-fill passport details across all forms</li>
+                      <li>✓ Save family member profiles for group applications</li>
+                      <li>✓ Real-time validation prevents costly rejections</li>
+                    </ul>
+                  </div>
+                  <button
+                    onClick={() => setShowProfilePrompt(false)}
+                    className="text-white/80 hover:text-white"
+                  >
+                    ×
+                  </button>
+                </div>
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => window.location.href = '/app/profile-onboarding'}
+                    className="px-4 py-2 bg-white text-indigo-600 rounded-lg font-medium hover:bg-indigo-50"
+                  >
+                    Set Up Profile Now
+                  </button>
+                  <button
+                    onClick={() => setShowProfilePrompt(false)}
+                    className="px-4 py-2 bg-white/20 text-white rounded-lg font-medium hover:bg-white/30"
+                  >
+                    Remind Me Later
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Validation Summary */}
+            {validationErrors.length > 0 && (
+              <div className="p-4 border-t border-gray-200">
+                <h3 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                  <AlertCircle className="w-5 h-5 text-amber-500" />
+                  Validation Issues ({validationErrors.length})
+                </h3>
+                <div className="space-y-2">
+                  {validationErrors.slice(0, 3).map((error, index) => (
+                    <div key={index} className="text-sm">
+                      {formatValidationMessage(error)}
+                    </div>
+                  ))}
+                  {validationErrors.length > 3 && (
+                    <button className="text-sm text-indigo-600 hover:text-indigo-800">
+                      Show {validationErrors.length - 3} more...
+                    </button>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Country-Specific Requirements */}
+            {travelProfile && countryValidationRules[travelProfile.destinationCountry.toLowerCase()] && (
+              <div className="p-4 bg-blue-50 border-t border-blue-200">
+                <h3 className="font-semibold text-blue-900 mb-2">
+                  {travelProfile.destinationCountry} Visa Requirements
+                </h3>
+                <div className="grid grid-cols-2 gap-3 text-sm text-blue-700">
+                  <div>
+                    <strong>Passport Validity:</strong> {countryValidationRules[travelProfile.destinationCountry.toLowerCase()].passportValidityMonths} months
+                  </div>
+                  <div>
+                    <strong>Date Format:</strong> {countryValidationRules[travelProfile.destinationCountry.toLowerCase()].dateFormat}
+                  </div>
+                  {countryValidationRules[travelProfile.destinationCountry.toLowerCase()].onwardTicketRequired && (
+                    <div className="col-span-2">
+                      <strong>⚠️ Onward ticket required</strong>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
         {/* Form fields */}
         <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
           <div className="p-4 bg-gray-50 border-b border-gray-200">
@@ -1152,6 +1441,27 @@ export const FormFillerWorkflow: React.FC = () => {
                         </button>
                       )}
                     </div>
+
+                    {/* Field-level validation feedback */}
+                    {getFieldValidationError(field.id) && (
+                      <div className={cn(
+                        "mt-2 text-xs flex items-start gap-1",
+                        getFieldValidationError(field.id)!.severity === 'error' ? "text-red-600" :
+                        getFieldValidationError(field.id)!.severity === 'warning' ? "text-amber-600" :
+                        "text-blue-600"
+                      )}>
+                        <AlertCircle className="w-3 h-3 mt-0.5 flex-shrink-0" />
+                        <span>{getFieldValidationError(field.id)!.message}</span>
+                      </div>
+                    )}
+
+                    {/* Auto-fill source indicator */}
+                    {autoFillData[field.id] && (
+                      <div className="mt-1 text-xs text-green-600 flex items-center gap-1">
+                        <CheckCircle2 className="w-3 h-3" />
+                        <span>Auto-filled from {autoFillData[field.id].source} (confidence: {Math.round(autoFillData[field.id].confidence * 100)}%)</span>
+                      </div>
+                    )}
                   </div>
 
                   {/* Help button */}
