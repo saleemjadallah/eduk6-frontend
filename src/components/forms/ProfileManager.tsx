@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { User, Briefcase, GraduationCap, Users, AlertCircle, CheckCircle2, Save, Plus } from 'lucide-react';
-import { profileApi, UserProfile, PassportProfile, EmploymentProfile, FamilyProfile, CompleteProfile } from '../../lib/api-profile';
-import type { EducationProfile } from '../../lib/api-profile';
+import { profileApi, UserProfile, PassportProfile, EmploymentProfile, EducationProfile, FamilyProfile, CompleteProfile } from '../../lib/api-profile';
 import { cn } from '../../utils/cn';
 
 interface ProfileManagerProps {
@@ -20,7 +19,7 @@ export const ProfileManager: React.FC<ProfileManagerProps> = ({ onProfileUpdate,
   const [personalForm, setPersonalForm] = useState<Partial<UserProfile>>({});
   const [passportForm, setPassportForm] = useState<Partial<PassportProfile>>({});
   const [employmentForm, setEmploymentForm] = useState<Partial<EmploymentProfile>>({ isCurrent: false });
-  const [_educationForm, _setEducationForm] = useState<Partial<EducationProfile>>({});
+  const [educationForm, setEducationForm] = useState<Partial<EducationProfile>>({});
   const [familyForm, setFamilyForm] = useState<Partial<FamilyProfile>>({});
 
   // Edit modes - will be used when edit functionality is implemented
@@ -108,6 +107,24 @@ export const ProfileManager: React.FC<ProfileManagerProps> = ({ onProfileUpdate,
       }
     } catch (error) {
       showSaveMessage('error', 'Error saving employment record');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleSaveEducation = async () => {
+    setIsSaving(true);
+    try {
+      const response = await profileApi.saveEducation(educationForm as EducationProfile);
+      if (response.success) {
+        showSaveMessage('success', 'Education record saved successfully');
+        setEducationForm({});
+        await loadProfile();
+      } else {
+        showSaveMessage('error', response.error || 'Failed to save education record');
+      }
+    } catch (error) {
+      showSaveMessage('error', 'Error saving education record');
     } finally {
       setIsSaving(false);
     }
@@ -518,6 +535,142 @@ export const ProfileManager: React.FC<ProfileManagerProps> = ({ onProfileUpdate,
             >
               <Plus className="w-5 h-5" />
               {isSaving ? 'Adding...' : 'Add Employment Record'}
+            </button>
+          </div>
+        )}
+
+        {/* Education Tab */}
+        {activeTab === 'education' && (
+          <div className="space-y-6">
+            {/* Education History List */}
+            {profile?.education && profile.education.length > 0 && (
+              <div className="mb-6">
+                <h3 className="text-lg font-semibold mb-3">Education History</h3>
+                <div className="space-y-2">
+                  {profile.education.map((edu) => (
+                    <div key={edu.id} className="p-4 bg-gray-50 rounded-lg flex items-center justify-between">
+                      <div>
+                        <p className="font-medium">{edu.degree} in {edu.fieldOfStudy}</p>
+                        <p className="text-sm text-gray-600">{edu.institutionName}</p>
+                        <p className="text-xs text-gray-500">
+                          Graduated: {edu.graduationDate ? new Date(edu.graduationDate).getFullYear() : 'In Progress'}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <h3 className="text-lg font-semibold">Add Education Record</h3>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="md:col-span-2">
+                <label className="block text-sm font-medium text-gray-700 mb-1">Institution Name *</label>
+                <input
+                  type="text"
+                  value={educationForm.institutionName || ''}
+                  onChange={(e) => setEducationForm({ ...educationForm, institutionName: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                  placeholder="University or School Name"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Degree *</label>
+                <select
+                  value={educationForm.degree || ''}
+                  onChange={(e) => setEducationForm({ ...educationForm, degree: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                >
+                  <option value="">Select...</option>
+                  <option value="High School Diploma">High School Diploma</option>
+                  <option value="Associate's Degree">Associate's Degree</option>
+                  <option value="Bachelor's Degree">Bachelor's Degree</option>
+                  <option value="Master's Degree">Master's Degree</option>
+                  <option value="Doctorate (PhD)">Doctorate (PhD)</option>
+                  <option value="Professional Degree">Professional Degree (MD, JD, etc.)</option>
+                  <option value="Diploma">Diploma/Certificate</option>
+                  <option value="Other">Other</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Field of Study *</label>
+                <input
+                  type="text"
+                  value={educationForm.fieldOfStudy || ''}
+                  onChange={(e) => setEducationForm({ ...educationForm, fieldOfStudy: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                  placeholder="e.g., Computer Science, Business Administration"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Start Date *</label>
+                <input
+                  type="date"
+                  value={educationForm.startDate || ''}
+                  onChange={(e) => setEducationForm({ ...educationForm, startDate: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Graduation Date</label>
+                <input
+                  type="date"
+                  value={educationForm.graduationDate || ''}
+                  onChange={(e) => setEducationForm({ ...educationForm, graduationDate: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                />
+                <p className="text-xs text-gray-500 mt-1">Leave blank if still studying</p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Country *</label>
+                <input
+                  type="text"
+                  value={educationForm.institutionAddress?.country || ''}
+                  onChange={(e) => setEducationForm({
+                    ...educationForm,
+                    institutionAddress: {
+                      ...educationForm.institutionAddress,
+                      city: educationForm.institutionAddress?.city || '',
+                      country: e.target.value
+                    }
+                  })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                  placeholder="Country where institution is located"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">City *</label>
+                <input
+                  type="text"
+                  value={educationForm.institutionAddress?.city || ''}
+                  onChange={(e) => setEducationForm({
+                    ...educationForm,
+                    institutionAddress: {
+                      ...educationForm.institutionAddress,
+                      country: educationForm.institutionAddress?.country || '',
+                      city: e.target.value
+                    }
+                  })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                  placeholder="City where institution is located"
+                />
+              </div>
+            </div>
+
+            <button
+              onClick={handleSaveEducation}
+              disabled={isSaving}
+              className="inline-flex items-center gap-2 px-6 py-3 bg-indigo-600 text-white rounded-xl font-semibold hover:bg-indigo-700 transition-colors disabled:opacity-50"
+            >
+              <Plus className="w-5 h-5" />
+              {isSaving ? 'Adding...' : 'Add Education Record'}
             </button>
           </div>
         )}

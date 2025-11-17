@@ -1,12 +1,67 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { ArrowLeft, User, Shield, CreditCard, Bell } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { ProfileManager } from '../components/forms/ProfileManager';
 import { cn } from '../utils/cn';
+import { profileApi, CompleteProfile } from '../lib/api-profile';
 
 export const ProfileSettingsPage: React.FC = () => {
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = React.useState<'profile' | 'security' | 'billing' | 'notifications'>('profile');
+  const [activeTab, setActiveTab] = useState<'profile' | 'security' | 'billing' | 'notifications'>('profile');
+  const [profile, setProfile] = useState<CompleteProfile | null>(null);
+  const [isLoadingProfile, setIsLoadingProfile] = useState(true);
+
+  useEffect(() => {
+    loadProfile();
+  }, []);
+
+  const loadProfile = async () => {
+    setIsLoadingProfile(true);
+    try {
+      const response = await profileApi.getProfile();
+      if (response.success && response.data) {
+        setProfile(response.data);
+      }
+    } catch (error) {
+      console.error('Error loading profile:', error);
+    } finally {
+      setIsLoadingProfile(false);
+    }
+  };
+
+  const getCompletionStatus = (section: string) => {
+    if (!profile) return 'missing';
+
+    switch (section) {
+      case 'personal':
+        return profile.profile ? 'complete' : 'missing';
+      case 'passport':
+        return profile.passports && profile.passports.length > 0 ? 'complete' : 'missing';
+      case 'employment':
+        return profile.employment && profile.employment.length > 0 ? 'complete' : 'add';
+      case 'education':
+        return profile.education && profile.education.length > 0 ? 'complete' : 'add';
+      case 'family':
+        return profile.family && profile.family.length > 0 ? 'complete' : 'optional';
+      default:
+        return 'missing';
+    }
+  };
+
+  const renderStatus = (status: string) => {
+    switch (status) {
+      case 'complete':
+        return <span className="text-green-600 font-medium">✓ Complete</span>;
+      case 'add':
+        return <span className="text-amber-600 font-medium">Add details</span>;
+      case 'optional':
+        return <span className="text-gray-400 font-medium">Optional</span>;
+      case 'missing':
+        return <span className="text-red-600 font-medium">Missing</span>;
+      default:
+        return <span className="text-gray-400 font-medium">-</span>;
+    }
+  };
 
   const tabs = [
     { id: 'profile', label: 'Profile & Auto-fill', icon: User, description: 'Manage your personal information for form auto-fill' },
@@ -60,24 +115,32 @@ export const ProfileSettingsPage: React.FC = () => {
             {activeTab === 'profile' && (
               <div className="mt-4 bg-gradient-to-br from-indigo-50 to-purple-50 rounded-xl border border-indigo-200 p-4">
                 <h3 className="font-semibold text-gray-900 mb-2">Profile Completion</h3>
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-gray-600">Personal Info</span>
-                    <span className="text-green-600 font-medium">✓ Complete</span>
+                {isLoadingProfile ? (
+                  <div className="text-sm text-gray-500">Loading...</div>
+                ) : (
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-gray-600">Personal Info</span>
+                      {renderStatus(getCompletionStatus('personal'))}
+                    </div>
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-gray-600">Passport</span>
+                      {renderStatus(getCompletionStatus('passport'))}
+                    </div>
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-gray-600">Employment</span>
+                      {renderStatus(getCompletionStatus('employment'))}
+                    </div>
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-gray-600">Education</span>
+                      {renderStatus(getCompletionStatus('education'))}
+                    </div>
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-gray-600">Family</span>
+                      {renderStatus(getCompletionStatus('family'))}
+                    </div>
                   </div>
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-gray-600">Passport</span>
-                    <span className="text-green-600 font-medium">✓ Complete</span>
-                  </div>
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-gray-600">Employment</span>
-                    <span className="text-amber-600 font-medium">Add details</span>
-                  </div>
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-gray-600">Family</span>
-                    <span className="text-gray-400 font-medium">Optional</span>
-                  </div>
-                </div>
+                )}
                 <div className="mt-4 pt-4 border-t border-indigo-200">
                   <p className="text-xs text-indigo-700">
                     Complete profiles enable faster auto-fill across all visa applications
