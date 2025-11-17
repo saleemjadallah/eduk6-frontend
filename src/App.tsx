@@ -20,6 +20,8 @@ import { FormFillerWorkflow } from './pages/workflows/FormFillerWorkflow';
 import { DocumentValidatorWorkflow } from './pages/workflows/DocumentValidatorWorkflow';
 import { PhotoComplianceWorkflow } from './pages/workflows/PhotoComplianceWorkflow';
 import { TravelPlannerWorkflow } from './pages/workflows/TravelPlannerWorkflow';
+import { ProfileOnboardingPage } from './pages/ProfileOnboardingPage';
+import { ProfileSettingsPage } from './pages/ProfileSettingsPage';
 
 // Component to check onboarding status and redirect if needed
 function OnboardingGuard({ children }: { user: User; children: React.ReactNode }) {
@@ -217,6 +219,34 @@ function App() {
               <OnboardingGuard user={user}>
                 <DashboardLayout user={user} onLogout={() => setUser(null)}>
                   <TravelPlannerWorkflow />
+                </DashboardLayout>
+              </OnboardingGuard>
+            ) : (
+              <Navigate to="/login" />
+            )
+          }
+        />
+        <Route
+          path="/app/profile-settings"
+          element={
+            user ? (
+              <OnboardingGuard user={user}>
+                <DashboardLayout user={user} onLogout={() => setUser(null)}>
+                  <ProfileSettingsPage />
+                </DashboardLayout>
+              </OnboardingGuard>
+            ) : (
+              <Navigate to="/login" />
+            )
+          }
+        />
+        <Route
+          path="/app/profile-onboarding"
+          element={
+            user ? (
+              <OnboardingGuard user={user}>
+                <DashboardLayout user={user} onLogout={() => setUser(null)}>
+                  <ProfileOnboardingPage />
                 </DashboardLayout>
               </OnboardingGuard>
             ) : (
