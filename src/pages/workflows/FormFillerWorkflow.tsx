@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { FileText, Upload, ExternalLink, Globe, AlertCircle, HelpCircle, CheckCircle2, Lightbulb, Eye, Download, ChevronRight, ArrowLeft, Sparkles, Edit3, LayoutList, FileImage, RefreshCw } from 'lucide-react';
+import { FileText, Upload, ExternalLink, Globe, AlertCircle, HelpCircle, CheckCircle2, Lightbulb, Eye, Download, ChevronRight, ArrowLeft, Sparkles, Edit3, RefreshCw, ChevronDown, ChevronUp } from 'lucide-react';
 import { useJeffrey } from '../../contexts/JeffreyContext';
 import { Breadcrumb, BreadcrumbItem } from '../../components/ui/Breadcrumb';
 import { cn } from '../../utils/cn';
@@ -80,11 +80,13 @@ export const FormFillerWorkflow: React.FC = () => {
   const [activeFieldHelp, setActiveFieldHelp] = useState<string | null>(null);
 
   // PDF view state
-  const [showPDFView, setShowPDFView] = useState(false);
+  const [pdfViewExpanded, setPdfViewExpanded] = useState(false); // Collapsible state
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
   const [editingLabelId, setEditingLabelId] = useState<string | null>(null);
   const [tempLabel, setTempLabel] = useState<string>('');
   const [identifyingFieldId, setIdentifyingFieldId] = useState<string | null>(null);
+  const [pageImages, setPageImages] = useState<string[]>([]); // Store PDF page images for AI analysis
+  const [analyzingWithAI, setAnalyzingWithAI] = useState(false);
 
   // Update Jeffrey's context when entering this workflow
   useEffect(() => {
@@ -181,6 +183,83 @@ export const FormFillerWorkflow: React.FC = () => {
     }
   };
 
+  // Convert PDF pages to base64 images for Gemini Vision AI analysis
+  const convertPDFPagesToImages = async (pdfBytes: ArrayBuffer): Promise<string[]> => {
+    try {
+      const pdf = await pdfjsLib.getDocument({ data: pdfBytes }).promise;
+      const images: string[] = [];
+
+      for (let i = 1; i <= pdf.numPages; i++) {
+        const page = await pdf.getPage(i);
+        const scale = 1.5; // Good quality without being too large
+        const viewport = page.getViewport({ scale });
+
+        const canvas = document.createElement('canvas');
+        const context = canvas.getContext('2d');
+        if (!context) continue;
+
+        canvas.height = viewport.height;
+        canvas.width = viewport.width;
+
+        await page.render({
+          canvasContext: context,
+          viewport: viewport
+        }).promise;
+
+        // Convert to base64 PNG (remove the data:image/png;base64, prefix)
+        const dataUrl = canvas.toDataURL('image/png');
+        const base64 = dataUrl.split(',')[1];
+        images.push(base64);
+      }
+
+      return images;
+    } catch (error) {
+      console.error('Error converting PDF to images:', error);
+      return [];
+    }
+  };
+
+  // Analyze PDF form fields using Gemini Vision AI
+  const analyzeFormWithAI = async (pdfBytes: ArrayBuffer, fieldCount: number): Promise<Map<number, { label: string; fieldType: string; confidence: number }>> => {
+    setAnalyzingWithAI(true);
+    const fieldMap = new Map<number, { label: string; fieldType: string; confidence: number }>();
+
+    try {
+      const images = await convertPDFPagesToImages(pdfBytes);
+      setPageImages(images);
+
+      if (images.length === 0) {
+        console.error('No page images generated');
+        return fieldMap;
+      }
+
+      console.log(`Sending ${images.length} pages to Gemini Vision for analysis...`);
+
+      const response = await visaDocsApi.analyzePDFForm({
+        pageImages: images,
+        fieldCount,
+        visaType: travelProfile?.visaRequirements?.visaType
+      });
+
+      if (response.success && response.data?.fields) {
+        response.data.fields.forEach((field: { fieldNumber: number; label: string; fieldType: string; confidence: number }) => {
+          fieldMap.set(field.fieldNumber, {
+            label: field.label,
+            fieldType: field.fieldType,
+            confidence: field.confidence
+          });
+        });
+        console.log(`AI identified ${fieldMap.size} fields`);
+      }
+    } catch (error) {
+      console.error('Error analyzing form with AI:', error);
+    } finally {
+      setAnalyzingWithAI(false);
+    }
+
+    return fieldMap;
+  };
+
   // Try to match field position with nearby text labels
   const findLabelForField = (_fieldIndex: number, _totalFields: number, textLines: string[]): string | null => {
     // Common visa form field patterns
@@ -214,7 +293,7 @@ export const FormFillerWorkflow: React.FC = () => {
     return null;
   };
 
-  // Extract fields from PDF using pdf-lib
+  // Extract fields from PDF using pdf-lib and enhance with AI Vision
   const extractPDFFields = async (pdfBytes: ArrayBuffer): Promise<FormField[]> => {
     try {
       // First extract text content to help identify fields
@@ -223,6 +302,9 @@ export const FormFillerWorkflow: React.FC = () => {
       const pdfDoc = await PDFDocument.load(pdfBytes);
       const form = pdfDoc.getForm();
       const pdfFields = form.getFields();
+
+      // Analyze form with Gemini Vision AI to get accurate field labels
+      const aiFieldMap = await analyzeFormWithAI(pdfBytes, pdfFields.length);
 
       const extractedFields: FormField[] = pdfFields.map((field, index) => {
         const fieldName = field.getName();
@@ -254,21 +336,30 @@ export const FormFillerWorkflow: React.FC = () => {
           value = field.getSelected()?.[0] || '';
         }
 
-        // Try to find a better label from the PDF text content
-        let label = fieldName
-          .replace(/([A-Z])/g, ' $1')
-          .replace(/[_-]/g, ' ')
-          .replace(/\s+/g, ' ')
-          .trim()
-          .split(' ')
-          .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
-          .join(' ');
+        // Get AI-identified label if available (field numbers are 1-based in AI response)
+        const aiField = aiFieldMap.get(index + 1);
+        let label = '';
 
-        // If field name is generic/undefined, try to find label from text
-        if (label.toLowerCase().includes('undefined') || label.length <= 2) {
-          const foundLabel = findLabelForField(index, pdfFields.length, textLines);
-          if (foundLabel) {
-            label = foundLabel;
+        if (aiField && aiField.confidence > 0.5) {
+          // Use AI-identified label with high confidence
+          label = aiField.label;
+        } else {
+          // Fallback to parsing field name
+          label = fieldName
+            .replace(/([A-Z])/g, ' $1')
+            .replace(/[_-]/g, ' ')
+            .replace(/\s+/g, ' ')
+            .trim()
+            .split(' ')
+            .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+            .join(' ');
+
+          // If field name is generic/undefined, try to find label from text
+          if (label.toLowerCase().includes('undefined') || label.length <= 2) {
+            const foundLabel = findLabelForField(index, pdfFields.length, textLines);
+            if (foundLabel) {
+              label = foundLabel;
+            }
           }
         }
 
@@ -383,11 +474,19 @@ export const FormFillerWorkflow: React.FC = () => {
 
     try {
       const arrayBuffer = await file.arrayBuffer();
+
+      // Create PDF URL for viewing
+      const blob = new Blob([arrayBuffer], { type: 'application/pdf' });
+      const url = URL.createObjectURL(blob);
+      setPdfUrl(url);
+
       const fields = await extractPDFFields(arrayBuffer);
 
       if (fields.length === 0) {
         alert('This PDF does not contain fillable form fields. Please upload a PDF with fillable fields, or download the official fillable version from the links above.');
         setIsProcessingPDF(false);
+        URL.revokeObjectURL(url);
+        setPdfUrl(null);
         return;
       }
 
@@ -401,6 +500,7 @@ export const FormFillerWorkflow: React.FC = () => {
 
       setCurrentForm(uploadedForm);
       setViewMode('fill');
+      addRecentAction('AI analyzed form fields', { totalFields: fields.length });
     } catch (error) {
       console.error('Error processing PDF:', error);
       const errorMessage = error instanceof Error ? error.message : 'Error processing PDF. Please ensure you upload a fillable PDF form.';
@@ -477,29 +577,59 @@ export const FormFillerWorkflow: React.FC = () => {
   };
 
   const handleIdentifyField = async (field: FormField, fieldIndex: number) => {
-    if (!currentForm) return;
+    if (!currentForm || pageImages.length === 0) return;
 
     setIdentifyingFieldId(field.id);
-
-    // Ask Jeffrey to identify what this field likely is based on position
-    const question = `I'm filling out a ${travelProfile?.visaRequirements?.visaType || 'visa'} application form for ${travelProfile?.destinationCountry || 'my destination'}. Field #${fieldIndex + 1} in the PDF has the internal name "${field.name}" but I can't tell what it's for. Based on common visa form layouts, what field is typically at position ${fieldIndex + 1}? Please suggest a specific field name like "Family Name", "Given Names", "Date of Birth", etc.`;
+    addRecentAction('Re-analyzing field with AI', { fieldNumber: fieldIndex + 1, originalLabel: field.label });
 
     try {
+      // Use AI vision to re-analyze the field
+      // Use the first page image for now (most fields are on first page)
+      const pageImage = pageImages[0];
+
+      const response = await visaDocsApi.reanalyzeField({
+        pageImage,
+        fieldIndex: fieldIndex + 1,
+        currentLabel: field.label,
+        visaType: travelProfile?.visaRequirements?.visaType
+      });
+
+      if (response.success && response.data?.newLabel) {
+        const newLabel = response.data.newLabel;
+        const confidence = response.data.confidence;
+        // Update the field label with AI's new suggestion
+        setCurrentForm(prev => {
+          if (!prev) return prev;
+          return {
+            ...prev,
+            fields: prev.fields.map(f =>
+              f.id === field.id ? {
+                ...f,
+                label: newLabel,
+                placeholder: `Enter ${newLabel.toLowerCase()}`,
+                hint: generateFieldHint(f.name, newLabel)
+              } : f
+            )
+          };
+        });
+        addRecentAction('AI re-identified field', {
+          fieldNumber: fieldIndex + 1,
+          newLabel,
+          confidence
+        });
+      }
+    } catch (error) {
+      console.error('Error re-analyzing field:', error);
+      // Fall back to asking Jeffrey
+      const question = `I'm filling out a ${travelProfile?.visaRequirements?.visaType || 'visa'} application form. Field #${fieldIndex + 1} has the label "${field.label}" but I disagree. What field is typically at position ${fieldIndex + 1} on ${travelProfile?.destinationCountry || 'the destination country'} visa forms?`;
       await askJeffrey(question);
-      addRecentAction('Asked Jeffrey to identify field', { fieldNumber: fieldIndex + 1, originalName: field.name });
     } finally {
       setIdentifyingFieldId(null);
     }
   };
 
-  const togglePDFView = () => {
-    if (!showPDFView && currentForm && !pdfUrl) {
-      // Create blob URL for PDF
-      const blob = new Blob([currentForm.pdfBytes], { type: 'application/pdf' });
-      const url = URL.createObjectURL(blob);
-      setPdfUrl(url);
-    }
-    setShowPDFView(!showPDFView);
+  const togglePDFExpanded = () => {
+    setPdfViewExpanded(!pdfViewExpanded);
   };
 
   // Cleanup PDF URL on unmount
@@ -734,13 +864,13 @@ export const FormFillerWorkflow: React.FC = () => {
 
             <button
               onClick={handleUploadClick}
-              disabled={isProcessingPDF}
+              disabled={isProcessingPDF || analyzingWithAI}
               className="inline-flex items-center gap-2 px-6 py-3 bg-indigo-600 text-white rounded-xl font-semibold hover:bg-indigo-700 transition-colors disabled:opacity-50"
             >
-              {isProcessingPDF ? (
+              {isProcessingPDF || analyzingWithAI ? (
                 <>
                   <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                  Processing PDF...
+                  {analyzingWithAI ? 'AI Analyzing Form Fields...' : 'Processing PDF...'}
                 </>
               ) : (
                 <>
@@ -752,6 +882,9 @@ export const FormFillerWorkflow: React.FC = () => {
 
             <p className="text-xs text-gray-500 mt-4">
               Supported: PDF files with fillable form fields
+            </p>
+            <p className="text-xs text-indigo-600 mt-1">
+              AI Vision will automatically identify each field for accurate completion
             </p>
           </div>
         </div>
@@ -789,7 +922,7 @@ export const FormFillerWorkflow: React.FC = () => {
               </button>
               <h1 className="text-3xl font-bold">Fill: {currentForm.fileName}</h1>
               <p className="text-gray-600">
-                Jeffrey found {currentForm.fields.length} fields to fill. Complete each field with guidance.
+                AI identified {currentForm.fields.length} fields. Complete each field with guidance.
               </p>
             </div>
             <div className="text-right">
@@ -807,19 +940,28 @@ export const FormFillerWorkflow: React.FC = () => {
           </div>
         </div>
 
-        {/* View Toggle and Form fields */}
-        <div className={cn(
-          "grid gap-6",
-          showPDFView ? "grid-cols-1 lg:grid-cols-2" : "grid-cols-1"
-        )}>
-          {/* PDF Viewer (when toggled on) */}
-          {showPDFView && pdfUrl && (
-            <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
-              <div className="p-4 bg-gray-50 border-b border-gray-200">
-                <h2 className="text-lg font-semibold">Original PDF Form</h2>
-                <p className="text-xs text-gray-500 mt-1">Reference the original form to identify field names</p>
+        {/* PDF Viewer - Always visible but collapsible */}
+        {pdfUrl && (
+          <div className="mb-6 bg-white rounded-2xl border border-gray-200 overflow-hidden">
+            <button
+              onClick={togglePDFExpanded}
+              className="w-full p-4 bg-gray-50 border-b border-gray-200 flex items-center justify-between hover:bg-gray-100 transition-colors"
+            >
+              <div className="flex items-center gap-3">
+                <FileText className="w-5 h-5 text-indigo-600" />
+                <div className="text-left">
+                  <h2 className="text-lg font-semibold">Original PDF Form</h2>
+                  <p className="text-xs text-gray-500 mt-0.5">Click to {pdfViewExpanded ? 'collapse' : 'expand'} - Reference the original form</p>
+                </div>
               </div>
-              <div className="h-[600px]">
+              {pdfViewExpanded ? (
+                <ChevronUp className="w-5 h-5 text-gray-500" />
+              ) : (
+                <ChevronDown className="w-5 h-5 text-gray-500" />
+              )}
+            </button>
+            {pdfViewExpanded && (
+              <div className="h-[500px]">
                 <object
                   data={pdfUrl}
                   type="application/pdf"
@@ -840,58 +982,36 @@ export const FormFillerWorkflow: React.FC = () => {
                   </div>
                 </object>
               </div>
+            )}
+          </div>
+        )}
+
+        {/* Form fields */}
+        <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
+          <div className="p-4 bg-gray-50 border-b border-gray-200">
+            <div className="flex items-center justify-between">
+              <h2 className="text-lg font-semibold">Form Fields</h2>
+              <button
+                onClick={handlePreviewForm}
+                disabled={completionPercent < 50}
+                className="inline-flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors disabled:opacity-50"
+              >
+                <Eye className="w-4 h-4" />
+                Preview & Download
+              </button>
             </div>
-          )}
+          </div>
 
-          {/* Form fields */}
-          <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
-            <div className="p-4 bg-gray-50 border-b border-gray-200">
-              <div className="flex items-center justify-between">
-                <h2 className="text-lg font-semibold">Form Fields</h2>
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={togglePDFView}
-                    className={cn(
-                      "inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors",
-                      showPDFView
-                        ? "bg-indigo-100 text-indigo-700 border border-indigo-200"
-                        : "bg-white border border-gray-300 hover:bg-gray-50"
-                    )}
-                  >
-                    {showPDFView ? (
-                      <>
-                        <LayoutList className="w-4 h-4" />
-                        Fields Only
-                      </>
-                    ) : (
-                      <>
-                        <FileImage className="w-4 h-4" />
-                        Show PDF
-                      </>
-                    )}
-                  </button>
-                  <button
-                    onClick={handlePreviewForm}
-                    disabled={completionPercent < 50}
-                    className="inline-flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors disabled:opacity-50"
-                  >
-                    <Eye className="w-4 h-4" />
-                    Preview & Download
-                  </button>
-                </div>
-              </div>
-            </div>
+          <div className="divide-y divide-gray-100 max-h-[600px] overflow-y-auto">
+            {currentForm.fields.map((field, index) => (
+              <div key={field.id} className="p-4 hover:bg-gray-50 transition-colors">
+                <div className="flex items-start gap-4">
+                  {/* Field number */}
+                  <div className="flex-shrink-0 w-8 h-8 bg-indigo-100 rounded-full flex items-center justify-center text-sm font-semibold text-indigo-700">
+                    {index + 1}
+                  </div>
 
-            <div className="divide-y divide-gray-100 max-h-[600px] overflow-y-auto">
-              {currentForm.fields.map((field, index) => (
-                <div key={field.id} className="p-4 hover:bg-gray-50 transition-colors">
-                  <div className="flex items-start gap-4">
-                    {/* Field number */}
-                    <div className="flex-shrink-0 w-8 h-8 bg-indigo-100 rounded-full flex items-center justify-center text-sm font-semibold text-indigo-700">
-                      {index + 1}
-                    </div>
-
-                    {/* Field content */}
+                  {/* Field content */}
                     <div className="flex-1">
                       <div className="flex items-center gap-2 mb-2">
                         {editingLabelId === field.id ? (
@@ -936,26 +1056,30 @@ export const FormFillerWorkflow: React.FC = () => {
                             {field.value.trim() !== '' && (
                               <CheckCircle2 className="w-4 h-4 text-green-500" />
                             )}
-                            {(field.label.toLowerCase().includes('undefined') || field.label.length <= 2) && (
-                              <>
-                                <button
-                                  onClick={() => handleIdentifyField(field, index)}
-                                  disabled={identifyingFieldId === field.id}
-                                  className={cn(
-                                    "p-1 rounded transition-colors",
-                                    identifyingFieldId === field.id
-                                      ? "text-indigo-600 animate-spin"
-                                      : "text-amber-600 hover:text-amber-800 hover:bg-amber-50"
-                                  )}
-                                  title="Ask Jeffrey to identify this field"
-                                >
-                                  <RefreshCw className="w-3.5 h-3.5" />
-                                </button>
-                                <span className="text-xs bg-amber-100 text-amber-700 px-2 py-0.5 rounded">
-                                  Needs identification
-                                </span>
-                              </>
-                            )}
+                            {/* Disagree button - available for all fields */}
+                            <button
+                              onClick={() => handleIdentifyField(field, index)}
+                              disabled={identifyingFieldId === field.id || pageImages.length === 0}
+                              className={cn(
+                                "inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium transition-colors",
+                                identifyingFieldId === field.id
+                                  ? "bg-indigo-100 text-indigo-600"
+                                  : "bg-gray-100 text-gray-600 hover:bg-amber-50 hover:text-amber-700"
+                              )}
+                              title="Ask AI to re-identify this field"
+                            >
+                              {identifyingFieldId === field.id ? (
+                                <>
+                                  <RefreshCw className="w-3 h-3 animate-spin" />
+                                  Re-analyzing...
+                                </>
+                              ) : (
+                                <>
+                                  <RefreshCw className="w-3 h-3" />
+                                  Disagree?
+                                </>
+                              )}
+                            </button>
                           </>
                         )}
                       </div>
@@ -1038,7 +1162,6 @@ export const FormFillerWorkflow: React.FC = () => {
                 </div>
               </div>
             ))}
-          </div>
           </div>
         </div>
 
