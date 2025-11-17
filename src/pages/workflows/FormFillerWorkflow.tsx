@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { FileText, Upload, ExternalLink, Globe, AlertCircle, HelpCircle, CheckCircle2, Lightbulb, Eye, Download, ChevronRight, ArrowLeft, Sparkles, Edit3, RefreshCw, ChevronDown, ChevronUp, Shield, Clock, TrendingUp, User } from 'lucide-react';
+import { FileText, Upload, ExternalLink, Globe, AlertCircle, HelpCircle, Lightbulb, Download, ArrowLeft, ChevronDown, ChevronUp, Shield } from 'lucide-react';
 import { useJeffrey } from '../../contexts/JeffreyContext';
 import { Breadcrumb, BreadcrumbItem } from '../../components/ui/Breadcrumb';
 import { cn } from '../../utils/cn';
@@ -7,7 +7,7 @@ import { onboardingApi, visaDocsApi } from '../../lib/api';
 import { PDFDocument } from 'pdf-lib';
 import * as pdfjsLib from 'pdfjs-dist';
 import { profileApi, CompleteProfile } from '../../lib/api-profile';
-import { validateForm, formatValidationMessage, countryValidationRules } from '../../lib/validation-rules';
+import { validateForm, countryValidationRules } from '../../lib/validation-rules';
 
 // Set up PDF.js worker - use unpkg which mirrors npm directly
 // react-pdf@10.2.0 uses pdfjs-dist@5.4.296
@@ -80,25 +80,40 @@ export const FormFillerWorkflow: React.FC = () => {
   const [isSearchingForms, setIsSearchingForms] = useState(false);
   const [formSearchError, setFormSearchError] = useState<string | null>(null);
   const [isProcessingPDF, setIsProcessingPDF] = useState(false);
-  const [activeFieldHelp, setActiveFieldHelp] = useState<string | null>(null);
 
   // PDF view state
   const [pdfViewExpanded, setPdfViewExpanded] = useState(false); // Collapsible state
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
-  const [editingLabelId, setEditingLabelId] = useState<string | null>(null);
-  const [tempLabel, setTempLabel] = useState<string>('');
-  const [identifyingFieldId, setIdentifyingFieldId] = useState<string | null>(null);
   const [pageImages, setPageImages] = useState<string[]>([]); // Store PDF page images for AI analysis
   const [analyzingWithAI, setAnalyzingWithAI] = useState(false);
 
-  // Profile auto-fill state
-  const [userProfile, setUserProfile] = useState<CompleteProfile | null>(null);
-  const [profileCompleteness, setProfileCompleteness] = useState(0);
-  const [isLoadingProfile, setIsLoadingProfile] = useState(false);
-  const [isAutoFilling, setIsAutoFilling] = useState(false);
-  const [showProfilePrompt, setShowProfilePrompt] = useState(false);
-  const [autoFillData, setAutoFillData] = useState<Record<string, { value: string; confidence: number; source: string }>>({});
-  const [validationErrors, setValidationErrors] = useState<Array<{ fieldId: string; message: string; severity: 'error' | 'warning' | 'info' }>>([]);
+  // Profile auto-fill state (kept for future use)
+  const [, setUserProfile] = useState<CompleteProfile | null>(null);
+  const [, setProfileCompleteness] = useState(0);
+  const [, setIsLoadingProfile] = useState(false);
+  const [, setShowProfilePrompt] = useState(false);
+  const [, setValidationErrors] = useState<Array<{ fieldId: string; message: string; severity: 'error' | 'warning' | 'info' }>>([]);
+
+  // Gemini Vision validation state
+  const [validationAnalysis, setValidationAnalysis] = useState<{
+    overallScore: number;
+    completedFields: number;
+    totalFields: number;
+    issues: Array<{
+      id: string;
+      fieldName: string;
+      type: 'error' | 'warning' | 'info';
+      message: string;
+      suggestion?: string;
+      location?: { page: number; area: string };
+    }>;
+    recommendations: string[];
+    countrySpecificNotes: string[];
+  } | null>(null);
+  const [isAnalyzingForm, setIsAnalyzingForm] = useState(false);
+  const [hoveredArea, setHoveredArea] = useState<string | null>(null);
+  const [fieldExplanation, setFieldExplanation] = useState<string | null>(null);
+  const [isLoadingExplanation, setIsLoadingExplanation] = useState(false);
 
   // Update Jeffrey's context when entering this workflow
   useEffect(() => {
@@ -141,60 +156,7 @@ export const FormFillerWorkflow: React.FC = () => {
     setProfileCompleteness(Math.round((score / total) * 100));
   };
 
-  // Auto-fill form fields from user profile
-  const handleAutoFill = async () => {
-    if (!userProfile?.profile || !currentForm) {
-      setShowProfilePrompt(true);
-      return;
-    }
-
-    setIsAutoFilling(true);
-    try {
-      const response = await profileApi.getAutoFillData({
-        country: travelProfile?.destinationCountry || '',
-        visaType: travelProfile?.visaRequirements?.visaType || '',
-        fields: currentForm.fields.map(f => ({
-          id: f.id,
-          name: f.name,
-          label: f.label
-        }))
-      });
-
-      if (response.success && response.data) {
-        setAutoFillData(response.data.autoFillData);
-
-        // Apply auto-fill data to fields
-        const updatedFields = currentForm.fields.map(field => {
-          const autoFillValue = response.data!.autoFillData[field.id];
-          if (autoFillValue) {
-            return { ...field, value: autoFillValue.value, source: autoFillValue.source };
-          }
-          return field;
-        });
-
-        setCurrentForm({ ...currentForm, fields: updatedFields });
-
-        // Show validation errors from auto-fill
-        if (response.data.validationErrors.length > 0) {
-          // Map API response format to our internal format
-          const mappedErrors = response.data.validationErrors.map(err => ({
-            fieldId: err.field,
-            message: err.error,
-            severity: err.severity
-          }));
-          setValidationErrors(mappedErrors);
-        }
-
-        addRecentAction('Auto-filled form fields from profile');
-      }
-    } catch (error) {
-      console.error('Error auto-filling:', error);
-    } finally {
-      setIsAutoFilling(false);
-    }
-  };
-
-  // Run validation when fields change
+  // Run validation when fields change (kept for future use)
   useEffect(() => {
     if (currentForm && travelProfile) {
       const formData: Record<string, string> = {};
@@ -211,15 +173,112 @@ export const FormFillerWorkflow: React.FC = () => {
     }
   }, [currentForm?.fields, travelProfile]);
 
-  const getAutoFillStats = () => {
-    if (!currentForm) return { autoFilledCount: 0, percentage: 0 };
-    const autoFilledCount = currentForm.fields.filter(f => autoFillData[f.id]?.source === 'profile').length;
-    const percentage = currentForm.fields.length > 0 ? Math.round((autoFilledCount / currentForm.fields.length) * 100) : 0;
-    return { autoFilledCount, percentage };
+  // Analyze uploaded form with Gemini Vision for validation
+  const analyzeFormForValidation = async (pdfImages: string[]) => {
+    setIsAnalyzingForm(true);
+    try {
+      const prompt = `You are a visa application form validator. Analyze this form and provide validation insights.
+
+Please analyze the form and return a JSON object with:
+1. overallScore: A score from 0-100 indicating form completeness and correctness
+2. completedFields: Number of fields that appear to be filled
+3. totalFields: Total number of fields detected
+4. issues: Array of validation issues found, each with:
+   - id: unique identifier
+   - fieldName: name of the problematic field
+   - type: "error" | "warning" | "info"
+   - message: description of the issue
+   - suggestion: how to fix it (optional)
+5. recommendations: Array of general recommendations
+6. countrySpecificNotes: Notes specific to ${travelProfile?.destinationCountry || 'the destination country'}
+
+Focus on:
+- Missing required fields
+- Date format issues
+- Passport validity concerns
+- Photo compliance
+- Supporting document requirements
+- Common rejection reasons
+
+Return ONLY valid JSON, no other text.`;
+
+      // Use the backend API for vision analysis instead of askJeffrey
+      const response = await visaDocsApi.analyzeFormValidation({
+        pageImages: pdfImages,
+        prompt,
+        country: travelProfile?.destinationCountry || ''
+      });
+
+      if (response.success && response.data) {
+        try {
+          // Extract JSON from response
+          const jsonMatch = response.data.analysis?.match(/\{[\s\S]*\}/);
+          if (jsonMatch) {
+            const analysisData = JSON.parse(jsonMatch[0]);
+            setValidationAnalysis(analysisData);
+          } else if (response.data.validation) {
+            // Direct validation object from API
+            setValidationAnalysis(response.data.validation);
+          } else {
+            // If no JSON found, create a basic structure
+            setValidationAnalysis({
+              overallScore: 0,
+              completedFields: 0,
+              totalFields: 0,
+              issues: [{
+                id: 'parse-error',
+                fieldName: 'Analysis',
+                type: 'warning',
+                message: 'Could not fully parse form. Please try uploading again.',
+              }],
+              recommendations: ['Upload a clearer PDF for better analysis'],
+              countrySpecificNotes: []
+            });
+          }
+        } catch (parseError) {
+          console.error('Error parsing validation response:', parseError);
+          setValidationAnalysis({
+            overallScore: 50,
+            completedFields: 0,
+            totalFields: 0,
+            issues: [],
+            recommendations: ['Form uploaded successfully. Hover over specific areas for detailed validation.'],
+            countrySpecificNotes: []
+          });
+        }
+      }
+    } catch (error) {
+      console.error('Error analyzing form:', error);
+    } finally {
+      setIsAnalyzingForm(false);
+    }
   };
 
-  const getFieldValidationError = (fieldId: string) => {
-    return validationErrors.find(e => e.fieldId === fieldId);
+  // Get field-specific explanation on hover
+  const getFieldExplanation = async (fieldName: string, area: string) => {
+    if (isLoadingExplanation) return;
+
+    setIsLoadingExplanation(true);
+    setHoveredArea(area);
+
+    try {
+      const prompt = `For a ${travelProfile?.destinationCountry || ''} visa application, explain the "${fieldName}" field:
+1. What information is required
+2. Correct format (if applicable)
+3. Common mistakes to avoid
+4. Why this field is important for visa approval
+
+Be concise but helpful. Format as a brief paragraph.`;
+
+      // Ask Jeffrey for text explanation
+      askJeffrey(prompt);
+      setFieldExplanation(`Loading explanation for ${fieldName}...`);
+    } catch (error) {
+      console.error('Error getting explanation:', error);
+      setFieldExplanation('Unable to load explanation. Please try again.');
+    } finally {
+      setIsLoadingExplanation(false);
+    }
   };
 
   const getCacheKey = (profile: TravelProfile): string => {
@@ -615,30 +674,32 @@ export const FormFillerWorkflow: React.FC = () => {
       const url = URL.createObjectURL(blob);
       setPdfUrl(url);
 
-      const fields = await extractPDFFields(arrayBuffer);
+      // Convert PDF to images for AI validation analysis
+      const pdfImagesForValidation = await convertPDFPagesToImages(arrayBuffer.slice(0));
 
-      if (fields.length === 0) {
-        alert('This PDF does not contain fillable form fields. Please upload a PDF with fillable fields, or download the official fillable version from the links above.');
-        setIsProcessingPDF(false);
-        URL.revokeObjectURL(url);
-        setPdfUrl(null);
-        return;
-      }
+      const fields = await extractPDFFields(arrayBuffer);
 
       const uploadedForm: UploadedForm = {
         id: `form-${Date.now()}`,
         fileName: file.name,
         pdfBytes: arrayBuffer,
-        fields,
+        fields: fields.length > 0 ? fields : [], // Allow empty fields for non-fillable PDFs
         extractedAt: new Date()
       };
 
       setCurrentForm(uploadedForm);
       setViewMode('fill');
-      addRecentAction('AI analyzed form fields', { totalFields: fields.length });
+
+      // Trigger Gemini Vision validation analysis
+      if (pdfImagesForValidation.length > 0) {
+        setPageImages(pdfImagesForValidation);
+        analyzeFormForValidation(pdfImagesForValidation);
+      }
+
+      addRecentAction('AI analyzing form for validation', { fileName: file.name });
     } catch (error) {
       console.error('Error processing PDF:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Error processing PDF. Please ensure you upload a fillable PDF form.';
+      const errorMessage = error instanceof Error ? error.message : 'Error processing PDF. Please try again.';
       alert(errorMessage);
     } finally {
       setIsProcessingPDF(false);
@@ -650,7 +711,8 @@ export const FormFillerWorkflow: React.FC = () => {
     }
   };
 
-  const handleFieldChange = (fieldId: string, value: string) => {
+  // Field change handler (kept for future use)
+  const _handleFieldChange = (_fieldId: string, _value: string) => {
     if (!currentForm) return;
 
     setCurrentForm(prev => {
@@ -658,110 +720,13 @@ export const FormFillerWorkflow: React.FC = () => {
       return {
         ...prev,
         fields: prev.fields.map(field =>
-          field.id === fieldId ? { ...field, value } : field
+          field.id === _fieldId ? { ...field, value: _value } : field
         )
       };
     });
   };
-
-  const handleApplySuggestion = (fieldId: string) => {
-    if (!currentForm) return;
-
-    const field = currentForm.fields.find(f => f.id === fieldId);
-    if (field?.suggestedValue) {
-      handleFieldChange(fieldId, field.suggestedValue);
-      addRecentAction('Applied suggested value', { field: field.label });
-    }
-  };
-
-  const handleAskJeffreyAboutField = (field: FormField) => {
-    setActiveFieldHelp(field.id);
-    askJeffrey(`How do I correctly fill the "${field.label}" field on my visa application form? I'm applying for a ${travelProfile?.visaRequirements?.visaType || 'visa'} to ${travelProfile?.destinationCountry || 'my destination country'}.`);
-  };
-
-  const handleStartEditLabel = (field: FormField) => {
-    setEditingLabelId(field.id);
-    setTempLabel(field.label);
-  };
-
-  const handleSaveLabel = (fieldId: string) => {
-    if (!currentForm || !tempLabel.trim()) return;
-
-    setCurrentForm(prev => {
-      if (!prev) return prev;
-      return {
-        ...prev,
-        fields: prev.fields.map(field =>
-          field.id === fieldId ? {
-            ...field,
-            label: tempLabel.trim(),
-            placeholder: `Enter ${tempLabel.trim().toLowerCase()}`,
-            hint: generateFieldHint(field.name, tempLabel.trim())
-          } : field
-        )
-      };
-    });
-    setEditingLabelId(null);
-    setTempLabel('');
-    addRecentAction('Renamed field label', { newLabel: tempLabel.trim() });
-  };
-
-  const handleCancelEditLabel = () => {
-    setEditingLabelId(null);
-    setTempLabel('');
-  };
-
-  const handleIdentifyField = async (field: FormField, fieldIndex: number) => {
-    if (!currentForm || pageImages.length === 0) return;
-
-    setIdentifyingFieldId(field.id);
-    addRecentAction('Re-analyzing field with AI', { fieldNumber: fieldIndex + 1, originalLabel: field.label });
-
-    try {
-      // Use AI vision to re-analyze the field
-      // Use the first page image for now (most fields are on first page)
-      const pageImage = pageImages[0];
-
-      const response = await visaDocsApi.reanalyzeField({
-        pageImage,
-        fieldIndex: fieldIndex + 1,
-        currentLabel: field.label,
-        visaType: travelProfile?.visaRequirements?.visaType
-      });
-
-      if (response.success && response.data?.newLabel) {
-        const newLabel = response.data.newLabel;
-        const confidence = response.data.confidence;
-        // Update the field label with AI's new suggestion
-        setCurrentForm(prev => {
-          if (!prev) return prev;
-          return {
-            ...prev,
-            fields: prev.fields.map(f =>
-              f.id === field.id ? {
-                ...f,
-                label: newLabel,
-                placeholder: `Enter ${newLabel.toLowerCase()}`,
-                hint: generateFieldHint(f.name, newLabel)
-              } : f
-            )
-          };
-        });
-        addRecentAction('AI re-identified field', {
-          fieldNumber: fieldIndex + 1,
-          newLabel,
-          confidence
-        });
-      }
-    } catch (error) {
-      console.error('Error re-analyzing field:', error);
-      // Fall back to asking Jeffrey
-      const question = `I'm filling out a ${travelProfile?.visaRequirements?.visaType || 'visa'} application form. Field #${fieldIndex + 1} has the label "${field.label}" but I disagree. What field is typically at position ${fieldIndex + 1} on ${travelProfile?.destinationCountry || 'the destination country'} visa forms?`;
-      await askJeffrey(question);
-    } finally {
-      setIdentifyingFieldId(null);
-    }
-  };
+  // Suppress unused warning
+  void _handleFieldChange;
 
   const togglePDFExpanded = () => {
     setPdfViewExpanded(!pdfViewExpanded);
@@ -786,60 +751,9 @@ export const FormFillerWorkflow: React.FC = () => {
     fileInputRef.current?.click();
   };
 
-  const handlePreviewForm = () => {
-    setViewMode('preview');
-    addRecentAction('Previewing completed form');
-  };
-
-  const handleBackToFill = () => {
-    setViewMode('fill');
-  };
-
   const handleBackToBrowse = () => {
     setViewMode('browse');
     setCurrentForm(null);
-  };
-
-  const handleDownloadFilledForm = async () => {
-    if (!currentForm) return;
-
-    try {
-      const pdfDoc = await PDFDocument.load(currentForm.pdfBytes);
-      const form = pdfDoc.getForm();
-
-      // Fill in the PDF fields with user values
-      currentForm.fields.forEach(field => {
-        try {
-          const pdfField = form.getField(field.name);
-          if (field.type === 'text' || field.type === 'textarea' || field.type === 'date') {
-            // @ts-expect-error: pdf-lib types
-            pdfField.setText(field.value);
-          } else if (field.type === 'checkbox' && field.value === 'true') {
-            // @ts-expect-error: pdf-lib types
-            pdfField.check();
-          } else if (field.type === 'select') {
-            // @ts-expect-error: pdf-lib types
-            pdfField.select(field.value);
-          }
-        } catch {
-          // Field might not exist in PDF, skip
-        }
-      });
-
-      const filledPdfBytes = await pdfDoc.save();
-      const blob = new Blob([filledPdfBytes.buffer as ArrayBuffer], { type: 'application/pdf' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `filled_${currentForm.fileName}`;
-      a.click();
-      URL.revokeObjectURL(url);
-
-      addRecentAction('Downloaded filled form', { fileName: currentForm.fileName });
-    } catch (error) {
-      console.error('Error downloading filled form:', error);
-      alert('Error generating filled PDF. Please try again.');
-    }
   };
 
   if (isLoading) {
@@ -1121,485 +1035,203 @@ export const FormFillerWorkflow: React.FC = () => {
           </div>
         )}
 
-        {/* Profile Auto-Fill Panel */}
-        {!isLoadingProfile && (
-          <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden mb-6">
-            {/* Profile Status Card */}
-            <div className={cn(
-              "p-4 border-b",
-              profileCompleteness === 100
-                ? "bg-green-50 border-green-200"
-                : profileCompleteness > 50
-                ? "bg-amber-50 border-amber-200"
-                : "bg-red-50 border-red-200"
-            )}>
-              <div className="flex items-start justify-between">
-                <div className="flex-1">
-                  <div className="flex items-center gap-2 mb-2">
-                    {profileCompleteness === 100 ? (
-                      <CheckCircle2 className="w-5 h-5 text-green-600" />
-                    ) : (
-                      <AlertCircle className="w-5 h-5 text-amber-600" />
-                    )}
-                    <h3 className="font-semibold text-gray-900">
-                      Profile {profileCompleteness}% Complete
-                    </h3>
-                  </div>
-                  <p className="text-sm text-gray-600 mb-3">
-                    {profileCompleteness === 100
-                      ? "Your profile is complete! Auto-fill will work at maximum efficiency."
-                      : `Complete your profile to enable ${100 - profileCompleteness}% more auto-fill coverage.`}
-                  </p>
-
-                  {/* Quick Stats */}
-                  <div className="flex items-center gap-4 text-xs">
-                    <div className="flex items-center gap-1">
-                      <Clock className="w-3 h-3 text-gray-400" />
-                      <span className="text-gray-600">Saves ~15 min per form</span>
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <Shield className="w-3 h-3 text-gray-400" />
-                      <span className="text-gray-600">Prevents rejection errors</span>
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <TrendingUp className="w-3 h-3 text-gray-400" />
-                      <span className="text-gray-600">{getAutoFillStats().percentage}% auto-fillable</span>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => window.open('/app/profile-settings', '_blank')}
-                    className="px-3 py-1.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50"
-                  >
-                    <User className="w-4 h-4 inline mr-1" />
-                    Edit Profile
-                  </button>
-                  <button
-                    onClick={handleAutoFill}
-                    disabled={isAutoFilling || profileCompleteness === 0}
-                    className="px-4 py-1.5 text-sm font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-                  >
-                    {isAutoFilling ? (
-                      <>
-                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                        Auto-filling...
-                      </>
-                    ) : (
-                      <>
-                        <Sparkles className="w-4 h-4" />
-                        Auto-fill Form
-                      </>
-                    )}
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            {/* Profile Setup Prompt for New Users */}
-            {showProfilePrompt && (
-              <div className="bg-gradient-to-r from-indigo-500 to-purple-600 text-white p-6">
-                <div className="flex items-start justify-between">
-                  <div>
-                    <h3 className="text-xl font-bold mb-2">Set Up Your Profile for Auto-fill</h3>
-                    <p className="text-indigo-100 mb-4">
-                      Save your information once and auto-fill any visa form in seconds.
-                      No more typing the same data repeatedly!
-                    </p>
-                    <ul className="space-y-1 text-sm text-indigo-100 mb-4">
-                      <li>✓ Auto-fill passport details across all forms</li>
-                      <li>✓ Save family member profiles for group applications</li>
-                      <li>✓ Real-time validation prevents costly rejections</li>
-                    </ul>
-                  </div>
-                  <button
-                    onClick={() => setShowProfilePrompt(false)}
-                    className="text-white/80 hover:text-white"
-                  >
-                    ×
-                  </button>
-                </div>
-                <div className="flex gap-3">
-                  <button
-                    onClick={() => window.location.href = '/app/profile-onboarding'}
-                    className="px-4 py-2 bg-white text-indigo-600 rounded-lg font-medium hover:bg-indigo-50"
-                  >
-                    Set Up Profile Now
-                  </button>
-                  <button
-                    onClick={() => setShowProfilePrompt(false)}
-                    className="px-4 py-2 bg-white/20 text-white rounded-lg font-medium hover:bg-white/30"
-                  >
-                    Remind Me Later
-                  </button>
-                </div>
-              </div>
-            )}
-
-            {/* Validation Summary */}
-            {validationErrors.length > 0 && (
-              <div className="p-4 border-t border-gray-200">
-                <h3 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
-                  <AlertCircle className="w-5 h-5 text-amber-500" />
-                  Validation Issues ({validationErrors.length})
-                </h3>
-                <div className="space-y-2">
-                  {validationErrors.slice(0, 3).map((error, index) => (
-                    <div key={index} className="text-sm">
-                      {formatValidationMessage(error)}
-                    </div>
-                  ))}
-                  {validationErrors.length > 3 && (
-                    <button className="text-sm text-indigo-600 hover:text-indigo-800">
-                      Show {validationErrors.length - 3} more...
-                    </button>
-                  )}
-                </div>
-              </div>
-            )}
-
-            {/* Country-Specific Requirements */}
-            {travelProfile && countryValidationRules[travelProfile.destinationCountry.toLowerCase()] && (
-              <div className="p-4 bg-blue-50 border-t border-blue-200">
-                <h3 className="font-semibold text-blue-900 mb-2">
-                  {travelProfile.destinationCountry} Visa Requirements
-                </h3>
-                <div className="grid grid-cols-2 gap-3 text-sm text-blue-700">
-                  <div>
-                    <strong>Passport Validity:</strong> {countryValidationRules[travelProfile.destinationCountry.toLowerCase()].passportValidityMonths} months
-                  </div>
-                  <div>
-                    <strong>Date Format:</strong> {countryValidationRules[travelProfile.destinationCountry.toLowerCase()].dateFormat}
-                  </div>
-                  {countryValidationRules[travelProfile.destinationCountry.toLowerCase()].onwardTicketRequired && (
-                    <div className="col-span-2">
-                      <strong>⚠️ Onward ticket required</strong>
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* Form fields */}
-        <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
-          <div className="p-4 bg-gray-50 border-b border-gray-200">
+        {/* Validation Analysis Dashboard */}
+        <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden mb-6">
+          <div className="p-4 bg-gradient-to-r from-indigo-50 to-purple-50 border-b border-indigo-200">
             <div className="flex items-center justify-between">
-              <h2 className="text-lg font-semibold">Form Fields</h2>
+              <div className="flex items-center gap-3">
+                <div className={cn(
+                  "w-12 h-12 rounded-full flex items-center justify-center text-lg font-bold",
+                  isAnalyzingForm ? "bg-gray-200 text-gray-600 animate-pulse" :
+                  validationAnalysis?.overallScore && validationAnalysis.overallScore >= 80 ? "bg-green-100 text-green-700" :
+                  validationAnalysis?.overallScore && validationAnalysis.overallScore >= 50 ? "bg-amber-100 text-amber-700" :
+                  "bg-red-100 text-red-700"
+                )}>
+                  {isAnalyzingForm ? '...' : validationAnalysis?.overallScore || 0}
+                </div>
+                <div>
+                  <h3 className="font-semibold text-gray-900">
+                    {isAnalyzingForm ? 'Analyzing Form...' : 'Form Validation Score'}
+                  </h3>
+                  <p className="text-sm text-gray-600">
+                    {isAnalyzingForm ? 'AI is analyzing your form for potential issues' :
+                     validationAnalysis ? `${validationAnalysis.completedFields}/${validationAnalysis.totalFields} fields analyzed` :
+                     'Upload a form to get validation insights'}
+                  </p>
+                </div>
+              </div>
               <button
-                onClick={handlePreviewForm}
-                disabled={completionPercent < 50}
-                className="inline-flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors disabled:opacity-50"
+                onClick={() => pageImages.length > 0 && analyzeFormForValidation(pageImages)}
+                disabled={isAnalyzingForm || pageImages.length === 0}
+                className="px-4 py-2 bg-indigo-600 text-white rounded-lg font-medium hover:bg-indigo-700 disabled:opacity-50"
               >
-                <Eye className="w-4 h-4" />
-                Preview & Download
+                {isAnalyzingForm ? 'Analyzing...' : 'Re-analyze'}
               </button>
             </div>
           </div>
 
-          <div className="divide-y divide-gray-100 max-h-[600px] overflow-y-auto">
-            {currentForm.fields.map((field, index) => (
-              <div key={field.id} className="p-4 hover:bg-gray-50 transition-colors">
-                <div className="flex items-start gap-4">
-                  {/* Field number */}
-                  <div className="flex-shrink-0 w-8 h-8 bg-indigo-100 rounded-full flex items-center justify-center text-sm font-semibold text-indigo-700">
-                    {index + 1}
-                  </div>
-
-                  {/* Field content */}
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-2">
-                        {editingLabelId === field.id ? (
-                          <div className="flex items-center gap-2">
-                            <input
-                              type="text"
-                              value={tempLabel}
-                              onChange={(e) => setTempLabel(e.target.value)}
-                              onKeyDown={(e) => {
-                                if (e.key === 'Enter') handleSaveLabel(field.id);
-                                if (e.key === 'Escape') handleCancelEditLabel();
-                              }}
-                              className="px-2 py-1 border border-indigo-300 rounded text-sm font-semibold focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                              autoFocus
-                            />
-                            <button
-                              onClick={() => handleSaveLabel(field.id)}
-                              className="text-green-600 hover:text-green-800 text-xs font-medium"
-                            >
-                              Save
-                            </button>
-                            <button
-                              onClick={handleCancelEditLabel}
-                              className="text-gray-500 hover:text-gray-700 text-xs"
-                            >
-                              Cancel
-                            </button>
-                          </div>
-                        ) : (
-                          <>
-                            <label className="font-semibold text-gray-900">
-                              {field.label}
-                              {field.required && <span className="text-red-500 ml-1">*</span>}
-                            </label>
-                            <button
-                              onClick={() => handleStartEditLabel(field)}
-                              className="p-1 text-gray-400 hover:text-indigo-600 rounded transition-colors"
-                              title="Rename this field"
-                            >
-                              <Edit3 className="w-3 h-3" />
-                            </button>
-                            {field.value.trim() !== '' && (
-                              <CheckCircle2 className="w-4 h-4 text-green-500" />
-                            )}
-                            {/* Disagree button - available for all fields */}
-                            <button
-                              onClick={() => handleIdentifyField(field, index)}
-                              disabled={identifyingFieldId === field.id || pageImages.length === 0}
-                              className={cn(
-                                "inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium transition-colors",
-                                identifyingFieldId === field.id
-                                  ? "bg-indigo-100 text-indigo-600"
-                                  : "bg-gray-100 text-gray-600 hover:bg-amber-50 hover:text-amber-700"
-                              )}
-                              title="Ask AI to re-identify this field"
-                            >
-                              {identifyingFieldId === field.id ? (
-                                <>
-                                  <RefreshCw className="w-3 h-3 animate-spin" />
-                                  Re-analyzing...
-                                </>
-                              ) : (
-                                <>
-                                  <RefreshCw className="w-3 h-3" />
-                                  Disagree?
-                                </>
-                              )}
-                            </button>
-                          </>
+          {/* Validation Issues */}
+          {validationAnalysis && validationAnalysis.issues.length > 0 && (
+            <div className="p-4 border-b border-gray-200">
+              <h3 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                <AlertCircle className="w-5 h-5 text-amber-500" />
+                Issues Found ({validationAnalysis.issues.length})
+              </h3>
+              <div className="space-y-3">
+                {validationAnalysis.issues.map((issue) => (
+                  <div
+                    key={issue.id}
+                    className={cn(
+                      "p-3 rounded-lg border cursor-pointer hover:shadow-md transition-shadow",
+                      issue.type === 'error' ? "bg-red-50 border-red-200" :
+                      issue.type === 'warning' ? "bg-amber-50 border-amber-200" :
+                      "bg-blue-50 border-blue-200"
+                    )}
+                    onClick={() => getFieldExplanation(issue.fieldName, issue.id)}
+                  >
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <p className="font-medium text-gray-900">{issue.fieldName}</p>
+                        <p className="text-sm text-gray-700 mt-1">{issue.message}</p>
+                        {issue.suggestion && (
+                          <p className="text-sm text-indigo-600 mt-1">
+                            <strong>Suggestion:</strong> {issue.suggestion}
+                          </p>
                         )}
                       </div>
-
-                    {/* Input field based on type */}
-                    {field.type === 'textarea' ? (
-                      <textarea
-                        value={field.value}
-                        onChange={(e) => handleFieldChange(field.id, e.target.value)}
-                        placeholder={field.placeholder}
-                        rows={3}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm"
-                      />
-                    ) : field.type === 'select' && field.options ? (
-                      <select
-                        value={field.value}
-                        onChange={(e) => handleFieldChange(field.id, e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm"
-                      >
-                        <option value="">Select...</option>
-                        {field.options.map(opt => (
-                          <option key={opt} value={opt}>{opt}</option>
-                        ))}
-                      </select>
-                    ) : field.type === 'checkbox' ? (
-                      <label className="flex items-center gap-2">
-                        <input
-                          type="checkbox"
-                          checked={field.value === 'true'}
-                          onChange={(e) => handleFieldChange(field.id, e.target.checked ? 'true' : 'false')}
-                          className="w-4 h-4 text-indigo-600 rounded border-gray-300 focus:ring-indigo-500"
-                        />
-                        <span className="text-sm text-gray-600">Check if applicable</span>
-                      </label>
-                    ) : (
-                      <input
-                        type={field.type === 'date' ? 'date' : 'text'}
-                        value={field.value}
-                        onChange={(e) => handleFieldChange(field.id, e.target.value)}
-                        placeholder={field.placeholder}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm"
-                      />
-                    )}
-
-                    {/* Hint and suggestion */}
-                    <div className="mt-2 flex items-start gap-4">
-                      {field.hint && (
-                        <div className="flex items-start gap-1 text-xs text-gray-500">
-                          <Lightbulb className="w-3 h-3 mt-0.5 flex-shrink-0 text-amber-500" />
-                          <span>{field.hint}</span>
-                        </div>
-                      )}
-
-                      {field.suggestedValue && field.value !== field.suggestedValue && (
-                        <button
-                          onClick={() => handleApplySuggestion(field.id)}
-                          className="inline-flex items-center gap-1 text-xs text-indigo-600 hover:text-indigo-800 font-medium"
-                        >
-                          <Sparkles className="w-3 h-3" />
-                          Use: {field.suggestedValue}
-                          <span className="text-gray-400">({field.source})</span>
-                        </button>
-                      )}
+                      <HelpCircle className="w-4 h-4 text-gray-400 flex-shrink-0" />
                     </div>
-
-                    {/* Field-level validation feedback */}
-                    {getFieldValidationError(field.id) && (
-                      <div className={cn(
-                        "mt-2 text-xs flex items-start gap-1",
-                        getFieldValidationError(field.id)!.severity === 'error' ? "text-red-600" :
-                        getFieldValidationError(field.id)!.severity === 'warning' ? "text-amber-600" :
-                        "text-blue-600"
-                      )}>
-                        <AlertCircle className="w-3 h-3 mt-0.5 flex-shrink-0" />
-                        <span>{getFieldValidationError(field.id)!.message}</span>
-                      </div>
-                    )}
-
-                    {/* Auto-fill source indicator */}
-                    {autoFillData[field.id] && (
-                      <div className="mt-1 text-xs text-green-600 flex items-center gap-1">
-                        <CheckCircle2 className="w-3 h-3" />
-                        <span>Auto-filled from {autoFillData[field.id].source} (confidence: {Math.round(autoFillData[field.id].confidence * 100)}%)</span>
+                    {hoveredArea === issue.id && fieldExplanation && (
+                      <div className="mt-3 pt-3 border-t border-gray-200 text-sm text-gray-600">
+                        {isLoadingExplanation ? 'Loading explanation...' : fieldExplanation}
                       </div>
                     )}
                   </div>
-
-                  {/* Help button */}
-                  <button
-                    onClick={() => handleAskJeffreyAboutField(field)}
-                    className={cn(
-                      "flex-shrink-0 p-2 rounded-lg transition-colors",
-                      activeFieldHelp === field.id
-                        ? "bg-indigo-100 text-indigo-700"
-                        : "hover:bg-gray-100 text-gray-400 hover:text-indigo-600"
-                    )}
-                    title="Ask Jeffrey for help"
-                  >
-                    <HelpCircle className="w-5 h-5" />
-                  </button>
-                </div>
+                ))}
               </div>
-            ))}
-          </div>
-        </div>
+            </div>
+          )}
 
-        {/* Bottom action bar */}
-        <div className="mt-6 p-4 bg-white rounded-xl border border-gray-200 flex items-center justify-between">
-          <div className="text-sm text-gray-600">
-            {completionPercent === 100 ? (
-              <span className="text-green-600 font-medium">All fields completed! Ready to preview and download.</span>
-            ) : (
-              <span>Complete all required fields before downloading</span>
+          {/* Recommendations */}
+          {validationAnalysis && validationAnalysis.recommendations.length > 0 && (
+            <div className="p-4 border-b border-gray-200">
+              <h3 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                <Lightbulb className="w-5 h-5 text-amber-500" />
+                Recommendations
+              </h3>
+              <ul className="space-y-2">
+                {validationAnalysis.recommendations.map((rec, index) => (
+                  <li key={index} className="flex items-start gap-2 text-sm text-gray-700">
+                    <span className="text-indigo-600">•</span>
+                    <span>{rec}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {/* Country-Specific Notes */}
+          {validationAnalysis && validationAnalysis.countrySpecificNotes.length > 0 && (
+            <div className="p-4 bg-blue-50">
+              <h3 className="font-semibold text-blue-900 mb-3 flex items-center gap-2">
+                <Globe className="w-5 h-5" />
+                {travelProfile?.destinationCountry} Specific Notes
+              </h3>
+              <ul className="space-y-2">
+                {validationAnalysis.countrySpecificNotes.map((note, index) => (
+                  <li key={index} className="flex items-start gap-2 text-sm text-blue-700">
+                    <span>ℹ️</span>
+                    <span>{note}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {/* Quick Field Lookup */}
+          <div className="p-4 border-t border-gray-200">
+            <h3 className="font-semibold text-gray-900 mb-3">Quick Field Help</h3>
+            <p className="text-sm text-gray-600 mb-3">
+              Click on any common field below to get validation guidance:
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {['Full Name', 'Date of Birth', 'Passport Number', 'Passport Expiry', 'Nationality', 'Travel Purpose', 'Accommodation', 'Financial Proof'].map((field) => (
+                <button
+                  key={field}
+                  onClick={() => getFieldExplanation(field, field)}
+                  className={cn(
+                    "px-3 py-1.5 text-sm rounded-lg border transition-colors",
+                    hoveredArea === field ? "bg-indigo-100 border-indigo-300 text-indigo-700" : "bg-gray-100 border-gray-300 text-gray-700 hover:bg-indigo-50"
+                  )}
+                >
+                  {field}
+                </button>
+              ))}
+            </div>
+            {hoveredArea && !validationAnalysis?.issues.find(i => i.id === hoveredArea) && fieldExplanation && (
+              <div className="mt-4 p-3 bg-indigo-50 rounded-lg text-sm text-gray-700">
+                {isLoadingExplanation ? 'Loading explanation...' : fieldExplanation}
+              </div>
             )}
           </div>
-          <button
-            onClick={handlePreviewForm}
-            disabled={completionPercent < 50}
-            className="inline-flex items-center gap-2 px-6 py-3 bg-indigo-600 text-white rounded-xl font-semibold hover:bg-indigo-700 transition-colors disabled:opacity-50"
-          >
-            <Eye className="w-5 h-5" />
-            Preview & Download
-            <ChevronRight className="w-4 h-4" />
-          </button>
-        </div>
-      </div>
-    );
-  }
-
-  // PREVIEW MODE - Review completed form before download
-  if (viewMode === 'preview' && currentForm) {
-    const completionPercent = getCompletionPercentage();
-
-    return (
-      <div className="max-w-7xl mx-auto">
-        <Breadcrumb>
-          <BreadcrumbItem href="/app">Dashboard</BreadcrumbItem>
-          <BreadcrumbItem>
-            <button onClick={handleBackToBrowse} className="hover:text-indigo-600">
-              AI Form Filler
-            </button>
-          </BreadcrumbItem>
-          <BreadcrumbItem>
-            <button onClick={handleBackToFill} className="hover:text-indigo-600">
-              Fill Form
-            </button>
-          </BreadcrumbItem>
-          <BreadcrumbItem active>Preview</BreadcrumbItem>
-        </Breadcrumb>
-
-        <div className="mb-6">
-          <button
-            onClick={handleBackToFill}
-            className="inline-flex items-center gap-1 text-sm text-gray-600 hover:text-indigo-600 mb-2"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            Back to editing
-          </button>
-          <h1 className="text-3xl font-bold mb-2">Review Your Completed Form</h1>
-          <p className="text-gray-600">
-            Check all fields before downloading. Click "Back to editing" to make changes.
-          </p>
         </div>
 
-        {/* Summary card */}
-        <div className="bg-gradient-to-br from-green-50 to-emerald-50 border border-green-200 rounded-2xl p-6 mb-6">
-          <div className="flex items-center gap-3 mb-4">
-            <CheckCircle2 className="w-8 h-8 text-green-600" />
-            <div>
-              <h3 className="text-xl font-bold text-gray-900">Form Ready for Download</h3>
-              <p className="text-sm text-gray-600">{completionPercent}% complete - {currentForm.fields.filter(f => f.value.trim() !== '').length} of {currentForm.fields.length} fields filled</p>
-            </div>
-          </div>
-
-          <button
-            onClick={handleDownloadFilledForm}
-            className="inline-flex items-center gap-2 px-6 py-3 bg-green-600 text-white rounded-xl font-semibold hover:bg-green-700 transition-colors"
-          >
-            <Download className="w-5 h-5" />
-            Download Filled PDF
-          </button>
-        </div>
-
-        {/* Preview of filled fields */}
-        <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
-          <div className="p-4 bg-gray-50 border-b border-gray-200">
-            <h2 className="text-lg font-semibold">Field Summary</h2>
-          </div>
-
-          <div className="divide-y divide-gray-100">
-            {currentForm.fields.map((field) => (
-              <div key={field.id} className="p-4 flex items-center justify-between">
-                <div>
-                  <div className="font-medium text-gray-900">{field.label}</div>
-                  <div className="text-sm text-gray-600">
-                    {field.value.trim() || <span className="text-red-500 italic">Not filled</span>}
-                  </div>
+        {/* Country Requirements (from validation rules) */}
+        {travelProfile && countryValidationRules[travelProfile.destinationCountry.toLowerCase()] && (
+          <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden mb-6 p-4">
+            <h3 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
+              <Shield className="w-5 h-5 text-indigo-600" />
+              {travelProfile.destinationCountry} Visa Requirements
+            </h3>
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm">
+              <div className="p-3 bg-gray-50 rounded-lg">
+                <p className="font-medium text-gray-700">Passport Validity</p>
+                <p className="text-gray-900">{countryValidationRules[travelProfile.destinationCountry.toLowerCase()].passportValidityMonths} months</p>
+              </div>
+              <div className="p-3 bg-gray-50 rounded-lg">
+                <p className="font-medium text-gray-700">Date Format</p>
+                <p className="text-gray-900">{countryValidationRules[travelProfile.destinationCountry.toLowerCase()].dateFormat}</p>
+              </div>
+              {countryValidationRules[travelProfile.destinationCountry.toLowerCase()].onwardTicketRequired && (
+                <div className="p-3 bg-amber-50 rounded-lg">
+                  <p className="font-medium text-amber-700">⚠️ Onward Ticket</p>
+                  <p className="text-amber-900">Required</p>
                 </div>
-                {field.value.trim() !== '' ? (
-                  <CheckCircle2 className="w-5 h-5 text-green-500" />
-                ) : (
-                  <AlertCircle className="w-5 h-5 text-red-500" />
-                )}
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Warning for incomplete fields */}
-        {completionPercent < 100 && (
-          <div className="mt-4 p-4 bg-amber-50 border border-amber-200 rounded-lg">
-            <div className="flex items-start gap-2">
-              <AlertCircle className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
-              <div>
-                <p className="font-medium text-amber-800">Some fields are incomplete</p>
-                <p className="text-sm text-amber-700 mt-1">
-                  You have {currentForm.fields.filter(f => f.value.trim() === '').length} empty fields.
-                  Make sure all required fields are filled before submitting your visa application.
-                </p>
-              </div>
+              )}
             </div>
           </div>
         )}
+
+        {/* Bottom action - now for downloading original or getting more help */}
+        <div className="p-4 bg-white rounded-xl border border-gray-200 flex items-center justify-between">
+          <div className="text-sm text-gray-600">
+            {validationAnalysis && validationAnalysis.overallScore >= 80 ? (
+              <span className="text-green-600 font-medium">Form looks good! Review any remaining issues above.</span>
+            ) : validationAnalysis && validationAnalysis.overallScore >= 50 ? (
+              <span className="text-amber-600 font-medium">Some issues found. Address the recommendations above.</span>
+            ) : (
+              <span>Upload your form to see validation results</span>
+            )}
+          </div>
+          <div className="flex gap-3">
+            <button
+              onClick={handleBackToBrowse}
+              className="px-4 py-2 border border-gray-300 rounded-lg font-medium text-gray-700 hover:bg-gray-50"
+            >
+              Upload Different Form
+            </button>
+            {pdfUrl && (
+              <a
+                href={pdfUrl}
+                download={currentForm.fileName}
+                className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg font-medium hover:bg-indigo-700"
+              >
+                <Download className="w-4 h-4" />
+                Download Original PDF
+              </a>
+            )}
+          </div>
+        </div>
       </div>
     );
   }
