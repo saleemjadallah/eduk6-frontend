@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { FileText, Upload, ExternalLink, Globe, AlertCircle, HelpCircle, CheckCircle2, Lightbulb, Eye, Download, ChevronRight, ArrowLeft, Sparkles } from 'lucide-react';
+import { FileText, Upload, ExternalLink, Globe, AlertCircle, HelpCircle, CheckCircle2, Lightbulb, Eye, Download, ChevronRight, ArrowLeft, Sparkles, Edit3, LayoutList, FileImage } from 'lucide-react';
 import { useJeffrey } from '../../contexts/JeffreyContext';
 import { Breadcrumb, BreadcrumbItem } from '../../components/ui/Breadcrumb';
 import { cn } from '../../utils/cn';
@@ -74,6 +74,12 @@ export const FormFillerWorkflow: React.FC = () => {
   const [formSearchError, setFormSearchError] = useState<string | null>(null);
   const [isProcessingPDF, setIsProcessingPDF] = useState(false);
   const [activeFieldHelp, setActiveFieldHelp] = useState<string | null>(null);
+
+  // PDF view state
+  const [showPDFView, setShowPDFView] = useState(false);
+  const [pdfUrl, setPdfUrl] = useState<string | null>(null);
+  const [editingLabelId, setEditingLabelId] = useState<string | null>(null);
+  const [tempLabel, setTempLabel] = useState<string>('');
 
   // Update Jeffrey's context when entering this workflow
   useEffect(() => {
@@ -366,6 +372,57 @@ export const FormFillerWorkflow: React.FC = () => {
     setActiveFieldHelp(field.id);
     askJeffrey(`How do I correctly fill the "${field.label}" field on my visa application form? I'm applying for a ${travelProfile?.visaRequirements?.visaType || 'visa'} to ${travelProfile?.destinationCountry || 'my destination country'}.`);
   };
+
+  const handleStartEditLabel = (field: FormField) => {
+    setEditingLabelId(field.id);
+    setTempLabel(field.label);
+  };
+
+  const handleSaveLabel = (fieldId: string) => {
+    if (!currentForm || !tempLabel.trim()) return;
+
+    setCurrentForm(prev => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        fields: prev.fields.map(field =>
+          field.id === fieldId ? {
+            ...field,
+            label: tempLabel.trim(),
+            placeholder: `Enter ${tempLabel.trim().toLowerCase()}`,
+            hint: generateFieldHint(field.name, tempLabel.trim())
+          } : field
+        )
+      };
+    });
+    setEditingLabelId(null);
+    setTempLabel('');
+    addRecentAction('Renamed field label', { newLabel: tempLabel.trim() });
+  };
+
+  const handleCancelEditLabel = () => {
+    setEditingLabelId(null);
+    setTempLabel('');
+  };
+
+  const togglePDFView = () => {
+    if (!showPDFView && currentForm && !pdfUrl) {
+      // Create blob URL for PDF
+      const blob = new Blob([currentForm.pdfBytes], { type: 'application/pdf' });
+      const url = URL.createObjectURL(blob);
+      setPdfUrl(url);
+    }
+    setShowPDFView(!showPDFView);
+  };
+
+  // Cleanup PDF URL on unmount
+  useEffect(() => {
+    return () => {
+      if (pdfUrl) {
+        URL.revokeObjectURL(pdfUrl);
+      }
+    };
+  }, [pdfUrl]);
 
   const getCompletionPercentage = (): number => {
     if (!currentForm) return 0;
@@ -663,44 +720,129 @@ export const FormFillerWorkflow: React.FC = () => {
           </div>
         </div>
 
-        {/* Form fields */}
-        <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
-          <div className="p-4 bg-gray-50 border-b border-gray-200">
-            <div className="flex items-center justify-between">
-              <h2 className="text-lg font-semibold">Form Fields</h2>
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={handlePreviewForm}
-                  disabled={completionPercent < 50}
-                  className="inline-flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors disabled:opacity-50"
-                >
-                  <Eye className="w-4 h-4" />
-                  Preview & Download
-                </button>
+        {/* View Toggle and Form fields */}
+        <div className={cn(
+          "grid gap-6",
+          showPDFView ? "grid-cols-1 lg:grid-cols-2" : "grid-cols-1"
+        )}>
+          {/* PDF Viewer (when toggled on) */}
+          {showPDFView && pdfUrl && (
+            <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
+              <div className="p-4 bg-gray-50 border-b border-gray-200">
+                <h2 className="text-lg font-semibold">Original PDF Form</h2>
+                <p className="text-xs text-gray-500 mt-1">Reference the original form to identify field names</p>
+              </div>
+              <div className="h-[600px]">
+                <iframe
+                  src={pdfUrl}
+                  className="w-full h-full"
+                  title="PDF Form Preview"
+                />
               </div>
             </div>
-          </div>
+          )}
 
-          <div className="divide-y divide-gray-100">
-            {currentForm.fields.map((field, index) => (
-              <div key={field.id} className="p-4 hover:bg-gray-50 transition-colors">
-                <div className="flex items-start gap-4">
-                  {/* Field number */}
-                  <div className="flex-shrink-0 w-8 h-8 bg-indigo-100 rounded-full flex items-center justify-center text-sm font-semibold text-indigo-700">
-                    {index + 1}
-                  </div>
+          {/* Form fields */}
+          <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
+            <div className="p-4 bg-gray-50 border-b border-gray-200">
+              <div className="flex items-center justify-between">
+                <h2 className="text-lg font-semibold">Form Fields</h2>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={togglePDFView}
+                    className={cn(
+                      "inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors",
+                      showPDFView
+                        ? "bg-indigo-100 text-indigo-700 border border-indigo-200"
+                        : "bg-white border border-gray-300 hover:bg-gray-50"
+                    )}
+                  >
+                    {showPDFView ? (
+                      <>
+                        <LayoutList className="w-4 h-4" />
+                        Fields Only
+                      </>
+                    ) : (
+                      <>
+                        <FileImage className="w-4 h-4" />
+                        Show PDF
+                      </>
+                    )}
+                  </button>
+                  <button
+                    onClick={handlePreviewForm}
+                    disabled={completionPercent < 50}
+                    className="inline-flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors disabled:opacity-50"
+                  >
+                    <Eye className="w-4 h-4" />
+                    Preview & Download
+                  </button>
+                </div>
+              </div>
+            </div>
 
-                  {/* Field content */}
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-2">
-                      <label className="font-semibold text-gray-900">
-                        {field.label}
-                        {field.required && <span className="text-red-500 ml-1">*</span>}
-                      </label>
-                      {field.value.trim() !== '' && (
-                        <CheckCircle2 className="w-4 h-4 text-green-500" />
-                      )}
+            <div className="divide-y divide-gray-100 max-h-[600px] overflow-y-auto">
+              {currentForm.fields.map((field, index) => (
+                <div key={field.id} className="p-4 hover:bg-gray-50 transition-colors">
+                  <div className="flex items-start gap-4">
+                    {/* Field number */}
+                    <div className="flex-shrink-0 w-8 h-8 bg-indigo-100 rounded-full flex items-center justify-center text-sm font-semibold text-indigo-700">
+                      {index + 1}
                     </div>
+
+                    {/* Field content */}
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-2">
+                        {editingLabelId === field.id ? (
+                          <div className="flex items-center gap-2">
+                            <input
+                              type="text"
+                              value={tempLabel}
+                              onChange={(e) => setTempLabel(e.target.value)}
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter') handleSaveLabel(field.id);
+                                if (e.key === 'Escape') handleCancelEditLabel();
+                              }}
+                              className="px-2 py-1 border border-indigo-300 rounded text-sm font-semibold focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                              autoFocus
+                            />
+                            <button
+                              onClick={() => handleSaveLabel(field.id)}
+                              className="text-green-600 hover:text-green-800 text-xs font-medium"
+                            >
+                              Save
+                            </button>
+                            <button
+                              onClick={handleCancelEditLabel}
+                              className="text-gray-500 hover:text-gray-700 text-xs"
+                            >
+                              Cancel
+                            </button>
+                          </div>
+                        ) : (
+                          <>
+                            <label className="font-semibold text-gray-900">
+                              {field.label}
+                              {field.required && <span className="text-red-500 ml-1">*</span>}
+                            </label>
+                            <button
+                              onClick={() => handleStartEditLabel(field)}
+                              className="p-1 text-gray-400 hover:text-indigo-600 rounded transition-colors"
+                              title="Rename this field"
+                            >
+                              <Edit3 className="w-3 h-3" />
+                            </button>
+                            {field.value.trim() !== '' && (
+                              <CheckCircle2 className="w-4 h-4 text-green-500" />
+                            )}
+                            {(field.label.toLowerCase().includes('undefined') || field.label.length <= 2) && (
+                              <span className="text-xs bg-amber-100 text-amber-700 px-2 py-0.5 rounded">
+                                Click pencil to rename
+                              </span>
+                            )}
+                          </>
+                        )}
+                      </div>
 
                     {/* Input field based on type */}
                     {field.type === 'textarea' ? (
@@ -780,6 +922,7 @@ export const FormFillerWorkflow: React.FC = () => {
                 </div>
               </div>
             ))}
+          </div>
           </div>
         </div>
 
