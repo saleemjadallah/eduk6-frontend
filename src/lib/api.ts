@@ -258,6 +258,46 @@ export const visaDocsApi = {
     return response.data;
   },
 
+  // PDF Form Analysis with Gemini Vision AI
+  analyzePDFForm: async (data: {
+    pageImages: string[]; // Base64 encoded PNG images of PDF pages
+    fieldCount?: number;
+    visaType?: string;
+  }): Promise<ApiResponse<{
+    formType: string;
+    country: string;
+    totalFields: number;
+    fields: Array<{
+      fieldNumber: number;
+      label: string;
+      fieldType: string;
+      confidence: number;
+    }>;
+    processingNotes: string;
+    visaType: string;
+    analyzedAt: string;
+  }>> => {
+    const response = await api.post('/visadocs/forms/analyze-pdf', data);
+    return response.data;
+  },
+
+  reanalyzeField: async (data: {
+    pageImage: string; // Base64 encoded PNG image
+    fieldIndex: number;
+    currentLabel: string;
+    visaType?: string;
+  }): Promise<ApiResponse<{
+    fieldIndex: number;
+    previousLabel: string;
+    newLabel: string;
+    confidence: number;
+    fieldType: string;
+    analyzedAt: string;
+  }>> => {
+    const response = await api.post('/visadocs/forms/reanalyze-field', data);
+    return response.data;
+  },
+
   // Helper methods for unified dashboard with Jeffrey
   sendMessage: async (
     message: string,
