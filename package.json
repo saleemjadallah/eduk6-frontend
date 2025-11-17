@@ -24,6 +24,7 @@
     "firebase": "^10.14.1",
     "framer-motion": "^12.23.24",
     "lucide-react": "^0.344.0",
+    "pdf-lib": "^1.17.1",
     "react": "^19.0.0",
     "react-compare-slider": "^3.1.0",
     "react-dom": "^19.0.0",

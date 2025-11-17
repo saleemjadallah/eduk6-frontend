@@ -1,26 +1,10 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { FileText, Download, Sparkles, MessageCircle, Check, Upload, ExternalLink, Globe, AlertCircle } from 'lucide-react';
+import { FileText, Upload, ExternalLink, Globe, AlertCircle, HelpCircle, CheckCircle2, Lightbulb, Eye, Download, ChevronRight, ArrowLeft, Sparkles } from 'lucide-react';
 import { useJeffrey } from '../../contexts/JeffreyContext';
 import { Breadcrumb, BreadcrumbItem } from '../../components/ui/Breadcrumb';
-import { CompletionBadge } from '../../components/ui/CompletionBadge';
 import { cn } from '../../utils/cn';
 import { onboardingApi, visaDocsApi } from '../../lib/api';
-
-interface FormItem {
-  id: string;
-  name: string;
-  originalUrl: string;
-  completeness: number;
-  extractedFields: Record<string, unknown>;
-  filledData: Record<string, string>;
-}
-
-interface ExtractedField {
-  label: string;
-  value: string;
-  source: string;
-  confidence: number;
-}
+import { PDFDocument } from 'pdf-lib';
 
 interface SuggestedForm {
   name: string;
@@ -46,22 +30,50 @@ interface TravelProfile {
   };
 }
 
+interface FormField {
+  id: string;
+  name: string;
+  type: 'text' | 'date' | 'checkbox' | 'select' | 'textarea';
+  label: string;
+  value: string;
+  hint?: string;
+  suggestedValue?: string;
+  source?: string;
+  required?: boolean;
+  placeholder?: string;
+  options?: string[];
+}
+
+interface UploadedForm {
+  id: string;
+  fileName: string;
+  pdfBytes: ArrayBuffer;
+  fields: FormField[];
+  extractedAt: Date;
+}
+
+type ViewMode = 'browse' | 'fill' | 'preview';
+
 export const FormFillerWorkflow: React.FC = () => {
   const { updateWorkflow, addRecentAction, askJeffrey, formSearchCache, setFormSearchCache } = useJeffrey();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const [selectedForm, setSelectedForm] = useState<FormItem | null>(null);
-  const [availableForms, setAvailableForms] = useState<FormItem[]>([]);
-  const [extractedData, setExtractedData] = useState<ExtractedField[]>([]);
-  const [dataSources, setDataSources] = useState<{ id: string; name: string }[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  // View state
+  const [viewMode, setViewMode] = useState<ViewMode>('browse');
+  const [currentForm, setCurrentForm] = useState<UploadedForm | null>(null);
+
+  // Data state
   const [suggestedForms, setSuggestedForms] = useState<SuggestedForm[]>([]);
   const [additionalResources, setAdditionalResources] = useState<AdditionalResource[]>([]);
   const [processingNotes, setProcessingNotes] = useState<string>('');
   const [travelProfile, setTravelProfile] = useState<TravelProfile | null>(null);
-  const [isUploading, setIsUploading] = useState(false);
+
+  // Loading states
+  const [isLoading, setIsLoading] = useState(true);
   const [isSearchingForms, setIsSearchingForms] = useState(false);
   const [formSearchError, setFormSearchError] = useState<string | null>(null);
+  const [isProcessingPDF, setIsProcessingPDF] = useState(false);
+  const [activeFieldHelp, setActiveFieldHelp] = useState<string | null>(null);
 
   // Update Jeffrey's context when entering this workflow
   useEffect(() => {
@@ -70,7 +82,6 @@ export const FormFillerWorkflow: React.FC = () => {
     loadFormData();
   }, [updateWorkflow, addRecentAction]);
 
-  // Generate cache key based on travel profile
   const getCacheKey = (profile: TravelProfile): string => {
     return `${profile.destinationCountry}-${profile.visaRequirements?.visaType || 'default'}-${profile.nationality}`;
   };
@@ -79,7 +90,6 @@ export const FormFillerWorkflow: React.FC = () => {
     setIsLoading(true);
     setFormSearchError(null);
     try {
-      // Fetch onboarding data to get destination country
       const onboardingResponse = await onboardingApi.getStatus();
 
       if (onboardingResponse.success && onboardingResponse.data?.travelProfile) {
@@ -88,15 +98,12 @@ export const FormFillerWorkflow: React.FC = () => {
 
         const cacheKey = getCacheKey(profile);
 
-        // Check if we have cached results for this profile
         if (formSearchCache && formSearchCache.cacheKey === cacheKey) {
-          // Use cached results
           setSuggestedForms(formSearchCache.forms);
           setAdditionalResources(formSearchCache.additionalResources);
           setProcessingNotes(formSearchCache.processingNotes);
           setIsSearchingForms(false);
         } else {
-          // Use Perplexity AI to dynamically search for visa forms
           setIsSearchingForms(true);
           try {
             const formsResponse = await visaDocsApi.searchVisaForms({
@@ -116,7 +123,6 @@ export const FormFillerWorkflow: React.FC = () => {
               setAdditionalResources(resources);
               setProcessingNotes(notes);
 
-              // Cache the results
               setFormSearchCache({
                 forms,
                 additionalResources: resources,
@@ -135,11 +141,6 @@ export const FormFillerWorkflow: React.FC = () => {
           }
         }
       }
-
-      // TODO: Fetch real uploaded forms from API when backend is ready
-      setAvailableForms([]);
-      setExtractedData([]);
-      setDataSources([]);
     } catch (error) {
       console.error('Failed to load form data:', error);
     } finally {
@@ -147,62 +148,317 @@ export const FormFillerWorkflow: React.FC = () => {
     }
   };
 
-  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+  // Extract fields from PDF using pdf-lib
+  const extractPDFFields = async (pdfBytes: ArrayBuffer): Promise<FormField[]> => {
+    try {
+      const pdfDoc = await PDFDocument.load(pdfBytes);
+      const form = pdfDoc.getForm();
+      const pdfFields = form.getFields();
+
+      const extractedFields: FormField[] = pdfFields.map((field, index) => {
+        const fieldName = field.getName();
+        const fieldType = field.constructor.name;
+
+        let type: FormField['type'] = 'text';
+        let value = '';
+        let options: string[] | undefined;
+
+        if (fieldType === 'PDFTextField') {
+          type = 'text';
+          // @ts-expect-error: pdf-lib types
+          value = field.getText() || '';
+        } else if (fieldType === 'PDFCheckBox') {
+          type = 'checkbox';
+          // @ts-expect-error: pdf-lib types
+          value = field.isChecked() ? 'true' : 'false';
+        } else if (fieldType === 'PDFDropdown') {
+          type = 'select';
+          // @ts-expect-error: pdf-lib types
+          options = field.getOptions();
+          // @ts-expect-error: pdf-lib types
+          value = field.getSelected()?.[0] || '';
+        } else if (fieldType === 'PDFOptionList') {
+          type = 'select';
+          // @ts-expect-error: pdf-lib types
+          options = field.getOptions();
+          // @ts-expect-error: pdf-lib types
+          value = field.getSelected()?.[0] || '';
+        }
+
+        // Generate a human-readable label from field name
+        const label = fieldName
+          .replace(/([A-Z])/g, ' $1')
+          .replace(/[_-]/g, ' ')
+          .replace(/\s+/g, ' ')
+          .trim()
+          .split(' ')
+          .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+          .join(' ');
+
+        // Generate contextual hints based on field name patterns
+        const hint = generateFieldHint(fieldName, label);
+        const suggestedValue = generateSuggestedValue(fieldName, travelProfile);
+
+        return {
+          id: `field-${index}`,
+          name: fieldName,
+          type,
+          label,
+          value,
+          hint,
+          suggestedValue,
+          source: suggestedValue ? 'Your Profile' : undefined,
+          required: fieldName.toLowerCase().includes('required') || !fieldName.toLowerCase().includes('optional'),
+          placeholder: `Enter ${label.toLowerCase()}`,
+          options
+        };
+      });
+
+      return extractedFields;
+    } catch (error) {
+      console.error('Error extracting PDF fields:', error);
+      // Return common visa form fields as fallback
+      return generateCommonVisaFields();
+    }
+  };
+
+  const generateFieldHint = (fieldName: string, label: string): string => {
+    const lowerName = fieldName.toLowerCase();
+    const lowerLabel = label.toLowerCase();
+
+    if (lowerName.includes('surname') || lowerName.includes('family') || lowerName.includes('lastname')) {
+      return 'Enter your family name exactly as it appears on your passport';
+    }
+    if (lowerName.includes('given') || lowerName.includes('firstname') || lowerName.includes('first_name')) {
+      return 'Enter your given names as they appear on your passport';
+    }
+    if (lowerName.includes('passport') && lowerName.includes('number')) {
+      return 'Your passport number is on the top right of your passport data page';
+    }
+    if (lowerName.includes('birth') && lowerName.includes('date')) {
+      return 'Format: DD/MM/YYYY - Check your passport for exact date';
+    }
+    if (lowerName.includes('birth') && lowerName.includes('place')) {
+      return 'City and country where you were born';
+    }
+    if (lowerName.includes('nationality')) {
+      return 'Your current nationality as shown on passport';
+    }
+    if (lowerName.includes('address') || lowerLabel.includes('address')) {
+      return 'Your current residential address';
+    }
+    if (lowerName.includes('phone') || lowerName.includes('tel')) {
+      return 'Include country code (e.g., +1 for USA)';
+    }
+    if (lowerName.includes('email')) {
+      return 'Use an email you check regularly for visa updates';
+    }
+    if (lowerName.includes('employer') || lowerName.includes('occupation')) {
+      return 'Current job title or "Student" if studying';
+    }
+    if (lowerName.includes('purpose') || lowerName.includes('reason')) {
+      return 'Brief description of why you are traveling';
+    }
+    if (lowerName.includes('duration') || lowerName.includes('stay')) {
+      return 'Number of days you plan to stay';
+    }
+    if (lowerName.includes('arrival') || lowerName.includes('entry')) {
+      return 'Planned date of arrival in destination country';
+    }
+    if (lowerName.includes('departure') || lowerName.includes('exit')) {
+      return 'Planned date of leaving destination country';
+    }
+    return 'Fill in this field based on your current information';
+  };
+
+  const generateSuggestedValue = (fieldName: string, profile: TravelProfile | null): string | undefined => {
+    if (!profile) return undefined;
+
+    const lowerName = fieldName.toLowerCase();
+
+    if (lowerName.includes('nationality') || lowerName.includes('citizen')) {
+      return profile.nationality;
+    }
+    if (lowerName.includes('destination') || lowerName.includes('country') && lowerName.includes('visit')) {
+      return profile.destinationCountry;
+    }
+    if (lowerName.includes('purpose') || lowerName.includes('reason')) {
+      return profile.travelPurpose;
+    }
+    if (lowerName.includes('visa') && lowerName.includes('type')) {
+      return profile.visaRequirements?.visaType;
+    }
+    return undefined;
+  };
+
+  const generateCommonVisaFields = (): FormField[] => {
+    const commonFields = [
+      { name: 'surname', label: 'Family Name / Surname', type: 'text' as const },
+      { name: 'givenNames', label: 'Given Names', type: 'text' as const },
+      { name: 'dateOfBirth', label: 'Date of Birth', type: 'date' as const },
+      { name: 'placeOfBirth', label: 'Place of Birth', type: 'text' as const },
+      { name: 'nationality', label: 'Current Nationality', type: 'text' as const },
+      { name: 'passportNumber', label: 'Passport Number', type: 'text' as const },
+      { name: 'passportIssueDate', label: 'Passport Issue Date', type: 'date' as const },
+      { name: 'passportExpiryDate', label: 'Passport Expiry Date', type: 'date' as const },
+      { name: 'currentAddress', label: 'Current Residential Address', type: 'textarea' as const },
+      { name: 'email', label: 'Email Address', type: 'text' as const },
+      { name: 'phoneNumber', label: 'Phone Number', type: 'text' as const },
+      { name: 'occupation', label: 'Current Occupation', type: 'text' as const },
+      { name: 'employerName', label: 'Employer Name', type: 'text' as const },
+      { name: 'purposeOfTravel', label: 'Purpose of Travel', type: 'text' as const },
+      { name: 'intendedArrivalDate', label: 'Intended Date of Arrival', type: 'date' as const },
+      { name: 'intendedDepartureDate', label: 'Intended Date of Departure', type: 'date' as const },
+      { name: 'accommodationAddress', label: 'Address During Stay', type: 'textarea' as const },
+    ];
+
+    return commonFields.map((field, index) => ({
+      id: `field-${index}`,
+      name: field.name,
+      type: field.type,
+      label: field.label,
+      value: '',
+      hint: generateFieldHint(field.name, field.label),
+      suggestedValue: generateSuggestedValue(field.name, travelProfile),
+      source: generateSuggestedValue(field.name, travelProfile) ? 'Your Profile' : undefined,
+      required: true,
+      placeholder: `Enter ${field.label.toLowerCase()}`
+    }));
+  };
+
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
-    if (!files) return;
+    if (!files || files.length === 0) return;
 
-    const newFiles = Array.from(files);
+    const file = files[0];
+    if (file.type !== 'application/pdf') {
+      alert('Please upload a PDF file');
+      return;
+    }
 
-    // Simulate processing uploaded forms
-    setIsUploading(true);
-    setTimeout(() => {
-      const newForms: FormItem[] = newFiles.map((file, index) => ({
-        id: `uploaded-${Date.now()}-${index}`,
-        name: file.name.replace(/\.[^/.]+$/, ''),
-        originalUrl: URL.createObjectURL(file),
-        completeness: 0,
-        extractedFields: {},
-        filledData: {}
-      }));
+    setIsProcessingPDF(true);
+    addRecentAction('Uploaded form', { fileName: file.name });
 
-      setAvailableForms(prev => [...prev, ...newForms]);
-      addRecentAction('Uploaded form', { fileName: newFiles[0]?.name });
-      setIsUploading(false);
-    }, 1500);
+    try {
+      const arrayBuffer = await file.arrayBuffer();
+      const fields = await extractPDFFields(arrayBuffer);
+
+      const uploadedForm: UploadedForm = {
+        id: `form-${Date.now()}`,
+        fileName: file.name,
+        pdfBytes: arrayBuffer,
+        fields,
+        extractedAt: new Date()
+      };
+
+      setCurrentForm(uploadedForm);
+      setViewMode('fill');
+    } catch (error) {
+      console.error('Error processing PDF:', error);
+      alert('Error processing PDF. Please try again.');
+    } finally {
+      setIsProcessingPDF(false);
+    }
+
+    // Reset file input
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
+  const handleFieldChange = (fieldId: string, value: string) => {
+    if (!currentForm) return;
+
+    setCurrentForm(prev => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        fields: prev.fields.map(field =>
+          field.id === fieldId ? { ...field, value } : field
+        )
+      };
+    });
+  };
+
+  const handleApplySuggestion = (fieldId: string) => {
+    if (!currentForm) return;
+
+    const field = currentForm.fields.find(f => f.id === fieldId);
+    if (field?.suggestedValue) {
+      handleFieldChange(fieldId, field.suggestedValue);
+      addRecentAction('Applied suggested value', { field: field.label });
+    }
+  };
+
+  const handleAskJeffreyAboutField = (field: FormField) => {
+    setActiveFieldHelp(field.id);
+    askJeffrey(`How do I correctly fill the "${field.label}" field on my visa application form? I'm applying for a ${travelProfile?.visaRequirements?.visaType || 'visa'} to ${travelProfile?.destinationCountry || 'my destination country'}.`);
+  };
+
+  const getCompletionPercentage = (): number => {
+    if (!currentForm) return 0;
+    const filledFields = currentForm.fields.filter(f => f.value.trim() !== '').length;
+    return Math.round((filledFields / currentForm.fields.length) * 100);
   };
 
   const handleUploadClick = () => {
     fileInputRef.current?.click();
   };
 
-  const handleSelectForm = (form: FormItem) => {
-    setSelectedForm(form);
-    addRecentAction('Selected form', { formName: form.name });
+  const handlePreviewForm = () => {
+    setViewMode('preview');
+    addRecentAction('Previewing completed form');
   };
 
-  const handleAutoFillAll = () => {
-    if (!selectedForm) return;
-    addRecentAction('Auto-filled form', { formName: selectedForm.name });
-    // Simulate auto-fill
-    setSelectedForm((prev) =>
-      prev
-        ? {
-            ...prev,
-            completeness: Math.min(prev.completeness + 20, 100),
+  const handleBackToFill = () => {
+    setViewMode('fill');
+  };
+
+  const handleBackToBrowse = () => {
+    setViewMode('browse');
+    setCurrentForm(null);
+  };
+
+  const handleDownloadFilledForm = async () => {
+    if (!currentForm) return;
+
+    try {
+      const pdfDoc = await PDFDocument.load(currentForm.pdfBytes);
+      const form = pdfDoc.getForm();
+
+      // Fill in the PDF fields with user values
+      currentForm.fields.forEach(field => {
+        try {
+          const pdfField = form.getField(field.name);
+          if (field.type === 'text' || field.type === 'textarea' || field.type === 'date') {
+            // @ts-expect-error: pdf-lib types
+            pdfField.setText(field.value);
+          } else if (field.type === 'checkbox' && field.value === 'true') {
+            // @ts-expect-error: pdf-lib types
+            pdfField.check();
+          } else if (field.type === 'select') {
+            // @ts-expect-error: pdf-lib types
+            pdfField.select(field.value);
           }
-        : null
-    );
-  };
+        } catch {
+          // Field might not exist in PDF, skip
+        }
+      });
 
-  const handleDownloadForm = () => {
-    if (!selectedForm) return;
-    addRecentAction('Downloaded form', { formName: selectedForm.name });
-    // Trigger download
-    alert('Form download would start here');
-  };
+      const filledPdfBytes = await pdfDoc.save();
+      const blob = new Blob([filledPdfBytes.buffer as ArrayBuffer], { type: 'application/pdf' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `filled_${currentForm.fileName}`;
+      a.click();
+      URL.revokeObjectURL(url);
 
-  const handleAskJeffreyAboutField = (fieldName: string) => {
-    askJeffrey(`How do I fill the "${fieldName}" field correctly?`);
+      addRecentAction('Downloaded filled form', { fileName: currentForm.fileName });
+    } catch (error) {
+      console.error('Error downloading filled form:', error);
+      alert('Error generating filled PDF. Please try again.');
+    }
   };
 
   if (isLoading) {
@@ -216,392 +472,465 @@ export const FormFillerWorkflow: React.FC = () => {
     );
   }
 
-  return (
-    <div className="max-w-7xl mx-auto">
-      {/* Breadcrumb Navigation */}
-      <Breadcrumb>
-        <BreadcrumbItem href="/app">Dashboard</BreadcrumbItem>
-        <BreadcrumbItem active>AI Form Filler</BreadcrumbItem>
-      </Breadcrumb>
+  // BROWSE MODE - Show suggested forms and upload option
+  if (viewMode === 'browse') {
+    return (
+      <div className="max-w-7xl mx-auto">
+        <Breadcrumb>
+          <BreadcrumbItem href="/app">Dashboard</BreadcrumbItem>
+          <BreadcrumbItem active>AI Form Filler</BreadcrumbItem>
+        </Breadcrumb>
 
-      {/* Page Header */}
-      <div className="mb-8">
-        <h1 className="text-4xl font-bold mb-2">AI Form Filler</h1>
-        <p className="text-xl text-neutral-600">
-          Let AI auto-fill your visa application forms using your uploaded documents
-        </p>
-      </div>
-
-      {/* Suggested Forms Section - Based on Onboarding */}
-      {travelProfile && (
-        <div className="mb-8 p-6 bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-200 rounded-2xl">
-          <div className="flex items-center gap-3 mb-4">
-            <Globe className="w-6 h-6 text-blue-600" />
-            <h3 className="text-xl font-bold text-gray-900">
-              Official Visa Forms for {travelProfile.destinationCountry}
-            </h3>
-          </div>
-          <p className="text-sm text-gray-600 mb-4">
-            AI-powered search for {travelProfile.visaRequirements?.visaType || travelProfile.travelPurpose} visa application forms
+        <div className="mb-8">
+          <h1 className="text-4xl font-bold mb-2">AI Form Filler</h1>
+          <p className="text-xl text-neutral-600">
+            Download official visa forms and let Jeffrey help you fill them out correctly
           </p>
+        </div>
 
-          {isSearchingForms ? (
-            <div className="text-center py-8">
-              <div className="w-12 h-12 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin mx-auto mb-4" />
-              <p className="text-gray-600 font-medium">Searching for official forms...</p>
-              <p className="text-sm text-gray-500 mt-1">Using AI to find the latest official government forms</p>
+        {/* Suggested Forms Section */}
+        {travelProfile && (
+          <div className="mb-8 p-6 bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-200 rounded-2xl">
+            <div className="flex items-center gap-3 mb-4">
+              <Globe className="w-6 h-6 text-blue-600" />
+              <h3 className="text-xl font-bold text-gray-900">
+                Official Visa Forms for {travelProfile.destinationCountry}
+              </h3>
             </div>
-          ) : formSearchError ? (
-            <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
-              <p className="text-sm text-red-700">{formSearchError}</p>
-              <button
-                onClick={loadFormData}
-                className="mt-2 text-sm text-red-600 underline hover:text-red-800"
-              >
-                Try again
-              </button>
-            </div>
-          ) : suggestedForms.length > 0 ? (
-            <>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {suggestedForms.map((form, index) => (
-                  <div key={index} className="bg-white p-4 rounded-xl border border-blue-100 shadow-sm">
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-1">
-                          <h4 className="font-semibold text-gray-900">{form.name}</h4>
-                          <span className={`text-xs px-2 py-0.5 rounded-full ${
-                            form.formType === 'online' ? 'bg-green-100 text-green-700' :
-                            form.formType === 'pdf' ? 'bg-blue-100 text-blue-700' :
-                            'bg-purple-100 text-purple-700'
-                          }`}>
-                            {form.formType}
-                          </span>
-                        </div>
-                        <p className="text-xs text-gray-500 mb-2">{form.description}</p>
-                        {form.instructions && (
-                          <p className="text-xs text-gray-600 mb-2 italic">{form.instructions}</p>
-                        )}
-                        <div className="flex items-center gap-1 text-xs text-blue-600">
-                          <AlertCircle className="w-3 h-3" />
-                          <span>Source: {form.source}</span>
+            <p className="text-sm text-gray-600 mb-4">
+              AI-powered search for {travelProfile.visaRequirements?.visaType || travelProfile.travelPurpose} visa application forms
+            </p>
+
+            {isSearchingForms ? (
+              <div className="text-center py-8">
+                <div className="w-12 h-12 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin mx-auto mb-4" />
+                <p className="text-gray-600 font-medium">Searching for official forms...</p>
+                <p className="text-sm text-gray-500 mt-1">Using AI to find the latest official government forms</p>
+              </div>
+            ) : formSearchError ? (
+              <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
+                <p className="text-sm text-red-700">{formSearchError}</p>
+                <button
+                  onClick={loadFormData}
+                  className="mt-2 text-sm text-red-600 underline hover:text-red-800"
+                >
+                  Try again
+                </button>
+              </div>
+            ) : suggestedForms.length > 0 ? (
+              <>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {suggestedForms.map((form, index) => (
+                    <div key={index} className="bg-white p-4 rounded-xl border border-blue-100 shadow-sm">
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-1">
+                            <h4 className="font-semibold text-gray-900">{form.name}</h4>
+                            <span className={`text-xs px-2 py-0.5 rounded-full ${
+                              form.formType === 'online' ? 'bg-green-100 text-green-700' :
+                              form.formType === 'pdf' ? 'bg-blue-100 text-blue-700' :
+                              'bg-purple-100 text-purple-700'
+                            }`}>
+                              {form.formType}
+                            </span>
+                          </div>
+                          <p className="text-xs text-gray-500 mb-2">{form.description}</p>
+                          {form.instructions && (
+                            <p className="text-xs text-gray-600 mb-2 italic">{form.instructions}</p>
+                          )}
+                          <div className="flex items-center gap-1 text-xs text-blue-600">
+                            <AlertCircle className="w-3 h-3" />
+                            <span>Source: {form.source}</span>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                    <a
-                      href={form.officialUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="mt-3 inline-flex items-center gap-2 px-3 py-2 bg-blue-600 text-white text-sm rounded-lg font-medium hover:bg-blue-700 transition-colors w-full justify-center"
-                    >
-                      <ExternalLink className="w-4 h-4" />
-                      {form.formType === 'online' ? 'Access Online Portal' : 'Get Official Form'}
-                    </a>
-                  </div>
-                ))}
-              </div>
-
-              {/* Processing Notes */}
-              {processingNotes && (
-                <div className="mt-4 p-3 bg-amber-50 border border-amber-200 rounded-lg">
-                  <p className="text-sm text-amber-800">
-                    <strong>Important:</strong> {processingNotes}
-                  </p>
-                </div>
-              )}
-
-              {/* Additional Resources */}
-              {additionalResources.length > 0 && (
-                <div className="mt-4">
-                  <h4 className="text-sm font-semibold text-gray-700 mb-2">Additional Resources</h4>
-                  <div className="space-y-2">
-                    {additionalResources.map((resource, index) => (
                       <a
-                        key={index}
-                        href={resource.url}
+                        href={form.officialUrl}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="block p-3 bg-white border border-gray-200 rounded-lg hover:border-blue-300 transition-colors"
+                        className="mt-3 inline-flex items-center gap-2 px-3 py-2 bg-blue-600 text-white text-sm rounded-lg font-medium hover:bg-blue-700 transition-colors w-full justify-center"
                       >
-                        <div className="flex items-center justify-between">
-                          <span className="font-medium text-sm text-gray-900">{resource.title}</span>
-                          <ExternalLink className="w-4 h-4 text-gray-400" />
-                        </div>
-                        <p className="text-xs text-gray-500 mt-1">{resource.description}</p>
+                        <ExternalLink className="w-4 h-4" />
+                        {form.formType === 'online' ? 'Access Online Portal' : 'Get Official Form'}
                       </a>
-                    ))}
-                  </div>
+                    </div>
+                  ))}
                 </div>
-              )}
 
-              <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
-                <p className="text-sm text-yellow-800">
-                  <strong>Tip:</strong> Download the official form from the links above, then upload it here so Jeffrey can help you fill it out automatically.
-                </p>
+                {processingNotes && (
+                  <div className="mt-4 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+                    <p className="text-sm text-amber-800">
+                      <strong>Important:</strong> {processingNotes}
+                    </p>
+                  </div>
+                )}
+
+                {additionalResources.length > 0 && (
+                  <div className="mt-4">
+                    <h4 className="text-sm font-semibold text-gray-700 mb-2">Additional Resources</h4>
+                    <div className="space-y-2">
+                      {additionalResources.map((resource, index) => (
+                        <a
+                          key={index}
+                          href={resource.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="block p-3 bg-white border border-gray-200 rounded-lg hover:border-blue-300 transition-colors"
+                        >
+                          <div className="flex items-center justify-between">
+                            <span className="font-medium text-sm text-gray-900">{resource.title}</span>
+                            <ExternalLink className="w-4 h-4 text-gray-400" />
+                          </div>
+                          <p className="text-xs text-gray-500 mt-1">{resource.description}</p>
+                        </a>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </>
+            ) : (
+              <div className="text-center py-6">
+                <FileText className="w-10 h-10 text-gray-300 mx-auto mb-3" />
+                <p className="text-sm text-gray-600">No forms found for this destination.</p>
               </div>
-            </>
-          ) : (
-            <div className="text-center py-6">
-              <FileText className="w-10 h-10 text-gray-300 mx-auto mb-3" />
-              <p className="text-sm text-gray-600">No forms found for this destination.</p>
-              <button
-                onClick={() => askJeffrey(`What visa forms do I need for ${travelProfile.destinationCountry}?`)}
-                className="mt-2 text-sm text-blue-600 underline hover:text-blue-800"
-              >
-                Ask Jeffrey for help
-              </button>
-            </div>
-          )}
-        </div>
-      )}
+            )}
+          </div>
+        )}
 
-      {/* Step-by-step Form Filling */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Left: Form Selection & Preview */}
-        <div className="lg:col-span-2 bg-white p-6 rounded-2xl border border-neutral-200">
-          {/* Hidden file input */}
+        {/* Upload Section */}
+        <div className="bg-white p-8 rounded-2xl border-2 border-dashed border-indigo-300 hover:border-indigo-500 transition-colors">
           <input
             ref={fileInputRef}
             type="file"
-            accept=".pdf,.doc,.docx"
-            multiple
+            accept=".pdf"
             onChange={handleFileUpload}
             className="hidden"
           />
 
-          {/* Upload Section */}
-          <div className="mb-6">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-2xl font-bold">Your Forms</h3>
-              <button
-                onClick={handleUploadClick}
-                disabled={isUploading}
-                className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg font-semibold hover:bg-indigo-700 transition-colors disabled:opacity-50"
-              >
-                {isUploading ? (
-                  <>
-                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                    Processing...
-                  </>
-                ) : (
-                  <>
-                    <Upload className="w-4 h-4" />
-                    Upload Form
-                  </>
-                )}
-              </button>
+          <div className="text-center">
+            <div className="w-20 h-20 bg-indigo-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <Upload className="w-10 h-10 text-indigo-600" />
             </div>
+            <h3 className="text-2xl font-bold text-gray-900 mb-2">Upload Your PDF Form</h3>
+            <p className="text-gray-600 mb-6 max-w-lg mx-auto">
+              Download an official visa form from the links above, then upload it here. Jeffrey will extract the fields and help you fill them out correctly with smart suggestions.
+            </p>
 
-            {availableForms.length === 0 ? (
-              <div className="text-center py-12 border-2 border-dashed border-neutral-200 rounded-xl hover:border-indigo-300 transition-colors cursor-pointer"
-                   onClick={handleUploadClick}>
-                <Upload className="w-12 h-12 text-neutral-300 mx-auto mb-4" />
-                <h4 className="text-lg font-semibold text-neutral-700 mb-2">Upload Your Visa Application Form</h4>
-                <p className="text-neutral-500 mb-4 max-w-md mx-auto">
-                  Upload a PDF or Word document of your visa application form, and Jeffrey will help auto-fill it with your information.
-                </p>
-                <div className="flex flex-col items-center gap-3">
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleUploadClick();
-                    }}
-                    className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg font-semibold hover:bg-indigo-700 transition-colors"
-                  >
-                    <Upload className="w-4 h-4" />
-                    Choose File to Upload
-                  </button>
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      askJeffrey('How do I start filling visa application forms?');
-                    }}
-                    className="inline-flex items-center gap-2 px-4 py-2 border border-neutral-300 text-neutral-700 rounded-lg font-semibold hover:bg-neutral-50 transition-colors"
-                  >
-                    <MessageCircle className="w-4 h-4" />
-                    Ask Jeffrey for Help
-                  </button>
-                </div>
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {availableForms.map((form) => (
-                <button
-                  key={form.id}
-                  onClick={() => handleSelectForm(form)}
-                  className={cn(
-                    'w-full text-left p-4 rounded-xl border-2 transition-all',
-                    'hover:shadow-md',
-                    selectedForm?.id === form.id
-                      ? 'border-indigo-500 bg-indigo-50'
-                      : 'border-neutral-200 hover:border-neutral-300'
-                  )}
-                >
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <FileText className="w-5 h-5 text-indigo-600" />
-                      <span className="font-semibold text-neutral-900">{form.name}</span>
-                    </div>
-                    <CompletionBadge value={form.completeness} className="text-xs px-2 py-1" />
-                  </div>
-                  <div className="mt-2">
-                    <div className="w-full h-2 bg-neutral-100 rounded-full overflow-hidden">
-                      <div
-                        className="h-full bg-gradient-to-r from-indigo-500 to-purple-600 rounded-full"
-                        style={{ width: `${form.completeness}%` }}
-                      />
-                    </div>
-                  </div>
-                </button>
-              ))}
-              </div>
-            )}
+            <button
+              onClick={handleUploadClick}
+              disabled={isProcessingPDF}
+              className="inline-flex items-center gap-2 px-6 py-3 bg-indigo-600 text-white rounded-xl font-semibold hover:bg-indigo-700 transition-colors disabled:opacity-50"
+            >
+              {isProcessingPDF ? (
+                <>
+                  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  Processing PDF...
+                </>
+              ) : (
+                <>
+                  <Upload className="w-5 h-5" />
+                  Choose PDF File
+                </>
+              )}
+            </button>
+
+            <p className="text-xs text-gray-500 mt-4">
+              Supported: PDF files with fillable form fields
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // FILL MODE - Show extracted fields with Jeffrey's guidance
+  if (viewMode === 'fill' && currentForm) {
+    const completionPercent = getCompletionPercentage();
+    const filledCount = currentForm.fields.filter(f => f.value.trim() !== '').length;
+
+    return (
+      <div className="max-w-7xl mx-auto">
+        <Breadcrumb>
+          <BreadcrumbItem href="/app">Dashboard</BreadcrumbItem>
+          <BreadcrumbItem>
+            <button onClick={handleBackToBrowse} className="hover:text-indigo-600">
+              AI Form Filler
+            </button>
+          </BreadcrumbItem>
+          <BreadcrumbItem active>Fill Form</BreadcrumbItem>
+        </Breadcrumb>
+
+        {/* Header with progress */}
+        <div className="mb-6">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <button
+                onClick={handleBackToBrowse}
+                className="inline-flex items-center gap-1 text-sm text-gray-600 hover:text-indigo-600 mb-2"
+              >
+                <ArrowLeft className="w-4 h-4" />
+                Back to forms
+              </button>
+              <h1 className="text-3xl font-bold">Fill: {currentForm.fileName}</h1>
+              <p className="text-gray-600">
+                Jeffrey found {currentForm.fields.length} fields to fill. Complete each field with guidance.
+              </p>
+            </div>
+            <div className="text-right">
+              <div className="text-2xl font-bold text-indigo-600">{completionPercent}%</div>
+              <div className="text-sm text-gray-500">{filledCount}/{currentForm.fields.length} fields</div>
+            </div>
           </div>
 
-          {/* Form Preview & Editing */}
-          {selectedForm && (
-            <div className="border-t pt-6">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-2xl font-bold">{selectedForm.name}</h3>
-                <CompletionBadge value={selectedForm.completeness} className="px-4 py-2" />
-              </div>
-
-              {/* Simulated Form Fields */}
-              <div className="bg-neutral-50 rounded-xl p-6 border border-neutral-200">
-                <p className="text-sm text-neutral-500 mb-4">
-                  Form preview with editable fields:
-                </p>
-
-                <div className="space-y-4">
-                  {Object.entries(selectedForm.filledData).map(([key, value]) => (
-                    <div key={key} className="flex items-center gap-3">
-                      <div className="flex-1">
-                        <label className="block text-xs font-semibold text-neutral-500 mb-1">
-                          {key.replace(/([A-Z])/g, ' $1').trim()}
-                        </label>
-                        <input
-                          type="text"
-                          value={value}
-                          readOnly
-                          className="w-full px-3 py-2 rounded-lg border border-neutral-300 bg-white text-sm"
-                        />
-                      </div>
-                      <button
-                        onClick={() => handleAskJeffreyAboutField(key)}
-                        className="p-2 text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
-                        title="Ask Jeffrey"
-                      >
-                        <MessageCircle className="w-4 h-4" />
-                      </button>
-                      <Check className="w-5 h-5 text-green-500" />
-                    </div>
-                  ))}
-
-                  {/* Empty fields indicator */}
-                  {selectedForm.completeness < 100 && (
-                    <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
-                      <p className="text-sm text-yellow-700">
-                        {Math.round(((100 - selectedForm.completeness) / 100) * 10)} fields still
-                        need to be filled
-                      </p>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-          )}
+          {/* Progress bar */}
+          <div className="w-full h-3 bg-gray-200 rounded-full overflow-hidden">
+            <div
+              className="h-full bg-gradient-to-r from-indigo-500 to-purple-600 rounded-full transition-all duration-300"
+              style={{ width: `${completionPercent}%` }}
+            />
+          </div>
         </div>
 
-        {/* Right: Extracted Data Preview */}
-        <div className="bg-white p-6 rounded-2xl border border-neutral-200">
-          <h3 className="text-lg font-bold mb-4">Auto-Extracted Data</h3>
-          <p className="text-sm text-neutral-600 mb-4">
-            Jeffrey extracted this data from your uploaded documents:
-          </p>
-
-          {extractedData.length === 0 ? (
-            <div className="text-center py-8">
-              <FileText className="w-10 h-10 text-neutral-300 mx-auto mb-3" />
-              <p className="text-sm text-neutral-500">No data extracted yet</p>
-              <p className="text-xs text-neutral-400 mt-1">Upload documents to get started</p>
+        {/* Form fields */}
+        <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
+          <div className="p-4 bg-gray-50 border-b border-gray-200">
+            <div className="flex items-center justify-between">
+              <h2 className="text-lg font-semibold">Form Fields</h2>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={handlePreviewForm}
+                  disabled={completionPercent < 50}
+                  className="inline-flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors disabled:opacity-50"
+                >
+                  <Eye className="w-4 h-4" />
+                  Preview & Download
+                </button>
+              </div>
             </div>
-          ) : (
-            <>
-              <div className="space-y-4">
-                {extractedData.map((field, index) => (
-                  <div key={index} className="p-3 bg-neutral-50 rounded-lg">
-                    <div className="flex items-center justify-between mb-1">
-                      <span className="text-xs font-semibold text-neutral-500">{field.label}</span>
-                      <span
-                        className={cn(
-                          'text-xs font-medium px-2 py-0.5 rounded-full',
-                          field.confidence >= 95
-                            ? 'bg-green-100 text-green-700'
-                            : field.confidence >= 80
-                              ? 'bg-yellow-100 text-yellow-700'
-                              : 'bg-red-100 text-red-700'
-                        )}
-                      >
-                        {field.confidence}%
-                      </span>
-                    </div>
-                    <p className="text-sm font-medium text-neutral-900">{field.value}</p>
-                    <p className="text-xs text-neutral-400 mt-1">Source: {field.source}</p>
+          </div>
+
+          <div className="divide-y divide-gray-100">
+            {currentForm.fields.map((field, index) => (
+              <div key={field.id} className="p-4 hover:bg-gray-50 transition-colors">
+                <div className="flex items-start gap-4">
+                  {/* Field number */}
+                  <div className="flex-shrink-0 w-8 h-8 bg-indigo-100 rounded-full flex items-center justify-center text-sm font-semibold text-indigo-700">
+                    {index + 1}
                   </div>
-                ))}
-              </div>
 
-              {/* Data Sources */}
-              <div className="mt-6 p-4 bg-neutral-50 rounded-xl">
-                <p className="text-xs font-semibold text-neutral-500 mb-2">Data extracted from:</p>
-                <div className="space-y-2">
-                  {dataSources.map((source) => (
-                    <div key={source.id} className="flex items-center gap-2 text-sm">
-                      <FileText className="w-4 h-4 text-indigo-600" />
-                      <span className="text-neutral-700">{source.name}</span>
+                  {/* Field content */}
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-2">
+                      <label className="font-semibold text-gray-900">
+                        {field.label}
+                        {field.required && <span className="text-red-500 ml-1">*</span>}
+                      </label>
+                      {field.value.trim() !== '' && (
+                        <CheckCircle2 className="w-4 h-4 text-green-500" />
+                      )}
                     </div>
-                  ))}
+
+                    {/* Input field based on type */}
+                    {field.type === 'textarea' ? (
+                      <textarea
+                        value={field.value}
+                        onChange={(e) => handleFieldChange(field.id, e.target.value)}
+                        placeholder={field.placeholder}
+                        rows={3}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm"
+                      />
+                    ) : field.type === 'select' && field.options ? (
+                      <select
+                        value={field.value}
+                        onChange={(e) => handleFieldChange(field.id, e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm"
+                      >
+                        <option value="">Select...</option>
+                        {field.options.map(opt => (
+                          <option key={opt} value={opt}>{opt}</option>
+                        ))}
+                      </select>
+                    ) : field.type === 'checkbox' ? (
+                      <label className="flex items-center gap-2">
+                        <input
+                          type="checkbox"
+                          checked={field.value === 'true'}
+                          onChange={(e) => handleFieldChange(field.id, e.target.checked ? 'true' : 'false')}
+                          className="w-4 h-4 text-indigo-600 rounded border-gray-300 focus:ring-indigo-500"
+                        />
+                        <span className="text-sm text-gray-600">Check if applicable</span>
+                      </label>
+                    ) : (
+                      <input
+                        type={field.type === 'date' ? 'date' : 'text'}
+                        value={field.value}
+                        onChange={(e) => handleFieldChange(field.id, e.target.value)}
+                        placeholder={field.placeholder}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm"
+                      />
+                    )}
+
+                    {/* Hint and suggestion */}
+                    <div className="mt-2 flex items-start gap-4">
+                      {field.hint && (
+                        <div className="flex items-start gap-1 text-xs text-gray-500">
+                          <Lightbulb className="w-3 h-3 mt-0.5 flex-shrink-0 text-amber-500" />
+                          <span>{field.hint}</span>
+                        </div>
+                      )}
+
+                      {field.suggestedValue && field.value !== field.suggestedValue && (
+                        <button
+                          onClick={() => handleApplySuggestion(field.id)}
+                          className="inline-flex items-center gap-1 text-xs text-indigo-600 hover:text-indigo-800 font-medium"
+                        >
+                          <Sparkles className="w-3 h-3" />
+                          Use: {field.suggestedValue}
+                          <span className="text-gray-400">({field.source})</span>
+                        </button>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Help button */}
+                  <button
+                    onClick={() => handleAskJeffreyAboutField(field)}
+                    className={cn(
+                      "flex-shrink-0 p-2 rounded-lg transition-colors",
+                      activeFieldHelp === field.id
+                        ? "bg-indigo-100 text-indigo-700"
+                        : "hover:bg-gray-100 text-gray-400 hover:text-indigo-600"
+                    )}
+                    title="Ask Jeffrey for help"
+                  >
+                    <HelpCircle className="w-5 h-5" />
+                  </button>
                 </div>
               </div>
-            </>
-          )}
+            ))}
+          </div>
+        </div>
+
+        {/* Bottom action bar */}
+        <div className="mt-6 p-4 bg-white rounded-xl border border-gray-200 flex items-center justify-between">
+          <div className="text-sm text-gray-600">
+            {completionPercent === 100 ? (
+              <span className="text-green-600 font-medium">All fields completed! Ready to preview and download.</span>
+            ) : (
+              <span>Complete all required fields before downloading</span>
+            )}
+          </div>
+          <button
+            onClick={handlePreviewForm}
+            disabled={completionPercent < 50}
+            className="inline-flex items-center gap-2 px-6 py-3 bg-indigo-600 text-white rounded-xl font-semibold hover:bg-indigo-700 transition-colors disabled:opacity-50"
+          >
+            <Eye className="w-5 h-5" />
+            Preview & Download
+            <ChevronRight className="w-4 h-4" />
+          </button>
         </div>
       </div>
+    );
+  }
 
-      {/* Action Buttons */}
-      <div className="flex items-center gap-4 mt-8">
-        <button
-          onClick={handleAutoFillAll}
-          disabled={!selectedForm || selectedForm.completeness === 100}
-          className="inline-flex items-center gap-2 px-6 py-3 rounded-xl font-semibold
-                     bg-gradient-to-r from-indigo-500 to-purple-600 text-white
-                     hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          <Sparkles className="w-5 h-5" />
-          Auto-Fill All Fields
-        </button>
+  // PREVIEW MODE - Review completed form before download
+  if (viewMode === 'preview' && currentForm) {
+    const completionPercent = getCompletionPercentage();
 
-        <button
-          onClick={handleDownloadForm}
-          disabled={!selectedForm}
-          className="inline-flex items-center gap-2 px-6 py-3 rounded-xl font-semibold
-                     border border-neutral-300 text-neutral-700 hover:bg-neutral-50
-                     transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          <Download className="w-5 h-5" />
-          Download Form
-        </button>
+    return (
+      <div className="max-w-7xl mx-auto">
+        <Breadcrumb>
+          <BreadcrumbItem href="/app">Dashboard</BreadcrumbItem>
+          <BreadcrumbItem>
+            <button onClick={handleBackToBrowse} className="hover:text-indigo-600">
+              AI Form Filler
+            </button>
+          </BreadcrumbItem>
+          <BreadcrumbItem>
+            <button onClick={handleBackToFill} className="hover:text-indigo-600">
+              Fill Form
+            </button>
+          </BreadcrumbItem>
+          <BreadcrumbItem active>Preview</BreadcrumbItem>
+        </Breadcrumb>
 
-        <button
-          onClick={() => askJeffrey('What fields am I still missing?')}
-          className="inline-flex items-center gap-2 px-6 py-3 rounded-xl font-semibold
-                     border border-neutral-300 text-neutral-700 hover:bg-neutral-50
-                     transition-all"
-        >
-          <MessageCircle className="w-5 h-5" />
-          Ask Jeffrey
-        </button>
+        <div className="mb-6">
+          <button
+            onClick={handleBackToFill}
+            className="inline-flex items-center gap-1 text-sm text-gray-600 hover:text-indigo-600 mb-2"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            Back to editing
+          </button>
+          <h1 className="text-3xl font-bold mb-2">Review Your Completed Form</h1>
+          <p className="text-gray-600">
+            Check all fields before downloading. Click "Back to editing" to make changes.
+          </p>
+        </div>
+
+        {/* Summary card */}
+        <div className="bg-gradient-to-br from-green-50 to-emerald-50 border border-green-200 rounded-2xl p-6 mb-6">
+          <div className="flex items-center gap-3 mb-4">
+            <CheckCircle2 className="w-8 h-8 text-green-600" />
+            <div>
+              <h3 className="text-xl font-bold text-gray-900">Form Ready for Download</h3>
+              <p className="text-sm text-gray-600">{completionPercent}% complete - {currentForm.fields.filter(f => f.value.trim() !== '').length} of {currentForm.fields.length} fields filled</p>
+            </div>
+          </div>
+
+          <button
+            onClick={handleDownloadFilledForm}
+            className="inline-flex items-center gap-2 px-6 py-3 bg-green-600 text-white rounded-xl font-semibold hover:bg-green-700 transition-colors"
+          >
+            <Download className="w-5 h-5" />
+            Download Filled PDF
+          </button>
+        </div>
+
+        {/* Preview of filled fields */}
+        <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
+          <div className="p-4 bg-gray-50 border-b border-gray-200">
+            <h2 className="text-lg font-semibold">Field Summary</h2>
+          </div>
+
+          <div className="divide-y divide-gray-100">
+            {currentForm.fields.map((field) => (
+              <div key={field.id} className="p-4 flex items-center justify-between">
+                <div>
+                  <div className="font-medium text-gray-900">{field.label}</div>
+                  <div className="text-sm text-gray-600">
+                    {field.value.trim() || <span className="text-red-500 italic">Not filled</span>}
+                  </div>
+                </div>
+                {field.value.trim() !== '' ? (
+                  <CheckCircle2 className="w-5 h-5 text-green-500" />
+                ) : (
+                  <AlertCircle className="w-5 h-5 text-red-500" />
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Warning for incomplete fields */}
+        {completionPercent < 100 && (
+          <div className="mt-4 p-4 bg-amber-50 border border-amber-200 rounded-lg">
+            <div className="flex items-start gap-2">
+              <AlertCircle className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
+              <div>
+                <p className="font-medium text-amber-800">Some fields are incomplete</p>
+                <p className="text-sm text-amber-700 mt-1">
+                  You have {currentForm.fields.filter(f => f.value.trim() === '').length} empty fields.
+                  Make sure all required fields are filled before submitting your visa application.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
-    </div>
-  );
+    );
+  }
+
+  return null;
 };
