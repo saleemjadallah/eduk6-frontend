@@ -22,13 +22,10 @@ export const ProfileManager: React.FC<ProfileManagerProps> = ({ onProfileUpdate,
   const [educationForm, setEducationForm] = useState<Partial<EducationProfile>>({});
   const [familyForm, setFamilyForm] = useState<Partial<FamilyProfile>>({});
 
-  // Edit modes
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const [editingEmploymentId, setEditingEmploymentId] = useState<string | null>(null);
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const [_editingEducationId, setEditingEducationId] = useState<string | null>(null);
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const [_editingFamilyId, setEditingFamilyId] = useState<string | null>(null);
+  // Edit modes - will be used when edit functionality is implemented
+  const [, setEditingEmploymentId] = useState<string | null>(null);
+  const [, setEditingEducationId] = useState<string | null>(null);
+  const [, setEditingFamilyId] = useState<string | null>(null);
 
   useEffect(() => {
     loadProfile();
@@ -110,26 +107,6 @@ export const ProfileManager: React.FC<ProfileManagerProps> = ({ onProfileUpdate,
       }
     } catch (error) {
       showSaveMessage('error', 'Error saving employment record');
-    } finally {
-      setIsSaving(false);
-    }
-  };
-
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const _handleSaveEducation = async () => {
-    setIsSaving(true);
-    try {
-      const response = await profileApi.saveEducation(educationForm as EducationProfile);
-      if (response.success) {
-        showSaveMessage('success', 'Education record saved successfully');
-        setEducationForm({});
-        setEditingEducationId(null);
-        await loadProfile();
-      } else {
-        showSaveMessage('error', response.error || 'Failed to save education record');
-      }
-    } catch (error) {
-      showSaveMessage('error', 'Error saving education record');
     } finally {
       setIsSaving(false);
     }
