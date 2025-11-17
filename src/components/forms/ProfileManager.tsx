@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { User, Briefcase, GraduationCap, Users, AlertCircle, CheckCircle2, Save, Plus } from 'lucide-react';
-import { profileApi, UserProfile, PassportProfile, EmploymentProfile, EducationProfile, FamilyProfile, CompleteProfile } from '../../lib/api-profile';
+import { profileApi, UserProfile, PassportProfile, EmploymentProfile, FamilyProfile, CompleteProfile } from '../../lib/api-profile';
+import type { EducationProfile } from '../../lib/api-profile';
 import { cn } from '../../utils/cn';
 
 interface ProfileManagerProps {
@@ -19,12 +20,12 @@ export const ProfileManager: React.FC<ProfileManagerProps> = ({ onProfileUpdate,
   const [personalForm, setPersonalForm] = useState<Partial<UserProfile>>({});
   const [passportForm, setPassportForm] = useState<Partial<PassportProfile>>({});
   const [employmentForm, setEmploymentForm] = useState<Partial<EmploymentProfile>>({ isCurrent: false });
-  const [educationForm, setEducationForm] = useState<Partial<EducationProfile>>({});
+  const [_educationForm, _setEducationForm] = useState<Partial<EducationProfile>>({});
   const [familyForm, setFamilyForm] = useState<Partial<FamilyProfile>>({});
 
   // Edit modes - will be used when edit functionality is implemented
   const [, setEditingEmploymentId] = useState<string | null>(null);
-  const [, setEditingEducationId] = useState<string | null>(null);
+  const [, _setEditingEducationId] = useState<string | null>(null);
   const [, setEditingFamilyId] = useState<string | null>(null);
 
   useEffect(() => {

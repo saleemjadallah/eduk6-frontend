@@ -204,8 +204,7 @@ export const FormFillerWorkflow: React.FC = () => {
 
         await page.render({
           canvasContext: context,
-          viewport: viewport,
-          canvas: canvas as unknown as HTMLCanvasElement
+          viewport: viewport
         }).promise;
 
         // Convert to base64 PNG (remove the data:image/png;base64, prefix)
