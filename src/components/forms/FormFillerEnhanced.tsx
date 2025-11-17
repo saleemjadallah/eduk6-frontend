@@ -4,7 +4,7 @@ import {
   Shield, Clock, TrendingUp
 } from 'lucide-react';
 import { profileApi, CompleteProfile } from '../../lib/api-profile';
-import { validateForm } from '../../lib/validation-rules';
+import { validateForm, formatValidationMessage, countryValidationRules } from '../../lib/validation-rules';
 import { cn } from '../../utils/cn';
 
 interface FormField {
@@ -128,6 +128,7 @@ export const FormFillerEnhanced: React.FC<FormFillerEnhancedProps> = ({
     }
   };
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const _getFieldValidationStatus = (field: FormField) => {
     const error = validationErrors.find(e => e.fieldId === field.id);
     if (error) {
