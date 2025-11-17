@@ -9,6 +9,9 @@ import {
   LogOut,
   User as UserIcon,
   Bell,
+  Settings,
+  Users,
+  CreditCard,
 } from 'lucide-react';
 import { cn } from '../utils/cn';
 import { User } from '../types';
@@ -124,24 +127,57 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
 
                   {/* Dropdown Menu */}
                   <div
-                    className="absolute right-0 top-full mt-2 w-48 bg-white rounded-lg shadow-lg border border-neutral-200
+                    className="absolute right-0 top-full mt-2 w-56 bg-white rounded-lg shadow-lg border border-neutral-200
                                opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all"
                   >
                     <div className="py-1">
+                      {/* Profile Section */}
+                      <div className="px-4 py-2 border-b border-neutral-100">
+                        <p className="text-xs font-medium text-neutral-500 uppercase">Profile & Auto-fill</p>
+                      </div>
                       <Link
-                        to="/app/profile"
+                        to="/app/profile-settings"
                         className="flex items-center gap-2 px-4 py-2 text-sm text-neutral-700 hover:bg-neutral-50"
                       >
                         <UserIcon className="w-4 h-4" />
-                        Profile
+                        Personal Information
                       </Link>
-                      <button
-                        onClick={handleLogout}
-                        className="flex items-center gap-2 w-full px-4 py-2 text-sm text-red-600 hover:bg-red-50"
+                      <Link
+                        to="/app/profile-settings?tab=family"
+                        className="flex items-center gap-2 px-4 py-2 text-sm text-neutral-700 hover:bg-neutral-50"
                       >
-                        <LogOut className="w-4 h-4" />
-                        Logout
-                      </button>
+                        <Users className="w-4 h-4" />
+                        Family Members
+                      </Link>
+
+                      {/* Account Section */}
+                      <div className="px-4 py-2 border-t border-b border-neutral-100 mt-1">
+                        <p className="text-xs font-medium text-neutral-500 uppercase">Account</p>
+                      </div>
+                      <Link
+                        to="/app/profile-settings?tab=security"
+                        className="flex items-center gap-2 px-4 py-2 text-sm text-neutral-700 hover:bg-neutral-50"
+                      >
+                        <Settings className="w-4 h-4" />
+                        Settings
+                      </Link>
+                      <Link
+                        to="/app/profile-settings?tab=billing"
+                        className="flex items-center gap-2 px-4 py-2 text-sm text-neutral-700 hover:bg-neutral-50"
+                      >
+                        <CreditCard className="w-4 h-4" />
+                        Billing
+                      </Link>
+
+                      <div className="border-t border-neutral-100 mt-1">
+                        <button
+                          onClick={handleLogout}
+                          className="flex items-center gap-2 w-full px-4 py-2 text-sm text-red-600 hover:bg-red-50"
+                        >
+                          <LogOut className="w-4 h-4" />
+                          Logout
+                        </button>
+                      </div>
                     </div>
                   </div>
                 </div>
