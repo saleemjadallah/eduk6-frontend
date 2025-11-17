@@ -128,18 +128,6 @@ export const FormFillerEnhanced: React.FC<FormFillerEnhancedProps> = ({
     }
   };
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const _getFieldValidationStatus = (field: FormField) => {
-    const error = validationErrors.find(e => e.fieldId === field.id);
-    if (error) {
-      return error.severity;
-    }
-    if (field.value && field.required) {
-      return 'valid';
-    }
-    return null;
-  };
-
   const getAutoFillStats = () => {
     const autoFilledCount = fields.filter(f => autoFillData[f.id]?.source === 'profile').length;
     const percentage = fields.length > 0 ? Math.round((autoFilledCount / fields.length) * 100) : 0;
