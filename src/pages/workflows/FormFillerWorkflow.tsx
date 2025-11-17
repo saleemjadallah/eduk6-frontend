@@ -5,6 +5,10 @@ import { Breadcrumb, BreadcrumbItem } from '../../components/ui/Breadcrumb';
 import { cn } from '../../utils/cn';
 import { onboardingApi, visaDocsApi } from '../../lib/api';
 import { PDFDocument } from 'pdf-lib';
+import * as pdfjsLib from 'pdfjs-dist';
+
+// Set up PDF.js worker
+pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
 
 interface SuggestedForm {
   name: string;
@@ -155,9 +159,67 @@ export const FormFillerWorkflow: React.FC = () => {
     }
   };
 
+  // Extract text content from PDF to help identify field labels
+  const extractPDFText = async (pdfBytes: ArrayBuffer): Promise<string[]> => {
+    try {
+      const pdf = await pdfjsLib.getDocument({ data: pdfBytes }).promise;
+      const textLines: string[] = [];
+
+      for (let i = 1; i <= pdf.numPages; i++) {
+        const page = await pdf.getPage(i);
+        const textContent = await page.getTextContent();
+        const pageText = textContent.items
+          .map((item: unknown) => (item as { str: string }).str)
+          .filter((text: string) => text.trim().length > 0);
+        textLines.push(...pageText);
+      }
+
+      return textLines;
+    } catch (error) {
+      console.error('Error extracting PDF text:', error);
+      return [];
+    }
+  };
+
+  // Try to match field position with nearby text labels
+  const findLabelForField = (_fieldIndex: number, _totalFields: number, textLines: string[]): string | null => {
+    // Common visa form field patterns
+    const fieldPatterns = [
+      /surname|family\s*name|last\s*name/i,
+      /given\s*name|first\s*name|forename/i,
+      /date\s*of\s*birth|birth\s*date|dob/i,
+      /place\s*of\s*birth|birth\s*place/i,
+      /nationality|citizenship/i,
+      /passport\s*number|passport\s*no/i,
+      /issue\s*date|date\s*of\s*issue/i,
+      /expir|valid\s*until/i,
+      /address|residence/i,
+      /email|e-mail/i,
+      /phone|telephone|mobile/i,
+      /occupation|profession|job/i,
+      /employer|company/i,
+      /purpose|reason/i,
+      /arrival|entry/i,
+      /departure|exit|leaving/i,
+    ];
+
+    // Search for matching patterns in text
+    for (const pattern of fieldPatterns) {
+      const matchIndex = textLines.findIndex(line => pattern.test(line));
+      if (matchIndex !== -1) {
+        return textLines[matchIndex];
+      }
+    }
+
+    return null;
+  };
+
   // Extract fields from PDF using pdf-lib
   const extractPDFFields = async (pdfBytes: ArrayBuffer): Promise<FormField[]> => {
     try {
+      // First extract text content to help identify fields
+      const textLines = await extractPDFText(pdfBytes);
+
       const pdfDoc = await PDFDocument.load(pdfBytes);
       const form = pdfDoc.getForm();
       const pdfFields = form.getFields();
@@ -192,8 +254,8 @@ export const FormFillerWorkflow: React.FC = () => {
           value = field.getSelected()?.[0] || '';
         }
 
-        // Generate a human-readable label from field name
-        const label = fieldName
+        // Try to find a better label from the PDF text content
+        let label = fieldName
           .replace(/([A-Z])/g, ' $1')
           .replace(/[_-]/g, ' ')
           .replace(/\s+/g, ' ')
@@ -201,6 +263,14 @@ export const FormFillerWorkflow: React.FC = () => {
           .split(' ')
           .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
           .join(' ');
+
+        // If field name is generic/undefined, try to find label from text
+        if (label.toLowerCase().includes('undefined') || label.length <= 2) {
+          const foundLabel = findLabelForField(index, pdfFields.length, textLines);
+          if (foundLabel) {
+            label = foundLabel;
+          }
+        }
 
         // Generate contextual hints based on field name patterns
         const hint = generateFieldHint(fieldName, label);
@@ -750,11 +820,25 @@ export const FormFillerWorkflow: React.FC = () => {
                 <p className="text-xs text-gray-500 mt-1">Reference the original form to identify field names</p>
               </div>
               <div className="h-[600px]">
-                <iframe
-                  src={pdfUrl}
+                <object
+                  data={pdfUrl}
+                  type="application/pdf"
                   className="w-full h-full"
-                  title="PDF Form Preview"
-                />
+                >
+                  <div className="flex items-center justify-center h-full bg-gray-100">
+                    <div className="text-center">
+                      <FileText className="w-12 h-12 text-gray-400 mx-auto mb-2" />
+                      <p className="text-gray-600">PDF preview not available in browser</p>
+                      <a
+                        href={pdfUrl}
+                        download
+                        className="text-indigo-600 underline text-sm mt-2 inline-block"
+                      >
+                        Download PDF to view
+                      </a>
+                    </div>
+                  </div>
+                </object>
               </div>
             </div>
           )}
