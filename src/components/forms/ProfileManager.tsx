@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { User, Briefcase, GraduationCap, Users, Plane, AlertCircle, CheckCircle2, Save, Plus, Edit2, Trash2 } from 'lucide-react';
+import { User, Briefcase, GraduationCap, Users, AlertCircle, CheckCircle2, Save, Plus } from 'lucide-react';
 import { profileApi, UserProfile, PassportProfile, EmploymentProfile, EducationProfile, FamilyProfile, CompleteProfile } from '../../lib/api-profile';
 import { cn } from '../../utils/cn';
 
@@ -24,8 +24,8 @@ export const ProfileManager: React.FC<ProfileManagerProps> = ({ onProfileUpdate,
 
   // Edit modes
   const [editingEmploymentId, setEditingEmploymentId] = useState<string | null>(null);
-  const [editingEducationId, setEditingEducationId] = useState<string | null>(null);
-  const [editingFamilyId, setEditingFamilyId] = useState<string | null>(null);
+  const [_editingEducationId, setEditingEducationId] = useState<string | null>(null);
+  const [_editingFamilyId, setEditingFamilyId] = useState<string | null>(null);
 
   useEffect(() => {
     loadProfile();
@@ -112,7 +112,7 @@ export const ProfileManager: React.FC<ProfileManagerProps> = ({ onProfileUpdate,
     }
   };
 
-  const handleSaveEducation = async () => {
+  const _handleSaveEducation = async () => {
     setIsSaving(true);
     try {
       const response = await profileApi.saveEducation(educationForm as EducationProfile);
