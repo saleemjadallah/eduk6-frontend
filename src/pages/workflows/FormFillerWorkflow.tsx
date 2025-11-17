@@ -298,15 +298,21 @@ export const FormFillerWorkflow: React.FC = () => {
   // Extract fields from PDF using pdf-lib and enhance with AI Vision
   const extractPDFFields = async (pdfBytes: ArrayBuffer): Promise<FormField[]> => {
     try {
-      // First extract text content to help identify fields
-      const textLines = await extractPDFText(pdfBytes);
+      // Create copies of ArrayBuffer to avoid detachment issues
+      // Each PDF library operation can detach the original ArrayBuffer
+      const bytesForText = pdfBytes.slice(0);
+      const bytesForPdfLib = pdfBytes.slice(0);
+      const bytesForAI = pdfBytes.slice(0);
 
-      const pdfDoc = await PDFDocument.load(pdfBytes);
+      // First extract text content to help identify fields
+      const textLines = await extractPDFText(bytesForText);
+
+      const pdfDoc = await PDFDocument.load(bytesForPdfLib);
       const form = pdfDoc.getForm();
       const pdfFields = form.getFields();
 
       // Analyze form with Gemini Vision AI to get accurate field labels
-      const aiFieldMap = await analyzeFormWithAI(pdfBytes, pdfFields.length);
+      const aiFieldMap = await analyzeFormWithAI(bytesForAI, pdfFields.length);
 
       const extractedFields: FormField[] = pdfFields.map((field, index) => {
         const fieldName = field.getName();
