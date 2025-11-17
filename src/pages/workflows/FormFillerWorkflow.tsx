@@ -114,6 +114,13 @@ export const FormFillerWorkflow: React.FC = () => {
   const [hoveredArea, setHoveredArea] = useState<string | null>(null);
   const [fieldExplanation, setFieldExplanation] = useState<string | null>(null);
   const [isLoadingExplanation, setIsLoadingExplanation] = useState(false);
+  const [lastValidationTime, setLastValidationTime] = useState<Date | null>(null);
+  const [autoValidationEnabled, setAutoValidationEnabled] = useState(true);
+  const [validationCountdown, setValidationCountdown] = useState(0);
+  const pdfObjectRef = useRef<HTMLObjectElement>(null);
+  const autoValidationIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  // Suppress unused ref warning
+  void pdfObjectRef;
 
   // Update Jeffrey's context when entering this workflow
   useEffect(() => {
@@ -281,8 +288,147 @@ Be concise but helpful. Format as a brief paragraph.`;
     }
   };
 
+  // Re-capture current PDF state with filled values
+  const recapturePDFState = async (): Promise<string[]> => {
+    if (!currentForm?.pdfBytes) return pageImages;
+
+    try {
+      // Re-render the PDF with current field values filled in
+      const pdfDoc = await PDFDocument.load(currentForm.pdfBytes.slice(0));
+      const form = pdfDoc.getForm();
+
+      // Fill the PDF with current field values
+      currentForm.fields.forEach(field => {
+        try {
+          const pdfField = form.getField(field.name);
+          if (field.type === 'text' || field.type === 'textarea' || field.type === 'date') {
+            // @ts-expect-error: pdf-lib types
+            pdfField.setText(field.value);
+          } else if (field.type === 'checkbox' && field.value === 'true') {
+            // @ts-expect-error: pdf-lib types
+            pdfField.check();
+          } else if (field.type === 'select') {
+            // @ts-expect-error: pdf-lib types
+            pdfField.select(field.value);
+          }
+        } catch {
+          // Field might not exist
+        }
+      });
+
+      // Save the filled PDF
+      const filledPdfBytes = await pdfDoc.save();
+
+      // Convert to images for Gemini Vision
+      const newImages = await convertPDFPagesToImages(filledPdfBytes.buffer as ArrayBuffer);
+      return newImages;
+    } catch (error) {
+      console.error('Error recapturing PDF state:', error);
+      return pageImages; // Fall back to original images
+    }
+  };
+
+  // Auto-validation timer effect
+  useEffect(() => {
+    if (!autoValidationEnabled || viewMode !== 'fill' || !currentForm || isAnalyzingForm) {
+      if (autoValidationIntervalRef.current) {
+        clearInterval(autoValidationIntervalRef.current);
+        autoValidationIntervalRef.current = null;
+      }
+      setValidationCountdown(0);
+      return;
+    }
+
+    // Set countdown to 15 seconds
+    const AUTO_VALIDATION_INTERVAL = 15;
+    setValidationCountdown(AUTO_VALIDATION_INTERVAL);
+
+    // Update countdown every second
+    const countdownInterval = setInterval(() => {
+      setValidationCountdown(prev => {
+        if (prev <= 1) {
+          // Trigger validation
+          handleAutoValidation();
+          return AUTO_VALIDATION_INTERVAL;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    autoValidationIntervalRef.current = countdownInterval;
+
+    return () => {
+      if (autoValidationIntervalRef.current) {
+        clearInterval(autoValidationIntervalRef.current);
+        autoValidationIntervalRef.current = null;
+      }
+    };
+  }, [autoValidationEnabled, viewMode, currentForm, isAnalyzingForm]);
+
+  // Handle auto-validation
+  const handleAutoValidation = async () => {
+    if (isAnalyzingForm || !currentForm) return;
+
+    console.log('[FormFiller] Auto-validation triggered');
+    const newImages = await recapturePDFState();
+    if (newImages.length > 0) {
+      setPageImages(newImages);
+      await analyzeFormForValidation(newImages);
+      setLastValidationTime(new Date());
+    }
+  };
+
+  // Manual re-analyze with current PDF state
+  const handleReanalyze = async () => {
+    if (isAnalyzingForm || !currentForm) return;
+
+    console.log('[FormFiller] Manual re-analyze triggered');
+    const newImages = await recapturePDFState();
+    if (newImages.length > 0) {
+      setPageImages(newImages);
+      await analyzeFormForValidation(newImages);
+      setLastValidationTime(new Date());
+      // Reset countdown
+      setValidationCountdown(15);
+    }
+  };
+
   const getCacheKey = (profile: TravelProfile): string => {
     return `${profile.destinationCountry}-${profile.visaRequirements?.visaType || 'default'}-${profile.nationality}`;
+  };
+
+  const FORM_CACHE_TTL_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
+
+  const loadFormsFromStorage = (cacheKey: string) => {
+    if (typeof window === 'undefined') return null;
+    try {
+      const raw = localStorage.getItem(`formSearchCache:${cacheKey}`);
+      if (!raw) return null;
+      const parsed = JSON.parse(raw);
+      if (!parsed.cachedAt || Date.now() - parsed.cachedAt > FORM_CACHE_TTL_MS) {
+        localStorage.removeItem(`formSearchCache:${cacheKey}`);
+        return null;
+      }
+      return parsed;
+    } catch (error) {
+      console.warn('Failed to load cached forms from storage', error);
+      return null;
+    }
+  };
+
+  const persistFormsToStorage = (cacheKey: string, cache: FormSearchCache) => {
+    if (typeof window === 'undefined') return;
+    try {
+      localStorage.setItem(
+        `formSearchCache:${cacheKey}`,
+        JSON.stringify({
+          ...cache,
+          cachedAt: cache.cachedAt.getTime(),
+        })
+      );
+    } catch (error) {
+      console.warn('Failed to persist form cache', error);
+    }
   };
 
   const loadFormData = async () => {
@@ -296,6 +442,20 @@ Be concise but helpful. Format as a brief paragraph.`;
         setTravelProfile(profile);
 
         const cacheKey = getCacheKey(profile);
+
+        // Try restoring cached forms from localStorage first (persists across tabs/refresh)
+        const storedCache = loadFormsFromStorage(cacheKey);
+        if (storedCache) {
+          setSuggestedForms(storedCache.forms);
+          setAdditionalResources(storedCache.additionalResources);
+          setProcessingNotes(storedCache.processingNotes);
+          setFormSearchCache({
+            ...storedCache,
+            cachedAt: new Date(storedCache.cachedAt),
+          });
+          setIsSearchingForms(false);
+          return;
+        }
 
         if (formSearchCache && formSearchCache.cacheKey === cacheKey) {
           setSuggestedForms(formSearchCache.forms);
@@ -323,6 +483,14 @@ Be concise but helpful. Format as a brief paragraph.`;
               setProcessingNotes(notes);
 
               setFormSearchCache({
+                forms,
+                additionalResources: resources,
+                processingNotes: notes,
+                cacheKey,
+                cachedAt: new Date()
+              });
+
+              persistFormsToStorage(cacheKey, {
                 forms,
                 additionalResources: resources,
                 processingNotes: notes,
@@ -1058,15 +1226,39 @@ Be concise but helpful. Format as a brief paragraph.`;
                      validationAnalysis ? `${validationAnalysis.completedFields}/${validationAnalysis.totalFields} fields analyzed` :
                      'Upload a form to get validation insights'}
                   </p>
+                  {lastValidationTime && (
+                    <p className="text-xs text-gray-500 mt-1">
+                      Last validated: {lastValidationTime.toLocaleTimeString()}
+                    </p>
+                  )}
                 </div>
               </div>
-              <button
-                onClick={() => pageImages.length > 0 && analyzeFormForValidation(pageImages)}
-                disabled={isAnalyzingForm || pageImages.length === 0}
-                className="px-4 py-2 bg-indigo-600 text-white rounded-lg font-medium hover:bg-indigo-700 disabled:opacity-50"
-              >
-                {isAnalyzingForm ? 'Analyzing...' : 'Re-analyze'}
-              </button>
+              <div className="flex items-center gap-3">
+                {/* Auto-validation toggle and countdown */}
+                <div className="flex items-center gap-2">
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={autoValidationEnabled}
+                      onChange={(e) => setAutoValidationEnabled(e.target.checked)}
+                      className="w-4 h-4 text-indigo-600 rounded"
+                    />
+                    <span className="text-sm text-gray-700">Auto-validate</span>
+                  </label>
+                  {autoValidationEnabled && validationCountdown > 0 && !isAnalyzingForm && (
+                    <span className="text-xs bg-indigo-100 text-indigo-700 px-2 py-1 rounded-full">
+                      Next in {validationCountdown}s
+                    </span>
+                  )}
+                </div>
+                <button
+                  onClick={handleReanalyze}
+                  disabled={isAnalyzingForm || pageImages.length === 0}
+                  className="px-4 py-2 bg-indigo-600 text-white rounded-lg font-medium hover:bg-indigo-700 disabled:opacity-50"
+                >
+                  {isAnalyzingForm ? 'Analyzing...' : 'Re-analyze Now'}
+                </button>
+              </div>
             </div>
           </div>
 
