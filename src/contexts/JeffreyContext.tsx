@@ -2,6 +2,26 @@ import React, { createContext, useContext, useState, useCallback, useEffect, use
 import { JeffreyContextState, WorkflowType, JeffreyMessage } from '../types/unified';
 import { visaDocsApi } from '../lib/api';
 
+// Cache types for form search results
+interface FormSearchCache {
+  forms: Array<{
+    name: string;
+    description: string;
+    officialUrl: string;
+    source: string;
+    formType: string;
+    instructions?: string;
+  }>;
+  additionalResources: Array<{
+    title: string;
+    url: string;
+    description: string;
+  }>;
+  processingNotes: string;
+  cacheKey: string; // To invalidate when destination/visa type changes
+  cachedAt: Date;
+}
+
 interface JeffreyContextValue {
   // State
   context: JeffreyContextState;
@@ -9,6 +29,7 @@ interface JeffreyContextValue {
   isTyping: boolean;
   sessionId: string | null;
   suggestions: string[];
+  formSearchCache: FormSearchCache | null;
 
   // Actions
   updateWorkflow: (workflow: WorkflowType) => void;
@@ -18,6 +39,8 @@ interface JeffreyContextValue {
   sendMessage: (message: string) => Promise<void>;
   askJeffrey: (question: string) => Promise<void>;
   clearMessages: () => void;
+  setFormSearchCache: (cache: FormSearchCache) => void;
+  clearFormSearchCache: () => void;
 }
 
 const JeffreyContext = createContext<JeffreyContextValue | null>(null);
@@ -47,6 +70,7 @@ export const JeffreyProvider: React.FC<JeffreyProviderProps> = ({ children }) =>
   const [isTyping, setIsTyping] = useState(false);
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [suggestions, setSuggestions] = useState<string[]>([]);
+  const [formSearchCache, setFormSearchCacheState] = useState<FormSearchCache | null>(null);
 
   const lastWorkflowRef = useRef<WorkflowType>(null);
 
@@ -230,12 +254,21 @@ export const JeffreyProvider: React.FC<JeffreyProviderProps> = ({ children }) =>
     setSessionId(null);
   }, []);
 
+  const setFormSearchCache = useCallback((cache: FormSearchCache) => {
+    setFormSearchCacheState(cache);
+  }, []);
+
+  const clearFormSearchCache = useCallback(() => {
+    setFormSearchCacheState(null);
+  }, []);
+
   const value: JeffreyContextValue = {
     context,
     messages,
     isTyping,
     sessionId,
     suggestions,
+    formSearchCache,
     updateWorkflow,
     updatePackageContext,
     updateUserState,
@@ -243,6 +276,8 @@ export const JeffreyProvider: React.FC<JeffreyProviderProps> = ({ children }) =>
     sendMessage,
     askJeffrey,
     clearMessages,
+    setFormSearchCache,
+    clearFormSearchCache,
   };
 
   return <JeffreyContext.Provider value={value}>{children}</JeffreyContext.Provider>;

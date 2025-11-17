@@ -47,7 +47,7 @@ interface TravelProfile {
 }
 
 export const FormFillerWorkflow: React.FC = () => {
-  const { updateWorkflow, addRecentAction, askJeffrey } = useJeffrey();
+  const { updateWorkflow, addRecentAction, askJeffrey, formSearchCache, setFormSearchCache } = useJeffrey();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [selectedForm, setSelectedForm] = useState<FormItem | null>(null);
@@ -70,6 +70,11 @@ export const FormFillerWorkflow: React.FC = () => {
     loadFormData();
   }, [updateWorkflow, addRecentAction]);
 
+  // Generate cache key based on travel profile
+  const getCacheKey = (profile: TravelProfile): string => {
+    return `${profile.destinationCountry}-${profile.visaRequirements?.visaType || 'default'}-${profile.nationality}`;
+  };
+
   const loadFormData = async () => {
     setIsLoading(true);
     setFormSearchError(null);
@@ -81,29 +86,53 @@ export const FormFillerWorkflow: React.FC = () => {
         const profile = onboardingResponse.data.travelProfile;
         setTravelProfile(profile);
 
-        // Use Perplexity AI to dynamically search for visa forms
-        setIsSearchingForms(true);
-        try {
-          const formsResponse = await visaDocsApi.searchVisaForms({
-            country: profile.destinationCountry,
-            visaType: profile.visaRequirements?.visaType,
-            purpose: profile.travelPurpose,
-            nationality: profile.nationality
-          });
+        const cacheKey = getCacheKey(profile);
 
-          if (formsResponse.success && formsResponse.data) {
-            const responseData = formsResponse.data;
-            setSuggestedForms(responseData.forms || []);
-            setAdditionalResources(responseData.additionalResources || []);
-            setProcessingNotes(responseData.processingNotes || '');
-          } else {
-            setFormSearchError('Unable to find forms. Please try again later.');
-          }
-        } catch (searchError) {
-          console.error('Failed to search visa forms:', searchError);
-          setFormSearchError('Failed to search for visa forms. Please try again.');
-        } finally {
+        // Check if we have cached results for this profile
+        if (formSearchCache && formSearchCache.cacheKey === cacheKey) {
+          // Use cached results
+          setSuggestedForms(formSearchCache.forms);
+          setAdditionalResources(formSearchCache.additionalResources);
+          setProcessingNotes(formSearchCache.processingNotes);
           setIsSearchingForms(false);
+        } else {
+          // Use Perplexity AI to dynamically search for visa forms
+          setIsSearchingForms(true);
+          try {
+            const formsResponse = await visaDocsApi.searchVisaForms({
+              country: profile.destinationCountry,
+              visaType: profile.visaRequirements?.visaType,
+              purpose: profile.travelPurpose,
+              nationality: profile.nationality
+            });
+
+            if (formsResponse.success && formsResponse.data) {
+              const responseData = formsResponse.data;
+              const forms = responseData.forms || [];
+              const resources = responseData.additionalResources || [];
+              const notes = responseData.processingNotes || '';
+
+              setSuggestedForms(forms);
+              setAdditionalResources(resources);
+              setProcessingNotes(notes);
+
+              // Cache the results
+              setFormSearchCache({
+                forms,
+                additionalResources: resources,
+                processingNotes: notes,
+                cacheKey,
+                cachedAt: new Date()
+              });
+            } else {
+              setFormSearchError('Unable to find forms. Please try again later.');
+            }
+          } catch (searchError) {
+            console.error('Failed to search visa forms:', searchError);
+            setFormSearchError('Failed to search for visa forms. Please try again.');
+          } finally {
+            setIsSearchingForms(false);
+          }
         }
       }
 
