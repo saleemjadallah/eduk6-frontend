@@ -217,7 +217,7 @@ export const FormFillerWorkflow: React.FC = () => {
       const fieldGroups = currentForm ? groupFormFields(currentForm.fields) : new Map();
       const totalFieldGroups = fieldGroups.size;
       const filledFieldGroups = Array.from(fieldGroups.values())
-        .filter(group => group.some(f => f.value.trim() !== '')).length;
+        .filter(group => group.some((f: FormField) => f.value.trim() !== '')).length;
 
       const prompt = `You are a visa application form validator. Analyze this form and provide validation insights.
 
@@ -1201,7 +1201,7 @@ Be concise but helpful. Format as a brief paragraph.`;
 
     // Count groups where at least one field has a value
     const filledGroups = Array.from(fieldGroups.values())
-      .filter(group => group.some(f => f.value.trim() !== '')).length;
+      .filter(group => group.some((f: FormField) => f.value.trim() !== '')).length;
 
     return Math.round((filledGroups / fieldGroups.size) * 100);
   };
@@ -1407,7 +1407,7 @@ Be concise but helpful. Format as a brief paragraph.`;
     // Calculate logical field groups for display
     const fieldGroups = groupFormFields(currentForm.fields);
     const filledCount = Array.from(fieldGroups.values())
-      .filter(group => group.some(f => f.value.trim() !== '')).length;
+      .filter(group => group.some((f: FormField) => f.value.trim() !== '')).length;
     const totalFieldGroups = fieldGroups.size;
 
     return (
