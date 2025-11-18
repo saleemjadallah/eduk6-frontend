@@ -190,16 +190,51 @@ export const FormFillerWorkflow: React.FC = () => {
     }
   }, [currentForm?.fields, travelProfile]);
 
+  // Helper function to group fields by base name
+  const groupFormFields = (fields: FormField[]) => {
+    const fieldGroups = new Map<string, FormField[]>();
+
+    fields.forEach(field => {
+      // Remove numeric suffixes and common separators to group fields
+      const baseFieldName = field.name
+        .replace(/[_\-\s]*\d+$/, '') // Remove trailing numbers
+        .replace(/\[\d+\]$/, '');     // Remove [0], [1], etc.
+
+      if (!fieldGroups.has(baseFieldName)) {
+        fieldGroups.set(baseFieldName, []);
+      }
+      fieldGroups.get(baseFieldName)!.push(field);
+    });
+
+    return fieldGroups;
+  };
+
   // Analyze uploaded form with Gemini Vision for validation
   const analyzeFormForValidation = async (pdfImages: string[]) => {
     setIsAnalyzingForm(true);
     try {
+      // Calculate local field statistics for context
+      const fieldGroups = currentForm ? groupFormFields(currentForm.fields) : new Map();
+      const totalFieldGroups = fieldGroups.size;
+      const filledFieldGroups = Array.from(fieldGroups.values())
+        .filter(group => group.some(f => f.value.trim() !== '')).length;
+
       const prompt = `You are a visa application form validator. Analyze this form and provide validation insights.
 
-Please analyze the form and return a JSON object with:
+IMPORTANT: Many fields in government forms have character boxes where each letter goes in a separate box.
+Treat these character-box fields as SINGLE LOGICAL FIELDS, not multiple separate fields.
+For example, a "Name" field with 20 character boxes should count as 1 field, not 20 fields.
+
+Context from form structure:
+- This form has ${totalFieldGroups} logical field sections
+- Currently ${filledFieldGroups} sections have data entered
+
+Please analyze the form VISUALLY and return a JSON object with:
 1. overallScore: A score from 0-100 indicating form completeness and correctness
-2. completedFields: Number of fields that appear to be filled
-3. totalFields: Total number of fields detected
+   - Base this on logical sections filled, not individual character boxes
+   - Consider both completeness and correctness of entries
+2. completedFields: Number of LOGICAL FIELD SECTIONS that appear to be filled
+3. totalFields: Total number of LOGICAL FIELD SECTIONS detected (not character boxes)
 4. issues: Array of validation issues found, each with:
    - id: unique identifier
    - fieldName: name of the problematic field
@@ -210,7 +245,7 @@ Please analyze the form and return a JSON object with:
 6. countrySpecificNotes: Notes specific to ${travelProfile?.destinationCountry || 'the destination country'}
 
 Focus on:
-- Missing required fields
+- Missing required fields (sections, not individual boxes)
 - Date format issues
 - Passport validity concerns
 - Photo compliance
@@ -232,16 +267,39 @@ Return ONLY valid JSON, no other text.`;
           const jsonMatch = response.data.analysis?.match(/\{[\s\S]*\}/);
           if (jsonMatch) {
             const analysisData = JSON.parse(jsonMatch[0]);
-            setValidationAnalysis(analysisData);
+
+            // Adjust the analysis to use our local field group counts if AI's counts seem off
+            // This handles cases where AI still counts character boxes individually
+            const adjustedAnalysis = {
+              ...analysisData,
+              totalFields: totalFieldGroups || analysisData.totalFields,
+              completedFields: filledFieldGroups || analysisData.completedFields,
+              // Recalculate score based on our field groups if needed
+              overallScore: analysisData.overallScore || (totalFieldGroups > 0
+                ? Math.round((filledFieldGroups / totalFieldGroups) * 100)
+                : 0)
+            };
+
+            setValidationAnalysis(adjustedAnalysis);
           } else if (response.data.validation) {
-            // Direct validation object from API
-            setValidationAnalysis(response.data.validation);
+            // Direct validation object from API - adjust it too
+            const adjustedValidation = {
+              ...response.data.validation,
+              totalFields: totalFieldGroups || response.data.validation.totalFields,
+              completedFields: filledFieldGroups || response.data.validation.completedFields,
+              overallScore: response.data.validation.overallScore || (totalFieldGroups > 0
+                ? Math.round((filledFieldGroups / totalFieldGroups) * 100)
+                : 0)
+            };
+            setValidationAnalysis(adjustedValidation);
           } else {
-            // If no JSON found, create a basic structure
+            // If no JSON found, create a basic structure with our local counts
             setValidationAnalysis({
-              overallScore: 0,
-              completedFields: 0,
-              totalFields: 0,
+              overallScore: totalFieldGroups > 0
+                ? Math.round((filledFieldGroups / totalFieldGroups) * 100)
+                : 0,
+              completedFields: filledFieldGroups,
+              totalFields: totalFieldGroups,
               issues: [{
                 id: 'parse-error',
                 fieldName: 'Analysis',
@@ -255,9 +313,11 @@ Return ONLY valid JSON, no other text.`;
         } catch (parseError) {
           console.error('Error parsing validation response:', parseError);
           setValidationAnalysis({
-            overallScore: 50,
-            completedFields: 0,
-            totalFields: 0,
+            overallScore: totalFieldGroups > 0
+              ? Math.round((filledFieldGroups / totalFieldGroups) * 100)
+              : 50,
+            completedFields: filledFieldGroups,
+            totalFields: totalFieldGroups,
             issues: [],
             recommendations: ['Form uploaded successfully. Hover over specific areas for detailed validation.'],
             countrySpecificNotes: []
@@ -977,29 +1037,133 @@ Be concise but helpful. Format as a brief paragraph.`;
           const width = Math.abs(rect[2] - rect[0]);
           const height = Math.abs(rect[3] - rect[1]);
 
-          // Create input element
-          const input = document.createElement('input');
-          input.type = 'text';
-          input.name = fieldName;
-          input.value = currentForm?.fields.find(f => f.name === fieldName)?.value || '';
-          input.style.position = 'absolute';
-          input.style.left = `${left}px`;
-          input.style.top = `${top}px`;
-          input.style.width = `${width}px`;
-          input.style.height = `${height}px`;
-          input.style.border = '1px solid rgba(99, 102, 241, 0.3)';
-          input.style.background = 'rgba(255, 255, 255, 0.8)';
-          input.style.fontSize = '12px';
-          input.style.padding = '2px';
+          // Detect if this is a character-box field (wide field with character boxes)
+          // Character boxes are typically ~15-25px wide per character
+          const aspectRatio = width / height;
+          const isLikelyCharacterBoxField = aspectRatio > 4 && width > 80; // Wide field
 
-          // Add change listener
-          input.addEventListener('input', (e) => {
-            const target = e.target as HTMLInputElement;
-            handleFieldChange(fieldName, target.value);
-          });
+          if (isLikelyCharacterBoxField) {
+            // Create a container for character boxes
+            const container = document.createElement('div');
+            container.style.position = 'absolute';
+            container.style.left = `${left}px`;
+            container.style.top = `${top}px`;
+            container.style.width = `${width}px`;
+            container.style.height = `${height}px`;
+            container.style.display = 'flex';
+            container.style.gap = '2px';
+            container.style.alignItems = 'center';
 
-          annotationLayer.appendChild(input);
-          console.log('[FormFiller] Created input overlay for field:', fieldName);
+            // Estimate number of character boxes based on width
+            const charBoxWidth = Math.min(20, width / 10); // Max 20px per box, at least 10 boxes
+            const numBoxes = Math.floor(width / (charBoxWidth + 2));
+
+            const currentValue = currentForm?.fields.find(f => f.name === fieldName)?.value || '';
+            const chars = currentValue.split('');
+
+            // Create individual character boxes
+            for (let i = 0; i < numBoxes; i++) {
+              const charInput = document.createElement('input');
+              charInput.type = 'text';
+              charInput.maxLength = 1;
+              charInput.value = chars[i] || '';
+              charInput.style.width = `${charBoxWidth}px`;
+              charInput.style.height = `${height - 4}px`;
+              charInput.style.border = '1px solid rgba(99, 102, 241, 0.3)';
+              charInput.style.background = 'rgba(255, 255, 255, 0.9)';
+              charInput.style.fontSize = '14px';
+              charInput.style.textAlign = 'center';
+              charInput.style.padding = '0';
+              charInput.style.fontWeight = '500';
+              charInput.dataset.fieldName = fieldName;
+              charInput.dataset.charIndex = String(i);
+
+              // Auto-advance to next box on input
+              charInput.addEventListener('input', (e) => {
+                const target = e.target as HTMLInputElement;
+
+                // Collect all character values for this field
+                const allInputs = container.querySelectorAll('input');
+                const fullValue = Array.from(allInputs)
+                  .map((inp) => (inp as HTMLInputElement).value)
+                  .join('');
+
+                handleFieldChange(fieldName, fullValue);
+
+                // Auto-advance to next box if a character was entered
+                if (target.value && i < numBoxes - 1) {
+                  const nextInput = allInputs[i + 1] as HTMLInputElement;
+                  if (nextInput) nextInput.focus();
+                }
+              });
+
+              // Handle backspace to move to previous box
+              charInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Backspace' && !charInput.value && i > 0) {
+                  const allInputs = container.querySelectorAll('input');
+                  const prevInput = allInputs[i - 1] as HTMLInputElement;
+                  if (prevInput) {
+                    prevInput.focus();
+                    prevInput.select();
+                  }
+                }
+              });
+
+              // Handle paste to distribute characters across boxes
+              charInput.addEventListener('paste', (e) => {
+                e.preventDefault();
+                const pastedText = e.clipboardData?.getData('text') || '';
+                const allInputs = container.querySelectorAll('input');
+
+                for (let j = 0; j < pastedText.length && (i + j) < numBoxes; j++) {
+                  const targetInput = allInputs[i + j] as HTMLInputElement;
+                  if (targetInput) {
+                    targetInput.value = pastedText[j];
+                  }
+                }
+
+                // Update the full value
+                const fullValue = Array.from(allInputs)
+                  .map((inp) => (inp as HTMLInputElement).value)
+                  .join('');
+                handleFieldChange(fieldName, fullValue);
+
+                // Focus the next empty box or last filled box
+                const nextEmptyIndex = Math.min(i + pastedText.length, numBoxes - 1);
+                const nextInput = allInputs[nextEmptyIndex] as HTMLInputElement;
+                if (nextInput) nextInput.focus();
+              });
+
+              container.appendChild(charInput);
+            }
+
+            annotationLayer.appendChild(container);
+            console.log('[FormFiller] Created character-box input for field:', fieldName, `(${numBoxes} boxes)`);
+          } else {
+            // Standard single input field
+            const input = document.createElement('input');
+            input.type = 'text';
+            input.name = fieldName;
+            input.value = currentForm?.fields.find(f => f.name === fieldName)?.value || '';
+            input.style.position = 'absolute';
+            input.style.left = `${left}px`;
+            input.style.top = `${top}px`;
+            input.style.width = `${width}px`;
+            input.style.height = `${height}px`;
+            input.style.border = '1px solid rgba(99, 102, 241, 0.3)';
+            input.style.background = 'rgba(255, 255, 255, 0.8)';
+            input.style.fontSize = '12px';
+            input.style.padding = '2px';
+
+            // Add change listener
+            input.addEventListener('input', (e) => {
+              const target = e.target as HTMLInputElement;
+              handleFieldChange(fieldName, target.value);
+            });
+
+            annotationLayer.appendChild(input);
+            console.log('[FormFiller] Created standard input overlay for field:', fieldName);
+          }
         }
       });
     } catch (error) {
@@ -1032,8 +1196,14 @@ Be concise but helpful. Format as a brief paragraph.`;
 
   const getCompletionPercentage = (): number => {
     if (!currentForm) return 0;
-    const filledFields = currentForm.fields.filter(f => f.value.trim() !== '').length;
-    return Math.round((filledFields / currentForm.fields.length) * 100);
+
+    const fieldGroups = groupFormFields(currentForm.fields);
+
+    // Count groups where at least one field has a value
+    const filledGroups = Array.from(fieldGroups.values())
+      .filter(group => group.some(f => f.value.trim() !== '')).length;
+
+    return Math.round((filledGroups / fieldGroups.size) * 100);
   };
 
   const handleUploadClick = () => {
@@ -1233,7 +1403,12 @@ Be concise but helpful. Format as a brief paragraph.`;
   // FILL MODE - Show extracted fields with Jeffrey's guidance
   if (viewMode === 'fill' && currentForm) {
     const completionPercent = getCompletionPercentage();
-    const filledCount = currentForm.fields.filter(f => f.value.trim() !== '').length;
+
+    // Calculate logical field groups for display
+    const fieldGroups = groupFormFields(currentForm.fields);
+    const filledCount = Array.from(fieldGroups.values())
+      .filter(group => group.some(f => f.value.trim() !== '')).length;
+    const totalFieldGroups = fieldGroups.size;
 
     return (
       <div className="max-w-7xl mx-auto">
@@ -1260,12 +1435,12 @@ Be concise but helpful. Format as a brief paragraph.`;
               </button>
               <h1 className="text-3xl font-bold">Fill: {currentForm.fileName}</h1>
               <p className="text-gray-600">
-                AI identified {currentForm.fields.length} fields. Complete each field with guidance.
+                AI identified {totalFieldGroups} form sections. Complete each field with guidance.
               </p>
             </div>
             <div className="text-right">
               <div className="text-2xl font-bold text-indigo-600">{completionPercent}%</div>
-              <div className="text-sm text-gray-500">{filledCount}/{currentForm.fields.length} fields</div>
+              <div className="text-sm text-gray-500">{filledCount}/{totalFieldGroups} sections</div>
             </div>
           </div>
 
