@@ -303,8 +303,11 @@ Be concise but helpful. Format as a brief paragraph.`;
     if (!currentForm?.pdfBytes) return pageImages;
 
     try {
+      // Create a fresh copy of the ArrayBuffer to avoid detachment issues
+      const pdfBytesCopy = currentForm.pdfBytes.slice(0);
+
       // Re-render the PDF with current field values filled in
-      const pdfDoc = await PDFDocument.load(currentForm.pdfBytes.slice(0));
+      const pdfDoc = await PDFDocument.load(pdfBytesCopy);
       const form = pdfDoc.getForm();
 
       // Fill the PDF with current field values
@@ -847,8 +850,8 @@ Be concise but helpful. Format as a brief paragraph.`;
     try {
       const arrayBuffer = await file.arrayBuffer();
 
-      // Load PDF document for interactive rendering
-      const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+      // Load PDF document for interactive rendering (use a copy)
+      const pdf = await pdfjsLib.getDocument({ data: arrayBuffer.slice(0) }).promise;
       setPdfDocument(pdf);
 
       // Create PDF URL for fallback viewing
@@ -856,15 +859,19 @@ Be concise but helpful. Format as a brief paragraph.`;
       const url = URL.createObjectURL(blob);
       setPdfUrl(url);
 
-      // Convert PDF to images for AI validation analysis
+      // Convert PDF to images for AI validation analysis (use a copy)
       const pdfImagesForValidation = await convertPDFPagesToImages(arrayBuffer.slice(0));
 
-      const fields = await extractPDFFields(arrayBuffer);
+      // Extract fields (use a copy)
+      const fields = await extractPDFFields(arrayBuffer.slice(0));
+
+      // Store a fresh copy of the ArrayBuffer to prevent detachment
+      const pdfBytesCopy = arrayBuffer.slice(0);
 
       const uploadedForm: UploadedForm = {
         id: `form-${Date.now()}`,
         fileName: file.name,
-        pdfBytes: arrayBuffer,
+        pdfBytes: pdfBytesCopy,
         fields: fields.length > 0 ? fields : [], // Allow empty fields for non-fillable PDFs
         extractedAt: new Date()
       };
