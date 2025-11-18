@@ -59,6 +59,14 @@ interface UploadedForm {
   extractedAt: Date;
 }
 
+interface FormSearchCache {
+  forms: SuggestedForm[];
+  additionalResources: AdditionalResource[];
+  processingNotes: string;
+  cacheKey: string;
+  cachedAt: Date;
+}
+
 type ViewMode = 'browse' | 'fill' | 'preview';
 
 export const FormFillerWorkflow: React.FC = () => {
