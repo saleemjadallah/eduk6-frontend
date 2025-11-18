@@ -23,6 +23,11 @@ import { TravelPlannerWorkflow } from './pages/workflows/TravelPlannerWorkflow';
 import { ProfileOnboardingPage } from './pages/ProfileOnboardingPage';
 import { ProfileSettingsPage } from './pages/ProfileSettingsPage';
 
+// AI Form Filler Pages
+import FormFillerUploadPage from './pages/FormFillerUploadPage';
+import FormFillerReviewPage from './pages/FormFillerReviewPage';
+import FormFillerHistoryPage from './pages/FormFillerHistoryPage';
+
 // Component to check onboarding status and redirect if needed
 function OnboardingGuard({ children }: { user: User; children: React.ReactNode }) {
   const [checkingOnboarding, setCheckingOnboarding] = useState(true);
@@ -178,6 +183,42 @@ function App() {
                 <DashboardLayout user={user} onLogout={() => setUser(null)}>
                   <FormFillerWorkflow />
                 </DashboardLayout>
+              </OnboardingGuard>
+            ) : (
+              <Navigate to="/login" />
+            )
+          }
+        />
+        <Route
+          path="/form-filler/upload"
+          element={
+            user ? (
+              <OnboardingGuard user={user}>
+                <FormFillerUploadPage />
+              </OnboardingGuard>
+            ) : (
+              <Navigate to="/login" />
+            )
+          }
+        />
+        <Route
+          path="/form-filler/review"
+          element={
+            user ? (
+              <OnboardingGuard user={user}>
+                <FormFillerReviewPage />
+              </OnboardingGuard>
+            ) : (
+              <Navigate to="/login" />
+            )
+          }
+        />
+        <Route
+          path="/form-filler/history"
+          element={
+            user ? (
+              <OnboardingGuard user={user}>
+                <FormFillerHistoryPage />
               </OnboardingGuard>
             ) : (
               <Navigate to="/login" />
