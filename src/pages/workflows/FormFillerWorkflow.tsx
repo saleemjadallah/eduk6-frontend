@@ -94,6 +94,8 @@ export const FormFillerWorkflow: React.FC = () => {
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
   const [pageImages, setPageImages] = useState<string[]>([]); // Store PDF page images for AI analysis
   const [analyzingWithAI, setAnalyzingWithAI] = useState(false);
+  const [pdfDocument, setPdfDocument] = useState<pdfjsLib.PDFDocumentProxy | null>(null);
+  const canvasRefs = useRef<Map<number, HTMLCanvasElement>>(new Map());
 
   // Profile auto-fill state (kept for future use)
   const [, setUserProfile] = useState<CompleteProfile | null>(null);
@@ -845,7 +847,11 @@ Be concise but helpful. Format as a brief paragraph.`;
     try {
       const arrayBuffer = await file.arrayBuffer();
 
-      // Create PDF URL for viewing
+      // Load PDF document for interactive rendering
+      const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+      setPdfDocument(pdf);
+
+      // Create PDF URL for fallback viewing
       const blob = new Blob([arrayBuffer], { type: 'application/pdf' });
       const url = URL.createObjectURL(blob);
       setPdfUrl(url);
@@ -887,26 +893,126 @@ Be concise but helpful. Format as a brief paragraph.`;
     }
   };
 
-  // Field change handler (kept for future use)
-  const _handleFieldChange = (_fieldId: string, _value: string) => {
+  // Field change handler - now actually used!
+  const handleFieldChange = (fieldName: string, value: string) => {
     if (!currentForm) return;
+
+    console.log('[FormFiller] Field changed:', fieldName, value);
 
     setCurrentForm(prev => {
       if (!prev) return prev;
       return {
         ...prev,
         fields: prev.fields.map(field =>
-          field.id === _fieldId ? { ...field, value: _value } : field
+          field.name === fieldName ? { ...field, value } : field
         )
       };
     });
   };
-  // Suppress unused warning
-  void _handleFieldChange;
 
   const togglePDFExpanded = () => {
     setPdfViewExpanded(!pdfViewExpanded);
   };
+
+  // Render PDF pages with interactive annotations
+  const renderPDFPage = async (pageNum: number, canvas: HTMLCanvasElement) => {
+    if (!pdfDocument) return;
+
+    try {
+      const page = await pdfDocument.getPage(pageNum);
+      const viewport = page.getViewport({ scale: 1.5 });
+
+      const context = canvas.getContext('2d');
+      if (!context) return;
+
+      canvas.height = viewport.height;
+      canvas.width = viewport.width;
+
+      await page.render({
+        canvasContext: context,
+        viewport: viewport,
+        canvas: canvas
+      } as Parameters<typeof page.render>[0]).promise;
+
+      // Get annotations (form fields)
+      const annotations = await page.getAnnotations();
+
+      // Find the annotation layer container for this page
+      const canvasParent = canvas.parentElement;
+      if (!canvasParent) return;
+
+      let annotationLayer = canvasParent.querySelector('.annotation-layer') as HTMLDivElement;
+      if (!annotationLayer) {
+        annotationLayer = document.createElement('div');
+        annotationLayer.className = 'annotation-layer';
+        annotationLayer.style.position = 'absolute';
+        annotationLayer.style.top = '0';
+        annotationLayer.style.left = '0';
+        annotationLayer.style.width = `${viewport.width}px`;
+        annotationLayer.style.height = `${viewport.height}px`;
+        annotationLayer.style.pointerEvents = 'auto';
+        canvasParent.appendChild(annotationLayer);
+      }
+
+      // Clear existing annotations
+      annotationLayer.innerHTML = '';
+
+      // Create input overlays for each form field
+      annotations.forEach((annotation: any) => {
+        if (annotation.fieldType && annotation.rect) {
+          const [x1, y1, x2, y2] = annotation.rect;
+          const fieldName = annotation.fieldName || `field_${pageNum}_${x1}_${y1}`;
+
+          // Transform coordinates to viewport
+          const rect = viewport.convertToViewportRectangle([x1, y1, x2, y2]);
+          const left = Math.min(rect[0], rect[2]);
+          const top = Math.min(rect[1], rect[3]);
+          const width = Math.abs(rect[2] - rect[0]);
+          const height = Math.abs(rect[3] - rect[1]);
+
+          // Create input element
+          const input = document.createElement('input');
+          input.type = 'text';
+          input.name = fieldName;
+          input.value = currentForm?.fields.find(f => f.name === fieldName)?.value || '';
+          input.style.position = 'absolute';
+          input.style.left = `${left}px`;
+          input.style.top = `${top}px`;
+          input.style.width = `${width}px`;
+          input.style.height = `${height}px`;
+          input.style.border = '1px solid rgba(99, 102, 241, 0.3)';
+          input.style.background = 'rgba(255, 255, 255, 0.8)';
+          input.style.fontSize = '12px';
+          input.style.padding = '2px';
+
+          // Add change listener
+          input.addEventListener('input', (e) => {
+            const target = e.target as HTMLInputElement;
+            handleFieldChange(fieldName, target.value);
+          });
+
+          annotationLayer.appendChild(input);
+          console.log('[FormFiller] Created input overlay for field:', fieldName);
+        }
+      });
+    } catch (error) {
+      console.error('Error rendering PDF page:', error);
+    }
+  };
+
+  // Effect to render PDF when document is loaded and expanded
+  useEffect(() => {
+    if (pdfDocument && pdfViewExpanded) {
+      (async () => {
+        for (let i = 1; i <= pdfDocument.numPages; i++) {
+          const canvas = canvasRefs.current.get(i);
+          if (canvas) {
+            await renderPDFPage(i, canvas);
+          }
+        }
+      })();
+    }
+  }, [pdfDocument, pdfViewExpanded]);
 
   // Cleanup PDF URL on unmount
   useEffect(() => {
@@ -1186,26 +1292,34 @@ Be concise but helpful. Format as a brief paragraph.`;
               )}
             </button>
             {pdfViewExpanded && (
-              <div className="h-[500px]">
-                <object
-                  data={pdfUrl}
-                  type="application/pdf"
-                  className="w-full h-full"
-                >
-                  <div className="flex items-center justify-center h-full bg-gray-100">
+              <div className="h-[500px] overflow-auto bg-gray-100 p-4">
+                {pdfDocument ? (
+                  <div className="space-y-4">
+                    {Array.from({ length: pdfDocument.numPages }, (_, i) => i + 1).map((pageNum) => (
+                      <div key={pageNum} className="relative bg-white shadow-lg mx-auto" style={{ width: 'fit-content' }}>
+                        <canvas
+                          ref={(canvas) => {
+                            if (canvas) {
+                              canvasRefs.current.set(pageNum, canvas);
+                              renderPDFPage(pageNum, canvas);
+                            }
+                          }}
+                          className="block"
+                        />
+                        <div className="absolute top-0 left-0 w-full h-full pointer-events-none">
+                          {/* Annotation layer will be rendered here by PDF.js */}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="flex items-center justify-center h-full">
                     <div className="text-center">
                       <FileText className="w-12 h-12 text-gray-400 mx-auto mb-2" />
-                      <p className="text-gray-600">PDF preview not available in browser</p>
-                      <a
-                        href={pdfUrl}
-                        download
-                        className="text-indigo-600 underline text-sm mt-2 inline-block"
-                      >
-                        Download PDF to view
-                      </a>
+                      <p className="text-gray-600">Loading PDF...</p>
                     </div>
                   </div>
-                </object>
+                )}
               </div>
             )}
           </div>
