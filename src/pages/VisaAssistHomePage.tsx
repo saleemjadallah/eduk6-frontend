@@ -45,6 +45,9 @@ import RejectionReasonCard from '../components/visa/RejectionReasonCard';
 import CountryCard from '../components/visa/CountryCard';
 import JeffreyShowcase from '../components/visa/JeffreyShowcase';
 
+// Assets
+import gammaClouds from '../assets/gamma-travel-bg.png';
+
 export default function VisaAssistHomePage() {
   return (
     <div className="min-h-screen bg-white">
@@ -179,10 +182,16 @@ export default function VisaAssistHomePage() {
       </section>
 
       {/* ===== PROBLEM STATEMENT SECTION ===== */}
-      <section className="py-24 bg-gradient-to-b from-white to-neutral-50 relative overflow-hidden">
-        {/* Decorative background pattern */}
+      <section className="py-24 relative overflow-hidden">
+        {/* Gamma Cloud Background */}
+        <div className="absolute inset-0 z-0">
+          <img src={gammaClouds} alt="" className="w-full h-full object-cover" />
+          <div className="absolute inset-0 bg-white/40 backdrop-blur-[2px]" />
+        </div>
+
+        {/* Decorative background pattern - kept but made subtle */}
         <div
-          className="absolute inset-0 opacity-[0.03]"
+          className="absolute inset-0 opacity-[0.02] z-0"
           style={{
             backgroundImage: `radial-gradient(circle at 1px 1px, rgb(0 0 0) 1px, transparent 0)`,
             backgroundSize: '40px 40px',
@@ -421,50 +430,50 @@ export default function VisaAssistHomePage() {
                 transition={{ duration: 0.5, delay: 0.3 }}
                 className="bg-gradient-to-br from-amber-500 to-orange-600 text-white rounded-3xl p-8 shadow-2xl relative overflow-hidden group hover:scale-[1.02] transition-transform duration-500 cursor-pointer"
               >
-              <div className="relative z-10">
-                <Badge variant="white" className="mb-4">
-                  <Plane className="w-4 h-4 mr-2" />
-                  NEW Feature
-                </Badge>
-                <h3 className="text-3xl font-bold mb-3">AI Travel Itinerary Generator</h3>
-                <p className="text-orange-100 mb-6 max-w-2xl">
-                  Generates a compliant, detailed, and verifiable travel itinerary (flights, hotels, activities) that
-                  aligns with your stated purpose and duration. Mandatory for Schengen and tourist visas.
-                </p>
+                <div className="relative z-10">
+                  <Badge variant="white" className="mb-4">
+                    <Plane className="w-4 h-4 mr-2" />
+                    NEW Feature
+                  </Badge>
+                  <h3 className="text-3xl font-bold mb-3">AI Travel Itinerary Generator</h3>
+                  <p className="text-orange-100 mb-6 max-w-2xl">
+                    Generates a compliant, detailed, and verifiable travel itinerary (flights, hotels, activities) that
+                    aligns with your stated purpose and duration. Mandatory for Schengen and tourist visas.
+                  </p>
 
-                <div className="grid grid-cols-2 gap-3 mb-6">
-                  <div className="flex items-center gap-2">
-                    <MapPin className="w-5 h-5" />
-                    <span>Realistic daily plans</span>
+                  <div className="grid grid-cols-2 gap-3 mb-6">
+                    <div className="flex items-center gap-2">
+                      <MapPin className="w-5 h-5" />
+                      <span>Realistic daily plans</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Hotel className="w-5 h-5" />
+                      <span>Verified hotel bookings</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Plane className="w-5 h-5" />
+                      <span>Flight confirmations</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Calendar className="w-5 h-5" />
+                      <span>Duration-aligned activities</span>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <Hotel className="w-5 h-5" />
-                    <span>Verified hotel bookings</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Plane className="w-5 h-5" />
-                    <span>Flight confirmations</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Calendar className="w-5 h-5" />
-                    <span>Duration-aligned activities</span>
+
+                  <div className="flex items-baseline gap-2">
+                    <span className="text-2xl font-bold">AED 125</span>
+                    <span className="text-sm text-orange-200">per itinerary</span>
                   </div>
                 </div>
 
-                <div className="flex items-baseline gap-2">
-                  <span className="text-2xl font-bold">AED 125</span>
-                  <span className="text-sm text-orange-200">per itinerary</span>
-                </div>
-              </div>
-
-              {/* Background pattern */}
-              <div
-                className="absolute inset-0 opacity-10"
-                style={{
-                  backgroundImage: `linear-gradient(rgba(255, 255, 255, 0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(255, 255, 255, 0.1) 1px, transparent 1px)`,
-                  backgroundSize: '20px 20px',
-                }}
-              />
+                {/* Background pattern */}
+                <div
+                  className="absolute inset-0 opacity-10"
+                  style={{
+                    backgroundImage: `linear-gradient(rgba(255, 255, 255, 0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(255, 255, 255, 0.1) 1px, transparent 1px)`,
+                    backgroundSize: '20px 20px',
+                  }}
+                />
               </motion.div>
             </Link>
 
@@ -510,7 +519,12 @@ export default function VisaAssistHomePage() {
       </section>
 
       {/* ===== HOW IT WORKS SECTION ===== */}
-      <section id="how-it-works" className="py-24 bg-gradient-to-b from-neutral-50 to-white">
+      <section id="how-it-works" className="py-24 relative overflow-hidden">
+        {/* Gamma Cloud Background */}
+        <div className="absolute inset-0 z-0">
+          <img src={gammaClouds} alt="" className="w-full h-full object-cover rotate-180" />
+          <div className="absolute inset-0 bg-white/50 backdrop-blur-[2px]" />
+        </div>
         <div className="max-w-7xl mx-auto px-6">
           <SectionHeader className="text-center mb-20">
             <h2 className="text-5xl md:text-6xl font-bold mb-6">
