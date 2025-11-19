@@ -4,7 +4,7 @@ import { useJeffrey } from '../../contexts/JeffreyContext';
 import { Breadcrumb, BreadcrumbItem } from '../../components/ui/Breadcrumb';
 import { cn } from '../../utils/cn';
 import { onboardingApi, visaDocsApi, formFillerApi } from '../../lib/api';
-import { PDFDocument } from 'pdf-lib';
+import { PDFDocument, StandardFonts } from 'pdf-lib';
 import * as pdfjsLib from 'pdfjs-dist';
 import { profileApi, CompleteProfile } from '../../lib/api-profile';
 import { validateForm } from '../../lib/validation-rules';
@@ -409,6 +409,9 @@ Be concise but helpful. Format as a brief paragraph.`;
       const pdfDoc = await PDFDocument.load(pdfBytesCopy);
       const form = pdfDoc.getForm();
 
+      // Embed standard font for field values
+      const helveticaFont = await pdfDoc.embedFont(StandardFonts.Helvetica);
+
       // Fill the PDF with current field values
       currentForm.fields.forEach(field => {
         try {
@@ -427,6 +430,13 @@ Be concise but helpful. Format as a brief paragraph.`;
           // Field might not exist
         }
       });
+
+      // Force update of field appearances so they are visible in the rendered image
+      try {
+        form.updateFieldAppearances(helveticaFont);
+      } catch (e) {
+        console.warn('Could not update field appearances:', e);
+      }
 
       // Save the filled PDF
       const filledPdfBytes = await pdfDoc.save();
