@@ -1125,10 +1125,24 @@ Be concise but helpful. Format as a brief paragraph.`;
       await extractFilledPDFValues();
 
       // Ensure we have page images
-      let imagesToAnalyze = pageImages;
+      // Ensure we have page images of the FILLED form
+      let imagesToAnalyze: string[] = [];
+
+      // Always try to recapture state first to get filled values
+      try {
+        imagesToAnalyze = await recapturePDFState();
+      } catch (e) {
+        console.warn('[FormFiller] Failed to recapture PDF state, falling back to original images', e);
+        imagesToAnalyze = pageImages;
+      }
+
       if (imagesToAnalyze.length === 0 && currentForm.pdfBytes) {
-        // If no images, convert PDF to images now
+        // If still no images, convert original PDF to images
         imagesToAnalyze = await convertPDFPagesToImages(currentForm.pdfBytes);
+      }
+
+      // Update state with new images so we can see them if needed
+      if (imagesToAnalyze.length > 0) {
         setPageImages(imagesToAnalyze);
       }
 
