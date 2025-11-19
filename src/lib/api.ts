@@ -332,7 +332,7 @@ export const visaDocsApi = {
     markdownOutput?: string;
     totalFields: number;
     pagesAnalyzed: number;
-    extractionMethod: 'azure_layout' | 'azure_prebuilt_id' | 'gemini_flash';
+    extractionMethod: 'azure_layout' | 'azure_document' | 'azure_prebuilt_id' | 'gemini_flash';
     overallConfidence: number;
     processingTime: number;
     qualityAssessment?: {
