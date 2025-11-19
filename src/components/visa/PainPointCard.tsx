@@ -11,28 +11,28 @@ interface PainPointCardProps {
 
 const colorClasses = {
   red: {
-    bg: 'from-red-50 to-red-100',
-    border: 'border-red-200',
+    bg: 'from-red-50/80 to-red-100/80',
+    border: 'border-red-200/50',
     text: 'text-red-900',
-    shadow: 'shadow-red-500/20',
+    shadow: 'shadow-red-500/10',
   },
   orange: {
-    bg: 'from-orange-50 to-orange-100',
-    border: 'border-orange-200',
+    bg: 'from-orange-50/80 to-orange-100/80',
+    border: 'border-orange-200/50',
     text: 'text-orange-900',
-    shadow: 'shadow-orange-500/20',
+    shadow: 'shadow-orange-500/10',
   },
   amber: {
-    bg: 'from-amber-50 to-amber-100',
-    border: 'border-amber-200',
+    bg: 'from-amber-50/80 to-amber-100/80',
+    border: 'border-amber-200/50',
     text: 'text-amber-900',
-    shadow: 'shadow-amber-500/20',
+    shadow: 'shadow-amber-500/10',
   },
   purple: {
-    bg: 'from-purple-50 to-purple-100',
-    border: 'border-purple-200',
+    bg: 'from-purple-50/80 to-purple-100/80',
+    border: 'border-purple-200/50',
     text: 'text-purple-900',
-    shadow: 'shadow-purple-500/20',
+    shadow: 'shadow-purple-500/10',
   },
 };
 
@@ -49,7 +49,8 @@ export default function PainPointCard({ icon, stat, label, description, color }:
       className={`
         relative overflow-hidden
         bg-gradient-to-br ${colors.bg}
-        border-2 ${colors.border}
+        backdrop-blur-md
+        border ${colors.border}
         rounded-3xl p-8
         shadow-lg ${colors.shadow}
         hover:shadow-xl

@@ -18,8 +18,8 @@ export default function RejectionReasonCard({ icon, title, description, percenta
       whileHover={{ y: -8, scale: 1.02 }}
       className="
         relative overflow-hidden
-        bg-white
-        border-2 border-neutral-200
+        bg-white/70 backdrop-blur-md
+        border border-white/50
         rounded-3xl p-8
         shadow-lg hover:shadow-xl
         transition-all duration-300
