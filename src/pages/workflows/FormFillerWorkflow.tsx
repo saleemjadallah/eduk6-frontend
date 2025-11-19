@@ -648,7 +648,7 @@ Be concise but helpful. Format as a brief paragraph.`;
     }
   };
 
-  // Analyze PDF form fields using Azure Document Intelligence (with Gemini Vision fallback)
+  // Extract PDF form fields directly from PDF structure (bypasses character box overlays)
   const analyzeFormWithAI = async (pdfBytes: ArrayBuffer, _fieldCount: number): Promise<Map<number, { label: string; fieldType: string; confidence: number }>> => {
     setAnalyzingWithAI(true);
     const fieldMap = new Map<number, { label: string; fieldType: string; confidence: number }>();
@@ -659,33 +659,41 @@ Be concise but helpful. Format as a brief paragraph.`;
         new Uint8Array(pdfBytes).reduce((data, byte) => data + String.fromCharCode(byte), '')
       );
 
-      console.log(`Sending PDF to Azure Document Intelligence for analysis...`);
+      console.log(`Extracting PDF form field definitions (bypassing overlays)...`);
 
-      const response = await visaDocsApi.analyzePDFForm({
+      const response = await visaDocsApi.extractPDFFields({
         pdfBuffer: base64Pdf,
-        visaType: travelProfile?.visaRequirements?.visaType
+        useAzure: false // Don't use Azure correlation for now
       });
 
       if (response.success && response.data?.fields) {
-        console.log(`Extraction method: ${response.data.extractionMethod}`);
-        console.log(`Overall confidence: ${response.data.overallConfidence}%`);
-        console.log(`Processing time: ${response.data.processingTime}ms`);
+        console.log(`Found ${response.data.totalFields} form fields in PDF structure`);
+        console.log(`Has visual overlays: ${response.data.hasOverlays}`);
 
-        response.data.fields.forEach((field: { fieldNumber: number; label: string; fieldType: string; confidence: number }) => {
+        response.data.fields.forEach((field: {
+          fieldNumber: number;
+          fieldName: string;
+          label: string;
+          type: string;
+          value: string;
+          readOnly: boolean;
+          required: boolean;
+          maxLength?: number;
+        }) => {
           fieldMap.set(field.fieldNumber, {
             label: field.label,
-            fieldType: field.fieldType,
-            confidence: field.confidence
+            fieldType: field.type,
+            confidence: 95 // High confidence since we're reading actual form structure
           });
         });
-        console.log(`AI identified ${fieldMap.size} fields using ${response.data.extractionMethod}`);
+        console.log(`Extracted ${fieldMap.size} fillable fields from PDF`);
 
         // Still convert PDF to images for display purposes
         const images = await convertPDFPagesToImages(pdfBytes);
         setPageImages(images);
       }
     } catch (error) {
-      console.error('Error analyzing form with AI:', error);
+      console.error('Error extracting form fields:', error);
     } finally {
       setAnalyzingWithAI(false);
     }
