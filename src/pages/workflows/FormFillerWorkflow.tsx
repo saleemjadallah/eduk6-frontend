@@ -440,9 +440,13 @@ Be concise but helpful. Format as a brief paragraph.`;
 
       // Save the filled PDF
       const filledPdfBytes = await pdfDoc.save();
+      console.log(`[FormFiller] Recaptured PDF size: ${filledPdfBytes.length} bytes`);
 
       // Convert to images for Gemini Vision
-      const newImages = await convertPDFPagesToImages(filledPdfBytes.buffer as ArrayBuffer);
+      // Pass the Uint8Array directly
+      const newImages = await convertPDFPagesToImages(filledPdfBytes);
+      console.log(`[FormFiller] Generated ${newImages.length} images from recaptured PDF`);
+
       return newImages;
     } catch (error) {
       console.error('Error recapturing PDF state:', error);
@@ -660,8 +664,9 @@ Be concise but helpful. Format as a brief paragraph.`;
   };
 
   // Convert PDF pages to base64 images for Gemini Vision AI analysis
-  const convertPDFPagesToImages = async (pdfBytes: ArrayBuffer): Promise<string[]> => {
+  const convertPDFPagesToImages = async (pdfBytes: ArrayBuffer | Uint8Array): Promise<string[]> => {
     try {
+      // pdfjs-dist handles both ArrayBuffer and Uint8Array in the data property
       const pdf = await pdfjsLib.getDocument({ data: pdfBytes }).promise;
       const images: string[] = [];
 
