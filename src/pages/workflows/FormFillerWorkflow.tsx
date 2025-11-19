@@ -248,6 +248,28 @@ export const FormFillerWorkflow: React.FC = () => {
     return fieldGroups;
   };
 
+  // Sanitize validation result to ensure all fields are in correct format
+  const sanitizeValidationResult = (data: any) => {
+    return {
+      overallScore: typeof data.overallScore === 'number' ? data.overallScore : 0,
+      completedFields: typeof data.completedFields === 'number' ? data.completedFields : 0,
+      totalFields: typeof data.totalFields === 'number' ? data.totalFields : 0,
+      issues: Array.isArray(data.issues) ? data.issues.map((issue: any) => ({
+        id: String(issue.id || 'unknown'),
+        fieldName: String(issue.fieldName || 'Unknown Field'),
+        type: ['error', 'warning', 'info'].includes(issue.type) ? issue.type : 'info',
+        message: String(issue.message || 'No details provided'),
+        suggestion: issue.suggestion ? String(issue.suggestion) : undefined
+      })) : [],
+      recommendations: Array.isArray(data.recommendations)
+        ? data.recommendations.map((r: any) => typeof r === 'string' ? r : String(r))
+        : [],
+      countrySpecificNotes: Array.isArray(data.countrySpecificNotes)
+        ? data.countrySpecificNotes.map((n: any) => typeof n === 'string' ? n : String(n))
+        : []
+    };
+  };
+
   // Analyze uploaded form with Gemini Vision for validation
   const analyzeFormForValidation = async (pdfImages: string[]) => {
     setIsAnalyzingForm(true);
@@ -319,7 +341,7 @@ Return ONLY valid JSON, no other text.`;
                 : 0)
             };
 
-            setValidationAnalysis(adjustedAnalysis);
+            setValidationAnalysis(sanitizeValidationResult(adjustedAnalysis));
           } else if (response.data.validation) {
             // Direct validation object from API - adjust it too
             const adjustedValidation = {
@@ -330,10 +352,10 @@ Return ONLY valid JSON, no other text.`;
                 ? Math.round((filledFieldGroups / totalFieldGroups) * 100)
                 : 0)
             };
-            setValidationAnalysis(adjustedValidation);
+            setValidationAnalysis(sanitizeValidationResult(adjustedValidation));
           } else {
             // If no JSON found, create a basic structure with our local counts
-            setValidationAnalysis({
+            setValidationAnalysis(sanitizeValidationResult({
               overallScore: totalFieldGroups > 0
                 ? Math.round((filledFieldGroups / totalFieldGroups) * 100)
                 : 0,
@@ -347,11 +369,11 @@ Return ONLY valid JSON, no other text.`;
               }],
               recommendations: ['Upload a clearer PDF for better analysis'],
               countrySpecificNotes: []
-            });
+            }));
           }
         } catch (parseError) {
           console.error('Error parsing validation response:', parseError);
-          setValidationAnalysis({
+          setValidationAnalysis(sanitizeValidationResult({
             overallScore: totalFieldGroups > 0
               ? Math.round((filledFieldGroups / totalFieldGroups) * 100)
               : 50,
@@ -360,7 +382,7 @@ Return ONLY valid JSON, no other text.`;
             issues: [],
             recommendations: ['Form uploaded successfully. Hover over specific areas for detailed validation.'],
             countrySpecificNotes: []
-          });
+          }));
         }
       }
     } catch (error) {
