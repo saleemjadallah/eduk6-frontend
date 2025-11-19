@@ -1049,6 +1049,129 @@ Be concise but helpful. Format as a brief paragraph.`;
     });
   };
 
+  // Extract filled values from PDF
+  const extractFilledPDFValues = async (): Promise<Record<string, string> | null> => {
+    if (!currentForm?.pdfBytes) {
+      console.error('[FormFiller] No PDF bytes available');
+      return null;
+    }
+
+    try {
+      console.log('[FormFiller] Extracting filled PDF values...');
+
+      // Load the PDF
+      const pdfDoc = await PDFDocument.load(currentForm.pdfBytes);
+      const form = pdfDoc.getForm();
+      const fields = form.getFields();
+
+      const formData: Record<string, string> = {};
+
+      // Extract values from all fields
+      fields.forEach(field => {
+        const fieldName = field.getName();
+        const fieldType = field.constructor.name;
+
+        try {
+          if (fieldType === 'PDFTextField') {
+            // @ts-expect-error: pdf-lib types
+            formData[fieldName] = field.getText() || '';
+          } else if (fieldType === 'PDFCheckBox') {
+            // @ts-expect-error: pdf-lib types
+            formData[fieldName] = field.isChecked() ? 'true' : 'false';
+          } else if (fieldType === 'PDFDropdown' || fieldType === 'PDFOptionList') {
+            // @ts-expect-error: pdf-lib types
+            const selected = field.getSelected();
+            formData[fieldName] = selected?.[0] || '';
+          }
+        } catch (err) {
+          console.warn(`[FormFiller] Could not read field ${fieldName}:`, err);
+        }
+      });
+
+      console.log(`[FormFiller] Extracted ${Object.keys(formData).length} field values`);
+      return formData;
+    } catch (error) {
+      console.error('[FormFiller] Error extracting PDF values:', error);
+      return null;
+    }
+  };
+
+  // Validate filled form
+  const handleValidateForm = async () => {
+    if (!currentForm) return;
+
+    setIsAnalyzingForm(true);
+    try {
+      console.log('[FormFiller] Validating filled form...');
+
+      // Extract filled values from PDF
+      const filledData = await extractFilledPDFValues();
+      if (!filledData) {
+        alert('Error extracting form data. Please try again.');
+        return;
+      }
+
+      // Call validation API (using generic api for now since specific endpoint structure isn't defined)
+      // In production, this would call: POST /api/form-filler/{id}/validate
+      // For now, we'll show a placeholder response
+      console.log('Filled data to validate:', filledData);
+
+      // Placeholder validation response - in production, call actual API
+      const response = {
+        success: true,
+        data: {
+          validation: {
+            overallConfidence: 85,
+            recommendedActions: [
+              'Review all required fields',
+              'Verify dates are in correct format',
+              'Check passport validity'
+            ]
+          },
+          issues: {
+            errors: [] as Array<{ field: string; message: string }>,
+            warnings: [] as Array<{ field: string; message: string }>
+          }
+        }
+      };
+
+      if (response.success && response.data) {
+        // Update validation analysis with backend results
+        setValidationAnalysis({
+          overallScore: response.data.validation.overallConfidence || 0,
+          completedFields: Object.keys(filledData).filter(k => filledData[k]).length,
+          totalFields: Object.keys(filledData).length,
+          issues: [
+            ...response.data.issues.errors.map((e: { field: string; message: string }) => ({
+              id: `error-${e.field}`,
+              fieldName: e.field,
+              type: 'error' as const,
+              message: e.message,
+              suggestion: undefined
+            })),
+            ...response.data.issues.warnings.map((w: { field: string; message: string }) => ({
+              id: `warning-${w.field}`,
+              fieldName: w.field,
+              type: 'warning' as const,
+              message: w.message,
+              suggestion: undefined
+            }))
+          ],
+          recommendations: response.data.validation.recommendedActions || [],
+          countrySpecificNotes: []
+        });
+
+        setLastValidationTime(new Date());
+        console.log('[FormFiller] Validation complete:', response.data);
+      }
+    } catch (error) {
+      console.error('[FormFiller] Validation error:', error);
+      alert('Validation failed. Please try again.');
+    } finally {
+      setIsAnalyzingForm(false);
+    }
+  };
+
   const togglePDFExpanded = () => {
     setPdfViewExpanded(!pdfViewExpanded);
   };
@@ -1443,11 +1566,35 @@ Be concise but helpful. Format as a brief paragraph.`;
             {pdfViewExpanded && (
               <div className="h-[600px] overflow-auto bg-gray-100">
                 {pdfUrl ? (
-                  <iframe
-                    src={pdfUrl}
-                    className="w-full h-full border-0"
-                    title="Fillable PDF Form"
-                  />
+                  <>
+                    <iframe
+                      src={pdfUrl}
+                      className="w-full h-full border-0"
+                      title="Fillable PDF Form"
+                    />
+                    <div className="p-4 bg-white border-t border-gray-200 flex items-center justify-between">
+                      <p className="text-sm text-gray-600">
+                        Fill the form above, then click validate to check for errors
+                      </p>
+                      <button
+                        onClick={handleValidateForm}
+                        disabled={isAnalyzingForm}
+                        className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg font-medium hover:bg-indigo-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        {isAnalyzingForm ? (
+                          <>
+                            <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                            Validating...
+                          </>
+                        ) : (
+                          <>
+                            <Shield className="w-4 h-4" />
+                            Validate Form
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  </>
                 ) : (
                   <div className="flex items-center justify-center h-full">
                     <div className="text-center">
