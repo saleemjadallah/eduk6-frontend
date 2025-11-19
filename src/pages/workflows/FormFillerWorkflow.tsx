@@ -1049,133 +1049,29 @@ Be concise but helpful. Format as a brief paragraph.`;
           const width = Math.abs(rect[2] - rect[0]);
           const height = Math.abs(rect[3] - rect[1]);
 
-          // Detect if this is a character-box field (wide field with character boxes)
-          // Character boxes are typically ~15-25px wide per character
-          const aspectRatio = width / height;
-          const isLikelyCharacterBoxField = aspectRatio > 4 && width > 80; // Wide field
+          // Create standard single input field (character box overlay removed)
+          const input = document.createElement('input');
+          input.type = 'text';
+          input.name = fieldName;
+          input.value = currentForm?.fields.find(f => f.name === fieldName)?.value || '';
+          input.style.position = 'absolute';
+          input.style.left = `${left}px`;
+          input.style.top = `${top}px`;
+          input.style.width = `${width}px`;
+          input.style.height = `${height}px`;
+          input.style.border = '1px solid rgba(99, 102, 241, 0.3)';
+          input.style.background = 'rgba(255, 255, 255, 0.8)';
+          input.style.fontSize = '12px';
+          input.style.padding = '2px';
 
-          if (isLikelyCharacterBoxField) {
-            // Create a container for character boxes
-            const container = document.createElement('div');
-            container.style.position = 'absolute';
-            container.style.left = `${left}px`;
-            container.style.top = `${top}px`;
-            container.style.width = `${width}px`;
-            container.style.height = `${height}px`;
-            container.style.display = 'flex';
-            container.style.gap = '2px';
-            container.style.alignItems = 'center';
+          // Add change listener
+          input.addEventListener('input', (e) => {
+            const target = e.target as HTMLInputElement;
+            handleFieldChange(fieldName, target.value);
+          });
 
-            // Estimate number of character boxes based on width
-            const charBoxWidth = Math.min(20, width / 10); // Max 20px per box, at least 10 boxes
-            const numBoxes = Math.floor(width / (charBoxWidth + 2));
-
-            const currentValue = currentForm?.fields.find(f => f.name === fieldName)?.value || '';
-            const chars = currentValue.split('');
-
-            // Create individual character boxes
-            for (let i = 0; i < numBoxes; i++) {
-              const charInput = document.createElement('input');
-              charInput.type = 'text';
-              charInput.maxLength = 1;
-              charInput.value = chars[i] || '';
-              charInput.style.width = `${charBoxWidth}px`;
-              charInput.style.height = `${height - 4}px`;
-              charInput.style.border = '1px solid rgba(99, 102, 241, 0.3)';
-              charInput.style.background = 'rgba(255, 255, 255, 0.9)';
-              charInput.style.fontSize = '14px';
-              charInput.style.textAlign = 'center';
-              charInput.style.padding = '0';
-              charInput.style.fontWeight = '500';
-              charInput.dataset.fieldName = fieldName;
-              charInput.dataset.charIndex = String(i);
-
-              // Auto-advance to next box on input
-              charInput.addEventListener('input', (e) => {
-                const target = e.target as HTMLInputElement;
-
-                // Collect all character values for this field
-                const allInputs = container.querySelectorAll('input');
-                const fullValue = Array.from(allInputs)
-                  .map((inp) => (inp as HTMLInputElement).value)
-                  .join('');
-
-                handleFieldChange(fieldName, fullValue);
-
-                // Auto-advance to next box if a character was entered
-                if (target.value && i < numBoxes - 1) {
-                  const nextInput = allInputs[i + 1] as HTMLInputElement;
-                  if (nextInput) nextInput.focus();
-                }
-              });
-
-              // Handle backspace to move to previous box
-              charInput.addEventListener('keydown', (e) => {
-                if (e.key === 'Backspace' && !charInput.value && i > 0) {
-                  const allInputs = container.querySelectorAll('input');
-                  const prevInput = allInputs[i - 1] as HTMLInputElement;
-                  if (prevInput) {
-                    prevInput.focus();
-                    prevInput.select();
-                  }
-                }
-              });
-
-              // Handle paste to distribute characters across boxes
-              charInput.addEventListener('paste', (e) => {
-                e.preventDefault();
-                const pastedText = e.clipboardData?.getData('text') || '';
-                const allInputs = container.querySelectorAll('input');
-
-                for (let j = 0; j < pastedText.length && (i + j) < numBoxes; j++) {
-                  const targetInput = allInputs[i + j] as HTMLInputElement;
-                  if (targetInput) {
-                    targetInput.value = pastedText[j];
-                  }
-                }
-
-                // Update the full value
-                const fullValue = Array.from(allInputs)
-                  .map((inp) => (inp as HTMLInputElement).value)
-                  .join('');
-                handleFieldChange(fieldName, fullValue);
-
-                // Focus the next empty box or last filled box
-                const nextEmptyIndex = Math.min(i + pastedText.length, numBoxes - 1);
-                const nextInput = allInputs[nextEmptyIndex] as HTMLInputElement;
-                if (nextInput) nextInput.focus();
-              });
-
-              container.appendChild(charInput);
-            }
-
-            annotationLayer.appendChild(container);
-            console.log('[FormFiller] Created character-box input for field:', fieldName, `(${numBoxes} boxes)`);
-          } else {
-            // Standard single input field
-            const input = document.createElement('input');
-            input.type = 'text';
-            input.name = fieldName;
-            input.value = currentForm?.fields.find(f => f.name === fieldName)?.value || '';
-            input.style.position = 'absolute';
-            input.style.left = `${left}px`;
-            input.style.top = `${top}px`;
-            input.style.width = `${width}px`;
-            input.style.height = `${height}px`;
-            input.style.border = '1px solid rgba(99, 102, 241, 0.3)';
-            input.style.background = 'rgba(255, 255, 255, 0.8)';
-            input.style.fontSize = '12px';
-            input.style.padding = '2px';
-
-            // Add change listener
-            input.addEventListener('input', (e) => {
-              const target = e.target as HTMLInputElement;
-              handleFieldChange(fieldName, target.value);
-            });
-
-            annotationLayer.appendChild(input);
-            console.log('[FormFiller] Created standard input overlay for field:', fieldName);
-          }
+          annotationLayer.appendChild(input);
+          console.log('[FormFiller] Created standard input overlay for field:', fieldName);
         }
       });
     } catch (error) {
