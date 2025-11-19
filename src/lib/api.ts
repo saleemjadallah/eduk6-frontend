@@ -461,6 +461,39 @@ export const visaDocsApi = {
     const response = await api.post('/visadocs/forms/analyze-validation', data);
     return response.data;
   },
+
+  // Get Jeffrey's guidance for specific fields
+  getFieldGuidance: async (data: {
+    fields: Array<{ name: string; label?: string }>;
+    country: string;
+    visaType: string;
+  }): Promise<ApiResponse<{
+    fieldGuidance: Array<{
+      fieldName: string;
+      description: string;
+      importance: 'required' | 'recommended' | 'optional';
+      commonMistakes: string[];
+    }>;
+  }>> => {
+    const response = await api.post('/visadocs/forms/get-field-guidance', data);
+    return response.data;
+  },
+};
+
+// Form Filler API
+export const formFillerApi = {
+  // Save draft (autosave)
+  saveDraft: async (data: {
+    formId?: string;
+    formData: any;
+    pdfBytes?: string; // Base64
+  }): Promise<ApiResponse<{
+    formId: string;
+    savedAt: string;
+  }>> => {
+    const response = await api.post('/form-filler/save-draft', data);
+    return response.data;
+  },
 };
 
 // Batch API
