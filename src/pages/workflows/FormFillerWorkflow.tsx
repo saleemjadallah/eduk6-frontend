@@ -1801,7 +1801,7 @@ Be concise but helpful. Format as a brief paragraph.`;
                 </div>
                 <button
                   onClick={handleReanalyze}
-                  disabled={isAnalyzingForm || pageImages.length === 0}
+                  disabled={isAnalyzingForm || !currentForm}
                   className="px-4 py-2 bg-indigo-600 text-white rounded-lg font-medium hover:bg-indigo-700 disabled:opacity-50"
                 >
                   {isAnalyzingForm ? 'Analyzing...' : 'Re-analyze Now'}
@@ -2027,14 +2027,33 @@ Be concise but helpful. Format as a brief paragraph.`;
               Upload Different Form
             </button>
             {pdfUrl && (
-              <a
-                href={pdfUrl}
-                download={currentForm.fileName}
-                className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg font-medium hover:bg-indigo-700"
-              >
-                <Download className="w-4 h-4" />
-                Download Original PDF
-              </a>
+              <>
+                <button
+                  onClick={handleValidateForm}
+                  disabled={isAnalyzingForm}
+                  className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg font-medium hover:bg-indigo-700 disabled:opacity-50"
+                >
+                  {isAnalyzingForm ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      Validating...
+                    </>
+                  ) : (
+                    <>
+                      <Shield className="w-4 h-4" />
+                      Validate Form
+                    </>
+                  )}
+                </button>
+                <a
+                  href={pdfUrl}
+                  download={currentForm.fileName}
+                  className="inline-flex items-center gap-2 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-50"
+                >
+                  <Download className="w-4 h-4" />
+                  Original PDF
+                </a>
+              </>
             )}
           </div>
         </div>
