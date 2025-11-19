@@ -258,7 +258,40 @@ export const visaDocsApi = {
     return response.data;
   },
 
-  // PDF Form Analysis using Azure Document Intelligence (with Gemini Vision fallback)
+  // PDF Form Field Extraction - Extracts actual form field definitions from PDF structure
+  // This bypasses character box overlays and reads the actual fillable fields
+  extractPDFFields: async (data: {
+    pdfBuffer: string; // Base64 encoded PDF file
+    useAzure?: boolean; // Optional: correlate with Azure DI
+  }): Promise<ApiResponse<{
+    fields: Array<{
+      fieldNumber: number;
+      fieldName: string;
+      label: string;
+      type: string;
+      value: string;
+      readOnly: boolean;
+      required: boolean;
+      maxLength?: number;
+    }>;
+    totalFields: number;
+    pageCount: number;
+    hasOverlays: boolean;
+    correlation?: Array<{
+      fieldName: string;
+      detectedLabel: string;
+      generatedLabel: string;
+      type: string;
+      confidence: number;
+      matched: boolean;
+    }>;
+    extractedAt: string;
+  }>> => {
+    const response = await api.post('/visadocs/forms/extract-fields', data);
+    return response.data;
+  },
+
+  // PDF Form Analysis using Azure Document Intelligence (LEGACY - may not work with overlays)
   analyzePDFForm: async (data: {
     pdfBuffer: string; // Base64 encoded PDF file
     visaType?: string;
