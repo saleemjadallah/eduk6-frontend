@@ -526,19 +526,12 @@ Be concise but helpful. Format as a brief paragraph.`;
     }
   };
 
-  // Manual re-analyze with current PDF state
+  // Unified validation handler used by both buttons
   const handleReanalyze = async () => {
-    if (isAnalyzingForm || !currentForm) return;
-
-    console.log('[FormFiller] Manual re-analyze triggered');
-    const newImages = await recapturePDFState();
-    if (newImages.length > 0) {
-      setPageImages(newImages);
-      await analyzeFormForValidation(newImages);
-      setLastValidationTime(new Date());
-      // Reset countdown
-      setValidationCountdown(15);
-    }
+    // Just call handleValidateForm - they do the same thing
+    await handleValidateForm();
+    // Reset countdown for auto-validation
+    setValidationCountdown(15);
   };
 
   const getCacheKey = (profile: TravelProfile): string => {
