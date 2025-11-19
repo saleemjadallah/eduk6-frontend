@@ -648,29 +648,29 @@ Be concise but helpful. Format as a brief paragraph.`;
     }
   };
 
-  // Analyze PDF form fields using Gemini Vision AI
-  const analyzeFormWithAI = async (pdfBytes: ArrayBuffer, fieldCount: number): Promise<Map<number, { label: string; fieldType: string; confidence: number }>> => {
+  // Analyze PDF form fields using Azure Document Intelligence (with Gemini Vision fallback)
+  const analyzeFormWithAI = async (pdfBytes: ArrayBuffer, _fieldCount: number): Promise<Map<number, { label: string; fieldType: string; confidence: number }>> => {
     setAnalyzingWithAI(true);
     const fieldMap = new Map<number, { label: string; fieldType: string; confidence: number }>();
 
     try {
-      const images = await convertPDFPagesToImages(pdfBytes);
-      setPageImages(images);
+      // Convert PDF ArrayBuffer to base64 string
+      const base64Pdf = btoa(
+        new Uint8Array(pdfBytes).reduce((data, byte) => data + String.fromCharCode(byte), '')
+      );
 
-      if (images.length === 0) {
-        console.error('No page images generated');
-        return fieldMap;
-      }
-
-      console.log(`Sending ${images.length} pages to Gemini Vision for analysis...`);
+      console.log(`Sending PDF to Azure Document Intelligence for analysis...`);
 
       const response = await visaDocsApi.analyzePDFForm({
-        pageImages: images,
-        fieldCount,
+        pdfBuffer: base64Pdf,
         visaType: travelProfile?.visaRequirements?.visaType
       });
 
       if (response.success && response.data?.fields) {
+        console.log(`Extraction method: ${response.data.extractionMethod}`);
+        console.log(`Overall confidence: ${response.data.overallConfidence}%`);
+        console.log(`Processing time: ${response.data.processingTime}ms`);
+
         response.data.fields.forEach((field: { fieldNumber: number; label: string; fieldType: string; confidence: number }) => {
           fieldMap.set(field.fieldNumber, {
             label: field.label,
@@ -678,7 +678,11 @@ Be concise but helpful. Format as a brief paragraph.`;
             confidence: field.confidence
           });
         });
-        console.log(`AI identified ${fieldMap.size} fields`);
+        console.log(`AI identified ${fieldMap.size} fields using ${response.data.extractionMethod}`);
+
+        // Still convert PDF to images for display purposes
+        const images = await convertPDFPagesToImages(pdfBytes);
+        setPageImages(images);
       }
     } catch (error) {
       console.error('Error analyzing form with AI:', error);
