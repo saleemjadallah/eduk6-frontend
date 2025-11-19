@@ -304,6 +304,32 @@ export const visaDocsApi = {
       confidence: number;
       pageNumber: number;
     }>;
+    queryResults?: Array<{
+      field: string;
+      value: string;
+      confidence: number;
+    }>;
+    tables?: Array<{
+      rowCount: number;
+      columnCount: number;
+      cells: Array<{
+        rowIndex: number;
+        columnIndex: number;
+        content: string;
+        kind: 'content' | 'columnHeader' | 'rowHeader' | 'stubHead';
+      }>;
+    }>;
+    selectionMarks?: Array<{
+      state: 'selected' | 'unselected';
+      confidence: number;
+      boundingBox?: number[];
+    }>;
+    barcodes?: Array<{
+      value: string;
+      kind: string;
+      confidence: number;
+    }>;
+    markdownOutput?: string;
     totalFields: number;
     pagesAnalyzed: number;
     extractionMethod: 'azure_layout' | 'azure_prebuilt_id' | 'gemini_flash';

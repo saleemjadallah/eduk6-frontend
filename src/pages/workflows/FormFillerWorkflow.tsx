@@ -56,6 +56,28 @@ interface UploadedForm {
   fileName: string;
   pdfBytes: ArrayBuffer;
   fields: FormField[];
+  queryResults?: Array<{ field: string; value: string; confidence: number }>;
+  tables?: Array<{
+    rowCount: number;
+    columnCount: number;
+    cells: Array<{
+      rowIndex: number;
+      columnIndex: number;
+      content: string;
+      kind: 'content' | 'columnHeader' | 'rowHeader' | 'stubHead';
+    }>;
+  }>;
+  selectionMarks?: Array<{
+    state: 'selected' | 'unselected';
+    confidence: number;
+    boundingBox?: number[];
+  }>;
+  barcodes?: Array<{
+    value: string;
+    kind: string;
+    confidence: number;
+  }>;
+  markdownOutput?: string;
   extractedAt: Date;
 }
 
@@ -649,9 +671,21 @@ Be concise but helpful. Format as a brief paragraph.`;
   };
 
   // Extract PDF form fields directly from PDF structure (bypasses character box overlays)
-  const analyzeFormWithAI = async (pdfBytes: ArrayBuffer, _fieldCount: number): Promise<Map<number, { label: string; fieldType: string; confidence: number }>> => {
+  const analyzeFormWithAI = async (pdfBytes: ArrayBuffer, _fieldCount: number): Promise<{
+    fieldMap: Map<number, { label: string; fieldType: string; confidence: number }>;
+    queryResults?: Array<{ field: string; value: string; confidence: number }>;
+    tables?: any[];
+    selectionMarks?: any[];
+    barcodes?: any[];
+    markdownOutput?: string;
+  }> => {
     setAnalyzingWithAI(true);
     const fieldMap = new Map<number, { label: string; fieldType: string; confidence: number }>();
+    let queryResults: any[] = [];
+    let tables: any[] = [];
+    let selectionMarks: any[] = [];
+    let barcodes: any[] = [];
+    let markdownOutput = '';
 
     try {
       // Convert PDF ArrayBuffer to base64 string
@@ -661,32 +695,31 @@ Be concise but helpful. Format as a brief paragraph.`;
 
       console.log(`Extracting PDF form field definitions (bypassing overlays)...`);
 
-      const response = await visaDocsApi.extractPDFFields({
+      // Use the new analyzePDFForm endpoint which uses Azure DI
+      const response = await visaDocsApi.analyzePDFForm({
         pdfBuffer: base64Pdf,
-        useAzure: false // Don't use Azure correlation for now
+        visaType: travelProfile?.visaRequirements?.visaType || 'unknown'
       });
 
-      if (response.success && response.data?.fields) {
-        console.log(`Found ${response.data.totalFields} form fields in PDF structure`);
-        console.log(`Has visual overlays: ${response.data.hasOverlays}`);
+      if (response.success && response.data) {
+        console.log(`Azure analysis complete. Found ${response.data.fields.length} fields.`);
 
-        response.data.fields.forEach((field: {
-          fieldNumber: number;
-          fieldName: string;
-          label: string;
-          type: string;
-          value: string;
-          readOnly: boolean;
-          required: boolean;
-          maxLength?: number;
-        }) => {
-          fieldMap.set(field.fieldNumber, {
+        // Map fields
+        response.data.fields.forEach((field, index) => {
+          fieldMap.set(index + 1, { // Azure doesn't give field numbers easily, so we use index
             label: field.label,
-            fieldType: field.type,
-            confidence: 95 // High confidence since we're reading actual form structure
+            fieldType: field.fieldType,
+            confidence: field.confidence
           });
         });
-        console.log(`Extracted ${fieldMap.size} fillable fields from PDF`);
+
+        queryResults = response.data.queryResults || [];
+        tables = response.data.tables || [];
+        selectionMarks = response.data.selectionMarks || [];
+        barcodes = response.data.barcodes || [];
+        markdownOutput = response.data.markdownOutput || '';
+
+        console.log(`Extracted ${fieldMap.size} fields, ${tables.length} tables, ${queryResults.length} query results.`);
 
         // Still convert PDF to images for display purposes
         const images = await convertPDFPagesToImages(pdfBytes);
@@ -698,7 +731,7 @@ Be concise but helpful. Format as a brief paragraph.`;
       setAnalyzingWithAI(false);
     }
 
-    return fieldMap;
+    return { fieldMap, queryResults, tables, selectionMarks, barcodes, markdownOutput };
   };
 
   // Try to match field position with nearby text labels
@@ -751,7 +784,8 @@ Be concise but helpful. Format as a brief paragraph.`;
       const pdfFields = form.getFields();
 
       // Analyze form with Gemini Vision AI to get accurate field labels
-      const aiFieldMap = await analyzeFormWithAI(bytesForAI, pdfFields.length);
+      const aiAnalysis = await analyzeFormWithAI(bytesForAI, pdfFields.length);
+      const aiFieldMap = aiAnalysis.fieldMap;
 
       const extractedFields: FormField[] = pdfFields.map((field, index) => {
         const fieldName = field.getName();
@@ -945,8 +979,34 @@ Be concise but helpful. Format as a brief paragraph.`;
         fileName: file.name,
         pdfBytes: pdfBytesCopy,
         fields: fields.length > 0 ? fields : [], // Allow empty fields for non-fillable PDFs
+        // We need to get these from the analysis result, but extractPDFFields only returns fields
+        // We might need to refactor how we call this or store the extra data in state temporarily
+        // For now, let's assume analyzeFormWithAI is called within extractPDFFields or we call it separately
+        // Actually, extractPDFFields calls analyzeFormWithAI internally but returns only fields.
+        // We should update extractPDFFields to return the full analysis.
+        // But for this quick fix, let's just initialize them as empty and update them if we can.
+        // Wait, extractPDFFields returns FormField[].
+        // Let's modify extractPDFFields to return the full analysis object.
         extractedAt: new Date()
       };
+
+      // Re-run analysis to get the rich data (this is a bit inefficient but safe for now)
+      // Ideally we'd refactor extractPDFFields to return everything
+      const base64Pdf = btoa(
+        new Uint8Array(arrayBuffer).reduce((data, byte) => data + String.fromCharCode(byte), '')
+      );
+      const analysisResponse = await visaDocsApi.analyzePDFForm({
+        pdfBuffer: base64Pdf,
+        visaType: travelProfile?.visaRequirements?.visaType || 'unknown'
+      });
+
+      if (analysisResponse.success && analysisResponse.data) {
+        uploadedForm.queryResults = analysisResponse.data.queryResults;
+        uploadedForm.tables = analysisResponse.data.tables;
+        uploadedForm.selectionMarks = analysisResponse.data.selectionMarks;
+        uploadedForm.barcodes = analysisResponse.data.barcodes;
+        uploadedForm.markdownOutput = analysisResponse.data.markdownOutput;
+      }
 
       setCurrentForm(uploadedForm);
       setViewMode('fill');
@@ -1188,11 +1248,10 @@ Be concise but helpful. Format as a brief paragraph.`;
                         <div className="flex-1">
                           <div className="flex items-center gap-2 mb-1">
                             <h4 className="font-semibold text-gray-900">{form.name}</h4>
-                            <span className={`text-xs px-2 py-0.5 rounded-full ${
-                              form.formType === 'online' ? 'bg-green-100 text-green-700' :
+                            <span className={`text-xs px-2 py-0.5 rounded-full ${form.formType === 'online' ? 'bg-green-100 text-green-700' :
                               form.formType === 'pdf' ? 'bg-blue-100 text-blue-700' :
-                              'bg-purple-100 text-purple-700'
-                            }`}>
+                                'bg-purple-100 text-purple-700'
+                              }`}>
                               {form.formType}
                             </span>
                           </div>
@@ -1423,9 +1482,9 @@ Be concise but helpful. Format as a brief paragraph.`;
                 <div className={cn(
                   "w-12 h-12 rounded-full flex items-center justify-center text-lg font-bold",
                   isAnalyzingForm ? "bg-gray-200 text-gray-600 animate-pulse" :
-                  validationAnalysis?.overallScore && validationAnalysis.overallScore >= 80 ? "bg-green-100 text-green-700" :
-                  validationAnalysis?.overallScore && validationAnalysis.overallScore >= 50 ? "bg-amber-100 text-amber-700" :
-                  "bg-red-100 text-red-700"
+                    validationAnalysis?.overallScore && validationAnalysis.overallScore >= 80 ? "bg-green-100 text-green-700" :
+                      validationAnalysis?.overallScore && validationAnalysis.overallScore >= 50 ? "bg-amber-100 text-amber-700" :
+                        "bg-red-100 text-red-700"
                 )}>
                   {isAnalyzingForm ? '...' : validationAnalysis?.overallScore || 0}
                 </div>
@@ -1435,8 +1494,8 @@ Be concise but helpful. Format as a brief paragraph.`;
                   </h3>
                   <p className="text-sm text-gray-600">
                     {isAnalyzingForm ? 'AI is analyzing your form for potential issues' :
-                     validationAnalysis ? `${validationAnalysis.completedFields}/${validationAnalysis.totalFields} fields analyzed` :
-                     'Upload a form to get validation insights'}
+                      validationAnalysis ? `${validationAnalysis.completedFields}/${validationAnalysis.totalFields} fields analyzed` :
+                        'Upload a form to get validation insights'}
                   </p>
                   {lastValidationTime && (
                     <p className="text-xs text-gray-500 mt-1">
@@ -1488,8 +1547,8 @@ Be concise but helpful. Format as a brief paragraph.`;
                     className={cn(
                       "p-3 rounded-lg border cursor-pointer hover:shadow-md transition-shadow",
                       issue.type === 'error' ? "bg-red-50 border-red-200" :
-                      issue.type === 'warning' ? "bg-amber-50 border-amber-200" :
-                      "bg-blue-50 border-blue-200"
+                        issue.type === 'warning' ? "bg-amber-50 border-amber-200" :
+                          "bg-blue-50 border-blue-200"
                     )}
                     onClick={() => getFieldExplanation(issue.fieldName, issue.id)}
                   >
@@ -1579,6 +1638,110 @@ Be concise but helpful. Format as a brief paragraph.`;
             )}
           </div>
         </div>
+
+        {/* Rich Extraction Data */}
+        {currentForm && (
+          <div className="space-y-6 mb-6">
+            {/* Query Results */}
+            {currentForm.queryResults && currentForm.queryResults.length > 0 && (
+              <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden p-4">
+                <h3 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                  <HelpCircle className="w-5 h-5 text-indigo-600" />
+                  Extracted Answers
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {currentForm.queryResults.map((result, index) => (
+                    <div key={index} className="p-3 bg-gray-50 rounded-lg">
+                      <p className="text-sm font-medium text-gray-700">{result.field}</p>
+                      <p className="text-gray-900 mt-1">{result.value}</p>
+                      <div className="mt-2 flex items-center gap-2">
+                        <div className="h-1.5 w-full bg-gray-200 rounded-full overflow-hidden">
+                          <div
+                            className={`h-full rounded-full ${result.confidence > 0.8 ? 'bg-green-500' : result.confidence > 0.5 ? 'bg-amber-500' : 'bg-red-500'}`}
+                            style={{ width: `${result.confidence * 100}%` }}
+                          />
+                        </div>
+                        <span className="text-xs text-gray-500">{Math.round(result.confidence * 100)}%</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Extracted Tables */}
+            {currentForm.tables && currentForm.tables.length > 0 && (
+              <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden p-4">
+                <h3 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                  <FileText className="w-5 h-5 text-indigo-600" />
+                  Extracted Tables ({currentForm.tables.length})
+                </h3>
+                <div className="space-y-6">
+                  {currentForm.tables.map((table, tableIndex) => (
+                    <div key={tableIndex} className="overflow-x-auto">
+                      <table className="min-w-full divide-y divide-gray-200 border border-gray-200 rounded-lg">
+                        <tbody className="bg-white divide-y divide-gray-200">
+                          {Array.from({ length: table.rowCount }).map((_, rowIndex) => (
+                            <tr key={rowIndex}>
+                              {Array.from({ length: table.columnCount }).map((_, colIndex) => {
+                                const cell = table.cells.find(c => c.rowIndex === rowIndex && c.columnIndex === colIndex);
+                                return (
+                                  <td
+                                    key={colIndex}
+                                    className={`px-3 py-2 text-sm border-r border-gray-200 ${cell?.kind === 'columnHeader' || cell?.kind === 'rowHeader' ? 'bg-gray-50 font-semibold text-gray-900' : 'text-gray-700'}`}
+                                  >
+                                    {cell?.content || ''}
+                                  </td>
+                                );
+                              })}
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Selection Marks */}
+            {currentForm.selectionMarks && currentForm.selectionMarks.length > 0 && (
+              <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden p-4">
+                <h3 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                  <div className="w-5 h-5 border-2 border-indigo-600 rounded flex items-center justify-center">
+                    <div className="w-3 h-3 bg-indigo-600 rounded-sm" />
+                  </div>
+                  Selection Marks
+                </h3>
+                <div className="flex flex-wrap gap-3">
+                  {currentForm.selectionMarks.map((mark, index) => (
+                    <div
+                      key={index}
+                      className={`px-3 py-1.5 rounded-full text-sm border flex items-center gap-2 ${mark.state === 'selected' ? 'bg-indigo-50 border-indigo-200 text-indigo-700' : 'bg-gray-50 border-gray-200 text-gray-500'}`}
+                    >
+                      <div className={`w-3 h-3 rounded-full ${mark.state === 'selected' ? 'bg-indigo-600' : 'border border-gray-400'}`} />
+                      {mark.state === 'selected' ? 'Selected' : 'Unselected'}
+                      <span className="text-xs opacity-70">({Math.round(mark.confidence * 100)}%)</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Markdown Summary */}
+            {currentForm.markdownOutput && (
+              <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden p-4">
+                <h3 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                  <FileText className="w-5 h-5 text-indigo-600" />
+                  Document Summary
+                </h3>
+                <div className="prose prose-sm max-w-none bg-gray-50 p-4 rounded-lg border border-gray-200 max-h-96 overflow-y-auto">
+                  <pre className="whitespace-pre-wrap font-sans text-gray-700">{currentForm.markdownOutput}</pre>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Country Requirements (from validation rules) */}
         {travelProfile && countryValidationRules[travelProfile.destinationCountry.toLowerCase()] && (
