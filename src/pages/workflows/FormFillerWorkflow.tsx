@@ -1441,26 +1441,13 @@ Be concise but helpful. Format as a brief paragraph.`;
               )}
             </button>
             {pdfViewExpanded && (
-              <div className="h-[500px] overflow-auto bg-gray-100 p-4">
-                {pdfDocument ? (
-                  <div className="space-y-4">
-                    {Array.from({ length: pdfDocument.numPages }, (_, i) => i + 1).map((pageNum) => (
-                      <div key={pageNum} className="relative bg-white shadow-lg mx-auto" style={{ width: 'fit-content' }}>
-                        <canvas
-                          ref={(canvas) => {
-                            if (canvas) {
-                              canvasRefs.current.set(pageNum, canvas);
-                              renderPDFPage(pageNum, canvas);
-                            }
-                          }}
-                          className="block"
-                        />
-                        <div className="absolute top-0 left-0 w-full h-full pointer-events-none">
-                          {/* Annotation layer will be rendered here by PDF.js */}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
+              <div className="h-[600px] overflow-auto bg-gray-100">
+                {pdfUrl ? (
+                  <iframe
+                    src={pdfUrl}
+                    className="w-full h-full border-0"
+                    title="Fillable PDF Form"
+                  />
                 ) : (
                   <div className="flex items-center justify-center h-full">
                     <div className="text-center">
