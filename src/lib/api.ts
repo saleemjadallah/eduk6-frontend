@@ -258,22 +258,29 @@ export const visaDocsApi = {
     return response.data;
   },
 
-  // PDF Form Analysis with Gemini Vision AI
+  // PDF Form Analysis using Azure Document Intelligence (with Gemini Vision fallback)
   analyzePDFForm: async (data: {
-    pageImages: string[]; // Base64 encoded PNG images of PDF pages
-    fieldCount?: number;
+    pdfBuffer: string; // Base64 encoded PDF file
     visaType?: string;
   }): Promise<ApiResponse<{
-    formType: string;
-    country: string;
-    totalFields: number;
     fields: Array<{
       fieldNumber: number;
       label: string;
+      value: string;
       fieldType: string;
       confidence: number;
+      pageNumber: number;
     }>;
-    processingNotes: string;
+    totalFields: number;
+    pagesAnalyzed: number;
+    extractionMethod: 'azure_layout' | 'azure_prebuilt_id' | 'gemini_flash';
+    overallConfidence: number;
+    processingTime: number;
+    qualityAssessment?: {
+      quality: 'high' | 'medium' | 'low';
+      score: number;
+      reasons: string[];
+    };
     visaType: string;
     analyzedAt: string;
   }>> => {
