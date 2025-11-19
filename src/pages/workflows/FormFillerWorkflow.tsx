@@ -3,11 +3,11 @@ import { FileText, Upload, ExternalLink, Globe, AlertCircle, HelpCircle, Lightbu
 import { useJeffrey } from '../../contexts/JeffreyContext';
 import { Breadcrumb, BreadcrumbItem } from '../../components/ui/Breadcrumb';
 import { cn } from '../../utils/cn';
-import { onboardingApi, visaDocsApi } from '../../lib/api';
+import { onboardingApi, visaDocsApi, formFillerApi } from '../../lib/api';
 import { PDFDocument } from 'pdf-lib';
 import * as pdfjsLib from 'pdfjs-dist';
 import { profileApi, CompleteProfile } from '../../lib/api-profile';
-import { validateForm, countryValidationRules } from '../../lib/validation-rules';
+import { validateForm } from '../../lib/validation-rules';
 
 // Set up PDF.js worker - use unpkg which mirrors npm directly
 // react-pdf@10.2.0 uses pdfjs-dist@5.4.296
@@ -89,6 +89,13 @@ interface FormSearchCache {
   cachedAt: Date;
 }
 
+interface FieldGuidance {
+  fieldName: string;
+  description: string;
+  importance: 'required' | 'recommended' | 'optional';
+  commonMistakes: string[];
+}
+
 type ViewMode = 'browse' | 'fill' | 'preview';
 
 export const FormFillerWorkflow: React.FC = () => {
@@ -153,6 +160,16 @@ export const FormFillerWorkflow: React.FC = () => {
   const autoValidationIntervalRef = useRef<NodeJS.Timeout | null>(null);
   // Suppress unused ref warning
   void pdfObjectRef;
+
+  // Jeffrey Guidance State
+  const [fieldGuidance, setFieldGuidance] = useState<FieldGuidance[]>([]);
+  const [isLoadingGuidance, setIsLoadingGuidance] = useState(false);
+
+  // Autosave State
+  const [autosaveStatus, setAutosaveStatus] = useState<'saved' | 'saving' | 'error'>('saved');
+  const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null);
+  const [formId, setFormId] = useState<string | null>(null);
+  const autosaveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Update Jeffrey's context when entering this workflow
   useEffect(() => {
@@ -1104,65 +1121,44 @@ Be concise but helpful. Format as a brief paragraph.`;
     try {
       console.log('[FormFiller] Validating filled form...');
 
-      // Extract filled values from PDF
-      const filledData = await extractFilledPDFValues();
-      if (!filledData) {
-        alert('Error extracting form data. Please try again.');
+      // Extract filled values from PDF (optional, but good for debugging)
+      await extractFilledPDFValues();
+
+      // Ensure we have page images
+      let imagesToAnalyze = pageImages;
+      if (imagesToAnalyze.length === 0 && currentForm.pdfBytes) {
+        // If no images, convert PDF to images now
+        imagesToAnalyze = await convertPDFPagesToImages(currentForm.pdfBytes);
+        setPageImages(imagesToAnalyze);
+      }
+
+      if (imagesToAnalyze.length === 0) {
+        alert('Could not generate images for validation. Please try again.');
         return;
       }
 
-      // Call validation API (using generic api for now since specific endpoint structure isn't defined)
-      // In production, this would call: POST /api/form-filler/{id}/validate
-      // For now, we'll show a placeholder response
-      console.log('Filled data to validate:', filledData);
+      // Call validation API
+      const response = await visaDocsApi.analyzeFormValidation({
+        pageImages: imagesToAnalyze,
+        prompt: `Validate this ${travelProfile?.destinationCountry || 'visa'} form. Check for missing required fields, incorrect formats, and consistency.`,
+        country: travelProfile?.destinationCountry || 'Unknown'
+      });
 
-      // Placeholder validation response - in production, call actual API
-      const response = {
-        success: true,
-        data: {
-          validation: {
-            overallConfidence: 85,
-            recommendedActions: [
-              'Review all required fields',
-              'Verify dates are in correct format',
-              'Check passport validity'
-            ]
-          },
-          issues: {
-            errors: [] as Array<{ field: string; message: string }>,
-            warnings: [] as Array<{ field: string; message: string }>
-          }
-        }
-      };
-
-      if (response.success && response.data) {
+      if (response.success && response.data?.validation) {
         // Update validation analysis with backend results
         setValidationAnalysis({
-          overallScore: response.data.validation.overallConfidence || 0,
-          completedFields: Object.keys(filledData).filter(k => filledData[k]).length,
-          totalFields: Object.keys(filledData).length,
-          issues: [
-            ...response.data.issues.errors.map((e: { field: string; message: string }) => ({
-              id: `error-${e.field}`,
-              fieldName: e.field,
-              type: 'error' as const,
-              message: e.message,
-              suggestion: undefined
-            })),
-            ...response.data.issues.warnings.map((w: { field: string; message: string }) => ({
-              id: `warning-${w.field}`,
-              fieldName: w.field,
-              type: 'warning' as const,
-              message: w.message,
-              suggestion: undefined
-            }))
-          ],
-          recommendations: response.data.validation.recommendedActions || [],
-          countrySpecificNotes: []
+          overallScore: response.data.validation.overallScore,
+          completedFields: response.data.validation.completedFields,
+          totalFields: response.data.validation.totalFields,
+          issues: response.data.validation.issues,
+          recommendations: response.data.validation.recommendations,
+          countrySpecificNotes: response.data.validation.countrySpecificNotes
         });
 
         setLastValidationTime(new Date());
         console.log('[FormFiller] Validation complete:', response.data);
+      } else {
+        throw new Error('Validation failed or returned no data');
       }
     } catch (error) {
       console.error('[FormFiller] Validation error:', error);
@@ -1171,6 +1167,101 @@ Be concise but helpful. Format as a brief paragraph.`;
       setIsAnalyzingForm(false);
     }
   };
+
+  // Fetch Jeffrey's guidance for fields
+  const fetchFieldGuidance = async () => {
+    if (!currentForm?.fields || currentForm.fields.length === 0) return;
+
+    setIsLoadingGuidance(true);
+    try {
+      // Only get guidance for the first 20 fields to avoid overwhelming the API/User initially
+      // In a real app, we might paginate this or fetch on demand
+      const fieldsToAnalyze = currentForm.fields.slice(0, 20).map(f => ({
+        name: f.name,
+        label: f.label
+      }));
+
+      const response = await visaDocsApi.getFieldGuidance({
+        fields: fieldsToAnalyze,
+        country: travelProfile?.destinationCountry || 'Unknown',
+        visaType: travelProfile?.visaRequirements?.visaType || 'Visa'
+      });
+
+      if (response.success && response.data?.fieldGuidance) {
+        setFieldGuidance(response.data.fieldGuidance);
+      }
+    } catch (error) {
+      console.error('Error fetching field guidance:', error);
+    } finally {
+      setIsLoadingGuidance(false);
+    }
+  };
+
+  // Autosave draft
+  const saveFormDraft = async () => {
+    if (!currentForm) return;
+
+    setAutosaveStatus('saving');
+    try {
+      // Extract current values
+      const formData: Record<string, { value: string; source: 'manual' }> = {};
+      currentForm.fields.forEach(field => {
+        if (field.value) {
+          formData[field.name] = {
+            value: field.value,
+            source: 'manual'
+          };
+        }
+      });
+
+      if (Object.keys(formData).length === 0) {
+        setAutosaveStatus('saved');
+        return;
+      }
+
+      const response = await formFillerApi.saveDraft({
+        formId: formId || undefined,
+        formData
+      });
+
+      if (response.success && response.data) {
+        setFormId(response.data.formId);
+        setLastSavedAt(new Date(response.data.savedAt));
+        setAutosaveStatus('saved');
+      } else {
+        setAutosaveStatus('error');
+      }
+    } catch (error) {
+      console.error('Error saving draft:', error);
+      setAutosaveStatus('error');
+    }
+  };
+
+  // Trigger autosave when fields change
+  useEffect(() => {
+    if (autosaveTimeoutRef.current) {
+      clearTimeout(autosaveTimeoutRef.current);
+    }
+
+    if (currentForm && viewMode === 'fill') {
+      autosaveTimeoutRef.current = setTimeout(() => {
+        saveFormDraft();
+      }, 3000); // Autosave after 3 seconds of inactivity
+    }
+
+    return () => {
+      if (autosaveTimeoutRef.current) {
+        clearTimeout(autosaveTimeoutRef.current);
+      }
+    };
+  }, [currentForm?.fields]);
+
+  // Fetch guidance when form is loaded
+  useEffect(() => {
+    if (currentForm && viewMode === 'fill' && fieldGuidance.length === 0) {
+      fetchFieldGuidance();
+    }
+  }, [currentForm, viewMode]);
 
   const togglePDFExpanded = () => {
     setPdfViewExpanded(!pdfViewExpanded);
@@ -1529,7 +1620,30 @@ Be concise but helpful. Format as a brief paragraph.`;
               </p>
             </div>
             <div className="text-right">
-              <div className="text-2xl font-bold text-indigo-600">{completionPercent}%</div>
+              <div className="flex items-center justify-end gap-3 mb-1">
+                {/* Autosave Indicator */}
+                <div className="flex items-center gap-1.5 text-xs font-medium">
+                  {autosaveStatus === 'saving' && (
+                    <>
+                      <div className="w-3 h-3 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin" />
+                      <span className="text-indigo-600">Saving...</span>
+                    </>
+                  )}
+                  {autosaveStatus === 'saved' && lastSavedAt && (
+                    <>
+                      <span className="w-2 h-2 bg-green-500 rounded-full" />
+                      <span className="text-gray-500">Saved {lastSavedAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                    </>
+                  )}
+                  {autosaveStatus === 'error' && (
+                    <>
+                      <AlertCircle className="w-3 h-3 text-red-500" />
+                      <span className="text-red-500">Save failed</span>
+                    </>
+                  )}
+                </div>
+                <div className="text-2xl font-bold text-indigo-600">{completionPercent}%</div>
+              </div>
               <div className="text-sm text-gray-500">{filledCount}/{totalFieldGroups} sections</div>
             </div>
           </div>
@@ -1773,135 +1887,97 @@ Be concise but helpful. Format as a brief paragraph.`;
           </div>
         </div>
 
-        {/* Rich Extraction Data */}
+        {/* Jeffrey's Field Guidance */}
         {currentForm && (
-          <div className="space-y-6 mb-6">
-            {/* Query Results */}
-            {currentForm.queryResults && currentForm.queryResults.length > 0 && (
-              <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden p-4">
-                <h3 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
-                  <HelpCircle className="w-5 h-5 text-indigo-600" />
-                  Extracted Answers
-                </h3>
+          <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden mb-6">
+            <div className="p-4 bg-gradient-to-r from-indigo-50 to-blue-50 border-b border-indigo-100 flex items-center justify-between">
+              <h3 className="font-semibold text-gray-900 flex items-center gap-2">
+                <div className="w-8 h-8 bg-indigo-100 rounded-full flex items-center justify-center">
+                  <Lightbulb className="w-5 h-5 text-indigo-600" />
+                </div>
+                Jeffrey's Field Guidance
+              </h3>
+              {isLoadingGuidance && (
+                <span className="text-sm text-gray-500 flex items-center gap-2">
+                  <div className="w-4 h-4 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin" />
+                  Loading guidance...
+                </span>
+              )}
+            </div>
+
+            <div className="p-6">
+              {fieldGuidance.length > 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {currentForm.queryResults.map((result, index) => (
-                    <div key={index} className="p-3 bg-gray-50 rounded-lg">
-                      <p className="text-sm font-medium text-gray-700">{result.field}</p>
-                      <p className="text-gray-900 mt-1">{result.value}</p>
-                      <div className="mt-2 flex items-center gap-2">
-                        <div className="h-1.5 w-full bg-gray-200 rounded-full overflow-hidden">
-                          <div
-                            className={`h-full rounded-full ${result.confidence > 0.8 ? 'bg-green-500' : result.confidence > 0.5 ? 'bg-amber-500' : 'bg-red-500'}`}
-                            style={{ width: `${result.confidence * 100}%` }}
-                          />
-                        </div>
-                        <span className="text-xs text-gray-500">{Math.round(result.confidence * 100)}%</span>
+                  {fieldGuidance.map((guidance, index) => (
+                    <div key={index} className="p-4 border border-gray-200 rounded-xl hover:border-indigo-300 hover:shadow-sm transition-all">
+                      <div className="flex items-start justify-between mb-2">
+                        <h4 className="font-semibold text-gray-900">{guidance.fieldName}</h4>
+                        <span className={cn(
+                          "text-xs px-2 py-1 rounded-full font-medium",
+                          guidance.importance === 'required' ? "bg-red-100 text-red-700" :
+                            guidance.importance === 'recommended' ? "bg-amber-100 text-amber-700" :
+                              "bg-gray-100 text-gray-700"
+                        )}>
+                          {guidance.importance.charAt(0).toUpperCase() + guidance.importance.slice(1)}
+                        </span>
                       </div>
+
+                      <p className="text-sm text-gray-600 mb-3">{guidance.description}</p>
+
+                      {guidance.commonMistakes.length > 0 && (
+                        <div className="mb-3">
+                          <p className="text-xs font-semibold text-amber-700 mb-1">Common Mistakes:</p>
+                          <ul className="list-disc list-inside text-xs text-gray-600 space-y-0.5">
+                            {guidance.commonMistakes.map((mistake, i) => (
+                              <li key={i}>{mistake}</li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+
+                      <button
+                        onClick={() => askJeffrey(`I need help with the "${guidance.fieldName}" field on the ${travelProfile?.destinationCountry} visa form. ${guidance.description}`)}
+                        className="w-full mt-2 py-2 px-3 bg-indigo-50 text-indigo-700 text-sm font-medium rounded-lg hover:bg-indigo-100 transition-colors flex items-center justify-center gap-2"
+                      >
+                        <HelpCircle className="w-4 h-4" />
+                        Need More Help?
+                      </button>
                     </div>
                   ))}
                 </div>
-              </div>
-            )}
-
-            {/* Extracted Tables */}
-            {currentForm.tables && currentForm.tables.length > 0 && (
-              <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden p-4">
-                <h3 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
-                  <FileText className="w-5 h-5 text-indigo-600" />
-                  Extracted Tables ({currentForm.tables.length})
-                </h3>
-                <div className="space-y-6">
-                  {currentForm.tables.map((table, tableIndex) => (
-                    <div key={tableIndex} className="overflow-x-auto">
-                      <table className="min-w-full divide-y divide-gray-200 border border-gray-200 rounded-lg">
-                        <tbody className="bg-white divide-y divide-gray-200">
-                          {Array.from({ length: table.rowCount }).map((_, rowIndex) => (
-                            <tr key={rowIndex}>
-                              {Array.from({ length: table.columnCount }).map((_, colIndex) => {
-                                const cell = table.cells.find(c => c.rowIndex === rowIndex && c.columnIndex === colIndex);
-                                return (
-                                  <td
-                                    key={colIndex}
-                                    className={`px-3 py-2 text-sm border-r border-gray-200 ${cell?.kind === 'columnHeader' || cell?.kind === 'rowHeader' ? 'bg-gray-50 font-semibold text-gray-900' : 'text-gray-700'}`}
-                                  >
-                                    {cell?.content || ''}
-                                  </td>
-                                );
-                              })}
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Selection Marks */}
-            {currentForm.selectionMarks && currentForm.selectionMarks.length > 0 && (
-              <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden p-4">
-                <h3 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
-                  <div className="w-5 h-5 border-2 border-indigo-600 rounded flex items-center justify-center">
-                    <div className="w-3 h-3 bg-indigo-600 rounded-sm" />
-                  </div>
-                  Selection Marks
-                </h3>
-                <div className="flex flex-wrap gap-3">
-                  {currentForm.selectionMarks.map((mark, index) => (
-                    <div
-                      key={index}
-                      className={`px-3 py-1.5 rounded-full text-sm border flex items-center gap-2 ${mark.state === 'selected' ? 'bg-indigo-50 border-indigo-200 text-indigo-700' : 'bg-gray-50 border-gray-200 text-gray-500'}`}
+              ) : (
+                <div className="text-center py-8 text-gray-500">
+                  <p>Jeffrey is analyzing the form fields to provide guidance...</p>
+                  {!isLoadingGuidance && (
+                    <button
+                      onClick={fetchFieldGuidance}
+                      className="mt-2 text-indigo-600 hover:underline"
                     >
-                      <div className={`w-3 h-3 rounded-full ${mark.state === 'selected' ? 'bg-indigo-600' : 'border border-gray-400'}`} />
-                      {mark.state === 'selected' ? 'Selected' : 'Unselected'}
-                      <span className="text-xs opacity-70">({Math.round(mark.confidence * 100)}%)</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Markdown Summary */}
-            {currentForm.markdownOutput && (
-              <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden p-4">
-                <h3 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
-                  <FileText className="w-5 h-5 text-indigo-600" />
-                  Document Summary
-                </h3>
-                <div className="prose prose-sm max-w-none bg-gray-50 p-4 rounded-lg border border-gray-200 max-h-96 overflow-y-auto">
-                  <pre className="whitespace-pre-wrap font-sans text-gray-700">{currentForm.markdownOutput}</pre>
-                </div>
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* Country Requirements (from validation rules) */}
-        {travelProfile && countryValidationRules[travelProfile.destinationCountry.toLowerCase()] && (
-          <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden mb-6 p-4">
-            <h3 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
-              <Shield className="w-5 h-5 text-indigo-600" />
-              {travelProfile.destinationCountry} Visa Requirements
-            </h3>
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm">
-              <div className="p-3 bg-gray-50 rounded-lg">
-                <p className="font-medium text-gray-700">Passport Validity</p>
-                <p className="text-gray-900">{countryValidationRules[travelProfile.destinationCountry.toLowerCase()].passportValidityMonths} months</p>
-              </div>
-              <div className="p-3 bg-gray-50 rounded-lg">
-                <p className="font-medium text-gray-700">Date Format</p>
-                <p className="text-gray-900">{countryValidationRules[travelProfile.destinationCountry.toLowerCase()].dateFormat}</p>
-              </div>
-              {countryValidationRules[travelProfile.destinationCountry.toLowerCase()].onwardTicketRequired && (
-                <div className="p-3 bg-amber-50 rounded-lg">
-                  <p className="font-medium text-amber-700">⚠️ Onward Ticket</p>
-                  <p className="text-amber-900">Required</p>
+                      Retry fetching guidance
+                    </button>
+                  )}
                 </div>
               )}
             </div>
           </div>
         )}
+
+
+        {/* Markdown Summary */}
+        {
+          currentForm.markdownOutput && (
+            <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden p-4">
+              <h3 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                <FileText className="w-5 h-5 text-indigo-600" />
+                Document Summary
+              </h3>
+              <div className="prose prose-sm max-w-none bg-gray-50 p-4 rounded-lg border border-gray-200 max-h-96 overflow-y-auto">
+                <pre className="whitespace-pre-wrap font-sans text-gray-700">{currentForm.markdownOutput}</pre>
+              </div>
+            </div>
+          )
+        }
+
 
         {/* Bottom action - now for downloading original or getting more help */}
         <div className="p-4 bg-white rounded-xl border border-gray-200 flex items-center justify-between">
