@@ -437,6 +437,15 @@ export const FormFillerWorkflow: React.FC = () => {
 
   // Sanitize validation result to ensure all fields are in correct format
   const sanitizeValidationResult = (data: any) => {
+    const normalizeTextValue = (value: any) => {
+      if (typeof value === 'string') return value;
+      if (value && typeof value === 'object') {
+        if (typeof value.message === 'string') return value.message;
+        return JSON.stringify(value);
+      }
+      return String(value ?? '');
+    };
+
     return {
       overallScore: typeof data.overallScore === 'number' ? data.overallScore : 0,
       completedFields: typeof data.completedFields === 'number' ? data.completedFields : 0,
@@ -449,10 +458,10 @@ export const FormFillerWorkflow: React.FC = () => {
         suggestion: issue.suggestion ? String(issue.suggestion) : undefined
       })) : [],
       recommendations: Array.isArray(data.recommendations)
-        ? data.recommendations.map((r: any) => typeof r === 'string' ? r : String(r))
+        ? data.recommendations.map((r: any) => normalizeTextValue(r)).filter((text: string) => text.length > 0)
         : [],
       countrySpecificNotes: Array.isArray(data.countrySpecificNotes)
-        ? data.countrySpecificNotes.map((n: any) => typeof n === 'string' ? n : String(n))
+        ? data.countrySpecificNotes.map((n: any) => normalizeTextValue(n)).filter((text: string) => text.length > 0)
         : []
     };
   };
@@ -2473,22 +2482,6 @@ Be concise but helpful. Format as a brief paragraph.`;
             </div>
           </div>
         )}
-
-
-        {/* Markdown Summary */}
-        {
-          currentForm.markdownOutput && (
-            <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden p-4">
-              <h3 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
-                <FileText className="w-5 h-5 text-indigo-600" />
-                Document Summary
-              </h3>
-              <div className="prose prose-sm max-w-none bg-gray-50 p-4 rounded-lg border border-gray-200 max-h-96 overflow-y-auto">
-                <pre className="whitespace-pre-wrap font-sans text-gray-700">{currentForm.markdownOutput}</pre>
-              </div>
-            </div>
-          )
-        }
 
 
         {/* Bottom action - now for downloading original or getting more help */}
