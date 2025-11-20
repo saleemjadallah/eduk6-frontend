@@ -441,6 +441,8 @@ export const visaDocsApi = {
     pageImages: string[];
     prompt: string;
     country: string;
+    fieldData?: Record<string, string>;
+    filledPdfBase64?: string;
   }): Promise<ApiResponse<{
     analysis?: string;
     validation?: {
