@@ -74,11 +74,11 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
         <header className="fixed top-0 left-0 right-0 h-16 bg-white/80 backdrop-blur-xl border-b border-white/50 z-50 shadow-sm">
           <div className="h-full flex items-center justify-between px-6">
             {/* Logo */}
-            <Link to="/app" className="flex items-center gap-2">
+            <Link to="/app" className="flex items-center -ml-2">
               <img
                 src="/assets/Logo_wbg-removebg-preview.png"
                 alt="VisaDocs"
-                className="h-10 w-auto"
+                className="h-14 w-auto object-contain"
               />
             </Link>
 
