@@ -59,6 +59,39 @@ export const UnifiedDashboardHome: React.FC<UnifiedDashboardHomeProps> = ({ user
   const [isDocumentsExpanded, setIsDocumentsExpanded] = useState(false);
   const [checkedDocuments, setCheckedDocuments] = useState<Set<string>>(new Set());
 
+  // Calculate overall progress across all 4 workflows
+  const calculateOverallProgress = (
+    completedForms: number,
+    totalForms: number,
+    validatedDocs: number,
+    totalDocs: number,
+    photoProgress: number,
+    requiredPhotos: number,
+    travelProgress: number
+  ) => {
+    // Weight each workflow equally (25% each)
+    const formWeight = 0.25;
+    const docWeight = 0.25;
+    const photoWeight = 0.25;
+    const travelWeight = 0.25;
+
+    // Calculate progress for each workflow
+    const formProgressPct = totalForms > 0 ? (completedForms / totalForms) * 100 : 0;
+    const docProgressPct = totalDocs > 0 ? (validatedDocs / totalDocs) * 100 : 0;
+    const photoProgressPct = requiredPhotos > 0 ? (photoProgress / requiredPhotos) * 100 : 0;
+    const travelProgressPct = travelProgress; // Already a percentage
+
+    // Calculate weighted average
+    const overall = Math.round(
+      formProgressPct * formWeight +
+      docProgressPct * docWeight +
+      photoProgressPct * photoWeight +
+      travelProgressPct * travelWeight
+    );
+
+    setOverallCompleteness(overall);
+  };
+
   // Update Jeffrey's context when entering dashboard
   useEffect(() => {
     updateWorkflow('dashboard');
@@ -93,8 +126,8 @@ export const UnifiedDashboardHome: React.FC<UnifiedDashboardHomeProps> = ({ user
           setPhotoProgress(0);
           setTravelProgress(0);
 
-          // Calculate overall completeness (starts at 10% for completing onboarding)
-          setOverallCompleteness(10);
+          // Calculate overall completeness dynamically based on all workflows
+          calculateOverallProgress(0, 1, 0, docs.length, 0, 1, 0);
         }
 
         // Fetch personalized recommendations
@@ -199,6 +232,12 @@ export const UnifiedDashboardHome: React.FC<UnifiedDashboardHomeProps> = ({ user
       } else {
         newSet.add(document);
       }
+
+      // Update validated docs count and recalculate overall progress
+      const validatedCount = newSet.size;
+      setValidatedDocs(validatedCount);
+      calculateOverallProgress(formProgress, totalForms, validatedCount, totalDocs, photoProgress, requiredPhotos, travelProgress);
+
       return newSet;
     });
   };
