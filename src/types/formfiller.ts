@@ -72,6 +72,9 @@ export interface FilledForm {
   downloadUrl?: string;
   createdAt: Date;
   completedAt?: Date | null;
+  updatedAt?: Date;
+  formName?: string;
+  completionPercentage?: number;
 }
 
 export interface FormFillerUploadResponse {

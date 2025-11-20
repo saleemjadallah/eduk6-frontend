@@ -497,6 +497,11 @@ export interface FormDraftSummary {
   totalFields: number;
   filledFields: number;
   status: FormDraftStatus;
+  versionHistory?: Array<{
+    snapshotId: string;
+    savedAt: string;
+    completionPercentage: number;
+  }>;
 }
 
 export const formFillerApi = {
@@ -534,6 +539,11 @@ export const formFillerApi = {
     updatedAt: string;
     hasPdf?: boolean;
     status?: FormDraftStatus;
+    versionHistory?: Array<{
+      snapshotId: string;
+      savedAt: string;
+      completionPercentage: number;
+    }>;
   } | null>> => {
     const response = await api.get('/form-filler/draft');
     return response.data;
@@ -554,6 +564,11 @@ export const formFillerApi = {
     updatedAt: string;
     hasPdf?: boolean;
     status?: FormDraftStatus;
+    versionHistory?: Array<{
+      snapshotId: string;
+      savedAt: string;
+      completionPercentage: number;
+    }>;
   }>> => {
     const response = await api.get(`/form-filler/drafts/${draftId}`);
     return response.data;
@@ -577,6 +592,29 @@ export const formFillerApi = {
 
   deleteDraft: async (formId: string): Promise<ApiResponse<{ formId: string }>> => {
     const response = await api.delete(`/form-filler/drafts/${formId}`);
+    return response.data;
+  },
+
+  deleteForm: async (formId: string): Promise<ApiResponse<{ formId: string }>> => {
+    const response = await api.delete(`/form-filler/${formId}`);
+    return response.data;
+  },
+
+  restoreDraftVersion: async (data: { formId: string; versionId: string }): Promise<ApiResponse<{
+    formId: string;
+    filledData: any;
+    pdfUrl: string | null;
+    fileName: string;
+    updatedAt: string;
+    hasPdf?: boolean;
+    status?: FormDraftStatus;
+    versionHistory?: Array<{
+      snapshotId: string;
+      savedAt: string;
+      completionPercentage: number;
+    }>;
+  }>> => {
+    const response = await api.post(`/form-filler/drafts/${data.formId}/versions/${data.versionId}/restore`);
     return response.data;
   },
 };

@@ -4,6 +4,8 @@ import { useJeffrey } from '../../contexts/JeffreyContext';
 import { Breadcrumb, BreadcrumbItem } from '../../components/ui/Breadcrumb';
 import { cn } from '../../utils/cn';
 import { onboardingApi, visaDocsApi, formFillerApi, type FormDraftStatus, type FormDraftSummary } from '../../lib/api';
+import { getFormHistory, downloadFilledPDF } from '../../lib/api-formfiller';
+import type { FilledForm } from '../../types/formfiller';
 import { PDFDocument, StandardFonts } from 'pdf-lib';
 import * as pdfjsLib from 'pdfjs-dist';
 import { profileApi, CompleteProfile } from '../../lib/api-profile';
@@ -126,6 +128,11 @@ type DraftDetail = {
   updatedAt: string;
   hasPdf?: boolean;
   status?: FormDraftStatus;
+  versionHistory?: Array<{
+    snapshotId: string;
+    savedAt: string;
+    completionPercentage: number;
+  }>;
 };
 
 export const FormFillerWorkflow: React.FC = () => {
@@ -184,9 +191,11 @@ export const FormFillerWorkflow: React.FC = () => {
   const [isLoadingGuidance, setIsLoadingGuidance] = useState(false);
 
   // Autosave State
-  const [autosaveStatus, setAutosaveStatus] = useState<'saved' | 'saving' | 'error'>('saved');
+  const [autosaveStatus, setAutosaveStatus] = useState<'saved' | 'saving' | 'error' | 'local_only'>('saved');
   const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null);
   const [formId, setFormId] = useState<string | null>(null);
+  const [lastVersionId, setLastVersionId] = useState<string | null>(null);
+  const [versionHistory, setVersionHistory] = useState<Array<{ snapshotId: string; savedAt: string; completionPercentage: number }>>([]);
   const autosaveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const originalPdfUploadedRef = useRef(false);
   const draftLoadedRef = useRef(false);
@@ -200,6 +209,16 @@ export const FormFillerWorkflow: React.FC = () => {
   const fieldInputRefs = useRef<Map<string, HTMLInputElement | HTMLTextAreaElement>>(new Map());
   const [highlightedField, setHighlightedField] = useState<string | null>(null);
   const savedDraftsPanelRef = useRef<HTMLDivElement | null>(null);
+  const [showVersionHistory, setShowVersionHistory] = useState(false);
+  const [saveToast, setSaveToast] = useState<string | null>(null);
+  const [restoringVersionId, setRestoringVersionId] = useState<string | null>(null);
+  const [recentForms, setRecentForms] = useState<FilledForm[]>([]);
+  const [isLoadingHistory, setIsLoadingHistory] = useState(false);
+  const [historyError, setHistoryError] = useState<string | null>(null);
+  const [deletingHistoryId, setDeletingHistoryId] = useState<string | null>(null);
+  const [pendingUploadFile, setPendingUploadFile] = useState<File | null>(null);
+  const [showUploadChoice, setShowUploadChoice] = useState(false);
+  const [isReplacingDrafts, setIsReplacingDrafts] = useState(false);
 
   // Update Jeffrey's context when entering this workflow
   useEffect(() => {
@@ -207,6 +226,7 @@ export const FormFillerWorkflow: React.FC = () => {
     addRecentAction('Entered Form Filler workflow');
     loadFormData();
     loadUserProfile();
+    loadRecentHistory();
   }, [updateWorkflow, addRecentAction]);
 
   // Load user profile for auto-fill
@@ -1447,25 +1467,15 @@ Be concise but helpful. Format as a brief paragraph.`;
       const draftBlobUrl = URL.createObjectURL(new Blob([pdfArrayBuffer], { type: 'application/pdf' }));
       setPdfUrl(draftBlobUrl);
 
-      const metadata = draft.filledData?.metadata || {};
-      const valuesRecord = draft.filledData?.values ?? draft.filledData ?? {};
-      const fieldSnapshot: FormField[] = metadata.fields || [];
-
-      const hydratedFields = fieldSnapshot.length > 0 ? fieldSnapshot.map((field) => {
-        const storedEntry = valuesRecord?.[field.name];
-        return {
-          ...field,
-          value: storedEntry?.value ?? field.value ?? '',
-        };
-      }) : currentForm?.fields || [];
+      const hydratedFields = hydrateFieldsFromDraftData(draft.filledData, currentForm?.fields || []);
 
       const restoredForm: UploadedForm = {
         id: draft.formId,
-        fileName: metadata.fileName || draft.fileName || 'Saved Draft.pdf',
+        fileName: draft.filledData?.metadata?.fileName || draft.fileName || 'Saved Draft.pdf',
         pdfBytes: pdfArrayBuffer,
         fields: hydratedFields,
         queryResults: [],
-        extractedAt: new Date(metadata.savedAt || draft.updatedAt || Date.now()),
+        extractedAt: new Date(draft.filledData?.metadata?.savedAt || draft.updatedAt || Date.now()),
       };
 
       setCurrentForm(restoredForm);
@@ -1473,6 +1483,8 @@ Be concise but helpful. Format as a brief paragraph.`;
       setViewMode('fill');
       setSavedDraft(null);
       originalPdfUploadedRef.current = true;
+      setVersionHistory(draft.versionHistory || []);
+      setLastVersionId(draft.versionHistory?.[0]?.snapshotId ?? null);
 
       const images = await convertPDFPagesToImages(pdfArrayBuffer);
       setPageImages(images);
@@ -1495,6 +1507,8 @@ Be concise but helpful. Format as a brief paragraph.`;
 
         if (!drafts.length) {
           setSavedDraft(null);
+          setVersionHistory([]);
+          setLastVersionId(null);
           return;
         }
 
@@ -1515,18 +1529,44 @@ Be concise but helpful. Format as a brief paragraph.`;
 
         if (detailedDraft) {
           setSavedDraft(detailedDraft);
+          setVersionHistory(detailedDraft.versionHistory || []);
+          setLastVersionId(detailedDraft.versionHistory?.[0]?.snapshotId ?? null);
         } else {
           setSavedDraft(null);
+          setVersionHistory([]);
+          setLastVersionId(null);
         }
       } else {
         setDraftSummaries([]);
         setSavedDraft(null);
+        setVersionHistory([]);
+        setLastVersionId(null);
       }
     } catch (error) {
       console.error('Error loading drafts:', error);
     } finally {
       setIsLoadingDrafts(false);
       draftLoadedRef.current = true;
+    }
+  };
+
+  const loadRecentHistory = async () => {
+    setIsLoadingHistory(true);
+    setHistoryError(null);
+    try {
+      const response = await getFormHistory(6, 0);
+      if (response.success && response.data?.forms) {
+        setRecentForms(response.data.forms);
+      } else {
+        setRecentForms([]);
+        setHistoryError(response.error || 'Unable to load history.');
+      }
+    } catch (error) {
+      console.error('Error loading history:', error);
+      setHistoryError('Unable to load history.');
+      setRecentForms([]);
+    } finally {
+      setIsLoadingHistory(false);
     }
   };
 
@@ -1546,6 +1586,33 @@ Be concise but helpful. Format as a brief paragraph.`;
       .join(' ');
   };
 
+  const hydrateFieldsFromDraftData = (
+    draftData: DraftDetail['filledData'],
+    fallbackFields: FormField[] = []
+  ): FormField[] => {
+    const metadata = draftData?.metadata || {};
+    const valueRecord = draftData?.values ?? draftData ?? {};
+    const fieldSnapshot: FormField[] = metadata.fields || [];
+
+    if (fieldSnapshot.length === 0) {
+      return fallbackFields.map((field) => {
+        const storedEntry = valueRecord?.[field.name];
+        return {
+          ...field,
+          value: storedEntry?.value ?? field.value ?? '',
+        };
+      });
+    }
+
+    return fieldSnapshot.map((field) => {
+      const storedEntry = valueRecord?.[field.name];
+      return {
+        ...field,
+        value: storedEntry?.value ?? field.value ?? '',
+      };
+    });
+  };
+
   const handlePreviewDraft = async (draftId: string) => {
     setPreviewingDraftId(draftId);
     try {
@@ -1560,6 +1627,37 @@ Be concise but helpful. Format as a brief paragraph.`;
       alert('Unable to load draft preview. Please try again.');
     } finally {
       setPreviewingDraftId(null);
+    }
+  };
+
+  const handleRestoreVersion = async (versionId: string) => {
+    if (!formId || !currentForm) return;
+    setRestoringVersionId(versionId);
+    try {
+      const response = await formFillerApi.restoreDraftVersion({ formId, versionId });
+      if (response.success && response.data) {
+        const detail = response.data;
+        const hydratedFields = hydrateFieldsFromDraftData(detail.filledData, currentForm.fields);
+        setCurrentForm((prev) =>
+          prev
+            ? {
+                ...prev,
+                fields: hydratedFields,
+              }
+            : prev
+        );
+        setVersionHistory(detail.versionHistory || []);
+        setLastVersionId(versionId);
+        setSaveToast('Rolled back to previous version.');
+        setShowVersionHistory(false);
+      } else {
+        alert(response.error || 'Unable to restore version.');
+      }
+    } catch (error) {
+      console.error('Error restoring version:', error);
+      alert('Unable to restore this version. Please try again.');
+    } finally {
+      setRestoringVersionId(null);
     }
   };
 
@@ -1606,6 +1704,8 @@ Be concise but helpful. Format as a brief paragraph.`;
       }
 
       await restoreDraft(detail);
+      setVersionHistory(detail.versionHistory || []);
+      setLastVersionId(detail.versionHistory?.[0]?.snapshotId ?? null);
     } catch (error) {
       console.error('Error resuming draft:', error);
       alert('Unable to resume the draft. Please try again.');
@@ -1637,6 +1737,64 @@ Be concise but helpful. Format as a brief paragraph.`;
     }
   };
 
+  const handleDeleteHistoryForm = async (formId: string, status: string) => {
+    const confirmDelete = window.confirm('Delete this form? This action cannot be undone.');
+    if (!confirmDelete) return;
+
+    setDeletingHistoryId(formId);
+    try {
+      if (status === 'draft') {
+        await formFillerApi.deleteDraft(formId);
+        await loadDraftFromServer(false, true);
+      } else {
+        await formFillerApi.deleteForm(formId);
+      }
+      await loadRecentHistory();
+    } catch (error) {
+      console.error('Error deleting form:', error);
+      alert('Unable to delete this form. Please try again.');
+    } finally {
+      setDeletingHistoryId(null);
+    }
+  };
+
+  const handleDownloadHistoryForm = async (formId: string, fileName?: string) => {
+    try {
+      await downloadFilledPDF(formId, fileName || 'filled-form.pdf');
+    } catch (error) {
+      alert('Unable to download the filled PDF. Please try again.');
+    }
+  };
+
+  const confirmStartNewForm = async () => {
+    if (!pendingUploadFile) return;
+    setIsReplacingDrafts(true);
+    try {
+      await Promise.all(draftSummaries.map(async (draft) => {
+        await formFillerApi.deleteDraft(draft.id);
+      }));
+      setDraftSummaries([]);
+      setSavedDraft(null);
+      setVersionHistory([]);
+      setLastVersionId(null);
+      await processUploadedFile(pendingUploadFile);
+      await loadDraftFromServer(false, true);
+      await loadRecentHistory();
+    } catch (error) {
+      console.error('Error replacing draft:', error);
+      alert('Unable to start a new form right now. Please try again.');
+    } finally {
+      setIsReplacingDrafts(false);
+      setPendingUploadFile(null);
+      setShowUploadChoice(false);
+    }
+  };
+
+  const dismissUploadPrompt = () => {
+    setPendingUploadFile(null);
+    setShowUploadChoice(false);
+  };
+
   const handleOpenDraftPdf = async (draftId: string) => {
     try {
       const detail = savedDraft?.formId === draftId ? savedDraft : await fetchDraftDetail(draftId);
@@ -1651,19 +1809,19 @@ Be concise but helpful. Format as a brief paragraph.`;
     }
   };
 
-  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const files = event.target.files;
-    if (!files || files.length === 0) return;
-
-    const file = files[0];
+  const processUploadedFile = async (file: File) => {
     if (file.type !== 'application/pdf') {
       alert('Please upload a PDF file');
       return;
     }
 
+    setPendingUploadFile(null);
+    setShowUploadChoice(false);
     setIsProcessingPDF(true);
     setFormId(null);
     originalPdfUploadedRef.current = false;
+    setVersionHistory([]);
+    setLastVersionId(null);
     addRecentAction('Uploaded form', { fileName: file.name });
     setSavedDraft(null);
 
@@ -1782,11 +1940,24 @@ Be concise but helpful. Format as a brief paragraph.`;
     } finally {
       setIsProcessingPDF(false);
     }
+  };
 
-    // Reset file input
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = event.target.files;
+    if (!files || files.length === 0) return;
+
+    const file = files[0];
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
+
+    if (draftSummaries.length > 0) {
+      setPendingUploadFile(file);
+      setShowUploadChoice(true);
+      return;
+    }
+
+    await processUploadedFile(file);
   };
 
   // Field change handler - now actually used!
@@ -2015,7 +2186,7 @@ Be concise but helpful. Format as a brief paragraph.`;
   };
 
   // Autosave draft
-  const saveFormDraft = async (): Promise<string | null> => {
+  const saveFormDraft = async (options?: { showToast?: boolean }): Promise<string | null> => {
     if (!currentForm) return formId;
 
     setAutosaveStatus('saving');
@@ -2056,9 +2227,28 @@ Be concise but helpful. Format as a brief paragraph.`;
         }
         const resolvedId = response.data.formId || formId || null;
         setLastSavedAt(new Date(response.data.savedAt));
-        setAutosaveStatus('saved');
+
+        if (response.data.versionId) {
+          setLastVersionId(response.data.versionId);
+        }
+        if (response.data.versions) {
+          setVersionHistory(response.data.versions);
+        }
+
+        if (response.data.persisted === false) {
+          setAutosaveStatus('local_only');
+        } else {
+          setAutosaveStatus('saved');
+        }
         if (shouldIncludePdf) {
           originalPdfUploadedRef.current = true;
+        }
+        if (options?.showToast) {
+          if (response.data.persisted === false) {
+            setSaveToast('Draft saved locally. Please reconnect before leaving.');
+          } else {
+            setSaveToast('Draft saved, safe to leave.');
+          }
         }
         return resolvedId;
       } else {
@@ -2129,6 +2319,12 @@ Be concise but helpful. Format as a brief paragraph.`;
   useEffect(() => {
     fieldInputRefs.current.clear();
   }, [currentForm]);
+
+  useEffect(() => {
+    if (!saveToast) return;
+    const timeout = setTimeout(() => setSaveToast(null), 4000);
+    return () => clearTimeout(timeout);
+  }, [saveToast]);
 
   const togglePDFExpanded = () => {
     setPdfViewExpanded(!pdfViewExpanded);
@@ -2282,6 +2478,10 @@ Be concise but helpful. Format as a brief paragraph.`;
     setCurrentForm(null);
     setFormId(null);
     originalPdfUploadedRef.current = false;
+    setVersionHistory([]);
+    setLastVersionId(null);
+    setShowVersionHistory(false);
+    setSaveToast(null);
   };
 
   if (isLoading) {
@@ -2407,6 +2607,23 @@ Be concise but helpful. Format as a brief paragraph.`;
                         <p className="text-xs text-gray-500">
                           {draft.country || 'Unknown'} • {draft.visaType || 'Visa type TBD'}
                         </p>
+                        {draft.versionHistory && draft.versionHistory.length > 0 && (
+                          <div className="mt-2 space-y-1">
+                            <p className="text-[10px] uppercase tracking-wide text-gray-500">Recent Saves</p>
+                            <div className="flex flex-wrap gap-1.5 text-[11px] text-gray-600">
+                              {draft.versionHistory.slice(0, 3).map((version) => (
+                                <span
+                                  key={`${draft.id}-${version.snapshotId}`}
+                                  className="px-2 py-0.5 rounded-full border border-gray-200 bg-gray-50"
+                                >
+                                  {new Date(version.savedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                  {' • '}
+                                  {version.completionPercentage}%
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+                        )}
                       </div>
                       <div className="text-right">
                         <p className="text-sm font-semibold text-indigo-700">
@@ -2740,6 +2957,135 @@ Be concise but helpful. Format as a brief paragraph.`;
             )}
           </div>
         </div>
+
+        <div className="bg-white rounded-2xl border border-gray-200">
+          <div className="flex items-center justify-between border-b border-gray-100 p-4">
+            <div>
+              <p className="text-sm font-semibold text-gray-900">Recent Forms</p>
+              <p className="text-xs text-gray-500">Completed and draft forms shown here</p>
+            </div>
+            <button
+              type="button"
+              onClick={loadRecentHistory}
+              className="text-xs font-medium text-indigo-600 hover:text-indigo-800"
+            >
+              Refresh
+            </button>
+          </div>
+          <div className="p-4 space-y-3">
+            {isLoadingHistory && (
+              <div className="flex items-center gap-2 text-sm text-gray-500">
+                <div className="w-4 h-4 border-2 border-indigo-200 border-t-indigo-600 rounded-full animate-spin" />
+                Loading recent forms...
+              </div>
+            )}
+            {!isLoadingHistory && historyError && (
+              <div className="text-sm text-red-600 bg-red-50 border border-red-100 rounded-lg p-3">
+                {historyError}
+              </div>
+            )}
+            {!isLoadingHistory && !historyError && recentForms.length === 0 && (
+              <div className="text-sm text-gray-500">
+                Completed forms will appear here once you finish filling them.
+              </div>
+            )}
+            {recentForms.map((form) => {
+              const isDraft = form.status === 'draft';
+              const statusClasses = isDraft ? 'bg-amber-100 text-amber-700' : 'bg-green-100 text-green-700';
+              const lastUpdated = form.completedAt || form.updatedAt || form.createdAt;
+              const lastUpdatedDate = lastUpdated ? new Date(lastUpdated as any) : null;
+              return (
+                <div key={form.id} className="p-3 border border-gray-200 rounded-xl bg-white shadow-sm">
+                  <div className="flex items-center justify-between gap-3">
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <p className="font-semibold text-gray-900">{form.formName || 'Untitled Form'}</p>
+                        <span className={cn('text-[10px] px-2 py-0.5 rounded-full font-semibold', statusClasses)}>
+                          {isDraft ? 'Draft' : 'Completed'}
+                        </span>
+                      </div>
+                      <p className="text-xs text-gray-500">
+                        Last updated {lastUpdatedDate ? lastUpdatedDate.toLocaleString() : 'N/A'}
+                      </p>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      {isDraft && (
+                        <button
+                          onClick={() => handleResumeDraft(form.id)}
+                          disabled={resumingDraftId === form.id}
+                          className="px-3 py-1.5 text-xs font-semibold rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+                        >
+                          {resumingDraftId === form.id ? 'Resuming...' : 'Resume'}
+                        </button>
+                      )}
+                      {!isDraft && (
+                        <button
+                          onClick={() => handleDownloadHistoryForm(form.id, form.formName)}
+                          className="px-3 py-1.5 text-xs font-semibold rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50"
+                        >
+                          Download
+                        </button>
+                      )}
+                      <button
+                        onClick={() => handleDeleteHistoryForm(form.id, form.status)}
+                        disabled={deletingHistoryId === form.id}
+                        className="px-3 py-1.5 text-xs font-semibold rounded-lg border border-rose-200 text-rose-700 hover:bg-rose-50 disabled:opacity-50"
+                      >
+                        {deletingHistoryId === form.id ? 'Deleting...' : 'Delete'}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {showUploadChoice && pendingUploadFile && (
+          <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-30 flex items-center justify-center px-4">
+            <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full p-6 space-y-4">
+              <h3 className="text-xl font-semibold text-gray-900">Start new form?</h3>
+              <p className="text-sm text-gray-600">
+                You already have saved drafts. Starting a new form will replace them with <strong>{pendingUploadFile.name}</strong>.
+              </p>
+              <div className="space-y-2 text-sm text-gray-600">
+                <p>What would you like to do?</p>
+                <ul className="list-disc list-inside text-gray-500">
+                  <li>Start a new form: discard existing drafts and upload this PDF.</li>
+                  <li>Resume current draft: keep working on the saved form.</li>
+                </ul>
+              </div>
+              <div className="flex flex-col sm:flex-row gap-3">
+                <button
+                  onClick={confirmStartNewForm}
+                  disabled={isReplacingDrafts}
+                  className="flex-1 inline-flex items-center justify-center px-4 py-2 bg-indigo-600 text-white rounded-lg font-semibold hover:bg-indigo-700 disabled:opacity-50"
+                >
+                  {isReplacingDrafts ? 'Replacing...' : 'Start New Form'}
+                </button>
+                <button
+                  onClick={() => {
+                    dismissUploadPrompt();
+                    if (savedDraft) {
+                      handleResumeDraft(savedDraft.formId, savedDraft);
+                    } else {
+                      scrollToSavedDrafts();
+                    }
+                  }}
+                  className="flex-1 inline-flex items-center justify-center px-4 py-2 border border-gray-300 rounded-lg font-semibold text-gray-700 hover:bg-gray-50"
+                >
+                  Resume Saved Draft
+                </button>
+                <button
+                  onClick={dismissUploadPrompt}
+                  className="px-4 py-2 text-sm text-gray-500 hover:text-gray-700"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     );
   }
@@ -2766,6 +3112,12 @@ Be concise but helpful. Format as a brief paragraph.`;
           <BreadcrumbItem active>Fill Form</BreadcrumbItem>
         </Breadcrumb>
 
+        {saveToast && (
+          <div className="mt-4 mb-2 rounded-lg border border-green-200 bg-green-50 px-4 py-2 text-sm text-green-800">
+            {saveToast}
+          </div>
+        )}
+
         {/* Header with progress */}
         <div className="mb-6">
           <div className="flex items-center justify-between mb-4">
@@ -2782,8 +3134,8 @@ Be concise but helpful. Format as a brief paragraph.`;
                 AI identified {totalFieldGroups} form sections. Complete each field with guidance.
               </p>
             </div>
-            <div className="text-right">
-              <div className="flex items-center justify-end gap-3 mb-1">
+                <div className="text-right">
+                  <div className="flex items-center justify-end gap-3 mb-1">
                 {/* Autosave Indicator */}
                 <div className="flex items-center gap-1.5 text-xs font-medium">
                   {autosaveStatus === 'saving' && (
@@ -2794,8 +3146,12 @@ Be concise but helpful. Format as a brief paragraph.`;
                   )}
                   {autosaveStatus === 'saved' && lastSavedAt && (
                     <>
-                      <span className="w-2 h-2 bg-green-500 rounded-full" />
-                      <span className="text-gray-500">Saved {lastSavedAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                      <span className="text-xs px-2 py-0.5 rounded-full bg-green-100 text-green-700 font-semibold">
+                        Saved to cloud
+                      </span>
+                      <span className="text-gray-500">
+                        {lastSavedAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      </span>
                     </>
                   )}
                   {autosaveStatus === 'error' && (
@@ -2804,24 +3160,96 @@ Be concise but helpful. Format as a brief paragraph.`;
                       <span className="text-red-500">Save failed</span>
                     </>
                   )}
-                </div>
-                <button
-                  onClick={() => saveFormDraft()}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50"
-                  disabled={autosaveStatus === 'saving'}
-                >
-                  {autosaveStatus === 'saving' ? (
+                  {autosaveStatus === 'local_only' && (
                     <>
-                      <div className="w-3 h-3 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin" />
-                      Saving…
-                    </>
-                  ) : (
-                    <>
-                      <FileText className="w-3 h-3" />
-                      Save Draft
+                      <AlertCircle className="w-3 h-3 text-amber-500" />
+                      <span className="text-amber-600">Local only - reconnect to sync</span>
+                      <button
+                        type="button"
+                        onClick={() => saveFormDraft()}
+                        className="ml-2 text-[10px] font-semibold text-amber-700 underline"
+                      >
+                        Retry now
+                      </button>
                     </>
                   )}
-                </button>
+                </div>
+                    <div className="flex items-center gap-2">
+                      {versionHistory.length > 0 && (
+                        <div className="relative">
+                          <button
+                            type="button"
+                            onClick={() => setShowVersionHistory((prev) => !prev)}
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold border border-gray-300 rounded-lg hover:bg-gray-50"
+                          >
+                            <FileText className="w-3 h-3" />
+                            Versions
+                          </button>
+                          {showVersionHistory && (
+                            <div className="absolute right-0 mt-2 w-64 bg-white border border-gray-200 rounded-lg shadow-lg z-10 p-3 text-left">
+                              <p className="text-xs font-semibold text-gray-700 mb-2">Recent Saves</p>
+                              <div className="max-h-48 overflow-y-auto space-y-2">
+                                {versionHistory.map((version) => (
+                                  <div
+                                    key={version.snapshotId}
+                                    className={cn(
+                                      'text-xs rounded-md border px-2 py-1 bg-white',
+                                      version.snapshotId === lastVersionId ? 'border-indigo-300 bg-indigo-50' : 'border-gray-200'
+                                    )}
+                                  >
+                                    <div className="flex items-center justify-between">
+                                      <div>
+                                        <p className="font-medium text-gray-900">
+                                          {new Date(version.savedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                        </p>
+                                        <p className="text-gray-600">{version.completionPercentage}% complete</p>
+                                      </div>
+                                      <button
+                                        type="button"
+                                        onClick={() => handleRestoreVersion(version.snapshotId)}
+                                        className="text-[11px] font-semibold text-indigo-600 hover:text-indigo-800 disabled:opacity-50"
+                                        disabled={restoringVersionId === version.snapshotId}
+                                      >
+                                        {restoringVersionId === version.snapshotId ? 'Restoring...' : 'Restore'}
+                                      </button>
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                      <button
+                        onClick={() => saveFormDraft()}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50"
+                        disabled={autosaveStatus === 'saving'}
+                      >
+                        {autosaveStatus === 'saving' ? (
+                          <>
+                            <div className="w-3 h-3 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin" />
+                            Saving…
+                          </>
+                        ) : (
+                          <>
+                            <FileText className="w-3 h-3" />
+                            Save Draft
+                          </>
+                        )}
+                      </button>
+                      <button
+                        onClick={async () => {
+                          const savedId = await saveFormDraft({ showToast: true });
+                          if (savedId) {
+                            handleBackToBrowse();
+                          }
+                        }}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold border border-gray-300 rounded-lg hover:bg-gray-50"
+                      >
+                        <Shield className="w-3 h-3" />
+                        Save & Close
+                      </button>
+                    </div>
                 <div className="text-2xl font-bold text-indigo-600">{completionPercent}%</div>
               </div>
               <div className="text-sm text-gray-500">{filledCount}/{totalFieldGroups} sections</div>
