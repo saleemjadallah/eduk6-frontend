@@ -137,6 +137,7 @@ export const FormFillerWorkflow: React.FC = () => {
   const [pdfDocument, setPdfDocument] = useState<pdfjsLib.PDFDocumentProxy | null>(null);
   const [pageAnnotations, setPageAnnotations] = useState<Record<number, PageAnnotation[]>>({});
   const canvasRefs = useRef<Map<number, HTMLCanvasElement>>(new Map());
+  const [isDownloadingFilledPdf, setIsDownloadingFilledPdf] = useState(false);
 
   // Profile auto-fill state (kept for future use)
   const [, setUserProfile] = useState<CompleteProfile | null>(null);
@@ -431,56 +432,63 @@ Be concise but helpful. Format as a brief paragraph.`;
     }
   };
 
-  // Re-capture current PDF state with filled values
-  const recapturePDFState = async (): Promise<string[]> => {
-    if (!currentForm?.pdfBytes) return pageImages;
+  const generateFilledPdfBytes = async (): Promise<Uint8Array | null> => {
+    if (!currentForm?.pdfBytes) return null;
 
     try {
-      // Create a fresh copy of the ArrayBuffer to avoid detachment issues
       const pdfBytesCopy = currentForm.pdfBytes.slice(0);
-
-      // Re-render the PDF with current field values filled in
       const pdfDoc = await PDFDocument.load(pdfBytesCopy);
       const form = pdfDoc.getForm();
-
-      // Embed standard font for field values
       const helveticaFont = await pdfDoc.embedFont(StandardFonts.Helvetica);
 
-      // Fill the PDF with current field values
       currentForm.fields.forEach(field => {
         try {
           const pdfField = form.getField(field.name);
-          if (field.type === 'text' || field.type === 'textarea' || field.type === 'date') {
+          if ((field.type === 'text' || field.type === 'textarea' || field.type === 'date') && typeof pdfField.setText === 'function') {
             // @ts-expect-error: pdf-lib types
-            pdfField.setText(field.value);
-          } else if (field.type === 'checkbox' && field.value === 'true') {
-            // @ts-expect-error: pdf-lib types
-            pdfField.check();
-          } else if (field.type === 'select') {
-            // @ts-expect-error: pdf-lib types
+            pdfField.setText(field.value || '');
+          } else if (field.type === 'checkbox') {
+            if (field.value === 'true' && typeof pdfField.check === 'function') {
+              // @ts-expect-error
+              pdfField.check();
+            } else if (field.value !== 'true' && typeof pdfField.uncheck === 'function') {
+              // @ts-expect-error
+              pdfField.uncheck();
+            }
+          } else if (field.type === 'select' && typeof pdfField.select === 'function') {
+            // @ts-expect-error
             pdfField.select(field.value);
           }
         } catch {
-          // Field might not exist
+          // Field might not exist or cannot be set
         }
       });
 
-      // Force update of field appearances so they are visible in the rendered image
       try {
         form.updateFieldAppearances(helveticaFont);
       } catch (e) {
         console.warn('Could not update field appearances:', e);
       }
 
-      // Save the filled PDF
       const filledPdfBytes = await pdfDoc.save();
-      console.log(`[FormFiller] Recaptured PDF size: ${filledPdfBytes.length} bytes`);
+      console.log(`[FormFiller] Generated filled PDF bytes (${filledPdfBytes.length})`);
+      return filledPdfBytes;
+    } catch (error) {
+      console.error('Error generating filled PDF bytes:', error);
+      return null;
+    }
+  };
 
-      // Convert to images for Gemini Vision
-      // Pass the Uint8Array directly
+  // Re-capture current PDF state with filled values
+  const recapturePDFState = async (): Promise<string[]> => {
+    try {
+      const filledPdfBytes = await generateFilledPdfBytes();
+      if (!filledPdfBytes) {
+        return pageImages;
+      }
+
       const newImages = await convertPDFPagesToImages(filledPdfBytes);
       console.log(`[FormFiller] Generated ${newImages.length} images from recaptured PDF`);
-
       return newImages;
     } catch (error) {
       console.error('Error recapturing PDF state:', error);
@@ -1266,6 +1274,34 @@ Be concise but helpful. Format as a brief paragraph.`;
       alert('Validation failed. Please try again.');
     } finally {
       setIsAnalyzingForm(false);
+    }
+  };
+
+  const handleDownloadFilledForm = async () => {
+    if (!currentForm) return;
+
+    setIsDownloadingFilledPdf(true);
+    try {
+      const filledBytes = await generateFilledPdfBytes();
+      if (!filledBytes) {
+        alert('Unable to generate filled PDF. Please try again.');
+        return;
+      }
+
+      const blob = new Blob([filledBytes], { type: 'application/pdf' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `${currentForm.fileName.replace(/\.pdf$/i, '')}-filled.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Error downloading filled PDF:', error);
+      alert('Failed to download the filled PDF. Please try again.');
+    } finally {
+      setIsDownloadingFilledPdf(false);
     }
   };
 
@@ -2193,6 +2229,23 @@ Be concise but helpful. Format as a brief paragraph.`;
                     <>
                       <Shield className="w-4 h-4" />
                       Validate Form
+                    </>
+                  )}
+                </button>
+                <button
+                  onClick={handleDownloadFilledForm}
+                  disabled={isDownloadingFilledPdf}
+                  className="inline-flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 disabled:opacity-50"
+                >
+                  {isDownloadingFilledPdf ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      Preparing...
+                    </>
+                  ) : (
+                    <>
+                      <Download className="w-4 h-4" />
+                      Download Filled PDF
                     </>
                   )}
                 </button>
