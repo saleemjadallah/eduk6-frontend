@@ -159,8 +159,26 @@ export const PhotoComplianceWorkflow: React.FC = () => {
       }
     } catch (error: any) {
       console.error('Photo upload error:', error);
-      setUploadError(error.response?.data?.error || error.message || 'Failed to process photo. Please try again.');
-      addRecentAction('Photo processing failed', { error: error.message });
+      console.error('Error details:', {
+        response: error.response,
+        status: error.response?.status,
+        data: error.response?.data,
+        message: error.message
+      });
+
+      let errorMessage = 'Failed to process photo. Please try again.';
+      if (error.response?.status === 401) {
+        errorMessage = 'You need to be logged in to process photos.';
+      } else if (error.response?.status === 400) {
+        errorMessage = error.response.data?.error || 'Invalid photo or missing requirements.';
+      } else if (error.response?.data?.error) {
+        errorMessage = error.response.data.error;
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+
+      setUploadError(errorMessage);
+      addRecentAction('Photo processing failed', { error: errorMessage });
     } finally {
       setIsProcessing(false);
     }
