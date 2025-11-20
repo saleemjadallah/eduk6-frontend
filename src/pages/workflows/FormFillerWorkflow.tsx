@@ -2400,7 +2400,6 @@ Be concise but helpful. Format as a brief paragraph.`;
               </div>
             </div>
           </div>
-        )}
 
         <div className="mb-8">
           <h1 className="text-4xl font-bold mb-2">AI Form Filler</h1>

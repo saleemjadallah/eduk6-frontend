@@ -65,7 +65,6 @@ export const PhotoComplianceWorkflow: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isProcessing, setIsProcessing] = useState(false);
   const [uploadError, setUploadError] = useState<string>('');
-  const [processedPhotoUrl, setProcessedPhotoUrl] = useState<string>('');
   const [destinationCountry, setDestinationCountry] = useState<string>('');
   const [visaPhotoSpecs, setVisaPhotoSpecs] = useState<PhotoSpecs | null>(null);
 
@@ -135,7 +134,6 @@ export const PhotoComplianceWorkflow: React.FC = () => {
 
       if (result.success && result.data) {
         setHasUploadedPhotos(true);
-        setProcessedPhotoUrl(result.data.processedPhotoUrl);
 
         // Create a VisaPhoto object for display
         const processedPhoto: VisaPhoto = {
@@ -289,15 +287,37 @@ export const PhotoComplianceWorkflow: React.FC = () => {
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                   {getPhotosForFormat(selectedFormat).map((photo) => (
                     <div key={photo.id} className="bg-neutral-50 rounded-xl border overflow-hidden group">
-                      <div className="aspect-[3/4] bg-neutral-200 relative flex items-center justify-center">
-                        <Camera className="w-12 h-12 text-neutral-400" />
+                      <div className="aspect-[3/4] bg-neutral-200 relative flex items-center justify-center overflow-hidden">
+                        {photo.url ? (
+                          <img
+                            src={photo.url}
+                            alt="Processed visa photo"
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <Camera className="w-12 h-12 text-neutral-400" />
+                        )}
                         <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex items-center justify-center gap-2 transition-opacity">
-                          <button className="p-2 bg-white rounded-lg"><Eye className="w-5 h-5" /></button>
-                          <button className="p-2 bg-white rounded-lg"><Download className="w-5 h-5" /></button>
+                          <a
+                            href={photo.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="p-2 bg-white rounded-lg hover:bg-gray-100"
+                          >
+                            <Eye className="w-5 h-5" />
+                          </a>
+                          <a
+                            href={photo.url}
+                            download={`visa-photo-${photo.format}.jpg`}
+                            className="p-2 bg-white rounded-lg hover:bg-gray-100"
+                          >
+                            <Download className="w-5 h-5" />
+                          </a>
                         </div>
                       </div>
                       <div className="p-3">
                         <p className="text-xs font-semibold">{VISA_PHOTO_SPECS[selectedFormat].dimensions}</p>
+                        <p className="text-xs text-green-600 mt-1">✓ Compliant</p>
                       </div>
                     </div>
                   ))}
