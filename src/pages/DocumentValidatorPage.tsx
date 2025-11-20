@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Upload, FileCheck, AlertCircle, CheckCircle2, FileText, GraduationCap, Heart, DollarSign, Clock } from 'lucide-react';
+import { Upload, FileCheck, AlertCircle, CheckCircle2, FileText, GraduationCap, Heart, DollarSign, Clock, ChevronDown, ChevronUp } from 'lucide-react';
 import Button from '../components/gamma/Button';
 import Card from '../components/gamma/Card';
 import Badge from '../components/gamma/Badge';
@@ -89,6 +89,8 @@ export default function DocumentValidatorPage() {
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [dragActive, setDragActive] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [isRequirementsExpanded, setIsRequirementsExpanded] = useState(false);
+  const [checkedRequirements, setCheckedRequirements] = useState<Set<string>>(new Set());
 
   const handleDrag = (e: React.DragEvent) => {
     e.preventDefault();
@@ -124,6 +126,24 @@ export default function DocumentValidatorPage() {
     setTimeout(() => {
       setLoading(false);
     }, 2000);
+  };
+
+  const handleRequirementCheck = (requirement: string) => {
+    setCheckedRequirements((prev) => {
+      const newSet = new Set(prev);
+      if (newSet.has(requirement)) {
+        newSet.delete(requirement);
+      } else {
+        newSet.add(requirement);
+      }
+      return newSet;
+    });
+  };
+
+  const handleDocumentSelect = (key: keyof typeof DOCUMENT_TYPES) => {
+    setSelectedDocument(key);
+    setCheckedRequirements(new Set());
+    setIsRequirementsExpanded(false);
   };
 
   return (
@@ -187,7 +207,7 @@ export default function DocumentValidatorPage() {
                   <motion.div
                     key={key}
                     whileHover={{ y: -4 }}
-                    onClick={() => setSelectedDocument(key as keyof typeof DOCUMENT_TYPES)}
+                    onClick={() => handleDocumentSelect(key as keyof typeof DOCUMENT_TYPES)}
                     className={`
                       cursor-pointer rounded-3xl p-6 transition-all duration-300
                       ${
@@ -308,18 +328,60 @@ export default function DocumentValidatorPage() {
 
                 {/* Requirements Checklist */}
                 <div className="mt-8 p-6 bg-blue-50 rounded-2xl">
-                  <h4 className="font-bold text-neutral-900 mb-4 flex items-center gap-2">
-                    <AlertCircle className="w-5 h-5 text-blue-600" />
-                    What We Check For:
-                  </h4>
-                  <ul className="space-y-2">
-                    {DOCUMENT_TYPES[selectedDocument].requirements.map((req, idx) => (
-                      <li key={idx} className="flex items-center gap-2 text-neutral-700">
-                        <CheckCircle2 className="w-4 h-4 text-blue-600" />
-                        {req}
-                      </li>
-                    ))}
-                  </ul>
+                  <button
+                    onClick={() => setIsRequirementsExpanded(!isRequirementsExpanded)}
+                    className="w-full flex items-center justify-between font-bold text-neutral-900 mb-2 hover:text-blue-600 transition-colors"
+                  >
+                    <div className="flex items-center gap-2">
+                      <AlertCircle className="w-5 h-5 text-blue-600" />
+                      What We Check For:
+                    </div>
+                    {isRequirementsExpanded ? (
+                      <ChevronUp className="w-5 h-5 text-blue-600" />
+                    ) : (
+                      <ChevronDown className="w-5 h-5 text-blue-600" />
+                    )}
+                  </button>
+
+                  {isRequirementsExpanded ? (
+                    <>
+                      <div className="space-y-2 mt-4">
+                        {DOCUMENT_TYPES[selectedDocument].requirements.map((req, idx) => (
+                          <label
+                            key={idx}
+                            className="flex items-center gap-3 p-3 rounded-lg hover:bg-white/50 cursor-pointer transition-colors group"
+                          >
+                            <input
+                              type="checkbox"
+                              checked={checkedRequirements.has(req)}
+                              onChange={() => handleRequirementCheck(req)}
+                              className="w-5 h-5 rounded border-blue-300 text-blue-600 focus:ring-blue-500 focus:ring-offset-0 cursor-pointer"
+                            />
+                            <span
+                              className={`flex-1 text-sm ${
+                                checkedRequirements.has(req)
+                                  ? 'text-neutral-500 line-through'
+                                  : 'text-neutral-700 group-hover:text-neutral-900'
+                              }`}
+                            >
+                              {req}
+                            </span>
+                            {checkedRequirements.has(req) && (
+                              <CheckCircle2 className="w-4 h-4 text-green-500" />
+                            )}
+                          </label>
+                        ))}
+                      </div>
+                      <div className="mt-3 text-sm text-neutral-600">
+                        {checkedRequirements.size} of {DOCUMENT_TYPES[selectedDocument].requirements.length}{' '}
+                        requirements checked
+                      </div>
+                    </>
+                  ) : (
+                    <p className="text-sm text-neutral-600 mt-2">
+                      Click to view {DOCUMENT_TYPES[selectedDocument].requirements.length} validation requirements
+                    </p>
+                  )}
                 </div>
               </Card>
             </motion.div>

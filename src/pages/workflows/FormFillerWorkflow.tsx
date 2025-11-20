@@ -192,6 +192,8 @@ export const FormFillerWorkflow: React.FC = () => {
   const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null);
   const [formId, setFormId] = useState<string | null>(null);
   const autosaveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const originalPdfUploadedRef = useRef(false);
+  const draftLoadedRef = useRef(false);
 
   // Update Jeffrey's context when entering this workflow
   useEffect(() => {
@@ -883,6 +885,7 @@ Be concise but helpful. Format as a brief paragraph.`;
     } catch (error) {
       console.error('Failed to load form data:', error);
     } finally {
+      await loadDraftFromServer();
       setIsLoading(false);
     }
   };
@@ -1242,6 +1245,64 @@ Be concise but helpful. Format as a brief paragraph.`;
     return undefined;
   };
 
+  const loadDraftFromServer = async () => {
+    if (draftLoadedRef.current) return;
+    try {
+      const response = await formFillerApi.getDraft();
+      if (!response.success || !response.data) {
+        draftLoadedRef.current = true;
+        return;
+      }
+
+      const { formId: draftId, filledData, pdfUrl, fileName } = response.data;
+      const metadata = filledData?.metadata || {};
+      const valuesRecord = filledData?.values ?? filledData ?? {};
+      const fieldSnapshot: FormField[] = metadata.fields || [];
+
+      if (!pdfUrl || fieldSnapshot.length === 0) {
+        draftLoadedRef.current = true;
+        return;
+      }
+
+      const pdfResponse = await fetch(pdfUrl);
+      const pdfArrayBuffer = await pdfResponse.arrayBuffer();
+      const pdfDoc = await pdfjsLib.getDocument({ data: pdfArrayBuffer.slice(0) }).promise;
+      setPdfDocument(pdfDoc);
+
+      const draftBlobUrl = URL.createObjectURL(new Blob([pdfArrayBuffer], { type: 'application/pdf' }));
+      setPdfUrl(draftBlobUrl);
+
+      const hydratedFields = fieldSnapshot.map((field) => {
+        const storedEntry = valuesRecord?.[field.name];
+        return {
+          ...field,
+          value: storedEntry?.value ?? field.value ?? '',
+        };
+      });
+
+      const restoredForm: UploadedForm = {
+        id: draftId,
+        fileName: metadata.fileName || fileName || 'Saved Draft.pdf',
+        pdfBytes: pdfArrayBuffer,
+        fields: hydratedFields,
+        queryResults: [],
+        extractedAt: new Date(metadata.savedAt || Date.now()),
+      };
+
+      setCurrentForm(restoredForm);
+      setFormId(draftId);
+      setViewMode('fill');
+      originalPdfUploadedRef.current = true;
+
+      const images = await convertPDFPagesToImages(pdfArrayBuffer);
+      setPageImages(images);
+    } catch (error) {
+      console.error('Error loading draft:', error);
+    } finally {
+      draftLoadedRef.current = true;
+    }
+  };
+
   const formatFieldLabel = (fieldName: string): string => {
     const cleaned = fieldName
       .replace(/[_\-]+/g, ' ')
@@ -1269,6 +1330,8 @@ Be concise but helpful. Format as a brief paragraph.`;
     }
 
     setIsProcessingPDF(true);
+    setFormId(null);
+    originalPdfUploadedRef.current = false;
     addRecentAction('Uploaded form', { fileName: file.name });
 
     try {
@@ -1576,14 +1639,15 @@ Be concise but helpful. Format as a brief paragraph.`;
     setAutosaveStatus('saving');
     try {
       // Extract current values
-      const formData: Record<string, { value: string; source: 'manual' }> = {};
+      const timestamp = new Date().toISOString();
+      const formData: Record<string, { value: string; source: 'manual'; filledAt: string; validationStatus: 'valid' }> = {};
       currentForm.fields.forEach(field => {
-        if (field.value) {
-          formData[field.name] = {
-            value: field.value,
-            source: 'manual'
-          };
-        }
+        formData[field.name] = {
+          value: field.value || '',
+          source: 'manual',
+          filledAt: timestamp,
+          validationStatus: 'valid'
+        };
       });
 
       if (Object.keys(formData).length === 0) {
@@ -1591,15 +1655,28 @@ Be concise but helpful. Format as a brief paragraph.`;
         return;
       }
 
+      const shouldIncludePdf = !originalPdfUploadedRef.current && currentForm.pdfBytes;
+
       const response = await formFillerApi.saveDraft({
         formId: formId || undefined,
-        formData
+        formData,
+        fields: currentForm.fields,
+        fileName: currentForm.fileName,
+        pdfBytes: shouldIncludePdf ? uint8ToBase64(new Uint8Array(currentForm.pdfBytes)) : undefined,
+        country: travelProfile?.destinationCountry,
+        visaType: travelProfile?.visaRequirements?.visaType,
+        formName: currentForm.fileName
       });
 
       if (response.success && response.data) {
-        setFormId(response.data.formId);
+        if (response.data.formId) {
+          setFormId(response.data.formId);
+        }
         setLastSavedAt(new Date(response.data.savedAt));
         setAutosaveStatus('saved');
+        if (shouldIncludePdf) {
+          originalPdfUploadedRef.current = true;
+        }
       } else {
         setAutosaveStatus('error');
       }
@@ -1785,6 +1862,8 @@ Be concise but helpful. Format as a brief paragraph.`;
   const handleBackToBrowse = () => {
     setViewMode('browse');
     setCurrentForm(null);
+    setFormId(null);
+    originalPdfUploadedRef.current = false;
   };
 
   if (isLoading) {

@@ -489,11 +489,28 @@ export const formFillerApi = {
     formId?: string;
     formData: any;
     pdfBytes?: string; // Base64
+    fields?: any[];
+    fileName?: string;
+    country?: string;
+    visaType?: string;
+    formName?: string;
   }): Promise<ApiResponse<{
     formId: string;
     savedAt: string;
+    persisted?: boolean;
   }>> => {
     const response = await api.post('/form-filler/save-draft', data);
+    return response.data;
+  },
+
+  getDraft: async (): Promise<ApiResponse<{
+    formId: string;
+    filledData: any;
+    pdfUrl: string | null;
+    fileName: string;
+    updatedAt: string;
+  } | null>> => {
+    const response = await api.get('/form-filler/draft');
     return response.data;
   },
 };
