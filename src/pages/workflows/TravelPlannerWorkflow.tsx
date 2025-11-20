@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Plane, Building, MapPin, Calendar, DollarSign, Download, MessageCircle, RefreshCw, Sparkles, Shield } from 'lucide-react';
 import { useJeffrey } from '../../contexts/JeffreyContext';
 import { Breadcrumb, BreadcrumbItem } from '../../components/ui/Breadcrumb';
+import { onboardingApi } from '../../lib/api';
 
 interface Flight { id: string; airline: string; departure: string; arrival: string; price: number; }
 interface Hotel { id: string; name: string; location: string; nights: number; price: number; }
@@ -20,11 +21,39 @@ export const TravelPlannerWorkflow: React.FC = () => {
     hotels: Hotel[];
     activities: Activity[];
   } | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     updateWorkflow('travel');
     addRecentAction('Entered Travel Planner workflow');
+    loadTravelData();
   }, [updateWorkflow, addRecentAction]);
+
+  const loadTravelData = async () => {
+    setIsLoading(true);
+    try {
+      // Fetch onboarding status to pre-fill travel data
+      const response = await onboardingApi.getStatus();
+
+      if (response.success && response.data?.travelProfile) {
+        const { destinationCountry, travelPurpose, travelDates: dates } = response.data.travelProfile;
+
+        // Pre-fill form with onboarding data
+        setDestination(destinationCountry);
+        setTripPurpose(travelPurpose);
+        setTravelDates({
+          start: dates.start,
+          end: dates.end,
+        });
+
+        addRecentAction('Pre-filled travel information from profile');
+      }
+    } catch (error) {
+      console.error('Failed to load travel data:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const handleGenerateItinerary = async () => {
     setIsGenerating(true);
@@ -48,6 +77,17 @@ export const TravelPlannerWorkflow: React.FC = () => {
 
   const tripDuration = travelDates.start && travelDates.end ? Math.ceil((new Date(travelDates.end).getTime() - new Date(travelDates.start).getTime()) / 86400000) : 0;
   const estimatedCost = generatedItinerary ? generatedItinerary.flights.reduce((s, f) => s + f.price, 0) + generatedItinerary.hotels.reduce((s, h) => s + h.price, 0) : 0;
+
+  if (isLoading) {
+    return (
+      <div className="max-w-7xl mx-auto flex items-center justify-center min-h-[60vh]">
+        <div className="text-center">
+          <div className="w-16 h-16 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin mx-auto mb-4" />
+          <p className="text-neutral-600">Loading your travel information...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-7xl mx-auto">

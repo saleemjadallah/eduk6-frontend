@@ -3,6 +3,7 @@ import { Camera, Download, Upload, Eye, MessageCircle, Check } from 'lucide-reac
 import { useJeffrey } from '../../contexts/JeffreyContext';
 import { Breadcrumb, BreadcrumbItem } from '../../components/ui/Breadcrumb';
 import { cn } from '../../utils/cn';
+import { onboardingApi } from '../../lib/api';
 
 interface VisaPhoto {
   id: string;
@@ -62,6 +63,8 @@ export const PhotoComplianceWorkflow: React.FC = () => {
   const [selectedFormat, setSelectedFormat] = useState<string>('uae');
   const [generatedPhotos, setGeneratedPhotos] = useState<VisaPhoto[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [destinationCountry, setDestinationCountry] = useState<string>('');
+  const [visaPhotoSpecs, setVisaPhotoSpecs] = useState<PhotoSpecs | null>(null);
 
   useEffect(() => {
     updateWorkflow('photo');
@@ -72,8 +75,35 @@ export const PhotoComplianceWorkflow: React.FC = () => {
   const loadPhotoData = async () => {
     setIsLoading(true);
     try {
+      // Fetch onboarding status to get photo requirements
+      const response = await onboardingApi.getStatus();
+
+      if (response.success && response.data?.travelProfile?.visaRequirements?.photoRequirements) {
+        const { destinationCountry: dest, visaRequirements } = response.data.travelProfile;
+        const { photoRequirements } = visaRequirements;
+
+        setDestinationCountry(dest);
+
+        // Set the visa-specific photo specs from onboarding
+        const countrySpecs: PhotoSpecs = {
+          name: `${dest} Visa Photo`,
+          dimensions: photoRequirements.dimensions,
+          background: photoRequirements.background,
+          faceSize: '70-80% of frame', // Default, can be enriched from backend
+          dpi: 600,
+        };
+
+        setVisaPhotoSpecs(countrySpecs);
+
+        // Determine default format based on destination
+        const formatKey = dest.toLowerCase().includes('uae') ? 'uae' :
+                         dest.toLowerCase().includes('us') ? 'us' :
+                         dest.toLowerCase().includes('schengen') || dest.toLowerCase().includes('europe') ? 'schengen' :
+                         'passport';
+        setSelectedFormat(formatKey);
+      }
+
       // TODO: Fetch user's generated photos from API
-      // For now, start with empty state
       setGeneratedPhotos([]);
       setHasUploadedPhotos(false);
     } catch (error) {
@@ -204,13 +234,23 @@ export const PhotoComplianceWorkflow: React.FC = () => {
         </div>
 
         <div className="bg-white p-6 rounded-2xl border border-neutral-200">
-          <h3 className="text-lg font-bold mb-4">Photo Requirements</h3>
+          <h3 className="text-lg font-bold mb-4">
+            Photo Requirements
+            {destinationCountry && <span className="text-sm font-normal text-gray-600 ml-2">for {destinationCountry}</span>}
+          </h3>
           <div className="space-y-3 mb-6">
-            <div className="p-3 bg-neutral-50 rounded-lg"><p className="text-xs font-semibold text-neutral-500">Dimensions</p><p className="text-sm font-medium">{VISA_PHOTO_SPECS[selectedFormat].dimensions}</p></div>
-            <div className="p-3 bg-neutral-50 rounded-lg"><p className="text-xs font-semibold text-neutral-500">Background</p><p className="text-sm font-medium">{VISA_PHOTO_SPECS[selectedFormat].background}</p></div>
-            <div className="p-3 bg-neutral-50 rounded-lg"><p className="text-xs font-semibold text-neutral-500">Face Size</p><p className="text-sm font-medium">{VISA_PHOTO_SPECS[selectedFormat].faceSize}</p></div>
+            <div className="p-3 bg-neutral-50 rounded-lg"><p className="text-xs font-semibold text-neutral-500">Dimensions</p><p className="text-sm font-medium">{visaPhotoSpecs?.dimensions || VISA_PHOTO_SPECS[selectedFormat].dimensions}</p></div>
+            <div className="p-3 bg-neutral-50 rounded-lg"><p className="text-xs font-semibold text-neutral-500">Background</p><p className="text-sm font-medium">{visaPhotoSpecs?.background || VISA_PHOTO_SPECS[selectedFormat].background}</p></div>
+            <div className="p-3 bg-neutral-50 rounded-lg"><p className="text-xs font-semibold text-neutral-500">Face Size</p><p className="text-sm font-medium">{visaPhotoSpecs?.faceSize || VISA_PHOTO_SPECS[selectedFormat].faceSize}</p></div>
           </div>
-          <button onClick={() => askJeffrey(`Tell me about ${VISA_PHOTO_SPECS[selectedFormat].name} photo requirements`)} className="w-full px-4 py-2 rounded-lg border text-sm font-semibold text-indigo-600 hover:bg-indigo-50 flex items-center justify-center gap-2">
+          {destinationCountry && (
+            <div className="mb-4 p-3 bg-indigo-50 rounded-lg border border-indigo-100">
+              <p className="text-xs text-indigo-700">
+                <strong>Note:</strong> These specifications are specifically for your {destinationCountry} visa application based on your onboarding profile.
+              </p>
+            </div>
+          )}
+          <button onClick={() => askJeffrey(`Tell me about ${visaPhotoSpecs?.name || VISA_PHOTO_SPECS[selectedFormat].name} photo requirements`)} className="w-full px-4 py-2 rounded-lg border text-sm font-semibold text-indigo-600 hover:bg-indigo-50 flex items-center justify-center gap-2">
             <MessageCircle className="w-4 h-4" />Ask Jeffrey
           </button>
           {generatedPhotos.length > 0 && (
