@@ -68,7 +68,7 @@ export default function HomePageNew() {
               className="mb-6 bg-white/10 backdrop-blur-lg border border-white/20 shadow-lg shadow-indigo-500/20"
             >
               <Sparkles className="w-4 h-4" />
-              <span className="bg-gradient-to-r from-indigo-500 to-purple-600 bg-clip-text text-transparent">
+              <span className="bg-gradient-to-r from-blue-500 to-cyan-600 bg-clip-text text-transparent">
                 Powered by AI
               </span>
             </Badge>
@@ -85,7 +85,7 @@ export default function HomePageNew() {
               Professional Headshots
             </span>
             <br />
-            <span className="bg-gradient-to-r from-indigo-500 via-blue-500 to-emerald-500 bg-clip-text text-transparent">
+            <span className="bg-gradient-to-r from-blue-500 via-cyan-500 to-emerald-500 bg-clip-text text-transparent">
               In Minutes, Not Weeks
             </span>
           </motion.h1>
@@ -134,7 +134,7 @@ export default function HomePageNew() {
                 {[1, 2, 3, 4, 5].map((i) => (
                   <div
                     key={i}
-                    className="w-10 h-10 rounded-full border-2 border-white bg-gradient-to-br from-indigo-400 to-purple-600"
+                    className="w-10 h-10 rounded-full border-2 border-white bg-gradient-to-br from-blue-400 to-cyan-600"
                   />
                 ))}
               </div>
@@ -164,7 +164,7 @@ export default function HomePageNew() {
             </Badge>
             <h2 className="text-5xl md:text-6xl font-bold mb-6 text-gray-900">
               See the{' '}
-              <span className="bg-gradient-to-r from-indigo-500 to-emerald-500 bg-clip-text text-transparent">
+              <span className="bg-gradient-to-r from-blue-500 to-emerald-500 bg-clip-text text-transparent">
                 transformation
               </span>
             </h2>
@@ -197,7 +197,7 @@ export default function HomePageNew() {
             </Badge>
             <h2 className="text-5xl md:text-6xl font-bold mb-6">
               One Click.{' '}
-              <span className="bg-gradient-to-r from-indigo-500 to-emerald-500 bg-clip-text text-transparent">
+              <span className="bg-gradient-to-r from-blue-500 to-emerald-500 bg-clip-text text-transparent">
                 Eight Platforms.
               </span>
             </h2>
@@ -214,7 +214,7 @@ export default function HomePageNew() {
               whileHover={{ y: -8 }}
               className="lg:col-span-2 lg:row-span-2 group relative overflow-hidden rounded-3xl
                          bg-gradient-to-br from-white to-blue-50 border-2 border-blue-100
-                         shadow-xl hover:shadow-2xl hover:shadow-indigo-500/20
+                         shadow-xl hover:shadow-2xl hover:shadow-blue-500/20
                          transition-all duration-500"
             >
               <div className="p-8">
@@ -236,7 +236,7 @@ export default function HomePageNew() {
                   </span>
                 </div>
 
-                <div className="aspect-square bg-gradient-to-br from-blue-100 to-indigo-200 rounded-2xl mb-4" />
+                <div className="aspect-square bg-gradient-to-br from-blue-100 to-cyan-200 rounded-2xl mb-4" />
 
                 <Badge variant="secondary">Most Popular</Badge>
               </div>
@@ -244,18 +244,18 @@ export default function HomePageNew() {
 
             {/* Corporate Template */}
             <Card className="p-6">
-              <Building2 className="w-8 h-8 text-indigo-600 mb-4" />
+              <Building2 className="w-8 h-8 text-blue-600 mb-4" />
               <h3 className="text-xl font-bold text-gray-900 mb-2">Corporate Website</h3>
               <p className="text-gray-600 text-sm mb-4">Formal, trustworthy, team consistency</p>
               <div className="aspect-[4/5] bg-gradient-to-br from-gray-100 to-gray-200 rounded-xl" />
             </Card>
 
             {/* Creative Template */}
-            <Card className="p-6 bg-gradient-to-br from-purple-50 to-pink-50">
-              <Palette className="w-8 h-8 text-purple-600 mb-4" />
+            <Card className="p-6 bg-gradient-to-br from-cyan-50 to-sky-50">
+              <Palette className="w-8 h-8 text-cyan-600 mb-4" />
               <h3 className="text-xl font-bold text-gray-900 mb-2">Creative Portfolio</h3>
               <p className="text-gray-600 text-sm mb-4">Modern, approachable, personality-forward</p>
-              <div className="aspect-[3/4] bg-gradient-to-br from-purple-100 to-pink-200 rounded-xl" />
+              <div className="aspect-[3/4] bg-gradient-to-br from-cyan-100 to-sky-200 rounded-xl" />
             </Card>
 
             {/* Executive Template - Large featured */}
@@ -278,7 +278,7 @@ export default function HomePageNew() {
                 <Card key={id} className="p-6">
                   <h3 className="text-lg font-bold text-gray-900 mb-2">{template.name}</h3>
                   <p className="text-gray-600 text-sm mb-4">{template.description}</p>
-                  <div className="aspect-square bg-gradient-to-br from-indigo-100 to-purple-200 rounded-xl" />
+                  <div className="aspect-square bg-gradient-to-br from-blue-100 to-cyan-200 rounded-xl" />
                 </Card>
               ))}
           </div>
@@ -286,7 +286,7 @@ export default function HomePageNew() {
           {/* View all templates CTA */}
           <div className="mt-16 text-center">
             <Link to="/upload">
-              <Button size="xl" variant="gradient" className="shadow-xl shadow-indigo-500/30">
+              <Button size="xl" variant="gradient" className="shadow-xl shadow-blue-500/30">
                 Explore All 8 Templates
                 <ArrowRight className="ml-2 w-5 h-5" />
               </Button>
@@ -301,7 +301,7 @@ export default function HomePageNew() {
           <SectionHeader className="text-center mb-20">
             <h2 className="text-5xl md:text-6xl font-bold mb-6">
               Simple as{' '}
-              <span className="bg-gradient-to-r from-indigo-500 to-emerald-500 bg-clip-text text-transparent">
+              <span className="bg-gradient-to-r from-blue-500 to-emerald-500 bg-clip-text text-transparent">
                 1-2-3
               </span>
             </h2>
@@ -311,7 +311,7 @@ export default function HomePageNew() {
           {/* Steps */}
           <div className="relative max-w-5xl mx-auto">
             {/* Connecting line */}
-            <div className="absolute top-1/2 left-0 right-0 h-1 bg-gradient-to-r from-indigo-500 via-blue-500 to-emerald-500 opacity-20 -translate-y-1/2 hidden lg:block" />
+            <div className="absolute top-1/2 left-0 right-0 h-1 bg-gradient-to-r from-blue-500 via-cyan-500 to-emerald-500 opacity-20 -translate-y-1/2 hidden lg:block" />
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-12 relative">
               {[
@@ -319,14 +319,14 @@ export default function HomePageNew() {
                   number: 1,
                   title: 'Upload Photos',
                   desc: 'Upload 12-20 selfies with different angles, expressions, and lighting',
-                  gradient: 'from-indigo-500 to-indigo-600',
+                  gradient: 'from-blue-500 to-blue-600',
                   items: ['Clear, front-facing photos', 'Good lighting, no sunglasses', 'Mix of expressions & angles'],
                 },
                 {
                   number: 2,
                   title: 'Choose Templates',
                   desc: 'Select from 8 platform-optimized templates and pick your plan',
-                  gradient: 'from-blue-500 to-blue-600',
+                  gradient: 'from-cyan-500 to-cyan-600',
                   items: ['LinkedIn, Corporate, Creative', 'Resume, Social, Executive', '40-200 headshots per plan'],
                 },
                 {
@@ -380,7 +380,7 @@ export default function HomePageNew() {
           <SectionHeader className="text-center mb-20">
             <h2 className="text-5xl md:text-6xl font-bold mb-6">
               Everything you need.{' '}
-              <span className="bg-gradient-to-r from-indigo-500 to-emerald-500 bg-clip-text text-transparent">
+              <span className="bg-gradient-to-r from-blue-500 to-emerald-500 bg-clip-text text-transparent">
                 Nothing you don't.
               </span>
             </h2>
@@ -391,7 +391,7 @@ export default function HomePageNew() {
             {/* Large feature - Platform Previews */}
             <motion.div
               whileHover={{ scale: 1.02 }}
-              className="lg:col-span-2 lg:row-span-2 bg-gradient-to-br from-blue-500 to-purple-600
+              className="lg:col-span-2 lg:row-span-2 bg-gradient-to-br from-blue-500 to-cyan-600
                          text-white rounded-3xl p-12 shadow-2xl overflow-hidden relative group"
             >
               <Badge variant="white" className="mb-6">
@@ -415,7 +415,7 @@ export default function HomePageNew() {
               { icon: Zap, title: 'Lightning Fast', desc: 'Get your headshots in 1-3 hours, not days', gradient: 'from-amber-400 to-orange-500' },
               { icon: DollarSign, title: 'Save 90%', desc: '$29-59 vs $300+ for traditional photography', gradient: 'from-emerald-400 to-green-500' },
               { icon: Users, title: 'Team Ready', desc: 'Bulk discounts & consistent styling for entire teams', gradient: 'from-blue-400 to-cyan-500' },
-              { icon: Shield, title: 'Full Rights', desc: 'Use your headshots anywhere - full commercial license included', gradient: 'from-indigo-400 to-purple-500' },
+              { icon: Shield, title: 'Full Rights', desc: 'Use your headshots anywhere - full commercial license included', gradient: 'from-blue-400 to-cyan-500' },
             ].map((feature, i) => (
               <Card key={i} className="p-8">
                 <div
@@ -445,7 +445,7 @@ export default function HomePageNew() {
             </Badge>
             <h2 className="text-5xl md:text-6xl font-bold mb-6">
               Choose your{' '}
-              <span className="bg-gradient-to-r from-indigo-500 to-emerald-500 bg-clip-text text-transparent">
+              <span className="bg-gradient-to-r from-blue-500 to-emerald-500 bg-clip-text text-transparent">
                 perfect plan
               </span>
             </h2>
@@ -464,11 +464,10 @@ export default function HomePageNew() {
                 <motion.div
                   key={key}
                   whileHover={{ y: -8, scale: isFeatured ? 1.05 : 1.02 }}
-                  className={`rounded-3xl p-8 transition-all duration-500 ${
-                    isFeatured
-                      ? 'bg-gradient-to-br from-indigo-500 to-purple-600 text-white shadow-2xl shadow-indigo-500/50 scale-105'
+                  className={`rounded-3xl p-8 transition-all duration-500 ${isFeatured
+                      ? 'bg-gradient-to-br from-blue-500 to-cyan-600 text-white shadow-2xl shadow-blue-500/50 scale-105'
                       : 'bg-white border-2 border-gray-200 shadow-lg hover:shadow-2xl'
-                  }`}
+                    }`}
                 >
                   {isFeatured && (
                     <Badge variant="white" className="absolute top-6 right-6">
@@ -485,8 +484,8 @@ export default function HomePageNew() {
                     </h3>
                     <p className={`mb-6 ${isFeatured ? 'text-blue-100' : 'text-gray-600'}`}>
                       {key === 'basic' ? 'Perfect for updating your LinkedIn' :
-                       key === 'professional' ? 'Best for job seekers & professionals' :
-                       'Premium variety for executives'}
+                        key === 'professional' ? 'Best for job seekers & professionals' :
+                          'Premium variety for executives'}
                     </p>
 
                     <div className="flex items-baseline gap-2 mb-6">
@@ -545,7 +544,7 @@ export default function HomePageNew() {
           <SectionHeader className="text-center mb-20">
             <h2 className="text-5xl md:text-6xl font-bold mb-6">
               Trusted by{' '}
-              <span className="bg-gradient-to-r from-indigo-500 to-emerald-500 bg-clip-text text-transparent">
+              <span className="bg-gradient-to-r from-blue-500 to-emerald-500 bg-clip-text text-transparent">
                 100,000+ professionals
               </span>
             </h2>
@@ -567,7 +566,7 @@ export default function HomePageNew() {
                 transition={{ duration: 0.6, delay: i * 0.1 }}
                 className="text-center"
               >
-                <div className="text-5xl font-bold bg-gradient-to-r from-indigo-500 to-emerald-500 bg-clip-text text-transparent mb-2">
+                <div className="text-5xl font-bold bg-gradient-to-r from-blue-500 to-emerald-500 bg-clip-text text-transparent mb-2">
                   {stat.number}
                 </div>
                 <div className="text-gray-600 text-lg">{stat.label}</div>
@@ -602,7 +601,7 @@ export default function HomePageNew() {
                 </div>
                 <p className="text-gray-700 mb-6 leading-relaxed italic">"{testimonial.text}"</p>
                 <div className="flex items-center">
-                  <div className="w-12 h-12 bg-gradient-to-br from-indigo-400 to-purple-600 rounded-full flex items-center justify-center text-white font-bold text-lg">
+                  <div className="w-12 h-12 bg-gradient-to-br from-blue-400 to-cyan-600 rounded-full flex items-center justify-center text-white font-bold text-lg">
                     {testimonial.name[0]}
                   </div>
                   <div className="ml-4">
@@ -617,7 +616,7 @@ export default function HomePageNew() {
       </section>
 
       {/* Final CTA Section */}
-      <section className="py-32 bg-gradient-to-br from-indigo-500 via-blue-500 to-emerald-500 text-white relative overflow-hidden">
+      <section className="py-32 bg-gradient-to-br from-blue-500 via-cyan-500 to-emerald-500 text-white relative overflow-hidden">
         {/* Animated background */}
         <div
           className="absolute inset-0 opacity-10"

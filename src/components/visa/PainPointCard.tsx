@@ -6,7 +6,7 @@ interface PainPointCardProps {
   stat: string;
   label: string;
   description: string;
-  color: 'red' | 'orange' | 'amber' | 'purple';
+  color: 'red' | 'orange' | 'amber' | 'cyan';
 }
 
 const colorClasses = {
@@ -28,11 +28,11 @@ const colorClasses = {
     text: 'text-amber-900',
     shadow: 'shadow-amber-500/10',
   },
-  purple: {
-    bg: 'from-purple-50/80 to-purple-100/80',
-    border: 'border-purple-200/50',
-    text: 'text-purple-900',
-    shadow: 'shadow-purple-500/10',
+  cyan: {
+    bg: 'from-cyan-50/80 to-sky-100/80',
+    border: 'border-cyan-200',
+    text: 'text-cyan-900',
+    shadow: 'shadow-cyan-500/10',
   },
 };
 
@@ -55,7 +55,7 @@ export default function PainPointCard({ icon, stat, label, description, color }:
         shadow-lg ${colors.shadow}
         hover:shadow-xl
         transition-all duration-300
-      `}
+  `}
     >
       <div className="mb-4">{icon}</div>
       <div className={`text-5xl font-extrabold mb-2 ${colors.text}`}>{stat}</div>

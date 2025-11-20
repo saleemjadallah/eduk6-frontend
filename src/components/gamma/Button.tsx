@@ -11,12 +11,12 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 }
 
 const variants = {
-  gradient: `bg-gradient-to-r from-indigo-500 to-purple-600 text-white
-             shadow-2xl shadow-indigo-500/50 hover:shadow-indigo-500/70`,
+  gradient: `bg-gradient-to-r from-blue-600 to-cyan-500 text-white
+             shadow-2xl shadow-blue-500/50 hover:shadow-blue-500/70`,
   outline: `bg-white/80 backdrop-blur-sm text-gray-900 border-2 border-gray-200
             hover:bg-white hover:border-gray-300`,
   ghost: `bg-transparent text-gray-700 hover:bg-gray-100`,
-  white: `bg-white text-indigo-600 shadow-xl hover:bg-gray-50`,
+  white: `bg-white text-blue-600 shadow-xl hover:bg-gray-50`,
 };
 
 const sizes = {

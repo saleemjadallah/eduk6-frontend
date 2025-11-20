@@ -149,7 +149,9 @@ export default function DashboardPage({ user }: DashboardPageProps) {
         {/* Quick Actions */}
         <div className="mb-8">
           <Link to="/upload">
-            <Button size="lg" className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700">
+            <Button
+              className="w-full bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white shadow-lg shadow-blue-500/20"
+            >
               <Plus className="mr-2 h-5 w-5" />
               Start New Visa Application
             </Button>
@@ -297,7 +299,7 @@ export default function DashboardPage({ user }: DashboardPageProps) {
                 </p>
               </div>
               <Link to="/upload">
-                <Button size="lg" className="bg-gradient-to-r from-blue-600 to-purple-600">
+                <Button size="lg" className="bg-gradient-to-r from-blue-600 to-cyan-600">
                   <Plus className="mr-2 h-5 w-5" />
                   Start Your First Application
                 </Button>
