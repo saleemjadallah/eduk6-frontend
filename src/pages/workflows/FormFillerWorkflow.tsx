@@ -444,20 +444,18 @@ Be concise but helpful. Format as a brief paragraph.`;
       currentForm.fields.forEach(field => {
         try {
           const pdfField = form.getField(field.name);
-          if ((field.type === 'text' || field.type === 'textarea' || field.type === 'date') && typeof pdfField.setText === 'function') {
-            // @ts-expect-error: pdf-lib types
-            pdfField.setText(field.value || '');
+          const fieldApi = pdfField as Record<string, any>;
+
+          if ((field.type === 'text' || field.type === 'textarea' || field.type === 'date') && typeof fieldApi.setText === 'function') {
+            fieldApi.setText(field.value || '');
           } else if (field.type === 'checkbox') {
-            if (field.value === 'true' && typeof pdfField.check === 'function') {
-              // @ts-expect-error
-              pdfField.check();
-            } else if (field.value !== 'true' && typeof pdfField.uncheck === 'function') {
-              // @ts-expect-error
-              pdfField.uncheck();
+            if (field.value === 'true' && typeof fieldApi.check === 'function') {
+              fieldApi.check();
+            } else if (field.value !== 'true' && typeof fieldApi.uncheck === 'function') {
+              fieldApi.uncheck();
             }
-          } else if (field.type === 'select' && typeof pdfField.select === 'function') {
-            // @ts-expect-error
-            pdfField.select(field.value);
+          } else if (field.type === 'select' && typeof fieldApi.select === 'function') {
+            fieldApi.select(field.value);
           }
         } catch {
           // Field might not exist or cannot be set
@@ -1288,7 +1286,9 @@ Be concise but helpful. Format as a brief paragraph.`;
         return;
       }
 
-      const blob = new Blob([filledBytes], { type: 'application/pdf' });
+      const arrayBuffer = new ArrayBuffer(filledBytes.byteLength);
+      new Uint8Array(arrayBuffer).set(filledBytes);
+      const blob = new Blob([arrayBuffer], { type: 'application/pdf' });
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
