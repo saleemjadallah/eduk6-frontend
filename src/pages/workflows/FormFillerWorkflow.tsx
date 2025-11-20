@@ -276,6 +276,13 @@ export const FormFillerWorkflow: React.FC = () => {
   const buildStructuredFormData = (): Record<string, string> => {
     if (!currentForm) return {};
     const data: Record<string, string> = {};
+    let combinedName: string | undefined;
+
+    const assignIfEmpty = (key: string, value: string) => {
+      if (value && !data[key]) {
+        data[key] = value;
+      }
+    };
 
     currentForm.fields.forEach(field => {
       const trimmedValue = typeof field.value === 'string' ? field.value.trim() : '';
@@ -291,7 +298,73 @@ export const FormFillerWorkflow: React.FC = () => {
           data[mapped] = trimmedValue;
         }
       });
+
+      const normalizedName = field.name.toLowerCase();
+      const normalizedLabel = (field.label || '').toLowerCase();
+      const combinedText = `${normalizedName} ${normalizedLabel}`.trim();
+      const includes = (phrase: string) => combinedText.includes(phrase);
+      const containsAll = (...tokens: string[]) => tokens.every(token => includes(token));
+      const containsAny = (...tokens: string[]) => tokens.some(token => includes(token));
+
+      if (!data.dateOfBirth && (containsAll('date', 'birth') || containsAny('dob', 'birth date'))) {
+        data.dateOfBirth = trimmedValue;
+      }
+
+      if (!data.nationality && containsAny('nationality', 'citizenship', 'citizen of')) {
+        data.nationality = trimmedValue;
+      }
+
+      if (!data.passportNumber && (containsAll('passport', 'number') || containsAny('passport no', 'passport#'))) {
+        data.passportNumber = trimmedValue;
+      }
+
+      if (!data.firstName && containsAny('first name', 'given name', 'givenname', 'firstname')) {
+        data.firstName = trimmedValue;
+      }
+
+      if (!data.lastName && containsAny('last name', 'family name', 'surname', 'lastname')) {
+        data.lastName = trimmedValue;
+      }
+
+      if (!data.countryOfBirth && containsAny('country of birth', 'place of birth')) {
+        data.countryOfBirth = trimmedValue;
+      }
+
+      if (!data.travelPurpose && containsAny('purpose of travel', 'reason for travel', 'travel purpose')) {
+        data.travelPurpose = trimmedValue;
+      }
+
+      const mentionsName = containsAny('name');
+      const mentionsSpecificName =
+        containsAny('first', 'given', 'family', 'surname', 'last', 'middle', 'maiden');
+
+      if (!combinedName && mentionsName && !mentionsSpecificName) {
+        combinedName = trimmedValue;
+      }
     });
+
+    const finalCombinedName = combinedName;
+    if (typeof finalCombinedName === 'string' && finalCombinedName.trim()) {
+      const parts = finalCombinedName.split(/\s+/).filter(Boolean);
+      if (parts.length === 1) {
+        assignIfEmpty('firstName', parts[0]);
+        assignIfEmpty('lastName', parts[0]);
+        assignIfEmpty('fullName', finalCombinedName);
+      } else {
+        assignIfEmpty('firstName', parts[0]);
+        assignIfEmpty('lastName', parts.slice(1).join(' '));
+        assignIfEmpty('fullName', finalCombinedName);
+      }
+    }
+
+    const fullNameValue = typeof data.fullName === 'string' ? data.fullName : '';
+    if (!data.firstName && fullNameValue) {
+      const parts = fullNameValue.split(/\s+/).filter(Boolean);
+      if (parts.length > 0) {
+        assignIfEmpty('firstName', parts[0]);
+        assignIfEmpty('lastName', parts.slice(1).join(' ') || parts[0]);
+      }
+    }
 
     return data;
   };

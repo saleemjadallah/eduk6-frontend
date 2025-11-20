@@ -67,7 +67,7 @@ export default function JeffreyAvatar({
       >
         {currentMood === 'neutral' ? (
           <img
-            src="/assets/Jeffrey.png"
+            src="/assets/new-jeffrey-removebg-preview.png"
             alt="Jeffrey AI Assistant"
             className="w-full h-full object-cover"
           />

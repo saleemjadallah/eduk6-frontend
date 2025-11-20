@@ -45,8 +45,8 @@ export const JeffreyRecommendations: React.FC<JeffreyRecommendationsProps> = ({
                      flex items-center justify-center flex-shrink-0 overflow-hidden"
         >
           <img
-            src="/assets/Jeffrey.png"
-            alt="Jeffrey AI Assistant"
+            src="/assets/new-jeffrey-removebg-preview.png"
+            alt="Jeffrey AI"
             className="w-full h-full object-cover"
           />
         </div>
