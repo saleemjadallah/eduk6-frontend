@@ -38,6 +38,44 @@ interface TravelProfile {
   lastUpdated: string;
 }
 
+const normalizeTravelProfile = (profile: Partial<TravelProfile> | null): TravelProfile => {
+  const safeVisaRequirements = profile?.visaRequirements
+    ? {
+        ...profile.visaRequirements,
+        requiredDocuments: profile.visaRequirements.requiredDocuments ?? [],
+        photoRequirements: {
+          dimensions: profile.visaRequirements.photoRequirements?.dimensions ?? '',
+          background: profile.visaRequirements.photoRequirements?.background ?? '',
+          specifications: profile.visaRequirements.photoRequirements?.specifications ?? [],
+        },
+        additionalNotes: profile.visaRequirements.additionalNotes ?? [],
+      }
+    : undefined;
+
+  return {
+    destinationCountry: profile?.destinationCountry ?? '',
+    travelPurpose: profile?.travelPurpose ?? '',
+    nationality: profile?.nationality ?? '',
+    travelDates: profile?.travelDates ?? { start: '', end: '' },
+    specialConcerns: profile?.specialConcerns ?? [],
+    visaRequirements: safeVisaRequirements,
+    lastUpdated: profile?.lastUpdated ?? new Date().toISOString(),
+  };
+};
+
+const safePercentage = (value: number, total: number) => (total > 0 ? Math.round((value / total) * 100) : 0);
+
+const formatDate = (value?: string) => {
+  if (!value) return 'TBD';
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) return 'TBD';
+  return parsed.toLocaleDateString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+  });
+};
+
 export const UnifiedDashboardHome: React.FC<UnifiedDashboardHomeProps> = ({ user }) => {
   const { updateWorkflow, addRecentAction } = useJeffrey();
   const location = useLocation();
@@ -112,22 +150,25 @@ export const UnifiedDashboardHome: React.FC<UnifiedDashboardHomeProps> = ({ user
       const onboardingResponse = await onboardingApi.getStatus();
 
       if (onboardingResponse.success && onboardingResponse.data?.travelProfile) {
-        const profile = onboardingResponse.data.travelProfile;
+        const profile = normalizeTravelProfile(onboardingResponse.data.travelProfile);
+        const docCount = profile.visaRequirements?.requiredDocuments.length ?? 0;
+        const formCount = profile.visaRequirements ? 1 : 0;
+        const photosNeeded = profile.visaRequirements ? 1 : 0;
+
         setTravelProfile(profile);
 
         // Set progress based on visa requirements
         if (profile.visaRequirements) {
-          const docs = profile.visaRequirements.requiredDocuments;
-          setTotalDocs(docs.length);
+          setTotalDocs(docCount);
           setValidatedDocs(0); // User hasn't validated any yet
-          setTotalForms(1); // At least 1 form to fill
+          setTotalForms(formCount);
           setFormProgress(0);
-          setRequiredPhotos(1); // At least 1 photo set needed
+          setRequiredPhotos(photosNeeded);
           setPhotoProgress(0);
           setTravelProgress(0);
 
           // Calculate overall completeness dynamically based on all workflows
-          calculateOverallProgress(0, 1, 0, docs.length, 0, 1, 0);
+          calculateOverallProgress(0, formCount, 0, docCount, 0, photosNeeded, 0);
         }
 
         // Fetch personalized recommendations
@@ -149,11 +190,14 @@ export const UnifiedDashboardHome: React.FC<UnifiedDashboardHomeProps> = ({ user
             icon: CheckCircle,
             title: 'Completed onboarding with Jeffrey',
             description: `Set destination to ${profile.destinationCountry} for ${profile.travelPurpose}`,
-            timestamp: new Date(profile.lastUpdated),
+            timestamp: Number.isNaN(new Date(profile.lastUpdated).getTime())
+              ? new Date()
+              : new Date(profile.lastUpdated),
           },
         ]);
       } else {
         // No onboarding data, set defaults
+        setTravelProfile(null);
         setTotalForms(0);
         setFormProgress(0);
         setTotalDocs(0);
@@ -205,6 +249,7 @@ export const UnifiedDashboardHome: React.FC<UnifiedDashboardHomeProps> = ({ user
     } catch (error) {
       console.error('Failed to load dashboard data:', error);
       // Set defaults on error
+      setTravelProfile(null);
       setTotalForms(0);
       setFormProgress(0);
       setTotalDocs(0);
@@ -241,6 +286,11 @@ export const UnifiedDashboardHome: React.FC<UnifiedDashboardHomeProps> = ({ user
       return newSet;
     });
   };
+
+  const requiredDocuments = travelProfile?.visaRequirements?.requiredDocuments ?? [];
+  const startDateLabel = formatDate(travelProfile?.travelDates?.start);
+  const endDateLabel = formatDate(travelProfile?.travelDates?.end);
+  const processingTimeLabel = travelProfile?.visaRequirements?.processingTime ?? 'Processing time unavailable';
 
   if (isLoading) {
     return (
@@ -310,19 +360,10 @@ export const UnifiedDashboardHome: React.FC<UnifiedDashboardHomeProps> = ({ user
                 Travel Dates
               </div>
               <p className="font-semibold text-gray-900">
-                {new Date(travelProfile.travelDates.start).toLocaleDateString('en-US', {
-                  month: 'short',
-                  day: 'numeric',
-                  year: 'numeric',
-                })}
+                {startDateLabel}
               </p>
               <p className="text-sm text-gray-600">
-                to{' '}
-                {new Date(travelProfile.travelDates.end).toLocaleDateString('en-US', {
-                  month: 'short',
-                  day: 'numeric',
-                  year: 'numeric',
-                })}
+                to {endDateLabel}
               </p>
             </div>
             <div>
@@ -334,7 +375,7 @@ export const UnifiedDashboardHome: React.FC<UnifiedDashboardHomeProps> = ({ user
                 onClick={() => setIsDocumentsExpanded(!isDocumentsExpanded)}
                 className="flex items-center gap-2 font-semibold text-gray-900 hover:text-indigo-600 transition-colors"
               >
-                {travelProfile.visaRequirements.requiredDocuments.length} documents
+                {requiredDocuments.length} documents
                 {isDocumentsExpanded ? (
                   <ChevronUp className="w-4 h-4" />
                 ) : (
@@ -342,7 +383,7 @@ export const UnifiedDashboardHome: React.FC<UnifiedDashboardHomeProps> = ({ user
                 )}
               </button>
               <p className="text-sm text-gray-600">
-                Processing: {travelProfile.visaRequirements.processingTime}
+                Processing: {processingTimeLabel}
               </p>
             </div>
           </div>
@@ -352,7 +393,7 @@ export const UnifiedDashboardHome: React.FC<UnifiedDashboardHomeProps> = ({ user
             <div className="mt-4 pt-4 border-t border-gray-200">
               <h3 className="text-sm font-semibold text-gray-700 mb-3">Required Documents:</h3>
               <div className="space-y-2">
-                {travelProfile.visaRequirements.requiredDocuments.map((doc, index) => (
+                {requiredDocuments.map((doc, index) => (
                   <label
                     key={index}
                     className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors group"
@@ -379,8 +420,7 @@ export const UnifiedDashboardHome: React.FC<UnifiedDashboardHomeProps> = ({ user
                 ))}
               </div>
               <div className="mt-3 text-sm text-gray-500">
-                {checkedDocuments.size} of {travelProfile.visaRequirements.requiredDocuments.length}{' '}
-                documents checked
+                {checkedDocuments.size} of {requiredDocuments.length} documents checked
               </div>
             </div>
           )}
@@ -423,7 +463,7 @@ export const UnifiedDashboardHome: React.FC<UnifiedDashboardHomeProps> = ({ user
           stats={{
             total: formProgress,
             label: 'forms filled',
-            completeness: Math.round((formProgress / totalForms) * 100),
+            completeness: safePercentage(formProgress, totalForms),
           }}
           cta={{
             label: formProgress < totalForms ? 'Continue Filling' : 'View Forms',
@@ -441,7 +481,7 @@ export const UnifiedDashboardHome: React.FC<UnifiedDashboardHomeProps> = ({ user
           stats={{
             total: validatedDocs,
             label: 'docs validated',
-            completeness: Math.round((validatedDocs / totalDocs) * 100),
+            completeness: safePercentage(validatedDocs, totalDocs),
           }}
           cta={{
             label: validatedDocs < totalDocs ? 'Validate Documents' : 'Review Documents',
@@ -459,7 +499,7 @@ export const UnifiedDashboardHome: React.FC<UnifiedDashboardHomeProps> = ({ user
           stats={{
             total: photoProgress,
             label: 'visa photos',
-            completeness: Math.round((photoProgress / requiredPhotos) * 100),
+            completeness: safePercentage(photoProgress, requiredPhotos),
           }}
           cta={{
             label: photoProgress === 0 ? 'Generate Photos' : 'View Photos',
