@@ -9,12 +9,53 @@ import {
   FileText,
   XCircle,
   Clock,
+  CheckSquare,
+  ChevronUp,
+  List,
 } from 'lucide-react';
 import { useJeffrey } from '../../contexts/JeffreyContext';
 import { Breadcrumb, BreadcrumbItem } from '../../components/ui/Breadcrumb';
 import { CompletionBadge } from '../../components/ui/CompletionBadge';
 import { cn } from '../../utils/cn';
+
 import { onboardingApi } from '../../lib/api';
+
+const DOCUMENT_GUIDELINES: Record<string, string[]> = {
+  'Bank Statement': [
+    'Must be on official bank letterhead',
+    'Recent (last 3-6 months)',
+    'Account holder name must match applicant',
+    'Bank stamp/seal required on every page',
+    'Clear transaction history'
+  ],
+  'Employment Letter': [
+    'Company letterhead required',
+    'Stated job title and salary',
+    'Employment start date',
+    'Authorized signature and company stamp',
+    'Dated within last 30 days'
+  ],
+  'Marriage Certificate': [
+    'Official government issued certificate',
+    'Attested/Apostilled if from outside country',
+    'Legal translation if not in English/Arabic',
+    'Both names clearly visible'
+  ],
+  'Flight Reservation': [
+    'Confirmed booking reference (PNR)',
+    'Passenger names matching passport',
+    'Arrival and departure dates matching travel plan',
+    'Airline logo and contact details'
+  ],
+  'Hotel Booking': [
+    'Confirmed reservation number',
+    'Guest names matching passport',
+    'Check-in/out dates matching travel plan',
+    'Hotel address and contact info'
+  ]
+};
+
+const UPLOAD_REQUIRED_DOCUMENTS = ['Passport', 'Photo', 'Visa Application Form'];
 
 interface Requirement {
   id: string;
@@ -22,7 +63,8 @@ interface Requirement {
   description: string;
   mandatory: boolean;
   documentId?: string;
-  status: 'pending' | 'uploaded' | 'validated' | 'failed';
+  status: 'pending' | 'uploaded' | 'validated' | 'failed' | 'self_verified';
+  verificationType: 'upload' | 'self_check';
 }
 
 interface ValidationInsight {
@@ -39,13 +81,14 @@ export const DocumentValidatorWorkflow: React.FC = () => {
   const [optionalRequirements, setOptionalRequirements] = useState<Requirement[]>([]);
   const [validationInsights, setValidationInsights] = useState<ValidationInsight[]>([]);
   const [jeffreyRecommendation, setJeffreyRecommendation] = useState('');
+  const [expandedGuidelines, setExpandedGuidelines] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
 
   // Calculate completeness
   const totalRequirements = mandatoryRequirements.length + optionalRequirements.length;
   const completedRequirements = [...mandatoryRequirements, ...optionalRequirements].filter(
-    (r) => r.status === 'validated'
+    (r) => r.status === 'validated' || r.status === 'self_verified'
   ).length;
   const documentCompleteness = totalRequirements > 0
     ? Math.round((completedRequirements / totalRequirements) * 100)
@@ -69,13 +112,20 @@ export const DocumentValidatorWorkflow: React.FC = () => {
         const { requiredDocuments } = visaRequirements;
 
         // Map required documents to mandatory requirements
-        const mandatoryReqs: Requirement[] = requiredDocuments.map((doc, index) => ({
-          id: `mandatory-${index}`,
-          item: doc,
-          description: `Required for ${destinationCountry} ${travelPurpose} visa`,
-          mandatory: true,
-          status: 'pending' as const,
-        }));
+        const mandatoryReqs: Requirement[] = requiredDocuments.map((doc, index) => {
+          const isUploadRequired = UPLOAD_REQUIRED_DOCUMENTS.some(reqDoc =>
+            doc.toLowerCase().includes(reqDoc.toLowerCase()) || reqDoc.toLowerCase().includes(doc.toLowerCase())
+          );
+
+          return {
+            id: `mandatory-${index}`,
+            item: doc,
+            description: `Required for ${destinationCountry} ${travelPurpose} visa`,
+            mandatory: true,
+            status: 'pending' as const,
+            verificationType: isUploadRequired ? 'upload' : 'self_check',
+          };
+        });
 
         setMandatoryRequirements(mandatoryReqs);
         setOptionalRequirements([]);
@@ -110,6 +160,8 @@ export const DocumentValidatorWorkflow: React.FC = () => {
     switch (status) {
       case 'validated':
         return <CheckCircle className="w-5 h-5 text-green-500" />;
+      case 'self_verified':
+        return <CheckSquare className="w-5 h-5 text-green-500" />;
       case 'uploaded':
         return <Clock className="w-5 h-5 text-blue-500" />;
       case 'failed':
@@ -123,6 +175,8 @@ export const DocumentValidatorWorkflow: React.FC = () => {
     switch (status) {
       case 'validated':
         return 'Validated';
+      case 'self_verified':
+        return 'Self Verified';
       case 'uploaded':
         return 'Pending Review';
       case 'failed':
@@ -157,6 +211,23 @@ export const DocumentValidatorWorkflow: React.FC = () => {
   const handleValidateAll = () => {
     addRecentAction('Triggered validation for all documents');
     alert('Validation process started for all uploaded documents');
+  };
+
+  const handleSelfVerify = (requirement: Requirement) => {
+    addRecentAction('Self-verified document', { item: requirement.item });
+
+    const updateRequirements = (reqs: Requirement[]) =>
+      reqs.map(r => r.id === requirement.id ? { ...r, status: 'self_verified' as const } : r);
+
+    setMandatoryRequirements(prev => updateRequirements(prev));
+    setOptionalRequirements(prev => updateRequirements(prev));
+  };
+
+  const toggleGuidelines = (id: string) => {
+    setExpandedGuidelines(prev => prev === id ? null : id);
+    if (expandedGuidelines !== id) {
+      addRecentAction('Checked guidelines', { documentId: id });
+    }
   };
 
   if (isLoading) {
@@ -236,61 +307,123 @@ export const DocumentValidatorWorkflow: React.FC = () => {
 
                 <div className="space-y-3">
                   {mandatoryRequirements.map((req) => (
-                <div
-                  key={req.id}
-                  className="flex items-center justify-between p-4 bg-neutral-50 rounded-xl border border-neutral-200"
-                >
-                  <div className="flex items-center gap-3">
-                    {getStatusIcon(req.status)}
-                    <div>
-                      <p className="font-semibold text-neutral-900">{req.item}</p>
-                      <p className="text-sm text-neutral-500">{req.description}</p>
-                    </div>
-                  </div>
+                    <div key={req.id}>
+                      <div
+                        className="flex items-center justify-between p-4 bg-neutral-50 rounded-xl border border-neutral-200"
+                      >
+                        <div className="flex items-center gap-3">
+                          {getStatusIcon(req.status)}
+                          <div>
+                            <p className="font-semibold text-neutral-900">{req.item}</p>
+                            <p className="text-sm text-neutral-500">{req.description}</p>
+                          </div>
+                        </div>
 
-                  <div className="flex items-center gap-2">
-                    <span
-                      className={cn(
-                        'text-xs font-medium px-2 py-1 rounded-full',
-                        req.status === 'validated' && 'bg-green-100 text-green-700',
-                        req.status === 'uploaded' && 'bg-blue-100 text-blue-700',
-                        req.status === 'failed' && 'bg-red-100 text-red-700',
-                        req.status === 'pending' && 'bg-neutral-100 text-neutral-600'
+                        <div className="flex items-center gap-2">
+                          <span
+                            className={cn(
+                              'text-xs font-medium px-2 py-1 rounded-full',
+                              req.status === 'validated' && 'bg-green-100 text-green-700',
+                              req.status === 'self_verified' && 'bg-green-100 text-green-700',
+                              req.status === 'uploaded' && 'bg-blue-100 text-blue-700',
+                              req.status === 'failed' && 'bg-red-100 text-red-700',
+                              req.status === 'pending' && 'bg-neutral-100 text-neutral-600'
+                            )}
+                          >
+                            {getStatusLabel(req.status)}
+                          </span>
+
+                          {req.documentId ? (
+                            <button
+                              onClick={() => handleViewDocument(req.documentId!)}
+                              className="p-2 text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
+                              title="View Document"
+                            >
+                              <Eye className="w-4 h-4" />
+                            </button>
+                          ) : req.verificationType === 'self_check' && req.status !== 'self_verified' ? (
+                            <div className="flex items-center gap-2">
+                              <button
+                                onClick={() => toggleGuidelines(req.id)}
+                                className="p-2 text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
+                                title="Show Requirements"
+                              >
+                                {expandedGuidelines === req.id ? (
+                                  <ChevronUp className="w-4 h-4" />
+                                ) : (
+                                  <List className="w-4 h-4" />
+                                )}
+                              </button>
+                              <button
+                                onClick={() => handleSelfVerify(req)}
+                                className="flex items-center gap-2 px-3 py-2 bg-green-50 text-green-700 hover:bg-green-100 rounded-lg transition-colors text-sm font-medium"
+                                title="I have this document"
+                              >
+                                <CheckSquare className="w-4 h-4" />
+                                I have this
+                              </button>
+                            </div>
+                          ) : (
+                            <button
+                              onClick={() => handleUpload(req)}
+                              className="p-2 text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
+                              title="Upload"
+                            >
+                              <Upload className="w-4 h-4" />
+                            </button>
+                          )}
+
+                          <button
+                            onClick={() => askJeffrey(`Tell me about ${req.item}`)}
+                            className="p-2 text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
+                            title="Ask Jeffrey"
+                          >
+                            <MessageCircle className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Guidelines Panel */}
+                      {expandedGuidelines === req.id && (
+                        <div className="mt-2 ml-12 p-4 bg-indigo-50 rounded-xl border border-indigo-100 animate-in slide-in-from-top-2">
+                          <div className="flex items-start gap-2 mb-2">
+                            <div className="p-1 bg-indigo-100 rounded-md">
+                              <List className="w-3 h-3 text-indigo-600" />
+                            </div>
+                            <span className="text-sm font-semibold text-indigo-900">
+                              What to check for:
+                            </span>
+                          </div>
+                          <ul className="space-y-2">
+                            {(DOCUMENT_GUIDELINES[Object.keys(DOCUMENT_GUIDELINES).find(k => req.item.includes(k)) || ''] || [
+                              'Ensure document is clear and legible',
+                              'Check for official stamps or signatures',
+                              'Verify dates are current',
+                              'Ensure names match your passport'
+                            ]).map((guide, idx) => (
+                              <li key={idx} className="flex items-start gap-2 text-sm text-indigo-800">
+                                <span className="mt-1.5 w-1 h-1 rounded-full bg-indigo-400 flex-shrink-0" />
+                                {guide}
+                              </li>
+                            ))}
+                          </ul>
+                          <div className="mt-3 pt-3 border-t border-indigo-200 flex justify-between items-center">
+                            <span className="text-xs text-indigo-600">
+                              AI-generated checklist
+                            </span>
+                            <button
+                              onClick={() => handleSelfVerify(req)}
+                              className="text-xs font-semibold text-indigo-700 hover:text-indigo-900"
+                            >
+                              Confirm I have this →
+                            </button>
+                          </div>
+                        </div>
                       )}
-                    >
-                      {getStatusLabel(req.status)}
-                    </span>
-
-                    {req.documentId ? (
-                      <button
-                        onClick={() => handleViewDocument(req.documentId!)}
-                        className="p-2 text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
-                        title="View Document"
-                      >
-                        <Eye className="w-4 h-4" />
-                      </button>
-                    ) : (
-                      <button
-                        onClick={() => handleUpload(req)}
-                        className="p-2 text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
-                        title="Upload"
-                      >
-                        <Upload className="w-4 h-4" />
-                      </button>
-                    )}
-
-                    <button
-                      onClick={() => askJeffrey(`Tell me about ${req.item}`)}
-                      className="p-2 text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
-                      title="Ask Jeffrey"
-                    >
-                      <MessageCircle className="w-4 h-4" />
-                    </button>
-                  </div>
+                    </div>
+                  ))}
                 </div>
-              ))}
-            </div>
-          </div>
+              </div>
 
               {/* Optional Documents */}
               <div>
@@ -370,30 +503,30 @@ export const DocumentValidatorWorkflow: React.FC = () => {
           ) : (
             <div className="space-y-4 mb-6">
               {validationInsights.map((insight, index) => (
-              <div
-                key={index}
-                className={cn(
-                  'p-4 rounded-xl border',
-                  insight.type === 'success' && 'bg-green-50 border-green-200',
-                  insight.type === 'warning' && 'bg-yellow-50 border-yellow-200',
-                  insight.type === 'error' && 'bg-red-50 border-red-200'
-                )}
-              >
-                <div className="flex items-start gap-3">
-                  {getInsightIcon(insight.type)}
-                  <div>
-                    <p className="font-semibold text-neutral-900 text-sm">{insight.title}</p>
-                    <p className="text-xs text-neutral-600 mt-1">{insight.description}</p>
-                    {insight.action && (
-                      <button className="text-xs font-semibold text-indigo-600 hover:text-indigo-700 mt-2">
-                        {insight.action}
-                      </button>
-                    )}
+                <div
+                  key={index}
+                  className={cn(
+                    'p-4 rounded-xl border',
+                    insight.type === 'success' && 'bg-green-50 border-green-200',
+                    insight.type === 'warning' && 'bg-yellow-50 border-yellow-200',
+                    insight.type === 'error' && 'bg-red-50 border-red-200'
+                  )}
+                >
+                  <div className="flex items-start gap-3">
+                    {getInsightIcon(insight.type)}
+                    <div>
+                      <p className="font-semibold text-neutral-900 text-sm">{insight.title}</p>
+                      <p className="text-xs text-neutral-600 mt-1">{insight.description}</p>
+                      {insight.action && (
+                        <button className="text-xs font-semibold text-indigo-600 hover:text-indigo-700 mt-2">
+                          {insight.action}
+                        </button>
+                      )}
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
           )}
 
           {/* Jeffrey's Recommendations */}

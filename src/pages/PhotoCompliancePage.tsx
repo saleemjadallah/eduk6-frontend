@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { motion } from 'framer-motion';
-import { Camera, CheckCircle2, AlertCircle, Image as ImageIcon, DollarSign, Clock, Sparkles } from 'lucide-react';
+import { Camera, CheckCircle2, AlertCircle, Image as ImageIcon, DollarSign, Clock, Sparkles, Download, ArrowLeft } from 'lucide-react';
 import Button from '../components/gamma/Button';
 import Card from '../components/gamma/Card';
 import Badge from '../components/gamma/Badge';
@@ -104,6 +104,10 @@ export default function PhotoCompliancePage() {
   const [uploadedPhotos, setUploadedPhotos] = useState<File[]>([]);
   const [dragActive, setDragActive] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [processedPhotoUrl, setProcessedPhotoUrl] = useState<string | null>(null);
+
+  const inputRef = useRef<HTMLInputElement>(null);
 
   const handleDrag = (e: React.DragEvent) => {
     e.preventDefault();
@@ -124,7 +128,7 @@ export default function PhotoCompliancePage() {
       const files = Array.from(e.dataTransfer.files).filter(
         (file) => file.type.startsWith('image/')
       );
-      setUploadedPhotos((prev) => [...prev, ...files].slice(0, 5)); // Max 5 photos
+      setUploadedPhotos((prev) => [...prev, ...files].slice(0, 1)); // Only one photo
     }
   };
 
@@ -133,7 +137,7 @@ export default function PhotoCompliancePage() {
       const files = Array.from(e.target.files).filter(
         (file) => file.type.startsWith('image/')
       );
-      setUploadedPhotos((prev) => [...prev, ...files].slice(0, 5));
+      setUploadedPhotos((prev) => [...prev, ...files].slice(0, 1)); // Only one photo
     }
   };
 
@@ -141,15 +145,105 @@ export default function PhotoCompliancePage() {
     setUploadedPhotos((prev) => prev.filter((_, i) => i !== index));
   };
 
-  const handleCheck = async () => {
+  const handleProcessRequest = async () => {
     if (!selectedVisaType || uploadedPhotos.length === 0) return;
 
     setLoading(true);
-    // TODO: Implement API call to check photo compliance
-    setTimeout(() => {
+    setError(null);
+
+    const photo = uploadedPhotos[0];
+    const formData = new FormData();
+    formData.append('photo', photo);
+    formData.append('visaType', selectedVisaType);
+
+    try {
+      // TODO: Replace with VITE_API_URL from .env
+      const response = await fetch('http://localhost:3000/api/photo/process-compliance', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        const errData = await response.json();
+        throw new Error(errData.error || 'Something went wrong');
+      }
+
+      const result = await response.json();
+      setProcessedPhotoUrl(result.processedPhotoUrl);
+
+    } catch (err: any) {
+      setError(err.message || 'Failed to process photo.');
+    } finally {
       setLoading(false);
-    }, 2000);
+    }
   };
+
+  const resetProcess = () => {
+    setSelectedVisaType(null);
+    setUploadedPhotos([]);
+    setProcessedPhotoUrl(null);
+    setError(null);
+  };
+
+  if (processedPhotoUrl) {
+    return (
+      <div className="min-h-screen bg-white py-12 md:py-20 px-6">
+        <div className="max-w-4xl mx-auto">
+          <SectionHeader className="text-center mb-12">
+            <h1 className="text-4xl md:text-5xl font-bold text-neutral-900 mb-4">Your Compliant Photo is Ready!</h1>
+            <p className="text-lg text-neutral-600">Download your AI-corrected photo or start over.</p>
+          </SectionHeader>
+
+          <Card className="p-8">
+            <div className="grid md:grid-cols-2 gap-8 items-center">
+              <div className="text-center">
+                <h3 className="text-lg font-semibold text-neutral-800 mb-4">Original Photo</h3>
+                <img
+                  src={URL.createObjectURL(uploadedPhotos[0])}
+                  alt="Original upload"
+                  className="rounded-xl w-full aspect-square object-cover border-2"
+                />
+              </div>
+              <div className="text-center">
+                <h3 className="text-lg font-semibold text-neutral-800 mb-4 flex items-center justify-center gap-2">
+                  <Sparkles className="w-5 h-5 text-purple-500" />
+                  AI-Corrected Photo
+                </h3>
+                <img
+                  src={processedPhotoUrl}
+                  alt="Processed compliant"
+                  className="rounded-xl w-full aspect-square object-cover border-2 border-purple-500"
+                />
+              </div>
+            </div>
+
+            <div className="mt-12 text-center">
+              <Button
+                variant="gradient"
+                size="xl"
+                onClick={() => {
+                  // Trigger download
+                  const link = document.createElement('a');
+                  link.href = processedPhotoUrl;
+                  link.download = 'compliant-photo.png';
+                  document.body.appendChild(link);
+                  link.click();
+                  document.body.removeChild(link);
+                }}
+              >
+                <Download className="w-5 h-5 mr-2" />
+                Download Photo
+              </Button>
+              <Button variant="outline" size="xl" onClick={resetProcess} className="ml-4">
+                <ArrowLeft className="w-5 h-5 mr-2" />
+                Start Over
+              </Button>
+            </div>
+          </Card>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-white to-neutral-50">
@@ -159,16 +253,15 @@ export default function PhotoCompliancePage() {
           <div className="text-center mb-12">
             <Badge variant="gradient" className="mb-4 inline-flex">
               <Camera className="w-4 h-4 mr-2" />
-              AI Photo Analysis
+              AI Photo Generator
             </Badge>
 
             <h1 className="text-5xl md:text-6xl font-bold mb-6 bg-gradient-to-br from-neutral-900 via-neutral-800 to-neutral-600 bg-clip-text text-transparent">
-              AI Photo Compliance
+              AI-Powered Visa Photos
             </h1>
 
             <p className="text-xl md:text-2xl text-neutral-600 max-w-3xl mx-auto mb-8">
-              Ensures uploaded photos meet exact size, background, and facial requirements for specific GCC visa types.
-              Auto-corrects if needed.
+              Upload a selfie, and we'll generate a compliant photo with the right dimensions, background, and facial sizing for your visa application.
             </p>
 
             {/* Stats */}
@@ -176,21 +269,21 @@ export default function PhotoCompliancePage() {
               <div className="flex items-center gap-2">
                 <Clock className="w-5 h-5 text-purple-500" />
                 <span className="text-sm font-medium">
-                  <strong className="text-neutral-900">2-3 minutes</strong> processing
+                  <strong className="text-neutral-900">~1 minute</strong> processing
                 </span>
               </div>
               <div className="hidden sm:block w-px h-6 bg-neutral-300" />
               <div className="flex items-center gap-2">
                 <DollarSign className="w-5 h-5 text-green-500" />
                 <span className="text-sm font-medium">
-                  <strong className="text-neutral-900">AED 20-25</strong> per photo set
+                  <strong className="text-neutral-900">AED 20-25</strong> per photo
                 </span>
               </div>
               <div className="hidden sm:block w-px h-6 bg-neutral-300" />
               <div className="flex items-center gap-2">
                 <Sparkles className="w-5 h-5 text-amber-500" />
                 <span className="text-sm font-medium">
-                  <strong className="text-neutral-900">Auto-correction</strong> included
+                  <strong className="text-neutral-900">Guaranteed Compliance</strong>
                 </span>
               </div>
             </div>
@@ -199,8 +292,8 @@ export default function PhotoCompliancePage() {
           {/* Step 1: Select Visa Type */}
           <div className="mb-12">
             <SectionHeader className="mb-8">
-              <h2 className="text-3xl font-bold text-neutral-900">Step 1: Select Visa Type</h2>
-              <p className="text-lg text-neutral-600">Choose the visa type you need photos for</p>
+              <h2 className="text-3xl font-bold text-neutral-900">Step 1: Choose Document</h2>
+              <p className="text-lg text-neutral-600">Select the type of document photo you need.</p>
             </SectionHeader>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -238,7 +331,7 @@ export default function PhotoCompliancePage() {
                         AED {visa.price}
                       </span>
                       <span className={`text-sm ${isSelected ? 'text-purple-200' : 'text-neutral-500'}`}>
-                        per set
+                        per photo
                       </span>
                     </div>
 
@@ -251,7 +344,7 @@ export default function PhotoCompliancePage() {
             </div>
           </div>
 
-          {/* Step 2: Upload Photos */}
+          {/* Step 2: Upload Your Selfie */}
           {selectedVisaType && (
             <motion.div
               initial={{ opacity: 0, y: 20 }}
@@ -260,9 +353,9 @@ export default function PhotoCompliancePage() {
               className="mb-12"
             >
               <SectionHeader className="mb-8">
-                <h2 className="text-3xl font-bold text-neutral-900">Step 2: Upload Photos</h2>
+                <h2 className="text-3xl font-bold text-neutral-900">Step 2: Upload Your Selfie</h2>
                 <p className="text-lg text-neutral-600">
-                  Upload 1-5 photos for {VISA_PHOTO_SPECS[selectedVisaType].name} compliance check
+                  Provide a clear, front-facing selfie. We'll handle the rest.
                 </p>
               </SectionHeader>
 
@@ -288,9 +381,9 @@ export default function PhotoCompliancePage() {
                       <CheckCircle2 className="w-16 h-16 text-green-500 mx-auto" />
                       <div>
                         <p className="text-lg font-semibold text-neutral-900 mb-2">
-                          {uploadedPhotos.length} {uploadedPhotos.length === 1 ? 'photo' : 'photos'} uploaded
+                          Photo Uploaded!
                         </p>
-                        <div className="grid grid-cols-3 gap-4 max-w-md mx-auto mb-4">
+                        <div className="grid grid-cols-1 gap-4 max-w-xs mx-auto mb-4">
                           {uploadedPhotos.map((photo, idx) => (
                             <div key={idx} className="relative group">
                               <img
@@ -310,37 +403,26 @@ export default function PhotoCompliancePage() {
                           ))}
                         </div>
                       </div>
-                      {uploadedPhotos.length < 5 && (
-                        <label className="cursor-pointer">
-                          <input
-                            type="file"
-                            accept="image/*"
-                            multiple
-                            onChange={handleFileChange}
-                            className="hidden"
-                          />
-                          <Button variant="outline" className="mx-auto">
-                            Add More Photos ({5 - uploadedPhotos.length} remaining)
-                          </Button>
-                        </label>
-                      )}
+                      <Button variant="outline" onClick={() => inputRef.current?.click()} className="mx-auto">
+                        Change Photo
+                      </Button>
                     </div>
                   ) : (
                     <div className="space-y-4">
                       <ImageIcon className="w-16 h-16 text-neutral-400 mx-auto" />
                       <div>
                         <p className="text-lg font-semibold text-neutral-900 mb-2">
-                          Drag and drop your photos here
+                          Drag and drop your selfie here
                         </p>
                         <p className="text-sm text-neutral-600 mb-4">
-                          or click to browse (JPG, PNG - Max 5 photos, 5MB each)
+                          or click to browse (JPG, PNG, HEIC - max 10MB)
                         </p>
                       </div>
                       <label className="cursor-pointer">
                         <input
+                          ref={inputRef}
                           type="file"
                           accept="image/*"
-                          multiple
                           onChange={handleFileChange}
                           className="hidden"
                         />
@@ -356,7 +438,7 @@ export default function PhotoCompliancePage() {
                 <div className="mt-8 p-6 bg-purple-50 rounded-2xl">
                   <h4 className="font-bold text-neutral-900 mb-4 flex items-center gap-2">
                     <AlertCircle className="w-5 h-5 text-purple-600" />
-                    {VISA_PHOTO_SPECS[selectedVisaType].name} Requirements:
+                    We will generate a photo that meets these requirements:
                   </h4>
                   <ul className="space-y-2">
                     {VISA_PHOTO_SPECS[selectedVisaType].specs.map((spec, idx) => (
@@ -381,9 +463,9 @@ export default function PhotoCompliancePage() {
             >
               <Card className="bg-gradient-to-br from-purple-50 to-pink-50">
                 <div className="text-center">
-                  <h3 className="text-2xl font-bold text-neutral-900 mb-4">Ready to Check Compliance?</h3>
+                  <h3 className="text-2xl font-bold text-neutral-900 mb-4">Ready to Generate Your Photo?</h3>
                   <p className="text-neutral-600 mb-6">
-                    We'll analyze your photos for compliance and auto-correct them if needed
+                    Our AI will generate a fully compliant photo from your selfie.
                   </p>
 
                   <div className="flex items-baseline justify-center gap-2 mb-6">
@@ -396,15 +478,17 @@ export default function PhotoCompliancePage() {
                   <Button
                     variant="gradient"
                     size="xl"
-                    onClick={handleCheck}
+                    onClick={handleProcessRequest}
                     disabled={loading}
                     className="shadow-2xl shadow-purple-500/50"
                   >
-                    {loading ? 'Processing...' : 'Proceed to Payment'}
+                    {loading ? 'Generating Your Photo...' : 'Generate & Proceed to Payment'}
                   </Button>
 
+                  {error && <p className="text-sm text-red-500 mt-4">{error}</p>}
+
                   <p className="text-sm text-neutral-500 mt-4">
-                    Powered by AI • Secure Payment via Stripe • Instant Results + Corrected Photos
+                    Powered by AI • Secure Payment via Stripe • Money-back Guarantee
                   </p>
                 </div>
               </Card>
@@ -417,8 +501,8 @@ export default function PhotoCompliancePage() {
       <section className="py-20 bg-white">
         <div className="max-w-7xl mx-auto px-6">
           <SectionHeader className="text-center mb-16">
-            <h2 className="text-4xl font-bold text-neutral-900 mb-4">How It Works</h2>
-            <p className="text-lg text-neutral-600">Automated photo compliance checking and correction</p>
+            <h2 className="text-4xl font-bold text-neutral-900 mb-4">Simple, Fast, and Compliant</h2>
+            <p className="text-lg text-neutral-600">From selfie to visa-ready photo in three easy steps.</p>
           </SectionHeader>
 
           <div className="grid md:grid-cols-3 gap-8">
@@ -426,9 +510,9 @@ export default function PhotoCompliancePage() {
               <div className="w-16 h-16 rounded-full bg-gradient-to-br from-purple-500 to-purple-600 text-white font-bold text-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">
                 1
               </div>
-              <h3 className="text-xl font-bold text-neutral-900 mb-2">Upload Photos</h3>
+              <h3 className="text-xl font-bold text-neutral-900 mb-2">Upload Selfie</h3>
               <p className="text-neutral-600">
-                Select visa type and upload 1-5 photos
+                Choose your document type and upload a selfie.
               </p>
             </div>
 
@@ -436,9 +520,9 @@ export default function PhotoCompliancePage() {
               <div className="w-16 h-16 rounded-full bg-gradient-to-br from-pink-500 to-pink-600 text-white font-bold text-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">
                 2
               </div>
-              <h3 className="text-xl font-bold text-neutral-900 mb-2">AI Analysis</h3>
+              <h3 className="text-xl font-bold text-neutral-900 mb-2">AI Generation</h3>
               <p className="text-neutral-600">
-                Checks dimensions, background, face size, and quality
+                Our AI creates a new photo meeting all official requirements.
               </p>
             </div>
 
@@ -446,9 +530,9 @@ export default function PhotoCompliancePage() {
               <div className="w-16 h-16 rounded-full bg-gradient-to-br from-amber-500 to-amber-600 text-white font-bold text-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">
                 3
               </div>
-              <h3 className="text-xl font-bold text-neutral-900 mb-2">Get Results</h3>
+              <h3 className="text-xl font-bold text-neutral-900 mb-2">Download</h3>
               <p className="text-neutral-600">
-                Download compliant photos with auto-corrections applied
+                Pay and instantly download your compliant photo.
               </p>
             </div>
           </div>
