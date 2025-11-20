@@ -831,6 +831,32 @@ export const wardrobeApi = {
   },
 };
 
+// Photo Compliance API
+export const photoComplianceApi = {
+  // Process a single photo for compliance
+  processCompliance: async (file: File): Promise<ApiResponse<{
+    success: boolean;
+    message: string;
+    originalFileName: string;
+    requirements: {
+      dimensions: string;
+      background: string;
+      specifications: string[];
+    };
+    processedPhotoUrl: string;
+  }>> => {
+    const formData = new FormData();
+    formData.append('photo', file);
+
+    const response = await api.post('/photo/process-compliance', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    return response.data;
+  },
+};
+
 // Export main axios instance
 export { api };
 export default api;
