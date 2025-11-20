@@ -62,9 +62,15 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
 
   return (
     <JeffreyProvider>
-      <div className="min-h-screen bg-neutral-50">
+      <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 relative">
+        {/* Background Pattern */}
+        <div className="absolute inset-0 opacity-[0.03] pointer-events-none" style={{
+          backgroundImage: `radial-gradient(circle at 1px 1px, rgb(0 0 0) 1px, transparent 0)`,
+          backgroundSize: '40px 40px',
+        }} />
+
         {/* Top Navigation Bar */}
-        <header className="fixed top-0 left-0 right-0 h-16 bg-white border-b border-neutral-200 z-50">
+        <header className="fixed top-0 left-0 right-0 h-16 bg-white/70 backdrop-blur-md border-b border-white/50 z-50 shadow-sm">
           <div className="h-full flex items-center justify-between px-6">
             {/* Logo */}
             <Link to="/app" className="flex items-center gap-2">
@@ -127,7 +133,7 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
 
                   {/* Dropdown Menu */}
                   <div
-                    className="absolute right-0 top-full mt-2 w-56 bg-white rounded-lg shadow-lg border border-neutral-200
+                    className="absolute right-0 top-full mt-2 w-56 bg-white/80 backdrop-blur-xl rounded-lg shadow-lg border border-white/50
                                opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all"
                   >
                     <div className="py-1">

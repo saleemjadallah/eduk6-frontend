@@ -232,7 +232,7 @@ export const UnifiedDashboardHome: React.FC<UnifiedDashboardHomeProps> = ({ user
 
       {/* Travel Profile Summary - shown if onboarding completed */}
       {travelProfile && travelProfile.visaRequirements && (
-        <div className="mb-8 p-6 bg-white border border-indigo-100 rounded-2xl shadow-sm">
+        <div className="mb-8 p-6 bg-white/60 backdrop-blur-md border border-white/50 rounded-2xl shadow-sm">
           <div className="flex items-start justify-between">
             <div>
               <h2 className="text-xl font-bold text-gray-900 mb-4 flex items-center">
@@ -292,8 +292,8 @@ export const UnifiedDashboardHome: React.FC<UnifiedDashboardHomeProps> = ({ user
 
       {/* Overall Progress Card */}
       <div
-        className="mb-8 p-6 bg-gradient-to-br from-indigo-50 to-purple-50
-                   border border-indigo-100 rounded-2xl"
+        className="mb-8 p-6 bg-white/40 backdrop-blur-md
+                   border border-white/50 rounded-2xl shadow-sm"
       >
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-2xl font-bold text-neutral-900">Overall Application Progress</h2>
@@ -391,7 +391,7 @@ export const UnifiedDashboardHome: React.FC<UnifiedDashboardHomeProps> = ({ user
       </div>
 
       {/* Recent Activity Timeline */}
-      <div className="bg-white p-6 rounded-2xl border border-neutral-200 mb-8">
+      <div className="bg-white/60 backdrop-blur-md p-6 rounded-2xl border border-white/50 mb-8 shadow-sm">
         <h3 className="text-2xl font-bold mb-6 text-neutral-900">Recent Activity</h3>
         <ActivityTimeline activities={recentActivity} maxItems={5} />
       </div>
