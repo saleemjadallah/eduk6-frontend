@@ -98,6 +98,17 @@ interface FieldGuidance {
 
 type ViewMode = 'browse' | 'fill' | 'preview';
 
+interface PageAnnotation {
+  fieldName: string;
+  fieldType: FormField['type'];
+  rect: {
+    left: number;
+    top: number;
+    width: number;
+    height: number;
+  };
+}
+
 export const FormFillerWorkflow: React.FC = () => {
   const { updateWorkflow, addRecentAction, askJeffrey, formSearchCache, setFormSearchCache } = useJeffrey();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -124,6 +135,7 @@ export const FormFillerWorkflow: React.FC = () => {
   const [pageImages, setPageImages] = useState<string[]>([]); // Store PDF page images for AI analysis
   const [analyzingWithAI, setAnalyzingWithAI] = useState(false);
   const [pdfDocument, setPdfDocument] = useState<pdfjsLib.PDFDocumentProxy | null>(null);
+  const [pageAnnotations, setPageAnnotations] = useState<Record<number, PageAnnotation[]>>({});
   const canvasRefs = useRef<Map<number, HTMLCanvasElement>>(new Map());
 
   // Profile auto-fill state (kept for future use)
@@ -987,6 +999,22 @@ Be concise but helpful. Format as a brief paragraph.`;
     return undefined;
   };
 
+  const formatFieldLabel = (fieldName: string): string => {
+    const cleaned = fieldName
+      .replace(/[_\-]+/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+
+    if (!cleaned) {
+      return 'Field';
+    }
+
+    return cleaned
+      .split(' ')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(' ');
+  };
+
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
     if (!files || files.length === 0) return;
@@ -1006,6 +1034,7 @@ Be concise but helpful. Format as a brief paragraph.`;
       // Load PDF document for interactive rendering (use a copy)
       const pdf = await pdfjsLib.getDocument({ data: arrayBuffer.slice(0) }).promise;
       setPdfDocument(pdf);
+      setPageAnnotations({});
 
       // Create PDF URL for fallback viewing
       const blob = new Blob([arrayBuffer], { type: 'application/pdf' });
@@ -1080,18 +1109,46 @@ Be concise but helpful. Format as a brief paragraph.`;
   };
 
   // Field change handler - now actually used!
-  const handleFieldChange = (fieldName: string, value: string) => {
+  const handleFieldChange = (fieldName: string, value: string, fieldType: FormField['type'] = 'text') => {
     if (!currentForm) return;
 
     console.log('[FormFiller] Field changed:', fieldName, value);
 
     setCurrentForm(prev => {
       if (!prev) return prev;
+      const fieldIndex = prev.fields.findIndex(field => field.name === fieldName);
+
+      // Update existing field
+      if (fieldIndex !== -1) {
+        const updatedFields = [...prev.fields];
+        updatedFields[fieldIndex] = {
+          ...updatedFields[fieldIndex],
+          value
+        };
+        return {
+          ...prev,
+          fields: updatedFields
+        };
+      }
+
+      // Create fallback field definition if the annotation exists but wasn't parsed originally
+      const label = formatFieldLabel(fieldName);
+      const newField: FormField = {
+        id: fieldName,
+        name: fieldName,
+        type: fieldType,
+        label,
+        value,
+        hint: generateFieldHint(fieldName, label),
+        suggestedValue: generateSuggestedValue(fieldName, travelProfile),
+        source: undefined,
+        required: false,
+        placeholder: `Enter ${label.toLowerCase()}`
+      };
+
       return {
         ...prev,
-        fields: prev.fields.map(field =>
-          field.name === fieldName ? { ...field, value } : field
-        )
+        fields: [...prev.fields, newField]
       };
     });
   };
@@ -1311,6 +1368,26 @@ Be concise but helpful. Format as a brief paragraph.`;
     setPdfViewExpanded(!pdfViewExpanded);
   };
 
+  const mapPdfFieldType = (fieldType?: string): FormField['type'] => {
+    if (!fieldType) return 'text';
+    const normalized = fieldType.toLowerCase();
+
+    if (normalized === 'tx' || normalized.includes('text')) {
+      return 'text';
+    }
+    if (normalized === 'btn' || normalized.includes('checkbox') || normalized.includes('check')) {
+      return 'checkbox';
+    }
+    if (normalized === 'ch' || normalized.includes('choice') || normalized.includes('select') || normalized.includes('combo')) {
+      return 'select';
+    }
+    if (normalized.includes('textarea')) {
+      return 'textarea';
+    }
+
+    return 'text';
+  };
+
   // Render PDF pages with interactive annotations
   const renderPDFPage = async (pageNum: number, canvas: HTMLCanvasElement) => {
     if (!pdfDocument) return;
@@ -1334,64 +1411,35 @@ Be concise but helpful. Format as a brief paragraph.`;
       // Get annotations (form fields)
       const annotations = await page.getAnnotations();
 
-      // Find the annotation layer container for this page
-      const canvasParent = canvas.parentElement;
-      if (!canvasParent) return;
+      const annotationData: PageAnnotation[] = [];
 
-      let annotationLayer = canvasParent.querySelector('.annotation-layer') as HTMLDivElement;
-      if (!annotationLayer) {
-        annotationLayer = document.createElement('div');
-        annotationLayer.className = 'annotation-layer';
-        annotationLayer.style.position = 'absolute';
-        annotationLayer.style.top = '0';
-        annotationLayer.style.left = '0';
-        annotationLayer.style.width = `${viewport.width}px`;
-        annotationLayer.style.height = `${viewport.height}px`;
-        annotationLayer.style.pointerEvents = 'auto';
-        canvasParent.appendChild(annotationLayer);
-      }
-
-      // Clear existing annotations
-      annotationLayer.innerHTML = '';
-
-      // Create input overlays for each form field
       annotations.forEach((annotation: any) => {
-        if (annotation.fieldType && annotation.rect) {
-          const [x1, y1, x2, y2] = annotation.rect;
-          const fieldName = annotation.fieldName || `field_${pageNum}_${x1}_${y1}`;
+        if (!annotation.fieldType || !annotation.rect) return;
 
-          // Transform coordinates to viewport
-          const rect = viewport.convertToViewportRectangle([x1, y1, x2, y2]);
-          const left = Math.min(rect[0], rect[2]);
-          const top = Math.min(rect[1], rect[3]);
-          const width = Math.abs(rect[2] - rect[0]);
-          const height = Math.abs(rect[3] - rect[1]);
+        const [x1, y1, x2, y2] = annotation.rect;
+        const fieldName = annotation.fieldName || `field_${pageNum}_${x1}_${y1}`;
+        const rect = viewport.convertToViewportRectangle([x1, y1, x2, y2]);
+        const left = Math.min(rect[0], rect[2]);
+        const top = Math.min(rect[1], rect[3]);
+        const width = Math.abs(rect[2] - rect[0]);
+        const height = Math.abs(rect[3] - rect[1]);
 
-          // Create standard single input field (character box overlay removed)
-          const input = document.createElement('input');
-          input.type = 'text';
-          input.name = fieldName;
-          input.value = currentForm?.fields.find(f => f.name === fieldName)?.value || '';
-          input.style.position = 'absolute';
-          input.style.left = `${left}px`;
-          input.style.top = `${top}px`;
-          input.style.width = `${width}px`;
-          input.style.height = `${height}px`;
-          input.style.border = '1px solid rgba(99, 102, 241, 0.3)';
-          input.style.background = 'rgba(255, 255, 255, 0.8)';
-          input.style.fontSize = '12px';
-          input.style.padding = '2px';
-
-          // Add change listener
-          input.addEventListener('input', (e) => {
-            const target = e.target as HTMLInputElement;
-            handleFieldChange(fieldName, target.value);
-          });
-
-          annotationLayer.appendChild(input);
-          console.log('[FormFiller] Created standard input overlay for field:', fieldName);
-        }
+        annotationData.push({
+          fieldName,
+          fieldType: mapPdfFieldType(annotation.fieldType),
+          rect: {
+            left,
+            top,
+            width,
+            height
+          }
+        });
       });
+
+      setPageAnnotations(prev => ({
+        ...prev,
+        [pageNum]: annotationData
+      }));
     } catch (error) {
       console.error('Error rendering PDF page:', error);
     }
@@ -1723,44 +1771,132 @@ Be concise but helpful. Format as a brief paragraph.`;
             </button>
             {pdfViewExpanded && (
               <div className="h-[600px] overflow-auto bg-gray-100">
-                {pdfUrl ? (
-                  <>
-                    <iframe
-                      src={pdfUrl}
-                      className="w-full h-full border-0"
-                      title="Fillable PDF Form"
-                    />
-                    <div className="p-4 bg-white border-t border-gray-200 flex items-center justify-between">
-                      <p className="text-sm text-gray-600">
-                        Fill the form above, then click validate to check for errors
-                      </p>
-                      <button
-                        onClick={handleValidateForm}
-                        disabled={isAnalyzingForm}
-                        className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg font-medium hover:bg-indigo-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                      >
-                        {isAnalyzingForm ? (
-                          <>
-                            <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                            Validating...
-                          </>
-                        ) : (
-                          <>
-                            <Shield className="w-4 h-4" />
-                            Validate Form
-                          </>
-                        )}
-                      </button>
-                    </div>
-                  </>
+                {pdfDocument ? (
+                  <div className="space-y-6 p-4">
+                    {Array.from({ length: pdfDocument.numPages }, (_, index) => {
+                      const pageNum = index + 1;
+                      const annotationsForPage = pageAnnotations[pageNum] || [];
+
+                      return (
+                        <div
+                          key={`pdf-page-${pageNum}`}
+                          className="relative w-fit mx-auto bg-white rounded-xl shadow border border-gray-200"
+                        >
+                          <canvas
+                            ref={(canvas) => {
+                              if (canvas) {
+                                canvasRefs.current.set(pageNum, canvas);
+                              } else {
+                                canvasRefs.current.delete(pageNum);
+                              }
+                            }}
+                            className="block"
+                          />
+                          <div className="absolute top-0 left-0 w-full h-full">
+                            {annotationsForPage.map(annotation => {
+                              const fieldState = currentForm.fields.find(f => f.name === annotation.fieldName);
+                              const fieldValue = fieldState?.value || '';
+                              const isCheckbox = annotation.fieldType === 'checkbox';
+                              const isTextarea = annotation.fieldType === 'textarea';
+
+                              const commonStyle: React.CSSProperties = {
+                                position: 'absolute',
+                                left: `${annotation.rect.left}px`,
+                                top: `${annotation.rect.top}px`,
+                                width: `${annotation.rect.width}px`,
+                                height: `${annotation.rect.height}px`,
+                                border: '1px solid rgba(99, 102, 241, 0.35)',
+                                backgroundColor: 'rgba(255,255,255,0.9)',
+                                fontSize: '12px',
+                                padding: isCheckbox ? '0' : '2px',
+                                pointerEvents: 'auto'
+                              };
+
+                              if (isCheckbox) {
+                                return (
+                                  <input
+                                    key={`${pageNum}-${annotation.fieldName}-${annotation.rect.left}-${annotation.rect.top}`}
+                                    type="checkbox"
+                                    name={annotation.fieldName}
+                                    checked={fieldValue === 'true'}
+                                    onChange={(event) =>
+                                      handleFieldChange(annotation.fieldName, event.currentTarget.checked ? 'true' : 'false', annotation.fieldType)
+                                    }
+                                    style={commonStyle}
+                                    className="rounded-sm accent-indigo-600"
+                                  />
+                                );
+                              }
+
+                              if (isTextarea) {
+                                return (
+                                  <textarea
+                                    key={`${pageNum}-${annotation.fieldName}-${annotation.rect.left}-${annotation.rect.top}`}
+                                    name={annotation.fieldName}
+                                    value={fieldValue}
+                                    onChange={(event) =>
+                                      handleFieldChange(annotation.fieldName, event.currentTarget.value, annotation.fieldType)
+                                    }
+                                    style={{ ...commonStyle, resize: 'none' }}
+                                    className="rounded-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                  />
+                                );
+                              }
+
+                              return (
+                                <input
+                                  key={`${pageNum}-${annotation.fieldName}-${annotation.rect.left}-${annotation.rect.top}`}
+                                  type="text"
+                                  name={annotation.fieldName}
+                                  value={fieldValue}
+                                  onChange={(event) =>
+                                    handleFieldChange(annotation.fieldName, event.currentTarget.value, annotation.fieldType)
+                                  }
+                                  style={commonStyle}
+                                  className="rounded-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                />
+                              );
+                            })}
+                            {annotationsForPage.length === 0 && (
+                              <div className="absolute inset-0 flex items-center justify-center text-sm text-gray-500 bg-white/60">
+                                No fillable fields detected on this page
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
                 ) : (
                   <div className="flex items-center justify-center h-full">
                     <div className="text-center">
                       <FileText className="w-12 h-12 text-gray-400 mx-auto mb-2" />
-                      <p className="text-gray-600">Loading PDF...</p>
+                      <p className="text-gray-600">Loading PDF pages...</p>
                     </div>
                   </div>
                 )}
+                <div className="p-4 bg-white border-t border-gray-200 flex items-center justify-between">
+                  <p className="text-sm text-gray-600">
+                    Type directly into the highlighted fields. Your entries sync with validation automatically.
+                  </p>
+                  <button
+                    onClick={handleValidateForm}
+                    disabled={isAnalyzingForm}
+                    className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg font-medium hover:bg-indigo-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {isAnalyzingForm ? (
+                      <>
+                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                        Validating...
+                      </>
+                    ) : (
+                      <>
+                        <Shield className="w-4 h-4" />
+                        Validate Form
+                      </>
+                    )}
+                  </button>
+                </div>
               </div>
             )}
           </div>
