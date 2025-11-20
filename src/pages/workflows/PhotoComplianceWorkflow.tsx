@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from 'react';
-import { Camera, Download, Upload, Eye, MessageCircle, Check } from 'lucide-react';
+import { Camera, Download, Upload, Eye, MessageCircle, Check, Loader2 } from 'lucide-react';
 import { useJeffrey } from '../../contexts/JeffreyContext';
 import { Breadcrumb, BreadcrumbItem } from '../../components/ui/Breadcrumb';
 import { cn } from '../../utils/cn';
-import { onboardingApi } from '../../lib/api';
+import { onboardingApi, photoComplianceApi } from '../../lib/api';
 
 interface VisaPhoto {
   id: string;
@@ -63,6 +63,9 @@ export const PhotoComplianceWorkflow: React.FC = () => {
   const [selectedFormat, setSelectedFormat] = useState<string>('uae');
   const [generatedPhotos, setGeneratedPhotos] = useState<VisaPhoto[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [uploadError, setUploadError] = useState<string>('');
+  const [processedPhotoUrl, setProcessedPhotoUrl] = useState<string>('');
   const [destinationCountry, setDestinationCountry] = useState<string>('');
   const [visaPhotoSpecs, setVisaPhotoSpecs] = useState<PhotoSpecs | null>(null);
 
@@ -115,9 +118,54 @@ export const PhotoComplianceWorkflow: React.FC = () => {
 
   const getPhotosForFormat = (format: string) => generatedPhotos.filter((p) => p.format === format);
 
-  const handlePhotoUpload = (files: FileList) => {
-    addRecentAction('Uploaded photos', { count: files.length });
-    setHasUploadedPhotos(true);
+  const handlePhotoUpload = async (files: FileList) => {
+    if (files.length === 0) return;
+
+    setUploadError('');
+    setIsProcessing(true);
+
+    try {
+      // For now, process the first photo
+      const file = files[0];
+
+      addRecentAction('Uploading photo for compliance processing', { fileName: file.name });
+
+      // Process the photo with Gemini
+      const result = await photoComplianceApi.processCompliance(file);
+
+      if (result.success && result.data) {
+        setHasUploadedPhotos(true);
+        setProcessedPhotoUrl(result.data.processedPhotoUrl);
+
+        // Create a VisaPhoto object for display
+        const processedPhoto: VisaPhoto = {
+          id: Date.now().toString(),
+          format: selectedFormat,
+          url: result.data.processedPhotoUrl,
+          specifications: {
+            width: 0, // These would come from the actual processing
+            height: 0,
+            dpi: 600,
+            background: result.data.requirements.background,
+          },
+        };
+
+        setGeneratedPhotos([processedPhoto]);
+
+        addRecentAction('Photo processed successfully', {
+          fileName: result.data.originalFileName,
+          requirements: result.data.requirements
+        });
+      } else {
+        throw new Error('Failed to process photo');
+      }
+    } catch (error: any) {
+      console.error('Photo upload error:', error);
+      setUploadError(error.response?.data?.error || error.message || 'Failed to process photo. Please try again.');
+      addRecentAction('Photo processing failed', { error: error.message });
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
   if (isLoading) {
@@ -147,15 +195,41 @@ export const PhotoComplianceWorkflow: React.FC = () => {
         <div className="lg:col-span-2 bg-white p-6 rounded-2xl border border-neutral-200">
           {!hasUploadedPhotos ? (
             <div>
-              <h3 className="text-2xl font-bold mb-4">Upload Your Photos</h3>
+              <h3 className="text-2xl font-bold mb-4">Upload Your Photo</h3>
+              {uploadError && (
+                <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700">
+                  <p className="font-semibold">Error</p>
+                  <p className="text-sm mt-1">{uploadError}</p>
+                </div>
+              )}
               <div
-                className="border-2 border-dashed border-neutral-300 rounded-xl p-12 text-center cursor-pointer hover:border-indigo-400 transition-colors"
-                onClick={() => document.getElementById('photo-upload')?.click()}
+                className={cn(
+                  "border-2 border-dashed border-neutral-300 rounded-xl p-12 text-center transition-colors",
+                  isProcessing ? "opacity-50 cursor-not-allowed" : "cursor-pointer hover:border-indigo-400"
+                )}
+                onClick={() => !isProcessing && document.getElementById('photo-upload')?.click()}
               >
-                <Upload className="w-12 h-12 text-neutral-400 mx-auto mb-4" />
-                <p className="text-lg font-semibold mb-2">Drag and drop your photos here</p>
-                <p className="text-sm text-neutral-500 mb-4">or click to browse files</p>
-                <input id="photo-upload" type="file" multiple accept="image/*" className="hidden" onChange={(e) => e.target.files && handlePhotoUpload(e.target.files)} />
+                {isProcessing ? (
+                  <>
+                    <Loader2 className="w-12 h-12 text-indigo-600 mx-auto mb-4 animate-spin" />
+                    <p className="text-lg font-semibold mb-2">Processing your photo...</p>
+                    <p className="text-sm text-neutral-500">Using AI to create a compliant visa photo</p>
+                  </>
+                ) : (
+                  <>
+                    <Upload className="w-12 h-12 text-neutral-400 mx-auto mb-4" />
+                    <p className="text-lg font-semibold mb-2">Drag and drop your selfie here</p>
+                    <p className="text-sm text-neutral-500 mb-4">or click to browse files</p>
+                  </>
+                )}
+                <input
+                  id="photo-upload"
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={(e) => e.target.files && handlePhotoUpload(e.target.files)}
+                  disabled={isProcessing}
+                />
                 <button
                   onClick={(e) => {
                     e.stopPropagation();

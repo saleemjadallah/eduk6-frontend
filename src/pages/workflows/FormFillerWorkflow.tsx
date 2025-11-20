@@ -1448,11 +1448,17 @@ Be concise but helpful. Format as a brief paragraph.`;
     setResumingDraftId(draftId);
     try {
       const detail = detailOverride || (await fetchDraftDetail(draftId));
-      if (detail) {
-        await restoreDraft(detail);
-      } else {
+      if (!detail) {
         alert('Unable to load this draft. Please try again.');
+        return;
       }
+
+      if (!detail.pdfUrl) {
+        alert('This draft no longer has a saved PDF. Please upload the original file again to continue.');
+        return;
+      }
+
+      await restoreDraft(detail);
     } catch (error) {
       console.error('Error resuming draft:', error);
       alert('Unable to resume the draft. Please try again.');
@@ -2141,8 +2147,69 @@ Be concise but helpful. Format as a brief paragraph.`;
           <BreadcrumbItem active>AI Form Filler</BreadcrumbItem>
         </Breadcrumb>
 
-        {(isLoadingDrafts || draftSummaries.length > 0 || savedDraft) && (
-          <div className="mb-8 grid gap-6 lg:grid-cols-3">
+        {savedDraft && (
+          <div
+            className={cn(
+              'mt-4 mb-6 rounded-2xl border p-4 flex flex-col md:flex-row md:items-center md:justify-between gap-4',
+              savedDraft.hasPdf ? 'bg-indigo-50 border-indigo-200' : 'bg-amber-50 border-amber-200'
+            )}
+          >
+            <div className="flex items-start gap-3">
+              <div
+                className={cn(
+                  'w-10 h-10 rounded-full flex items-center justify-center',
+                  savedDraft.hasPdf ? 'bg-indigo-100 text-indigo-600' : 'bg-amber-100 text-amber-700'
+                )}
+              >
+                <FileText className="w-5 h-5" />
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-gray-900">Resume saved draft</p>
+                <p className="text-xs text-gray-600">
+                  {savedDraft.fileName} • Last saved {new Date(savedDraft.updatedAt).toLocaleString()}
+                </p>
+                {!savedDraft.hasPdf && (
+                  <p className="text-xs text-amber-700 mt-1">
+                    We can&apos;t find the original PDF for this draft. Re-upload the form to keep editing.
+                  </p>
+                )}
+              </div>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <button
+                onClick={() => handleResumeDraft(savedDraft.formId, savedDraft)}
+                className="px-3 py-1.5 text-xs font-semibold rounded-lg text-white bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50"
+                disabled={resumingDraftId === savedDraft.formId || isRestoringDraft || !savedDraft.hasPdf}
+              >
+                {resumingDraftId === savedDraft.formId ? 'Resuming...' : 'Resume'}
+              </button>
+              <button
+                onClick={() => handleOpenDraftPdf(savedDraft.formId)}
+                className="px-3 py-1.5 text-xs font-semibold rounded-lg border border-gray-200 hover:bg-gray-50 disabled:opacity-50"
+                disabled={!savedDraft.pdfUrl}
+              >
+                Open saved PDF
+              </button>
+              <button
+                onClick={() => handleDiscardDraft(savedDraft.formId)}
+                className="px-3 py-1.5 text-xs font-semibold rounded-lg border border-rose-200 text-rose-700 hover:bg-rose-50 disabled:opacity-50"
+                disabled={discardingDraftId === savedDraft.formId}
+              >
+                {discardingDraftId === savedDraft.formId ? 'Discarding...' : 'Discard'}
+              </button>
+              {!savedDraft.hasPdf && (
+                <button
+                  onClick={handleUploadClick}
+                  className="px-3 py-1.5 text-xs font-semibold rounded-lg border border-amber-300 text-amber-800 hover:bg-amber-100"
+                >
+                  Re-upload PDF
+                </button>
+              )}
+            </div>
+          </div>
+        )}
+
+        <div className="mb-8 grid gap-6 lg:grid-cols-3">
             <div className="lg:col-span-2 bg-white rounded-2xl border border-gray-200">
               <div className="flex items-center justify-between border-b border-gray-100 p-4">
                 <div>
@@ -2200,11 +2267,16 @@ Be concise but helpful. Format as a brief paragraph.`;
                         </span>
                       </div>
                     </div>
+                    {!draft.hasPdf && (
+                      <p className="mt-2 text-xs text-amber-700">
+                        Saved data is intact, but the PDF is missing. Re-upload the original file to continue.
+                      </p>
+                    )}
                     <div className="mt-3 flex flex-wrap gap-2">
                       <button
                         onClick={() => handleResumeDraft(draft.id)}
                         className="px-3 py-1.5 text-xs font-semibold bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50"
-                        disabled={resumingDraftId === draft.id || isRestoringDraft}
+                        disabled={resumingDraftId === draft.id || isRestoringDraft || !draft.hasPdf}
                       >
                         {resumingDraftId === draft.id ? 'Resuming...' : 'Resume'}
                       </button>
@@ -2280,16 +2352,24 @@ Be concise but helpful. Format as a brief paragraph.`;
                         </p>
                       </object>
                     ) : (
-                      <div className="mt-4 p-4 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-800">
-                        This draft doesn&apos;t include a saved PDF yet. Upload the form again to keep a copy in the
-                        cloud.
+                      <div className="mt-4 p-4 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-800 space-y-2">
+                        <p>
+                          This draft doesn&apos;t include a saved PDF yet. Upload the form again to keep a copy in the
+                          cloud.
+                        </p>
+                        <button
+                          onClick={handleUploadClick}
+                          className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-semibold rounded-lg border border-amber-300 text-amber-800 hover:bg-amber-100"
+                        >
+                          Re-upload PDF
+                        </button>
                       </div>
                     )}
                     <div className="mt-4 flex flex-wrap gap-2">
                       <button
                         onClick={() => handleResumeDraft(savedDraft.formId, savedDraft)}
                         className="px-3 py-1.5 text-xs font-semibold bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50"
-                        disabled={resumingDraftId === savedDraft.formId || isRestoringDraft}
+                        disabled={resumingDraftId === savedDraft.formId || isRestoringDraft || !savedDraft.hasPdf}
                       >
                         {resumingDraftId === savedDraft.formId ? 'Resuming...' : 'Resume'}
                       </button>
