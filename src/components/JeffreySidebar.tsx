@@ -50,14 +50,14 @@ export const JeffreySidebar: React.FC<JeffreySidebarProps> = ({ className }) => 
     <aside
       className={cn(
         'fixed left-0 top-16 h-[calc(100vh-4rem)] w-[300px]',
-        'bg-white/70 backdrop-blur-md border-r border-white/50',
+        'bg-white/40 backdrop-blur-xl border-r border-white/30',
         'flex flex-col',
         'shadow-lg z-40',
         className
       )}
     >
       {/* Jeffrey Header */}
-      <div className="p-4 border-b border-white/50">
+      <div className="p-4 border-b border-white/30">
         <div className="flex items-center gap-3 mb-3">
           {/* Jeffrey Avatar with AI indicator */}
           <div className="relative">
@@ -141,7 +141,7 @@ export const JeffreySidebar: React.FC<JeffreySidebarProps> = ({ className }) => 
       />
 
       {/* Chat Input */}
-      <div className="p-4 border-t border-white/50">
+      <div className="p-4 border-t border-white/30">
         <div className="relative">
           <textarea
             value={inputMessage}

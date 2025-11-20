@@ -37,10 +37,16 @@ interface TravelProfile {
   };
 }
 
+interface FieldAppearance {
+  fontSize?: number;
+  fontName?: string;
+  checkboxOnValue?: string;
+}
+
 interface FormField {
   id: string;
   name: string;
-  type: 'text' | 'date' | 'checkbox' | 'select' | 'textarea';
+  type: 'text' | 'date' | 'checkbox' | 'select' | 'textarea' | 'radio';
   label: string;
   value: string;
   hint?: string;
@@ -49,6 +55,7 @@ interface FormField {
   required?: boolean;
   placeholder?: string;
   options?: string[];
+  appearance?: FieldAppearance;
 }
 
 interface UploadedForm {
@@ -107,6 +114,8 @@ interface PageAnnotation {
     width: number;
     height: number;
   };
+  appearance?: FieldAppearance;
+  widgetValue?: string;
 }
 
 export const FormFillerWorkflow: React.FC = () => {
@@ -446,6 +455,18 @@ Be concise but helpful. Format as a brief paragraph.`;
           const pdfField = form.getField(field.name);
           const fieldApi = pdfField as Record<string, any>;
 
+          if (
+            (field.type === 'text' || field.type === 'textarea' || field.type === 'date') &&
+            field.appearance?.fontSize &&
+            typeof fieldApi.setFontSize === 'function'
+          ) {
+            try {
+              fieldApi.setFontSize(field.appearance.fontSize);
+            } catch {
+              // Ignore font size errors and continue
+            }
+          }
+
           if ((field.type === 'text' || field.type === 'textarea' || field.type === 'date') && typeof fieldApi.setText === 'function') {
             fieldApi.setText(field.value || '');
           } else if (field.type === 'checkbox') {
@@ -456,6 +477,12 @@ Be concise but helpful. Format as a brief paragraph.`;
             }
           } else if (field.type === 'select' && typeof fieldApi.select === 'function') {
             fieldApi.select(field.value);
+          } else if (field.type === 'radio') {
+            if (field.value && typeof fieldApi.select === 'function') {
+              fieldApi.select(field.value);
+            } else if (!field.value && typeof fieldApi.clear === 'function') {
+              fieldApi.clear();
+            }
           }
         } catch {
           // Field might not exist or cannot be set
@@ -855,10 +882,14 @@ Be concise but helpful. Format as a brief paragraph.`;
       const extractedFields: FormField[] = pdfFields.map((field, index) => {
         const fieldName = field.getName();
         const fieldType = field.constructor.name;
+        const fieldAny = field as Record<string, any>;
+        const acroField = fieldAny?.acroField;
+        const defaultAppearance = acroField?.getDefaultAppearance?.() as string | undefined;
 
         let type: FormField['type'] = 'text';
         let value = '';
         let options: string[] | undefined;
+        const appearance: FieldAppearance = { ...parseDefaultAppearanceString(defaultAppearance) };
 
         if (fieldType === 'PDFTextField') {
           type = 'text';
@@ -868,6 +899,10 @@ Be concise but helpful. Format as a brief paragraph.`;
           type = 'checkbox';
           // @ts-expect-error: pdf-lib types
           value = field.isChecked() ? 'true' : 'false';
+          const onValue = acroField?.getOnValue?.();
+          if (onValue?.asString) {
+            appearance.checkboxOnValue = onValue.asString().replace(/^\//, '');
+          }
         } else if (fieldType === 'PDFDropdown') {
           type = 'select';
           // @ts-expect-error: pdf-lib types
@@ -880,6 +915,11 @@ Be concise but helpful. Format as a brief paragraph.`;
           options = field.getOptions();
           // @ts-expect-error: pdf-lib types
           value = field.getSelected()?.[0] || '';
+        } else if (fieldType === 'PDFRadioGroup') {
+          type = 'radio';
+          const radioOptions: string[] = fieldAny?.getOptions?.() || [];
+          options = radioOptions;
+          value = fieldAny?.getSelected?.() || '';
         }
 
         // Get AI-identified label if available (field numbers are 1-based in AI response)
@@ -924,7 +964,8 @@ Be concise but helpful. Format as a brief paragraph.`;
           source: suggestedValue ? 'Your Profile' : undefined,
           required: fieldName.toLowerCase().includes('required') || !fieldName.toLowerCase().includes('optional'),
           placeholder: `Enter ${label.toLowerCase()}`,
-          options
+          options,
+          appearance: Object.keys(appearance).length > 0 ? appearance : undefined
         };
       });
 
@@ -1115,7 +1156,12 @@ Be concise but helpful. Format as a brief paragraph.`;
   };
 
   // Field change handler - now actually used!
-  const handleFieldChange = (fieldName: string, value: string, fieldType: FormField['type'] = 'text') => {
+  const handleFieldChange = (
+    fieldName: string,
+    value: string,
+    fieldType: FormField['type'] = 'text',
+    appearance?: FieldAppearance
+  ) => {
     if (!currentForm) return;
 
     console.log('[FormFiller] Field changed:', fieldName, value);
@@ -1129,7 +1175,8 @@ Be concise but helpful. Format as a brief paragraph.`;
         const updatedFields = [...prev.fields];
         updatedFields[fieldIndex] = {
           ...updatedFields[fieldIndex],
-          value
+          value,
+          appearance: updatedFields[fieldIndex].appearance ?? appearance
         };
         return {
           ...prev,
@@ -1149,7 +1196,8 @@ Be concise but helpful. Format as a brief paragraph.`;
         suggestedValue: generateSuggestedValue(fieldName, travelProfile),
         source: undefined,
         required: false,
-        placeholder: `Enter ${label.toLowerCase()}`
+        placeholder: `Enter ${label.toLowerCase()}`,
+        appearance
       };
 
       return {
@@ -1424,6 +1472,25 @@ Be concise but helpful. Format as a brief paragraph.`;
     return 'text';
   };
 
+  const parseDefaultAppearanceString = (appearance?: string): Pick<FieldAppearance, 'fontSize' | 'fontName'> => {
+    if (!appearance) return {};
+    const tfRegex = /\/([^\s]+)\s+(\d*\.?\d+)\s+Tf/;
+    const match = tfRegex.exec(appearance);
+
+    if (!match) {
+      return {};
+    }
+
+    const [, fontNameRaw, fontSizeRaw] = match;
+    const fontSize = parseFloat(fontSizeRaw);
+    const fontName = fontNameRaw?.replace(/^\//, '');
+
+    return {
+      fontSize: Number.isFinite(fontSize) ? fontSize : undefined,
+      fontName: fontName || undefined
+    };
+  };
+
   // Render PDF pages with interactive annotations
   const renderPDFPage = async (pageNum: number, canvas: HTMLCanvasElement) => {
     if (!pdfDocument) return;
@@ -1459,16 +1526,24 @@ Be concise but helpful. Format as a brief paragraph.`;
         const top = Math.min(rect[1], rect[3]);
         const width = Math.abs(rect[2] - rect[0]);
         const height = Math.abs(rect[3] - rect[1]);
+        const baseFieldType = mapPdfFieldType(annotation.fieldType);
+        const isRadioButton = annotation.radioButton === true;
+        const isCheckboxButton = annotation.checkBox === true;
+        const resolvedFieldType: FormField['type'] = isRadioButton ? 'radio' : isCheckboxButton ? 'checkbox' : baseFieldType;
+        const widgetValue = annotation.exportValue || annotation.buttonValue || undefined;
+        const annotationAppearance = parseDefaultAppearanceString(annotation.defaultAppearance);
 
         annotationData.push({
           fieldName,
-          fieldType: mapPdfFieldType(annotation.fieldType),
+          fieldType: resolvedFieldType,
           rect: {
             left,
             top,
             width,
             height
-          }
+          },
+          appearance: Object.keys(annotationAppearance).length > 0 ? annotationAppearance : undefined,
+          widgetValue: typeof widgetValue === 'string' ? widgetValue : undefined
         });
       });
 
@@ -1833,7 +1908,11 @@ Be concise but helpful. Format as a brief paragraph.`;
                               const fieldState = currentForm.fields.find(f => f.name === annotation.fieldName);
                               const fieldValue = fieldState?.value || '';
                               const isCheckbox = annotation.fieldType === 'checkbox';
+                              const isRadio = annotation.fieldType === 'radio';
                               const isTextarea = annotation.fieldType === 'textarea';
+                              const fontSize = annotation.appearance?.fontSize
+                                ? `${annotation.appearance.fontSize}px`
+                                : '12px';
 
                               const commonStyle: React.CSSProperties = {
                                 position: 'absolute',
@@ -1843,8 +1922,8 @@ Be concise but helpful. Format as a brief paragraph.`;
                                 height: `${annotation.rect.height}px`,
                                 border: '1px solid rgba(99, 102, 241, 0.35)',
                                 backgroundColor: 'rgba(255,255,255,0.9)',
-                                fontSize: '12px',
-                                padding: isCheckbox ? '0' : '2px',
+                                fontSize,
+                                padding: isCheckbox || isRadio ? '0' : '2px',
                                 pointerEvents: 'auto'
                               };
 
@@ -1856,10 +1935,38 @@ Be concise but helpful. Format as a brief paragraph.`;
                                     name={annotation.fieldName}
                                     checked={fieldValue === 'true'}
                                     onChange={(event) =>
-                                      handleFieldChange(annotation.fieldName, event.currentTarget.checked ? 'true' : 'false', annotation.fieldType)
+                                      handleFieldChange(
+                                        annotation.fieldName,
+                                        event.currentTarget.checked ? 'true' : 'false',
+                                        annotation.fieldType,
+                                        annotation.appearance
+                                      )
                                     }
                                     style={commonStyle}
                                     className="rounded-sm accent-indigo-600"
+                                  />
+                                );
+                              }
+
+                              if (isRadio) {
+                                const optionValue = annotation.widgetValue || '';
+                                return (
+                                  <input
+                                    key={`${pageNum}-${annotation.fieldName}-${annotation.rect.left}-${annotation.rect.top}`}
+                                    type="radio"
+                                    name={annotation.fieldName}
+                                    value={optionValue}
+                                    checked={optionValue !== '' && fieldValue === optionValue}
+                                    onChange={(event) =>
+                                      handleFieldChange(
+                                        annotation.fieldName,
+                                        event.currentTarget.checked ? optionValue : '',
+                                        'radio',
+                                        annotation.appearance
+                                      )
+                                    }
+                                    style={commonStyle}
+                                    className="accent-indigo-600"
                                   />
                                 );
                               }
@@ -1871,7 +1978,7 @@ Be concise but helpful. Format as a brief paragraph.`;
                                     name={annotation.fieldName}
                                     value={fieldValue}
                                     onChange={(event) =>
-                                      handleFieldChange(annotation.fieldName, event.currentTarget.value, annotation.fieldType)
+                                      handleFieldChange(annotation.fieldName, event.currentTarget.value, annotation.fieldType, annotation.appearance)
                                     }
                                     style={{ ...commonStyle, resize: 'none' }}
                                     className="rounded-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
@@ -1886,7 +1993,7 @@ Be concise but helpful. Format as a brief paragraph.`;
                                   name={annotation.fieldName}
                                   value={fieldValue}
                                   onChange={(event) =>
-                                    handleFieldChange(annotation.fieldName, event.currentTarget.value, annotation.fieldType)
+                                    handleFieldChange(annotation.fieldName, event.currentTarget.value, annotation.fieldType, annotation.appearance)
                                   }
                                   style={commonStyle}
                                   className="rounded-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
