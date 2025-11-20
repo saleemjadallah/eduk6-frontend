@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { User, BookOpen, Briefcase, Users, ChevronRight, Check, SkipForward, Sparkles, Globe, Calendar } from 'lucide-react';
+import { User, BookOpen, Briefcase, Users, ChevronRight, Check, SkipForward, Sparkles, Globe } from 'lucide-react';
 import { profileApi, UserProfile, PassportProfile } from '../lib/api-profile';
 import { onboardingApi } from '../lib/api';
 import { cn } from '../utils/cn';
