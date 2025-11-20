@@ -199,6 +199,7 @@ export const FormFillerWorkflow: React.FC = () => {
   const [discardingDraftId, setDiscardingDraftId] = useState<string | null>(null);
   const fieldInputRefs = useRef<Map<string, HTMLInputElement | HTMLTextAreaElement>>(new Map());
   const [highlightedField, setHighlightedField] = useState<string | null>(null);
+  const savedDraftsPanelRef = useRef<HTMLDivElement | null>(null);
 
   // Update Jeffrey's context when entering this workflow
   useEffect(() => {
@@ -1562,6 +1563,10 @@ Be concise but helpful. Format as a brief paragraph.`;
     }
   };
 
+  const scrollToSavedDrafts = () => {
+    savedDraftsPanelRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
+
   const jumpToField = (fieldKey?: string | null, fallbackName?: string) => {
     if (!fieldKey && fallbackName) {
       const context = resolveFieldContext(fallbackName, fallbackName);
@@ -2292,6 +2297,7 @@ Be concise but helpful. Format as a brief paragraph.`;
 
   // BROWSE MODE - Show suggested forms and upload option
   if (viewMode === 'browse') {
+    const hasAnyDrafts = draftSummaries.length > 0;
     return (
       <div className="max-w-7xl mx-auto">
         <Breadcrumb>
@@ -2361,7 +2367,7 @@ Be concise but helpful. Format as a brief paragraph.`;
           </div>
         )}
 
-        <div className="mb-8 grid gap-6 lg:grid-cols-3">
+        <div ref={savedDraftsPanelRef} className="mb-8 grid gap-6 lg:grid-cols-3">
             <div className="lg:col-span-2 bg-white rounded-2xl border border-gray-200">
               <div className="flex items-center justify-between border-b border-gray-100 p-4">
                 <div>
@@ -2682,35 +2688,56 @@ Be concise but helpful. Format as a brief paragraph.`;
             <div className="w-20 h-20 bg-indigo-100 rounded-full flex items-center justify-center mx-auto mb-4">
               <Upload className="w-10 h-10 text-indigo-600" />
             </div>
-            <h3 className="text-2xl font-bold text-gray-900 mb-2">Upload Your PDF Form</h3>
+            <h3 className="text-2xl font-bold text-gray-900 mb-2">
+              {hasAnyDrafts ? 'Resume your saved draft' : 'Upload Your PDF Form'}
+            </h3>
             <p className="text-gray-600 mb-6 max-w-lg mx-auto">
-              Download an official visa form from the links above, then upload it here. Jeffrey will extract the fields and help you fill them out correctly with smart suggestions.
+              {hasAnyDrafts
+                ? 'You already have a saved draft. Resume or discard it above before uploading something new.'
+                : 'Download an official visa form from the links above, then upload it here. Jeffrey will extract the fields and help you fill them out correctly with smart suggestions.'}
             </p>
 
-            <button
-              onClick={handleUploadClick}
-              disabled={isProcessingPDF || analyzingWithAI}
-              className="inline-flex items-center gap-2 px-6 py-3 bg-indigo-600 text-white rounded-xl font-semibold hover:bg-indigo-700 transition-colors disabled:opacity-50"
-            >
-              {isProcessingPDF || analyzingWithAI ? (
-                <>
-                  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                  {analyzingWithAI ? 'AI Analyzing Form Fields...' : 'Processing PDF...'}
-                </>
-              ) : (
-                <>
-                  <Upload className="w-5 h-5" />
-                  Choose PDF File
-                </>
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+              <button
+                onClick={handleUploadClick}
+                disabled={isProcessingPDF || analyzingWithAI || hasAnyDrafts}
+                className="inline-flex items-center gap-2 px-6 py-3 bg-indigo-600 text-white rounded-xl font-semibold hover:bg-indigo-700 transition-colors disabled:opacity-50"
+              >
+                {isProcessingPDF || analyzingWithAI ? (
+                  <>
+                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    {analyzingWithAI ? 'AI Analyzing Form Fields...' : 'Processing PDF...'}
+                  </>
+                ) : (
+                  <>
+                    <Upload className="w-5 h-5" />
+                    {hasAnyDrafts ? 'Draft in progress' : 'Choose PDF File'}
+                  </>
+                )}
+              </button>
+              {hasAnyDrafts && (
+                <button
+                  type="button"
+                  onClick={scrollToSavedDrafts}
+                  className="text-sm font-semibold text-indigo-600 hover:text-indigo-800"
+                >
+                  View saved drafts
+                </button>
               )}
-            </button>
+            </div>
 
             <p className="text-xs text-gray-500 mt-4">
               Supported: PDF files with fillable form fields
             </p>
-            <p className="text-xs text-indigo-600 mt-1">
-              AI Vision will automatically identify each field for accurate completion
-            </p>
+            {hasAnyDrafts ? (
+              <p className="text-xs text-amber-700 mt-1">
+                Resume or discard drafts first to avoid overwriting your progress.
+              </p>
+            ) : (
+              <p className="text-xs text-indigo-600 mt-1">
+                AI Vision will automatically identify each field for accurate completion
+              </p>
+            )}
           </div>
         </div>
       </div>
