@@ -515,6 +515,12 @@ export const formFillerApi = {
     savedAt: string;
     persisted?: boolean;
     hasPdf?: boolean;
+    versionId?: string;
+    versions?: Array<{
+      snapshotId: string;
+      savedAt: string;
+      completionPercentage: number;
+    }>;
   }>> => {
     const response = await api.post('/form-filler/save-draft', data);
     return response.data;
