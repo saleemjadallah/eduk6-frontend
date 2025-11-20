@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { FileText, CheckCircle, Camera, Plane, Globe, MapPin, Calendar } from 'lucide-react';
+import { FileText, CheckCircle, Camera, Plane, Globe, MapPin, Calendar, ChevronDown, ChevronUp } from 'lucide-react';
 import { useJeffrey } from '../contexts/JeffreyContext';
 import { useLocation } from 'react-router-dom';
 import { ServiceCard } from '../components/dashboard/ServiceCard';
@@ -56,6 +56,8 @@ export const UnifiedDashboardHome: React.FC<UnifiedDashboardHomeProps> = ({ user
   const [isLoading, setIsLoading] = useState(true);
   const [travelProfile, setTravelProfile] = useState<TravelProfile | null>(null);
   const [showWelcomeBanner, setShowWelcomeBanner] = useState(false);
+  const [isDocumentsExpanded, setIsDocumentsExpanded] = useState(false);
+  const [checkedDocuments, setCheckedDocuments] = useState<Set<string>>(new Set());
 
   // Update Jeffrey's context when entering dashboard
   useEffect(() => {
@@ -189,6 +191,18 @@ export const UnifiedDashboardHome: React.FC<UnifiedDashboardHomeProps> = ({ user
     addRecentAction(`Navigated to ${workflow}`);
   };
 
+  const handleDocumentCheck = (document: string) => {
+    setCheckedDocuments((prev) => {
+      const newSet = new Set(prev);
+      if (newSet.has(document)) {
+        newSet.delete(document);
+      } else {
+        newSet.add(document);
+      }
+      return newSet;
+    });
+  };
+
   if (isLoading) {
     return (
       <div className="max-w-7xl mx-auto flex items-center justify-center min-h-[60vh]">
@@ -233,60 +247,104 @@ export const UnifiedDashboardHome: React.FC<UnifiedDashboardHomeProps> = ({ user
       {/* Travel Profile Summary - shown if onboarding completed */}
       {travelProfile && travelProfile.visaRequirements && (
         <div className="mb-8 p-6 bg-white/80 backdrop-blur-xl border border-white/50 rounded-2xl shadow-sm">
-          <div className="flex items-start justify-between">
-            <div>
-              <h2 className="text-xl font-bold text-gray-900 mb-4 flex items-center">
-                <Globe className="w-5 h-5 mr-2 text-indigo-600" />
-                Your Travel Profile
-              </h2>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div>
-                  <div className="flex items-center text-gray-500 text-sm mb-1">
-                    <MapPin className="w-4 h-4 mr-1" />
-                    Destination
-                  </div>
-                  <p className="font-semibold text-gray-900">{travelProfile.destinationCountry}</p>
-                  <p className="text-sm text-indigo-600">{travelProfile.visaRequirements.visaType}</p>
-                </div>
-                <div>
-                  <div className="flex items-center text-gray-500 text-sm mb-1">
-                    <Calendar className="w-4 h-4 mr-1" />
-                    Travel Dates
-                  </div>
-                  <p className="font-semibold text-gray-900">
-                    {new Date(travelProfile.travelDates.start).toLocaleDateString('en-US', {
-                      month: 'short',
-                      day: 'numeric',
-                      year: 'numeric',
-                    })}
-                  </p>
-                  <p className="text-sm text-gray-600">
-                    to{' '}
-                    {new Date(travelProfile.travelDates.end).toLocaleDateString('en-US', {
-                      month: 'short',
-                      day: 'numeric',
-                      year: 'numeric',
-                    })}
-                  </p>
-                </div>
-                <div>
-                  <div className="flex items-center text-gray-500 text-sm mb-1">
-                    <FileText className="w-4 h-4 mr-1" />
-                    Requirements
-                  </div>
-                  <p className="font-semibold text-gray-900">
-                    {travelProfile.visaRequirements.requiredDocuments.length} documents
-                  </p>
-                  <p className="text-sm text-gray-600">
-                    Processing: {travelProfile.visaRequirements.processingTime}
-                  </p>
-                </div>
-              </div>
-            </div>
+          <div className="flex items-start justify-between mb-4">
+            <h2 className="text-xl font-bold text-gray-900 flex items-center">
+              <Globe className="w-5 h-5 mr-2 text-indigo-600" />
+              Your Travel Profile
+            </h2>
             <button className="text-sm text-indigo-600 hover:text-indigo-700 font-medium">
               Edit Profile
             </button>
           </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-4">
+            <div>
+              <div className="flex items-center text-gray-500 text-sm mb-1">
+                <MapPin className="w-4 h-4 mr-1" />
+                Destination
+              </div>
+              <p className="font-semibold text-gray-900">{travelProfile.destinationCountry}</p>
+              <p className="text-sm text-indigo-600">{travelProfile.visaRequirements.visaType}</p>
+            </div>
+            <div>
+              <div className="flex items-center text-gray-500 text-sm mb-1">
+                <Calendar className="w-4 h-4 mr-1" />
+                Travel Dates
+              </div>
+              <p className="font-semibold text-gray-900">
+                {new Date(travelProfile.travelDates.start).toLocaleDateString('en-US', {
+                  month: 'short',
+                  day: 'numeric',
+                  year: 'numeric',
+                })}
+              </p>
+              <p className="text-sm text-gray-600">
+                to{' '}
+                {new Date(travelProfile.travelDates.end).toLocaleDateString('en-US', {
+                  month: 'short',
+                  day: 'numeric',
+                  year: 'numeric',
+                })}
+              </p>
+            </div>
+            <div>
+              <div className="flex items-center text-gray-500 text-sm mb-1">
+                <FileText className="w-4 h-4 mr-1" />
+                Requirements
+              </div>
+              <button
+                onClick={() => setIsDocumentsExpanded(!isDocumentsExpanded)}
+                className="flex items-center gap-2 font-semibold text-gray-900 hover:text-indigo-600 transition-colors"
+              >
+                {travelProfile.visaRequirements.requiredDocuments.length} documents
+                {isDocumentsExpanded ? (
+                  <ChevronUp className="w-4 h-4" />
+                ) : (
+                  <ChevronDown className="w-4 h-4" />
+                )}
+              </button>
+              <p className="text-sm text-gray-600">
+                Processing: {travelProfile.visaRequirements.processingTime}
+              </p>
+            </div>
+          </div>
+
+          {/* Expandable Documents List */}
+          {isDocumentsExpanded && (
+            <div className="mt-4 pt-4 border-t border-gray-200">
+              <h3 className="text-sm font-semibold text-gray-700 mb-3">Required Documents:</h3>
+              <div className="space-y-2">
+                {travelProfile.visaRequirements.requiredDocuments.map((doc, index) => (
+                  <label
+                    key={index}
+                    className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors group"
+                  >
+                    <input
+                      type="checkbox"
+                      checked={checkedDocuments.has(doc)}
+                      onChange={() => handleDocumentCheck(doc)}
+                      className="w-5 h-5 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 focus:ring-offset-0 cursor-pointer"
+                    />
+                    <span
+                      className={`flex-1 text-sm ${
+                        checkedDocuments.has(doc)
+                          ? 'text-gray-500 line-through'
+                          : 'text-gray-700 group-hover:text-gray-900'
+                      }`}
+                    >
+                      {doc}
+                    </span>
+                    {checkedDocuments.has(doc) && (
+                      <CheckCircle className="w-4 h-4 text-green-500" />
+                    )}
+                  </label>
+                ))}
+              </div>
+              <div className="mt-3 text-sm text-gray-500">
+                {checkedDocuments.size} of {travelProfile.visaRequirements.requiredDocuments.length}{' '}
+                documents checked
+              </div>
+            </div>
+          )}
         </div>
       )}
 
