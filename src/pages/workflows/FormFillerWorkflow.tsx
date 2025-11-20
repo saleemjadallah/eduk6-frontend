@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { FileText, Upload, ExternalLink, Globe, AlertCircle, HelpCircle, Lightbulb, Download, ArrowLeft, ChevronDown, ChevronUp, Shield } from 'lucide-react';
+import { FileText, Upload, ExternalLink, Globe, AlertCircle, HelpCircle, Lightbulb, Download, ArrowLeft, ChevronDown, ChevronUp, Shield, ArrowUpRight } from 'lucide-react';
 import { useJeffrey } from '../../contexts/JeffreyContext';
 import { Breadcrumb, BreadcrumbItem } from '../../components/ui/Breadcrumb';
 import { cn } from '../../utils/cn';
@@ -7,7 +7,7 @@ import { onboardingApi, visaDocsApi, formFillerApi, type FormDraftStatus, type F
 import { PDFDocument, StandardFonts } from 'pdf-lib';
 import * as pdfjsLib from 'pdfjs-dist';
 import { profileApi, CompleteProfile } from '../../lib/api-profile';
-import { validateForm, smartFieldMapper } from '../../lib/validation-rules';
+import { validateForm, smartFieldMapper, countryValidationRules } from '../../lib/validation-rules';
 
 // Set up PDF.js worker - use unpkg which mirrors npm directly
 // react-pdf@10.2.0 uses pdfjs-dist@5.4.296
@@ -165,21 +165,7 @@ export const FormFillerWorkflow: React.FC = () => {
   const [, setShowProfilePrompt] = useState(false);
 
   // Gemini Vision validation state
-  const [validationAnalysis, setValidationAnalysis] = useState<{
-    overallScore: number;
-    completedFields: number;
-    totalFields: number;
-    issues: Array<{
-      id: string;
-      fieldName: string;
-      type: 'error' | 'warning' | 'info';
-      message: string;
-      suggestion?: string;
-      location?: { page: number; area: string };
-    }>;
-    recommendations: string[];
-    countrySpecificNotes: string[];
-  } | null>(null);
+  const [validationAnalysis, setValidationAnalysis] = useState<ValidationResult | null>(null);
   const [isAnalyzingForm, setIsAnalyzingForm] = useState(false);
   const [visualValidationEnabled, setVisualValidationEnabled] = useState(true);
   const [hoveredArea, setHoveredArea] = useState<string | null>(null);
@@ -211,6 +197,8 @@ export const FormFillerWorkflow: React.FC = () => {
   const [previewingDraftId, setPreviewingDraftId] = useState<string | null>(null);
   const [resumingDraftId, setResumingDraftId] = useState<string | null>(null);
   const [discardingDraftId, setDiscardingDraftId] = useState<string | null>(null);
+  const fieldInputRefs = useRef<Map<string, HTMLInputElement | HTMLTextAreaElement>>(new Map());
+  const [highlightedField, setHighlightedField] = useState<string | null>(null);
 
   // Update Jeffrey's context when entering this workflow
   useEffect(() => {
@@ -270,16 +258,6 @@ export const FormFillerWorkflow: React.FC = () => {
     });
 
     return fieldGroups;
-  };
-
-  const getFieldDisplayName = (fieldId: string) => {
-    if (!currentForm) return formatFieldLabel(fieldId);
-    const direct = currentForm.fields.find(field => field.name === fieldId);
-    if (direct) return direct.label;
-    const looseMatch = currentForm.fields.find(field =>
-      field.name.toLowerCase().includes(fieldId.toLowerCase())
-    );
-    return looseMatch?.label || formatFieldLabel(fieldId);
   };
 
   const getFormCompletionStats = () => {
@@ -418,6 +396,104 @@ export const FormFillerWorkflow: React.FC = () => {
     return data;
   };
 
+  const findFieldByNameInsensitive = (candidate?: string | null): FormField | undefined => {
+    if (!candidate || !currentForm) return undefined;
+    const normalized = candidate.toLowerCase();
+    return currentForm.fields.find((field) => field.name.toLowerCase() === normalized);
+  };
+
+  const findFieldByCanonicalKey = (canonicalKey?: string | null): FormField | undefined => {
+    if (!canonicalKey || !currentForm) return undefined;
+    return currentForm.fields.find((field) => {
+      const matchFromName = smartFieldMapper.findBestMatch(field.name);
+      const matchFromLabel = smartFieldMapper.findBestMatch(field.label || '');
+      return matchFromName === canonicalKey || matchFromLabel === canonicalKey;
+    });
+  };
+
+  const resolveFieldContext = (fieldId?: string | null, fieldLabel?: string | null) => {
+    const fallbackLabel = fieldLabel || fieldId || 'Field';
+
+    if (!currentForm) {
+      return {
+        displayName: formatFieldLabel(fallbackLabel),
+        fieldKey: null,
+        value: undefined,
+      };
+    }
+
+    let matchedField: FormField | undefined;
+
+    matchedField = findFieldByNameInsensitive(fieldId);
+
+    if (!matchedField && fieldId) {
+      const canonicalFromId = smartFieldMapper.findBestMatch(fieldId);
+      matchedField = findFieldByCanonicalKey(canonicalFromId);
+    }
+
+    if (!matchedField && fieldLabel) {
+      const normalizedLabel = fieldLabel.toLowerCase();
+      matchedField = currentForm.fields.find(
+        (field) => (field.label || '').toLowerCase() === normalizedLabel
+      );
+    }
+
+    if (!matchedField && fieldLabel) {
+      const canonicalFromLabel = smartFieldMapper.findBestMatch(fieldLabel);
+      matchedField = findFieldByCanonicalKey(canonicalFromLabel);
+    }
+
+    if (!matchedField && fieldLabel) {
+      matchedField = currentForm.fields.find((field) =>
+        (field.label || '').toLowerCase().includes(fieldLabel.toLowerCase())
+      );
+    }
+
+    const displayName =
+      matchedField?.label ||
+      (matchedField ? formatFieldLabel(matchedField.name) : formatFieldLabel(fallbackLabel));
+
+    return {
+      displayName,
+      fieldKey: matchedField?.name ?? null,
+      value: matchedField?.value,
+    };
+  };
+
+  const getFieldTooltipText = (canonicalKey?: string | null, value?: string) => {
+    const countryKey = travelProfile?.destinationCountry?.toLowerCase() || '';
+    const countryRules = countryKey ? countryValidationRules[countryKey] : undefined;
+    const safeValue = value && value.trim() ? value : 'Not provided';
+
+    switch (canonicalKey) {
+      case 'dateOfBirth':
+        return `Expected format: ${countryRules?.dateFormat || 'DD/MM/YYYY'}. Current: ${safeValue}`;
+      case 'passportNumber':
+        return `Passport number must match your travel document. Current entry: ${safeValue}`;
+      case 'nationality':
+        return `Use the nationality shown on your passport. Current entry: ${safeValue}`;
+      case 'firstName':
+      case 'lastName':
+        return `Match exactly as in your passport. Current entry: ${safeValue}`;
+      case 'phone':
+        return `Use international format (e.g., +971 5...). Current entry: ${safeValue}`;
+      default:
+        return value ? `Current entry: ${safeValue}` : 'No value entered yet. Click to fill this field.';
+    }
+  };
+
+  const fieldBadgeVariants: Record<string, string> = {
+    dateOfBirth: 'bg-indigo-600 text-white',
+    passportNumber: 'bg-emerald-600 text-white',
+    nationality: 'bg-sky-600 text-white',
+    firstName: 'bg-purple-600 text-white',
+    lastName: 'bg-purple-600 text-white',
+    phone: 'bg-amber-600 text-white',
+    email: 'bg-rose-600 text-white',
+    address: 'bg-teal-600 text-white',
+    default: 'bg-gray-700 text-white',
+  };
+
   const mergeUniqueStrings = (existing: string[], incoming: string[]): string[] => {
     const existingSet = new Set(existing);
     const filtered = incoming.filter(item => {
@@ -428,24 +504,49 @@ export const FormFillerWorkflow: React.FC = () => {
     return [...existing, ...filtered];
   };
 
+  interface NormalizedValidationAnalysis {
+    overallScore: number;
+    completedFields: number;
+    totalFields: number;
+    issues: ValidationIssue[];
+    recommendations: string[];
+    countrySpecificNotes: string[];
+  }
+
+  type ValidationIssue = {
+    id: string;
+    fieldName: string;
+    type: 'error' | 'warning' | 'info';
+    message: string;
+    suggestion?: string;
+    fieldKey?: string | null;
+    actualValue?: string;
+    source: 'structured' | 'vision';
+  };
+
   const mergeValidationAnalyses = (
-    baseAnalysis: ReturnType<typeof sanitizeValidationResult> | null,
-    incomingAnalysis: ReturnType<typeof sanitizeValidationResult>
+    baseAnalysis: NormalizedValidationAnalysis | null,
+    incomingAnalysis: NormalizedValidationAnalysis
   ) => {
     if (!baseAnalysis) return incomingAnalysis;
 
     const existingIssueIds = new Set(
-      (baseAnalysis.issues as ValidationIssue[]).map(issue => issue.id)
+      baseAnalysis.issues.map(issue => issue.id)
     );
-    const uniqueIncomingIssues = (incomingAnalysis.issues as ValidationIssue[]).filter(
+    const uniqueIncomingIssues = incomingAnalysis.issues.filter(
       issue => !existingIssueIds.has(issue.id)
     );
+
+    const mergedIssues = [...baseAnalysis.issues, ...uniqueIncomingIssues].sort((a, b) => {
+      if (a.source === b.source) return 0;
+      return a.source === 'structured' ? -1 : 1;
+    });
 
     return {
       overallScore: incomingAnalysis.overallScore || baseAnalysis.overallScore,
       completedFields: incomingAnalysis.completedFields || baseAnalysis.completedFields,
       totalFields: incomingAnalysis.totalFields || baseAnalysis.totalFields,
-      issues: [...baseAnalysis.issues, ...uniqueIncomingIssues],
+      issues: mergedIssues,
       recommendations: mergeUniqueStrings(baseAnalysis.recommendations, incomingAnalysis.recommendations),
       countrySpecificNotes: mergeUniqueStrings(baseAnalysis.countrySpecificNotes, incomingAnalysis.countrySpecificNotes)
     };
@@ -459,12 +560,18 @@ export const FormFillerWorkflow: React.FC = () => {
       travelProfile?.visaRequirements?.visaType || ''
     );
 
-    const localIssues = localResult.errors.map((error, index) => ({
-      id: `local-${error.fieldId}-${index}`,
-      fieldName: getFieldDisplayName(error.fieldId),
-      type: error.severity,
-      message: error.message
-    }));
+    const localIssues = localResult.errors.map((error, index) => {
+      const context = resolveFieldContext(error.fieldId, error.fieldId);
+      return {
+        id: `local-${error.fieldId}-${index}`,
+        fieldName: context.displayName,
+        type: error.severity,
+        message: error.message,
+        fieldKey: context.fieldKey,
+        actualValue: context.value,
+        fieldId: error.fieldId,
+      };
+    });
 
     const recommendations = localIssues
       .filter(issue => issue.type === 'error')
@@ -481,11 +588,11 @@ export const FormFillerWorkflow: React.FC = () => {
       issues: localIssues,
       recommendations,
       countrySpecificNotes: notes
-    });
+    }, 'structured');
   };
 
   // Sanitize validation result to ensure all fields are in correct format
-  const sanitizeValidationResult = (data: any) => {
+  const sanitizeValidationResult = (data: any, source: 'structured' | 'vision' = 'vision'): NormalizedValidationAnalysis => {
     const normalizeTextValue = (value: any) => {
       if (typeof value === 'string') return value;
       if (value && typeof value === 'object') {
@@ -495,17 +602,29 @@ export const FormFillerWorkflow: React.FC = () => {
       return String(value ?? '');
     };
 
+    const normalizeIssue = (issue: any): ValidationIssue => {
+      const enrichedContext = resolveFieldContext(
+        typeof issue.fieldId === 'string' ? issue.fieldId : undefined,
+        typeof issue.fieldName === 'string' ? issue.fieldName : undefined
+      );
+
+      return {
+        id: String(issue.id || `${source}-${issue.fieldId || issue.fieldName || Date.now()}`),
+        fieldName: enrichedContext.displayName,
+        type: ['error', 'warning', 'info'].includes(issue.type) ? issue.type : 'info',
+        message: String(issue.message || 'No details provided'),
+        suggestion: issue.suggestion ? String(issue.suggestion) : undefined,
+        fieldKey: issue.fieldKey ?? enrichedContext.fieldKey ?? undefined,
+        actualValue: issue.actualValue ?? enrichedContext.value,
+        source,
+      };
+    };
+
     return {
       overallScore: typeof data.overallScore === 'number' ? data.overallScore : 0,
       completedFields: typeof data.completedFields === 'number' ? data.completedFields : 0,
       totalFields: typeof data.totalFields === 'number' ? data.totalFields : 0,
-      issues: Array.isArray(data.issues) ? data.issues.map((issue: any) => ({
-        id: String(issue.id || 'unknown'),
-        fieldName: String(issue.fieldName || 'Unknown Field'),
-        type: ['error', 'warning', 'info'].includes(issue.type) ? issue.type : 'info',
-        message: String(issue.message || 'No details provided'),
-        suggestion: issue.suggestion ? String(issue.suggestion) : undefined
-      })) : [],
+      issues: Array.isArray(data.issues) ? data.issues.map((issue: any) => normalizeIssue(issue)) : [],
       recommendations: Array.isArray(data.recommendations)
         ? data.recommendations.map((r: any) => normalizeTextValue(r)).filter((text: string) => text.length > 0)
         : [],
@@ -515,8 +634,7 @@ export const FormFillerWorkflow: React.FC = () => {
     };
   };
 
-  type ValidationResult = ReturnType<typeof sanitizeValidationResult>;
-  type ValidationIssue = ValidationResult['issues'][number];
+  type ValidationResult = NormalizedValidationAnalysis;
 
   // Analyze uploaded form with Gemini Vision for validation
   const analyzeFormForValidation = async (
@@ -1444,6 +1562,30 @@ Be concise but helpful. Format as a brief paragraph.`;
     }
   };
 
+  const jumpToField = (fieldKey?: string | null, fallbackName?: string) => {
+    if (!fieldKey && fallbackName) {
+      const context = resolveFieldContext(fallbackName, fallbackName);
+      fieldKey = context.fieldKey;
+    }
+
+    if (!fieldKey) return;
+
+    setPdfViewExpanded(true);
+
+    setTimeout(() => {
+      const target = fieldInputRefs.current.get(fieldKey!);
+      if (target) {
+        target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        setHighlightedField(fieldKey!);
+        try {
+          target.focus({ preventScroll: true });
+        } catch {
+          target.focus();
+        }
+      }
+    }, 100);
+  };
+
   const handleResumeDraft = async (draftId: string, detailOverride?: DraftDetail) => {
     setResumingDraftId(draftId);
     try {
@@ -1972,6 +2114,16 @@ Be concise but helpful. Format as a brief paragraph.`;
       fetchFieldGuidance();
     }
   }, [currentForm, viewMode]);
+
+  useEffect(() => {
+    if (!highlightedField) return;
+    const timeout = setTimeout(() => setHighlightedField(null), 2000);
+    return () => clearTimeout(timeout);
+  }, [highlightedField]);
+
+  useEffect(() => {
+    fieldInputRefs.current.clear();
+  }, [currentForm]);
 
   const togglePDFExpanded = () => {
     setPdfViewExpanded(!pdfViewExpanded);
@@ -2711,91 +2863,173 @@ Be concise but helpful. Format as a brief paragraph.`;
                               const fontSize = annotation.appearance?.fontSize
                                 ? `${annotation.appearance.fontSize}px`
                                 : '12px';
-
-                              const commonStyle: React.CSSProperties = {
+                              const canonicalKey =
+                                smartFieldMapper.findBestMatch(annotation.fieldName) ||
+                                smartFieldMapper.findBestMatch(fieldState?.label || '');
+                              const badgeClass = canonicalKey
+                                ? fieldBadgeVariants[canonicalKey] || fieldBadgeVariants.default
+                                : fieldBadgeVariants.default;
+                              const badgeLabel =
+                                canonicalKey
+                                  ? formatFieldLabel(canonicalKey)
+                                  : fieldState?.label || formatFieldLabel(annotation.fieldName);
+                              const tooltipText = getFieldTooltipText(canonicalKey, fieldValue);
+                              const baseStyle: React.CSSProperties = {
                                 position: 'absolute',
                                 left: `${annotation.rect.left}px`,
                                 top: `${annotation.rect.top}px`,
                                 width: `${annotation.rect.width}px`,
                                 height: `${annotation.rect.height}px`,
+                              };
+                              const inputStyle: React.CSSProperties = {
+                                width: '100%',
+                                height: '100%',
                                 border: '1px solid rgba(99, 102, 241, 0.35)',
-                                backgroundColor: 'rgba(255,255,255,0.9)',
+                                backgroundColor: 'rgba(255,255,255,0.95)',
                                 fontSize,
                                 padding: isCheckbox || isRadio ? '0' : '2px',
-                                pointerEvents: 'auto'
+                                borderRadius: 4,
                               };
+                              const isHighlighted = highlightedField === annotation.fieldName;
+                              const overlayKey = `${pageNum}-${annotation.fieldName}-${annotation.rect.left}-${annotation.rect.top}`;
+
+                              const registerRef = (element: HTMLInputElement | HTMLTextAreaElement | null) => {
+                                if (!element) {
+                                  fieldInputRefs.current.delete(annotation.fieldName);
+                                  return;
+                                }
+                                if (!fieldInputRefs.current.has(annotation.fieldName)) {
+                                  fieldInputRefs.current.set(annotation.fieldName, element);
+                                }
+                              };
+
+                              const badgeNode = (
+                                <span
+                                  className={cn(
+                                    'absolute -top-5 left-0 text-[10px] px-2 py-0.5 rounded-full shadow',
+                                    badgeClass
+                                  )}
+                                  title={tooltipText}
+                                >
+                                  {badgeLabel}
+                                </span>
+                              );
 
                               if (isCheckbox) {
                                 return (
-                                  <input
-                                    key={`${pageNum}-${annotation.fieldName}-${annotation.rect.left}-${annotation.rect.top}`}
-                                    type="checkbox"
-                                    name={annotation.fieldName}
-                                    checked={fieldValue === 'true'}
-                                    onChange={(event) =>
-                                      handleFieldChange(
-                                        annotation.fieldName,
-                                        event.currentTarget.checked ? 'true' : 'false',
-                                        annotation.fieldType,
-                                        annotation.appearance
-                                      )
-                                    }
-                                    style={commonStyle}
-                                    className="rounded-sm accent-indigo-600"
-                                  />
+                                  <div
+                                    key={overlayKey}
+                                    style={baseStyle}
+                                    className={cn(
+                                      'absolute pointer-events-auto flex items-center justify-center',
+                                      isHighlighted && 'ring-2 ring-yellow-300 rounded-md ring-offset-1'
+                                    )}
+                                  >
+                                    {badgeNode}
+                                    <input
+                                      type="checkbox"
+                                      name={annotation.fieldName}
+                                      checked={fieldValue === 'true'}
+                                      onChange={(event) =>
+                                        handleFieldChange(
+                                          annotation.fieldName,
+                                          event.currentTarget.checked ? 'true' : 'false',
+                                          annotation.fieldType,
+                                          annotation.appearance
+                                        )
+                                      }
+                                      ref={registerRef}
+                                      className="rounded-sm accent-indigo-600"
+                                      style={{ width: '60%', height: '60%' }}
+                                      title={tooltipText}
+                                    />
+                                  </div>
                                 );
                               }
 
                               if (isRadio) {
                                 const optionValue = annotation.widgetValue || '';
                                 return (
-                                  <input
-                                    key={`${pageNum}-${annotation.fieldName}-${annotation.rect.left}-${annotation.rect.top}`}
-                                    type="radio"
-                                    name={annotation.fieldName}
-                                    value={optionValue}
-                                    checked={optionValue !== '' && fieldValue === optionValue}
-                                    onChange={(event) =>
-                                      handleFieldChange(
-                                        annotation.fieldName,
-                                        event.currentTarget.checked ? optionValue : '',
-                                        'radio',
-                                        annotation.appearance
-                                      )
-                                    }
-                                    style={commonStyle}
-                                    className="accent-indigo-600"
-                                  />
+                                  <div
+                                    key={overlayKey}
+                                    style={baseStyle}
+                                    className={cn(
+                                      'absolute pointer-events-auto flex items-center justify-center',
+                                      isHighlighted && 'ring-2 ring-yellow-300 rounded-md ring-offset-1'
+                                    )}
+                                  >
+                                    {badgeNode}
+                                    <input
+                                      type="radio"
+                                      name={annotation.fieldName}
+                                      value={optionValue}
+                                      checked={optionValue !== '' && fieldValue === optionValue}
+                                      onChange={(event) =>
+                                        handleFieldChange(
+                                          annotation.fieldName,
+                                          event.currentTarget.checked ? optionValue : '',
+                                          'radio',
+                                          annotation.appearance
+                                        )
+                                      }
+                                      ref={registerRef}
+                                      className="accent-indigo-600"
+                                      style={{ width: '60%', height: '60%' }}
+                                      title={tooltipText}
+                                    />
+                                  </div>
                                 );
                               }
 
                               if (isTextarea) {
                                 return (
-                                  <textarea
-                                    key={`${pageNum}-${annotation.fieldName}-${annotation.rect.left}-${annotation.rect.top}`}
+                                  <div
+                                    key={overlayKey}
+                                    style={baseStyle}
+                                    className={cn(
+                                      'absolute pointer-events-auto',
+                                      isHighlighted && 'ring-2 ring-yellow-300 rounded-md ring-offset-1'
+                                    )}
+                                  >
+                                    {badgeNode}
+                                    <textarea
+                                      name={annotation.fieldName}
+                                      value={fieldValue}
+                                      onChange={(event) =>
+                                        handleFieldChange(annotation.fieldName, event.currentTarget.value, annotation.fieldType, annotation.appearance)
+                                      }
+                                      style={{ ...inputStyle, resize: 'none' }}
+                                      className="rounded-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                      ref={registerRef}
+                                      title={tooltipText}
+                                    />
+                                  </div>
+                                );
+                              }
+
+                              return (
+                                <div
+                                  key={overlayKey}
+                                  style={baseStyle}
+                                  className={cn(
+                                    'absolute pointer-events-auto',
+                                    isHighlighted && 'ring-2 ring-yellow-300 rounded-md ring-offset-1'
+                                  )}
+                                >
+                                  {badgeNode}
+                                  <input
+                                    type="text"
                                     name={annotation.fieldName}
                                     value={fieldValue}
                                     onChange={(event) =>
                                       handleFieldChange(annotation.fieldName, event.currentTarget.value, annotation.fieldType, annotation.appearance)
                                     }
-                                    style={{ ...commonStyle, resize: 'none' }}
+                                    style={inputStyle}
                                     className="rounded-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                    ref={registerRef}
+                                    title={tooltipText}
                                   />
-                                );
-                              }
-
-                              return (
-                                <input
-                                  key={`${pageNum}-${annotation.fieldName}-${annotation.rect.left}-${annotation.rect.top}`}
-                                  type="text"
-                                  name={annotation.fieldName}
-                                  value={fieldValue}
-                                  onChange={(event) =>
-                                    handleFieldChange(annotation.fieldName, event.currentTarget.value, annotation.fieldType, annotation.appearance)
-                                  }
-                                  style={commonStyle}
-                                  className="rounded-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                                />
+                                </div>
                               );
                             })}
                             {annotationsForPage.length === 0 && (
@@ -2925,24 +3159,50 @@ Be concise but helpful. Format as a brief paragraph.`;
                   <div
                     key={issue.id}
                     className={cn(
-                      "p-3 rounded-lg border cursor-pointer hover:shadow-md transition-shadow",
+                      "p-3 rounded-lg border transition-shadow",
                       issue.type === 'error' ? "bg-red-50 border-red-200" :
                         issue.type === 'warning' ? "bg-amber-50 border-amber-200" :
                           "bg-blue-50 border-blue-200"
                     )}
-                    onClick={() => getFieldExplanation(issue.fieldName, issue.id)}
                   >
                     <div className="flex items-start justify-between">
                       <div>
                         <p className="font-medium text-gray-900">{issue.fieldName}</p>
                         <p className="text-sm text-gray-700 mt-1">{issue.message}</p>
+                        {issue.actualValue && (
+                          <p className="text-xs text-gray-500 mt-1">
+                            Current entry: <span className="font-medium">{issue.actualValue}</span>
+                          </p>
+                        )}
                         {issue.suggestion && (
                           <p className="text-sm text-indigo-600 mt-1">
                             <strong>Suggestion:</strong> {issue.suggestion}
                           </p>
                         )}
                       </div>
-                      <HelpCircle className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                      <div className="flex items-center gap-2">
+                        {issue.source === 'vision' && (
+                          <span className="text-[10px] px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-700 font-semibold">
+                            Visual QA
+                          </span>
+                        )}
+                        <button
+                          onClick={() => getFieldExplanation(issue.fieldName, issue.id)}
+                          className="text-gray-500 hover:text-indigo-600"
+                        >
+                          <HelpCircle className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </div>
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      <button
+                        onClick={() => jumpToField(issue.fieldKey, issue.fieldName)}
+                        disabled={!issue.fieldKey && !currentForm}
+                        className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg border border-gray-300 text-gray-700 hover:bg-white"
+                      >
+                        <ArrowUpRight className="w-3 h-3" />
+                        Jump to field
+                      </button>
                     </div>
                     {hoveredArea === issue.id && fieldExplanation && (
                       <div className="mt-3 pt-3 border-t border-gray-200 text-sm text-gray-600">
