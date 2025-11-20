@@ -173,6 +173,9 @@ export const FormFillerWorkflow: React.FC = () => {
 
   // Gemini Vision validation state
   const [validationAnalysis, setValidationAnalysis] = useState<ValidationResult | null>(null);
+  const [visualQaResult, setVisualQaResult] = useState<ValidationResult | null>(null);
+  const [visualQaError, setVisualQaError] = useState<string | null>(null);
+  const [validationTab, setValidationTab] = useState<'fields' | 'visual'>('fields');
   const [isAnalyzingForm, setIsAnalyzingForm] = useState(false);
   const [visualValidationEnabled, setVisualValidationEnabled] = useState(true);
   const [hoveredArea, setHoveredArea] = useState<string | null>(null);
@@ -332,7 +335,14 @@ export const FormFillerWorkflow: React.FC = () => {
         data.nationality = trimmedValue;
       }
 
-      if (!data.passportNumber && (containsAll('passport', 'number') || containsAny('passport no', 'passport#'))) {
+      if (
+        !data.passportNumber &&
+        (
+          containsAll('passport', 'number') ||
+          containsAny('passport no', 'passport#') ||
+          (containsAll('travel', 'document') && containsAny('number', 'no', 'doc'))
+        )
+      ) {
         data.passportNumber = trimmedValue;
       }
 
@@ -515,16 +525,6 @@ export const FormFillerWorkflow: React.FC = () => {
     default: 'bg-gray-700 text-white',
   };
 
-  const mergeUniqueStrings = (existing: string[], incoming: string[]): string[] => {
-    const existingSet = new Set(existing);
-    const filtered = incoming.filter(item => {
-      if (existingSet.has(item)) return false;
-      existingSet.add(item);
-      return true;
-    });
-    return [...existing, ...filtered];
-  };
-
   interface NormalizedValidationAnalysis {
     overallScore: number;
     completedFields: number;
@@ -543,34 +543,6 @@ export const FormFillerWorkflow: React.FC = () => {
     fieldKey?: string | null;
     actualValue?: string;
     source: 'structured' | 'vision';
-  };
-
-  const mergeValidationAnalyses = (
-    baseAnalysis: NormalizedValidationAnalysis | null,
-    incomingAnalysis: NormalizedValidationAnalysis
-  ) => {
-    if (!baseAnalysis) return incomingAnalysis;
-
-    const existingIssueIds = new Set(
-      baseAnalysis.issues.map(issue => issue.id)
-    );
-    const uniqueIncomingIssues = incomingAnalysis.issues.filter(
-      issue => !existingIssueIds.has(issue.id)
-    );
-
-    const mergedIssues = [...baseAnalysis.issues, ...uniqueIncomingIssues].sort((a, b) => {
-      if (a.source === b.source) return 0;
-      return a.source === 'structured' ? -1 : 1;
-    });
-
-    return {
-      overallScore: incomingAnalysis.overallScore || baseAnalysis.overallScore,
-      completedFields: incomingAnalysis.completedFields || baseAnalysis.completedFields,
-      totalFields: incomingAnalysis.totalFields || baseAnalysis.totalFields,
-      issues: mergedIssues,
-      recommendations: mergeUniqueStrings(baseAnalysis.recommendations, incomingAnalysis.recommendations),
-      countrySpecificNotes: mergeUniqueStrings(baseAnalysis.countrySpecificNotes, incomingAnalysis.countrySpecificNotes)
-    };
   };
 
   const createLocalValidationAnalysis = (structuredData: Record<string, string>) => {
@@ -666,8 +638,9 @@ export const FormFillerWorkflow: React.FC = () => {
       mergeWithExisting?: boolean;
       skipSpinner?: boolean;
     }
-  ): Promise<ValidationResult | null> => {
+  ): Promise<{ result: ValidationResult | null; error?: string }> => {
     let finalResult: ValidationResult | null = null;
+    let errorMessage: string | null = null;
     if (!options?.skipSpinner) {
       setIsAnalyzingForm(true);
     }
@@ -742,10 +715,6 @@ Return ONLY valid JSON, no other text.`;
             };
             const sanitized = sanitizeValidationResult(adjustedAnalysis);
             finalResult = sanitized;
-            setValidationAnalysis(prev => options?.mergeWithExisting
-              ? mergeValidationAnalyses(prev, sanitized)
-              : sanitized
-            );
           } else if (response.data.validation) {
             // Direct validation object from API - adjust it too
             const adjustedValidation = {
@@ -758,61 +727,26 @@ Return ONLY valid JSON, no other text.`;
             };
             const sanitized = sanitizeValidationResult(adjustedValidation);
             finalResult = sanitized;
-            setValidationAnalysis(prev => options?.mergeWithExisting
-              ? mergeValidationAnalyses(prev, sanitized)
-              : sanitized
-            );
           } else {
-            // If no JSON found, create a basic structure with our local counts
-            const fallback = sanitizeValidationResult({
-              overallScore: totalFieldGroups > 0
-                ? Math.round((filledFieldGroups / totalFieldGroups) * 100)
-                : 0,
-              completedFields: filledFieldGroups,
-              totalFields: totalFieldGroups,
-              issues: [{
-                id: 'parse-error',
-                fieldName: 'Analysis',
-                type: 'warning',
-                message: 'Could not fully parse form. Please try uploading again.',
-              }],
-              recommendations: ['Upload a clearer PDF for better analysis'],
-              countrySpecificNotes: []
-            });
-            finalResult = fallback;
-            setValidationAnalysis(prev => options?.mergeWithExisting
-              ? mergeValidationAnalyses(prev, fallback)
-              : fallback
-            );
+            errorMessage = 'Visual QA unavailable right now. Please try again after uploading a clearer PDF.';
           }
         } catch (parseError) {
           console.error('Error parsing validation response:', parseError);
-          const fallback = sanitizeValidationResult({
-            overallScore: totalFieldGroups > 0
-              ? Math.round((filledFieldGroups / totalFieldGroups) * 100)
-              : 50,
-            completedFields: filledFieldGroups,
-            totalFields: totalFieldGroups,
-            issues: [],
-            recommendations: ['Form uploaded successfully. Hover over specific areas for detailed validation.'],
-            countrySpecificNotes: []
-          });
-          finalResult = fallback;
-          setValidationAnalysis(prev => options?.mergeWithExisting
-            ? mergeValidationAnalyses(prev, fallback)
-            : fallback
-          );
+          errorMessage = 'Visual QA unavailable. Please try again later.';
         }
+      } else {
+        errorMessage = 'Visual QA unavailable. Please try again later.';
       }
     } catch (error) {
       console.error('Error analyzing form:', error);
+      errorMessage = 'Visual QA unavailable. Please try again later.';
     } finally {
       if (!options?.skipSpinner) {
         setIsAnalyzingForm(false);
       }
     }
 
-    return finalResult;
+    return { result: finalResult, error: errorMessage || undefined };
   };
 
   // Get field-specific explanation on hover
@@ -949,7 +883,7 @@ Be concise but helpful. Format as a brief paragraph.`;
     console.log('[FormFiller] Auto-validation triggered');
     const structuredData = buildStructuredFormData();
     const localAnalysis = createLocalValidationAnalysis(structuredData);
-    setValidationAnalysis(prev => mergeValidationAnalyses(prev, localAnalysis));
+    setValidationAnalysis(localAnalysis);
     setLastValidationTime(new Date());
   };
 
@@ -1485,6 +1419,10 @@ Be concise but helpful. Format as a brief paragraph.`;
       originalPdfUploadedRef.current = true;
       setVersionHistory(draft.versionHistory || []);
       setLastVersionId(draft.versionHistory?.[0]?.snapshotId ?? null);
+      setValidationAnalysis(null);
+      setVisualQaResult(null);
+      setVisualQaError(null);
+      setValidationTab('fields');
 
       const images = await convertPDFPagesToImages(pdfArrayBuffer);
       setPageImages(images);
@@ -1704,8 +1642,6 @@ Be concise but helpful. Format as a brief paragraph.`;
       }
 
       await restoreDraft(detail);
-      setVersionHistory(detail.versionHistory || []);
-      setLastVersionId(detail.versionHistory?.[0]?.snapshotId ?? null);
     } catch (error) {
       console.error('Error resuming draft:', error);
       alert('Unable to resume the draft. Please try again.');
@@ -1824,6 +1760,10 @@ Be concise but helpful. Format as a brief paragraph.`;
     setLastVersionId(null);
     addRecentAction('Uploaded form', { fileName: file.name });
     setSavedDraft(null);
+    setValidationAnalysis(null);
+    setVisualQaResult(null);
+    setVisualQaError(null);
+    setValidationTab('fields');
 
     try {
       const arrayBuffer = await file.arrayBuffer();
@@ -2065,8 +2005,9 @@ Be concise but helpful. Format as a brief paragraph.`;
 
     const structuredData = buildStructuredFormData();
     const localAnalysis = createLocalValidationAnalysis(structuredData);
-    setValidationAnalysis(prev => mergeValidationAnalyses(prev, localAnalysis));
+    setValidationAnalysis(localAnalysis);
     setLastValidationTime(new Date());
+    setValidationTab('fields');
 
     if (!visualValidationEnabled) {
       return;
@@ -2103,7 +2044,7 @@ Be concise but helpful. Format as a brief paragraph.`;
 
       const filledPdfBase64 = filledPdfBytes ? uint8ToBase64(filledPdfBytes) : undefined;
 
-      const validationResult = await analyzeFormForValidation(imagesToAnalyze, {
+      const { result: validationResult, error: visualError } = await analyzeFormForValidation(imagesToAnalyze, {
         structuredData,
         filledPdfBase64,
         mergeWithExisting: true,
@@ -2112,9 +2053,17 @@ Be concise but helpful. Format as a brief paragraph.`;
 
       setLastValidationTime(new Date());
 
-      const hasBlockingErrors = validationResult?.issues.some((issue: ValidationIssue) => issue.type === 'error');
-      if (validationResult && !hasBlockingErrors) {
-        await markDraftCompleted('validation');
+      if (visualError) {
+        setVisualQaError(visualError);
+        setVisualQaResult(null);
+      } else if (validationResult) {
+        setVisualQaResult(validationResult);
+        setVisualQaError(null);
+
+        const hasBlockingErrors = validationResult.issues.some((issue: ValidationIssue) => issue.type === 'error');
+        if (!hasBlockingErrors) {
+          await markDraftCompleted('validation');
+        }
       }
     } catch (error) {
       console.error('[FormFiller] Validation error:', error);
@@ -2482,6 +2431,10 @@ Be concise but helpful. Format as a brief paragraph.`;
     setLastVersionId(null);
     setShowVersionHistory(false);
     setSaveToast(null);
+    setValidationAnalysis(null);
+    setVisualQaResult(null);
+    setVisualQaError(null);
+    setValidationTab('fields');
   };
 
   if (isLoading) {
@@ -3532,28 +3485,49 @@ Be concise but helpful. Format as a brief paragraph.`;
           </div>
         )}
 
-        {/* Validation Analysis Dashboard */}
+        {/* Validation / Visual QA */}
         <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden mb-6">
           <div className="p-4 bg-gradient-to-r from-indigo-50 to-purple-50 border-b border-indigo-200">
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between gap-4">
               <div className="flex items-center gap-3">
-                <div className={cn(
-                  "w-12 h-12 rounded-full flex items-center justify-center text-lg font-bold",
-                  isAnalyzingForm ? "bg-gray-200 text-gray-600 animate-pulse" :
-                    validationAnalysis?.overallScore && validationAnalysis.overallScore >= 80 ? "bg-green-100 text-green-700" :
-                      validationAnalysis?.overallScore && validationAnalysis.overallScore >= 50 ? "bg-amber-100 text-amber-700" :
-                        "bg-red-100 text-red-700"
-                )}>
-                  {isAnalyzingForm ? '...' : validationAnalysis?.overallScore || 0}
+                <div
+                  className={cn(
+                    "w-12 h-12 rounded-full flex items-center justify-center text-lg font-bold",
+                    validationTab === 'visual'
+                      ? isAnalyzingForm
+                        ? "bg-gray-200 text-gray-600 animate-pulse"
+                        : visualQaResult?.overallScore && visualQaResult.overallScore >= 80
+                          ? "bg-green-100 text-green-700"
+                          : visualQaResult?.overallScore && visualQaResult.overallScore >= 50
+                            ? "bg-amber-100 text-amber-700"
+                            : "bg-blue-100 text-blue-700"
+                      : validationAnalysis?.overallScore && validationAnalysis.overallScore >= 80
+                        ? "bg-green-100 text-green-700"
+                        : validationAnalysis?.overallScore && validationAnalysis.overallScore >= 50
+                          ? "bg-amber-100 text-amber-700"
+                          : "bg-red-100 text-red-700"
+                  )}
+                >
+                  {validationTab === 'visual'
+                    ? isAnalyzingForm
+                      ? '...'
+                      : visualQaResult?.overallScore ?? '--'
+                    : validationAnalysis?.overallScore ?? 0}
                 </div>
                 <div>
                   <h3 className="font-semibold text-gray-900">
-                    {isAnalyzingForm ? 'Analyzing Form...' : 'Form Validation Score'}
+                    {validationTab === 'visual' ? 'Visual QA Score (optional)' : 'Field Validation Score'}
                   </h3>
                   <p className="text-sm text-gray-600">
-                    {isAnalyzingForm ? 'AI is analyzing your form for potential issues' :
-                      validationAnalysis ? `${validationAnalysis.completedFields}/${validationAnalysis.totalFields} fields analyzed` :
-                        'Upload a form to get validation insights'}
+                    {validationTab === 'visual'
+                      ? visualQaError
+                        ? visualQaError
+                        : visualQaResult
+                          ? `${visualQaResult.completedFields}/${visualQaResult.totalFields} sections checked visually`
+                          : 'Run Visual QA to get AI cross-checks'
+                      : validationAnalysis
+                        ? `${validationAnalysis.completedFields}/${validationAnalysis.totalFields} fields analyzed`
+                        : 'Run validation to get structured field checks'}
                   </p>
                   {lastValidationTime && (
                     <p className="text-xs text-gray-500 mt-1">
@@ -3562,8 +3536,7 @@ Be concise but helpful. Format as a brief paragraph.`;
                   )}
                 </div>
               </div>
-              <div className="flex items-center gap-3">
-                {/* Auto-validation toggle and countdown */}
+              {validationTab === 'fields' ? (
                 <div className="flex items-center gap-2">
                   <label className="flex items-center gap-2 cursor-pointer">
                     <input
@@ -3580,7 +3553,8 @@ Be concise but helpful. Format as a brief paragraph.`;
                     </span>
                   )}
                 </div>
-                <div className="flex items-center gap-2">
+              ) : (
+                <div className="flex items-center gap-3">
                   <label className="flex items-center gap-2 cursor-pointer">
                     <input
                       type="checkbox"
@@ -3588,150 +3562,235 @@ Be concise but helpful. Format as a brief paragraph.`;
                       onChange={(e) => setVisualValidationEnabled(e.target.checked)}
                       className="w-4 h-4 text-indigo-600 rounded"
                     />
-                    <span className="text-sm text-gray-700">Include visual QA</span>
+                    <span className="text-sm text-gray-700">Enable Visual QA</span>
                   </label>
-                </div>
-                <button
-                  onClick={handleReanalyze}
-                  disabled={isAnalyzingForm || !currentForm}
-                  className="px-4 py-2 bg-indigo-600 text-white rounded-lg font-medium hover:bg-indigo-700 disabled:opacity-50"
-                >
-                  {isAnalyzingForm ? 'Analyzing...' : 'Re-analyze Now'}
-                </button>
-              </div>
-            </div>
-          </div>
-
-          {/* Validation Issues */}
-          {validationAnalysis && validationAnalysis.issues.length > 0 && (
-            <div className="p-4 border-b border-gray-200">
-              <h3 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
-                <AlertCircle className="w-5 h-5 text-amber-500" />
-                Issues Found ({validationAnalysis.issues.length})
-              </h3>
-              <div className="space-y-3">
-                {validationAnalysis.issues.map((issue) => (
-                  <div
-                    key={issue.id}
-                    className={cn(
-                      "p-3 rounded-lg border transition-shadow",
-                      issue.type === 'error' ? "bg-red-50 border-red-200" :
-                        issue.type === 'warning' ? "bg-amber-50 border-amber-200" :
-                          "bg-blue-50 border-blue-200"
-                    )}
+                  <button
+                    onClick={handleReanalyze}
+                    disabled={isAnalyzingForm || !currentForm || !visualValidationEnabled}
+                    className="px-4 py-2 bg-indigo-600 text-white rounded-lg font-medium hover:bg-indigo-700 disabled:opacity-50"
                   >
-                    <div className="flex items-start justify-between">
-                      <div>
-                        <p className="font-medium text-gray-900">{issue.fieldName}</p>
-                        <p className="text-sm text-gray-700 mt-1">{issue.message}</p>
-                        {issue.actualValue && (
-                          <p className="text-xs text-gray-500 mt-1">
-                            Current entry: <span className="font-medium">{issue.actualValue}</span>
-                          </p>
-                        )}
-                        {issue.suggestion && (
-                          <p className="text-sm text-indigo-600 mt-1">
-                            <strong>Suggestion:</strong> {issue.suggestion}
-                          </p>
-                        )}
-                      </div>
-                      <div className="flex items-center gap-2">
-                        {issue.source === 'vision' && (
-                          <span className="text-[10px] px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-700 font-semibold">
-                            Visual QA
-                          </span>
-                        )}
-                        <button
-                          onClick={() => getFieldExplanation(issue.fieldName, issue.id)}
-                          className="text-gray-500 hover:text-indigo-600"
-                        >
-                          <HelpCircle className="w-4 h-4" />
-                        </button>
-                      </div>
-                    </div>
-                    <div className="mt-3 flex flex-wrap gap-2">
-                      <button
-                        onClick={() => jumpToField(issue.fieldKey, issue.fieldName)}
-                        disabled={!issue.fieldKey && !currentForm}
-                        className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg border border-gray-300 text-gray-700 hover:bg-white"
-                      >
-                        <ArrowUpRight className="w-3 h-3" />
-                        Jump to field
-                      </button>
-                    </div>
-                    {hoveredArea === issue.id && fieldExplanation && (
-                      <div className="mt-3 pt-3 border-t border-gray-200 text-sm text-gray-600">
-                        {isLoadingExplanation ? 'Loading explanation...' : fieldExplanation}
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
+                    {isAnalyzingForm ? 'Analyzing...' : 'Run Visual QA'}
+                  </button>
+                </div>
+              )}
             </div>
-          )}
-
-          {/* Recommendations */}
-          {validationAnalysis && validationAnalysis.recommendations.length > 0 && (
-            <div className="p-4 border-b border-gray-200">
-              <h3 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
-                <Lightbulb className="w-5 h-5 text-amber-500" />
-                Recommendations
-              </h3>
-              <ul className="space-y-2">
-                {validationAnalysis.recommendations.map((rec, index) => (
-                  <li key={index} className="flex items-start gap-2 text-sm text-gray-700">
-                    <span className="text-indigo-600">•</span>
-                    <span>{rec}</span>
-                  </li>
-                ))}
-              </ul>
+            <div className="mt-4 flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setValidationTab('fields')}
+                className={cn(
+                  "px-3 py-1.5 text-xs font-semibold rounded-full border",
+                  validationTab === 'fields'
+                    ? "bg-indigo-600 text-white border-indigo-600"
+                    : "bg-white text-gray-600 border-gray-300 hover:bg-gray-50"
+                )}
+              >
+                Field Validation
+              </button>
+              <button
+                type="button"
+                onClick={() => setValidationTab('visual')}
+                className={cn(
+                  "px-3 py-1.5 text-xs font-semibold rounded-full border",
+                  validationTab === 'visual'
+                    ? "bg-indigo-600 text-white border-indigo-600"
+                    : "bg-white text-gray-600 border-gray-300 hover:bg-gray-50"
+                )}
+              >
+                Visual QA (optional)
+              </button>
             </div>
-          )}
-
-          {/* Country-Specific Notes */}
-          {validationAnalysis && validationAnalysis.countrySpecificNotes.length > 0 && (
-            <div className="p-4 bg-blue-50">
-              <h3 className="font-semibold text-blue-900 mb-3 flex items-center gap-2">
-                <Globe className="w-5 h-5" />
-                {travelProfile?.destinationCountry} Specific Notes
-              </h3>
-              <ul className="space-y-2">
-                {validationAnalysis.countrySpecificNotes.map((note, index) => (
-                  <li key={index} className="flex items-start gap-2 text-sm text-blue-700">
-                    <span>ℹ️</span>
-                    <span>{note}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
-
-          {/* Quick Field Lookup */}
-          <div className="p-4 border-t border-gray-200">
-            <h3 className="font-semibold text-gray-900 mb-3">Quick Field Help</h3>
-            <p className="text-sm text-gray-600 mb-3">
-              Click on any common field below to get validation guidance:
-            </p>
-            <div className="flex flex-wrap gap-2">
-              {['Full Name', 'Date of Birth', 'Passport Number', 'Passport Expiry', 'Nationality', 'Travel Purpose', 'Accommodation', 'Financial Proof'].map((field) => (
-                <button
-                  key={field}
-                  onClick={() => getFieldExplanation(field, field)}
-                  className={cn(
-                    "px-3 py-1.5 text-sm rounded-lg border transition-colors",
-                    hoveredArea === field ? "bg-indigo-100 border-indigo-300 text-indigo-700" : "bg-gray-100 border-gray-300 text-gray-700 hover:bg-indigo-50"
-                  )}
-                >
-                  {field}
-                </button>
-              ))}
-            </div>
-            {hoveredArea && !validationAnalysis?.issues.find(i => i.id === hoveredArea) && fieldExplanation && (
-              <div className="mt-4 p-3 bg-indigo-50 rounded-lg text-sm text-gray-700">
-                {isLoadingExplanation ? 'Loading explanation...' : fieldExplanation}
-              </div>
-            )}
           </div>
+
+          {validationTab === 'fields' ? (
+            <>
+              {validationAnalysis && validationAnalysis.issues.length > 0 ? (
+                <div className="p-4 border-b border-gray-200">
+                  <h3 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                    <AlertCircle className="w-5 h-5 text-amber-500" />
+                    Issues Found ({validationAnalysis.issues.length})
+                  </h3>
+                  <div className="space-y-3">
+                    {validationAnalysis.issues.map((issue) => (
+                      <div
+                        key={issue.id}
+                        className={cn(
+                          "p-3 rounded-lg border transition-shadow",
+                          issue.type === 'error' ? "bg-red-50 border-red-200" :
+                            issue.type === 'warning' ? "bg-amber-50 border-amber-200" :
+                              "bg-blue-50 border-blue-200"
+                        )}
+                      >
+                        <div className="flex items-start justify-between">
+                          <div>
+                            <p className="font-medium text-gray-900">{issue.fieldName}</p>
+                            <p className="text-sm text-gray-700 mt-1">{issue.message}</p>
+                            {issue.actualValue && (
+                              <p className="text-xs text-gray-500 mt-1">
+                                Current entry: <span className="font-medium">{issue.actualValue}</span>
+                              </p>
+                            )}
+                            {issue.suggestion && (
+                              <p className="text-sm text-indigo-600 mt-1">
+                                <strong>Suggestion:</strong> {issue.suggestion}
+                              </p>
+                            )}
+                          </div>
+                          <button
+                            onClick={() => getFieldExplanation(issue.fieldName, issue.id)}
+                            className="text-gray-500 hover:text-indigo-600"
+                          >
+                            <HelpCircle className="w-4 h-4" />
+                          </button>
+                        </div>
+                        <div className="mt-3 flex flex-wrap gap-2">
+                          <button
+                            onClick={() => jumpToField(issue.fieldKey, issue.fieldName)}
+                            disabled={!issue.fieldKey && !currentForm}
+                            className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg border border-gray-300 text-gray-700 hover:bg-white"
+                          >
+                            <ArrowUpRight className="w-3 h-3" />
+                            Jump to field
+                          </button>
+                        </div>
+                        {hoveredArea === issue.id && fieldExplanation && (
+                          <div className="mt-3 pt-3 border-t border-gray-200 text-sm text-gray-600">
+                            {isLoadingExplanation ? 'Loading explanation...' : fieldExplanation}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                <div className="p-4 border-b border-gray-200 text-sm text-gray-600">
+                  Run validation to see field-level issues.
+                </div>
+              )}
+
+              {validationAnalysis && validationAnalysis.recommendations.length > 0 && (
+                <div className="p-4 border-b border-gray-200">
+                  <h3 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                    <Lightbulb className="w-5 h-5 text-amber-500" />
+                    Recommendations
+                  </h3>
+                  <ul className="space-y-2">
+                    {validationAnalysis.recommendations.map((rec, index) => (
+                      <li key={index} className="flex items-start gap-2 text-sm text-gray-700">
+                        <span className="text-indigo-600">•</span>
+                        <span>{rec}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {validationAnalysis && validationAnalysis.countrySpecificNotes.length > 0 && (
+                <div className="p-4 bg-blue-50">
+                  <h3 className="font-semibold text-blue-900 mb-3 flex items-center gap-2">
+                    <Globe className="w-5 h-5" />
+                    {travelProfile?.destinationCountry} Specific Notes
+                  </h3>
+                  <ul className="space-y-2">
+                    {validationAnalysis.countrySpecificNotes.map((note, index) => (
+                      <li key={index} className="flex items-start gap-2 text-sm text-blue-700">
+                        <span>ℹ️</span>
+                        <span>{note}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              <div className="p-4 border-t border-gray-200">
+                <h3 className="font-semibold text-gray-900 mb-3">Quick Field Help</h3>
+                <p className="text-sm text-gray-600 mb-3">
+                  Click on any common field below to get validation guidance:
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {['Full Name', 'Date of Birth', 'Passport Number', 'Passport Expiry', 'Nationality', 'Travel Purpose', 'Accommodation', 'Financial Proof'].map((field) => (
+                    <button
+                      key={field}
+                      onClick={() => getFieldExplanation(field, field)}
+                      className={cn(
+                        "px-3 py-1.5 text-sm rounded-lg border transition-colors",
+                        hoveredArea === field ? "bg-indigo-100 border-indigo-300 text-indigo-700" : "bg-gray-100 border-gray-300 text-gray-700 hover:bg-indigo-50"
+                      )}
+                    >
+                      {field}
+                    </button>
+                  ))}
+                </div>
+                {hoveredArea && !validationAnalysis?.issues.find(i => i.id === hoveredArea) && fieldExplanation && (
+                  <div className="mt-4 p-3 bg-indigo-50 rounded-lg text-sm text-gray-700">
+                    {isLoadingExplanation ? 'Loading explanation...' : fieldExplanation}
+                  </div>
+                )}
+              </div>
+            </>
+          ) : (
+            <div className="p-4 space-y-4">
+              {visualQaError && (
+                <div className="p-3 rounded-lg bg-amber-50 text-amber-800 text-sm">
+                  {visualQaError}
+                </div>
+              )}
+              {!visualQaError && !visualQaResult && (
+                <div className="text-sm text-gray-600">
+                  Run Visual QA to get an AI-generated review of your PDF. This step is optional, but helpful for spotting formatting issues.
+                </div>
+              )}
+              {visualQaResult && (
+                <>
+                  {visualQaResult.issues.length > 0 ? (
+                    <div className="space-y-3">
+                      {visualQaResult.issues.map((issue) => (
+                        <div
+                          key={issue.id}
+                          className={cn(
+                            "p-3 rounded-lg border transition-shadow",
+                            issue.type === 'error' ? "bg-red-50 border-red-200" :
+                              issue.type === 'warning' ? "bg-amber-50 border-amber-200" :
+                                "bg-blue-50 border-blue-200"
+                          )}
+                        >
+                          <div className="flex items-start justify-between">
+                            <div>
+                              <p className="font-medium text-gray-900">{issue.fieldName}</p>
+                              <p className="text-sm text-gray-700 mt-1">{issue.message}</p>
+                              {issue.suggestion && (
+                                <p className="text-sm text-indigo-600 mt-1">
+                                  <strong>Suggestion:</strong> {issue.suggestion}
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-sm text-green-700 bg-green-50 border border-green-200 rounded-lg p-3">
+                      Visual QA did not find any issues.
+                    </div>
+                  )}
+
+                  {visualQaResult.recommendations.length > 0 && (
+                    <div className="p-3 border border-gray-200 rounded-lg">
+                      <h4 className="font-semibold text-gray-900 mb-2">AI Recommendations</h4>
+                      <ul className="space-y-1 text-sm text-gray-700">
+                        {visualQaResult.recommendations.map((rec, index) => (
+                          <li key={index} className="flex items-start gap-2">
+                            <span className="text-indigo-600">•</span>
+                            <span>{rec}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Jeffrey's Field Guidance */}

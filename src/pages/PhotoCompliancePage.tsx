@@ -5,6 +5,7 @@ import Button from '../components/gamma/Button';
 import Card from '../components/gamma/Card';
 import Badge from '../components/gamma/Badge';
 import SectionHeader from '../components/gamma/SectionHeader';
+import { photoComplianceApi } from '../lib/api';
 
 const VISA_PHOTO_SPECS = {
   uae_visa: {
@@ -157,22 +158,19 @@ export default function PhotoCompliancePage() {
     formData.append('visaType', selectedVisaType);
 
     try {
-      // TODO: Replace with VITE_API_URL from .env
-      const response = await fetch('http://localhost:3000/api/photo/process-compliance', {
-        method: 'POST',
-        body: formData,
-      });
+      const response = await photoComplianceApi.processCompliance(photo);
 
-      if (!response.ok) {
-        const errData = await response.json();
-        throw new Error(errData.error || 'Something went wrong');
+      if (!response.success) {
+        throw new Error(response.error || 'Failed to process photo.');
       }
 
-      const result = await response.json();
-      setProcessedPhotoUrl(result.processedPhotoUrl);
-
+      setProcessedPhotoUrl(response.data?.processedPhotoUrl ?? null);
     } catch (err: any) {
-      setError(err.message || 'Failed to process photo.');
+      const message =
+        err?.response?.data?.error ||
+        err?.message ||
+        'Failed to process photo. Please try again.';
+      setError(message);
     } finally {
       setLoading(false);
     }
