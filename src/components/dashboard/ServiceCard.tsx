@@ -42,8 +42,8 @@ export const ServiceCard: React.FC<ServiceCardProps> = ({
       to={cta.href}
       onClick={handleClick}
       className={cn(
-        'block group rounded-2xl bg-white/60 backdrop-blur-md border border-white/50 overflow-hidden',
-        'hover:shadow-xl hover:border-white/80 transition-all duration-300',
+        'block group rounded-2xl bg-white/40 backdrop-blur-xl border border-white/40 overflow-hidden',
+        'hover:shadow-xl hover:border-white/60 transition-all duration-300',
         'hover:-translate-y-1',
         className
       )}

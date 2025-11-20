@@ -18,6 +18,7 @@ import { User } from '../types';
 import { JeffreySidebar } from './JeffreySidebar';
 import { JeffreyProvider } from '../contexts/JeffreyContext';
 import { authApi } from '../lib/api';
+import gammaTravelBg from '../assets/gamma-travel-bg.png';
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
@@ -62,15 +63,15 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
 
   return (
     <JeffreyProvider>
-      <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 relative">
-        {/* Background Pattern */}
-        <div className="absolute inset-0 opacity-[0.03] pointer-events-none" style={{
-          backgroundImage: `radial-gradient(circle at 1px 1px, rgb(0 0 0) 1px, transparent 0)`,
-          backgroundSize: '40px 40px',
-        }} />
+      <div className="min-h-screen relative">
+        {/* Fixed Background Image */}
+        <div className="fixed inset-0 z-0">
+          <img src={gammaTravelBg} alt="" className="w-full h-full object-cover" />
+          <div className="absolute inset-0 bg-white/30 backdrop-blur-[2px]" />
+        </div>
 
         {/* Top Navigation Bar */}
-        <header className="fixed top-0 left-0 right-0 h-16 bg-white/70 backdrop-blur-md border-b border-white/50 z-50 shadow-sm">
+        <header className="fixed top-0 left-0 right-0 h-16 bg-white/40 backdrop-blur-xl border-b border-white/30 z-50 shadow-sm">
           <div className="h-full flex items-center justify-between px-6">
             {/* Logo */}
             <Link to="/app" className="flex items-center gap-2">
@@ -133,7 +134,7 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
 
                   {/* Dropdown Menu */}
                   <div
-                    className="absolute right-0 top-full mt-2 w-56 bg-white/80 backdrop-blur-xl rounded-lg shadow-lg border border-white/50
+                    className="absolute right-0 top-full mt-2 w-56 bg-white/60 backdrop-blur-2xl rounded-lg shadow-lg border border-white/40
                                opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all"
                   >
                     <div className="py-1">
@@ -196,7 +197,7 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
         <JeffreySidebar />
 
         {/* Main Content Area - Offset by sidebar width */}
-        <main className="pt-16 pl-[300px] min-h-screen">
+        <main className="pt-16 pl-[300px] min-h-screen relative z-10">
           <div className="p-8">{children}</div>
         </main>
       </div>
