@@ -1788,7 +1788,7 @@ Be concise but helpful. Format as a brief paragraph.`;
 
       setLastValidationTime(new Date());
 
-      const hasBlockingErrors = validationResult?.issues.some(issue => issue.type === 'error');
+      const hasBlockingErrors = validationResult?.issues.some((issue: ValidationIssue) => issue.type === 'error');
       if (validationResult && !hasBlockingErrors) {
         await markDraftCompleted('validation');
       }
