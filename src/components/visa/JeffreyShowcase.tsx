@@ -113,8 +113,8 @@ export default function JeffreyShowcase() {
           <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-4 flex items-center gap-3">
             <div className="w-10 h-10 rounded-full flex items-center justify-center overflow-hidden">
               <img
-                src="/assets/Jeffrey.png"
-                alt="Jeffrey AI Assistant"
+                src="/assets/new-jeffrey-removebg-preview.png"
+                alt="Jeffrey AI"
                 className="w-full h-full object-cover"
               />
             </div>
@@ -140,10 +140,9 @@ export default function JeffreyShowcase() {
                 <div
                   className={`
                     max-w-[80%] rounded-2xl px-4 py-3
-                    ${
-                      message.role === 'user'
-                        ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white'
-                        : 'bg-white border-2 border-neutral-200 text-neutral-800'
+                    ${message.role === 'user'
+                      ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white'
+                      : 'bg-white border-2 border-neutral-200 text-neutral-800'
                     }
                   `}
                 >

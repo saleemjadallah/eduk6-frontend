@@ -75,15 +75,11 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
           <div className="h-full flex items-center justify-between px-6">
             {/* Logo */}
             <Link to="/app" className="flex items-center gap-2">
-              <div
-                className="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-600
-                           flex items-center justify-center text-white font-bold text-sm"
-              >
-                VD
-              </div>
-              <span className="text-xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
-                VisaDocs
-              </span>
+              <img
+                src="/assets/Logo_wbg-removebg-preview.png"
+                alt="VisaDocs"
+                className="h-10 w-auto"
+              />
             </Link>
 
             {/* Main Navigation (visible on larger screens) */}
