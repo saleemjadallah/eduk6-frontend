@@ -83,7 +83,7 @@ export default function JeffreyShowcase() {
       {/* Background Elements */}
       <div className="absolute inset-0 pointer-events-none">
         <div className="absolute top-1/4 left-0 w-96 h-96 bg-blue-400/10 rounded-full blur-3xl" />
-        <div className="absolute bottom-0 right-0 w-96 h-96 bg-purple-400/10 rounded-full blur-3xl" />
+        <div className="absolute bottom-0 right-0 w-96 h-96 bg-cyan-400/10 rounded-full blur-3xl" />
       </div>
 
       <div className="container mx-auto px-4 relative z-10">
@@ -103,7 +103,7 @@ export default function JeffreyShowcase() {
 
             <h2 className="text-5xl md:text-7xl font-bold mb-6 leading-tight tracking-tight text-neutral-900">
               Say Hello to <br />
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600">
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 via-cyan-500 to-sky-400">
                 Jeffrey AI
               </span>
             </h2>
@@ -187,7 +187,7 @@ export default function JeffreyShowcase() {
               {/* Header */}
               <div className="px-6 py-5 border-b border-neutral-100 bg-white/50 backdrop-blur-md flex items-center gap-4">
                 <div className="relative">
-                  <div className="w-12 h-12 rounded-full bg-gradient-to-tr from-blue-100 to-purple-100 p-0.5">
+                  <div className="w-12 h-12 rounded-full bg-gradient-to-tr from-blue-100 to-cyan-100 p-0.5">
                     <img
                       src="/assets/new-jeffrey-removebg-preview.png"
                       alt="Jeffrey"
@@ -272,7 +272,7 @@ export default function JeffreyShowcase() {
             </motion.div>
 
             {/* Decorative Elements behind chat */}
-            <div className="absolute -z-10 inset-0 bg-gradient-to-tr from-blue-100/50 to-purple-100/50 rounded-[3rem] transform rotate-3 scale-105 blur-xl opacity-60" />
+            <div className="absolute -z-10 inset-0 bg-gradient-to-tr from-blue-100/50 to-cyan-100/50 rounded-[3rem] transform rotate-3 scale-105 blur-xl opacity-60" />
           </div>
         </div>
       </div>

@@ -94,27 +94,30 @@ export const JeffreySidebar: React.FC<JeffreySidebarProps> = ({ className }) => 
         {/* System Message - Jeffrey introduces himself */}
         {messages.length === 0 && (
           <div
-            className="bg-gradient-to-br from-indigo-50 to-purple-50
-                       rounded-2xl p-4 border border-indigo-100"
+            className="bg-gradient-to-br from-blue-50 to-cyan-50
+                       rounded-2xl p-4 border border-blue-100"
           >
+            <span className="bg-gradient-to-r from-blue-600 to-cyan-600 bg-clip-text text-transparent font-semibold">
+              Powered by AI
+            </span>
             <p className="text-sm text-neutral-700 mb-3">
               Hi! I'm Jeffrey, your AI visa assistant. I'm here to guide you through:
             </p>
             <ul className="space-y-2 text-sm text-neutral-600">
               <li className="flex items-start gap-2">
-                <FileText className="w-4 h-4 mt-0.5 text-indigo-600 flex-shrink-0" />
+                <FileText className="w-4 h-4 mt-0.5 text-blue-600 flex-shrink-0" />
                 <span>Auto-filling visa application forms</span>
               </li>
               <li className="flex items-start gap-2">
-                <CheckCircle className="w-4 h-4 mt-0.5 text-indigo-600 flex-shrink-0" />
+                <CheckCircle className="w-4 h-4 mt-0.5 text-blue-600 flex-shrink-0" />
                 <span>Validating your documents</span>
               </li>
               <li className="flex items-start gap-2">
-                <Camera className="w-4 h-4 mt-0.5 text-indigo-600 flex-shrink-0" />
+                <Camera className="w-4 h-4 mt-0.5 text-blue-600 flex-shrink-0" />
                 <span>Generating visa-compliant photos</span>
               </li>
               <li className="flex items-start gap-2">
-                <Plane className="w-4 h-4 mt-0.5 text-indigo-600 flex-shrink-0" />
+                <Plane className="w-4 h-4 mt-0.5 text-blue-600 flex-shrink-0" />
                 <span>Planning your travel itinerary</span>
               </li>
             </ul>
@@ -149,7 +152,7 @@ export const JeffreySidebar: React.FC<JeffreySidebarProps> = ({ className }) => 
             onKeyDown={handleKeyDown}
             placeholder="Ask Jeffrey anything..."
             className="w-full rounded-xl border border-neutral-300 px-4 py-3 pr-12
-                       resize-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent
+                       resize-none focus:ring-2 focus:ring-blue-500 focus:border-transparent
                        text-sm placeholder-neutral-400"
             rows={2}
           />
@@ -158,7 +161,7 @@ export const JeffreySidebar: React.FC<JeffreySidebarProps> = ({ className }) => 
             onClick={handleSendMessage}
             disabled={!inputMessage.trim() || isTyping}
             className="absolute bottom-3 right-3 w-8 h-8 rounded-lg
-                       bg-gradient-to-r from-indigo-500 to-purple-600
+                       bg-gradient-to-r from-blue-500 to-cyan-600
                        text-white flex items-center justify-center
                        disabled:opacity-50 disabled:cursor-not-allowed
                        hover:shadow-lg hover:scale-105 transition-all"

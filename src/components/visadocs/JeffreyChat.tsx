@@ -171,7 +171,7 @@ What would you like to know?`,
   return (
     <div className={`flex flex-col bg-white rounded-lg shadow-xl border border-gray-200 ${className}`}>
       {/* Header */}
-      <div className="bg-gradient-to-r from-blue-600 to-blue-700 text-white px-6 py-4 rounded-t-lg flex items-center justify-between">
+      <div className="bg-gradient-to-r from-blue-600 to-cyan-600 text-white px-6 py-4 rounded-t-lg flex items-center justify-between">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-full flex items-center justify-center overflow-hidden">
             <img
@@ -218,8 +218,8 @@ What would you like to know?`,
           >
             <div
               className={`max-w-[80%] rounded-2xl px-4 py-3 ${message.role === 'user'
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-white border border-gray-200 text-gray-800'
+                ? 'bg-blue-600 text-white'
+                : 'bg-white border border-gray-200 text-gray-800'
                 }`}
             >
               <div className="prose prose-sm max-w-none" dangerouslySetInnerHTML={{

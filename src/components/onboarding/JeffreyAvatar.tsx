@@ -48,7 +48,7 @@ export default function JeffreyAvatar({
           ${sizeClasses[size]}
           relative
           rounded-full
-          ${currentMood !== 'neutral' ? 'bg-gradient-to-br from-indigo-500 to-purple-600' : ''}
+          ${currentMood !== 'neutral' ? 'bg-gradient-to-br from-blue-500 to-cyan-500' : ''}
           flex items-center justify-center
           text-white font-bold
           shadow-xl

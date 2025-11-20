@@ -74,7 +74,7 @@ export default function VisaAssistHomePage() {
               className="mb-6 inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 backdrop-blur-lg border border-white/20 shadow-lg shadow-primary-500/20"
             >
               <Sparkles className="w-4 h-4" />
-              <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent font-semibold">
+              <span className="bg-gradient-to-r from-blue-600 to-cyan-600 bg-clip-text text-transparent font-semibold">
                 Powered by AI
               </span>
             </Badge>
@@ -116,7 +116,7 @@ export default function VisaAssistHomePage() {
               <Button
                 size="xl"
                 variant="gradient"
-                className="px-8 py-4 text-lg rounded-2xl bg-gradient-to-r from-blue-600 to-purple-600 text-white font-semibold shadow-2xl shadow-blue-500/50 hover:shadow-blue-500/70 hover:scale-105 transition-all duration-300 group"
+                className="px-8 py-4 text-lg rounded-2xl bg-gradient-to-r from-blue-600 to-cyan-600 text-white font-semibold shadow-2xl shadow-blue-500/50 hover:shadow-blue-500/70 hover:scale-105 transition-all duration-300 group"
               >
                 Process Your Documents
                 <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
@@ -239,11 +239,11 @@ export default function VisaAssistHomePage() {
             />
 
             <PainPointCard
-              icon={<FileX className="w-8 h-8 text-purple-500" />}
+              icon={<FileX className="w-8 h-8 text-cyan-500" />}
               stat="127"
               label="Form Fields"
               description="average number of fields in a GCC visa application"
-              color="purple"
+              color="cyan"
             />
           </div>
 
@@ -304,7 +304,7 @@ export default function VisaAssistHomePage() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.5 }}
-              className="lg:col-span-2 bg-gradient-to-br from-blue-500 to-purple-600 text-white rounded-3xl p-8 shadow-2xl overflow-hidden relative group hover:scale-[1.02] transition-transform duration-500"
+              className="lg:col-span-2 bg-gradient-to-br from-blue-500 to-cyan-600 text-white rounded-3xl p-8 shadow-2xl overflow-hidden relative group hover:scale-[1.02] transition-transform duration-500"
             >
               <div className="relative z-10">
                 <Badge variant="white" className="mb-4">
@@ -377,7 +377,7 @@ export default function VisaAssistHomePage() {
                   transition={{ duration: 0.5, delay: 0.2 }}
                   className="bg-white/80 backdrop-blur-sm rounded-3xl p-8 shadow-lg hover:shadow-xl hover:-translate-y-2 transition-all duration-300 cursor-pointer group h-full border border-neutral-100"
                 >
-                  <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-purple-400 to-pink-500 flex items-center justify-center mb-4 shadow-lg shadow-purple-500/30 group-hover:scale-110 transition-transform">
+                  <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-cyan-400 to-blue-500 flex items-center justify-center mb-4 shadow-lg shadow-cyan-500/30 group-hover:scale-110 transition-transform">
                     <Camera className="w-7 h-7 text-white" />
                   </div>
                   <h3 className="text-xl font-bold mb-2 text-neutral-900">AI Photo Compliance</h3>
@@ -543,8 +543,8 @@ export default function VisaAssistHomePage() {
                 transition={{ duration: 0.5, delay: 0.2 }}
                 className="relative"
               >
-                <div className="mb-6 h-64 rounded-2xl bg-gradient-to-br from-purple-50 to-pink-50 flex items-center justify-center">
-                  <Sparkles className="w-24 h-24 text-purple-400" />
+                <div className="mb-6 h-64 rounded-2xl bg-gradient-to-br from-cyan-50 to-sky-50 flex items-center justify-center">
+                  <Sparkles className="w-24 h-24 text-cyan-400" />
                 </div>
 
                 <div className="flex items-center gap-3 mb-4">
@@ -560,15 +560,15 @@ export default function VisaAssistHomePage() {
 
                 <ul className="space-y-2 text-neutral-600">
                   <li className="flex items-center gap-2">
-                    <Sparkles className="w-5 h-5 text-purple-500" />
+                    <Sparkles className="w-5 h-5 text-cyan-500" />
                     <span>Data extraction & validation</span>
                   </li>
                   <li className="flex items-center gap-2">
-                    <Sparkles className="w-5 h-5 text-purple-500" />
+                    <Sparkles className="w-5 h-5 text-cyan-500" />
                     <span>Compliance checking</span>
                   </li>
                   <li className="flex items-center gap-2">
-                    <Sparkles className="w-5 h-5 text-purple-500" />
+                    <Sparkles className="w-5 h-5 text-cyan-500" />
                     <span>Auto-fill all forms</span>
                   </li>
                 </ul>
@@ -648,7 +648,7 @@ export default function VisaAssistHomePage() {
           </div>
 
           {/* Upcoming: Unified GCC Visa */}
-          <Card className="rounded-3xl bg-gradient-to-br from-blue-50 to-purple-50 p-12 text-center shadow-xl relative overflow-hidden">
+          <Card className="rounded-3xl bg-gradient-to-br from-blue-50 to-cyan-50 p-12 text-center shadow-xl relative overflow-hidden">
             <Badge variant="outline" className="mb-6 inline-flex">
               <Sparkles className="w-4 h-4 mr-2" />
               Coming Soon
@@ -791,7 +791,7 @@ export default function VisaAssistHomePage() {
               transition={{ delay: 0.2 }}
               className="bg-white/60 backdrop-blur-md rounded-3xl p-8 shadow-lg border border-white/50 hover:shadow-2xl hover:-translate-y-2 transition-all duration-500"
             >
-              <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-purple-400 to-purple-600 flex items-center justify-center mb-6">
+              <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-cyan-400 to-blue-600 flex items-center justify-center mb-6">
                 <Camera className="w-8 h-8 text-white" />
               </div>
 

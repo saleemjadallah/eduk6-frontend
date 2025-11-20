@@ -334,11 +334,11 @@ export default function OnboardingChat({ userName, onComplete, onSkip }: Onboard
       <div className="px-6 py-4">
         <div className="flex items-center justify-between mb-2">
           <span className="text-sm font-medium text-gray-600">Setting up your profile</span>
-          <span className="text-sm font-medium text-indigo-600">{getProgress()}%</span>
+          <span className="text-sm font-medium text-blue-600">{getProgress()}%</span>
         </div>
         <div className="w-full bg-gray-200 rounded-full h-2">
           <div
-            className="bg-gradient-to-r from-indigo-500 to-purple-600 h-2 rounded-full transition-all duration-500"
+            className="bg-gradient-to-r from-blue-500 to-cyan-500 h-2 rounded-full transition-all duration-500"
             style={{ width: `${getProgress()}%` }}
           />
         </div>
@@ -360,10 +360,9 @@ export default function OnboardingChat({ userName, onComplete, onSkip }: Onboard
             <div
               className={`
                 max-w-[80%] rounded-2xl px-5 py-4
-                ${
-                  message.role === 'user'
-                    ? 'bg-indigo-600 text-white'
-                    : 'bg-gradient-to-br from-gray-50 to-indigo-50 border border-indigo-100'
+                ${message.role === 'user'
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-gradient-to-br from-gray-50 to-blue-50 border border-blue-100'
                 }
               `}
             >
@@ -393,8 +392,8 @@ export default function OnboardingChat({ userName, onComplete, onSkip }: Onboard
                       disabled={isTyping || isProcessing}
                       className="
                         px-4 py-2 rounded-full text-sm font-medium
-                        bg-white border border-indigo-200 text-indigo-700
-                        hover:bg-indigo-50 hover:border-indigo-300
+                        bg-white border border-blue-200 text-blue-700
+                        hover:bg-blue-50 hover:border-blue-300
                         disabled:opacity-50 disabled:cursor-not-allowed
                         transition-all duration-200
                         transform hover:scale-105
@@ -423,11 +422,11 @@ export default function OnboardingChat({ userName, onComplete, onSkip }: Onboard
             <div className="flex-shrink-0 mr-3">
               <JeffreyAvatar size="sm" mood="thinking" animate showPulse={false} />
             </div>
-            <div className="bg-gradient-to-br from-gray-50 to-indigo-50 border border-indigo-100 rounded-2xl px-5 py-4">
+            <div className="bg-gradient-to-br from-gray-50 to-blue-50 border border-blue-100 rounded-2xl px-5 py-4">
               <div className="flex space-x-2">
-                <div className="w-2 h-2 bg-indigo-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-                <div className="w-2 h-2 bg-indigo-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-                <div className="w-2 h-2 bg-indigo-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                <div className="w-2 h-2 bg-blue-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                <div className="w-2 h-2 bg-blue-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                <div className="w-2 h-2 bg-blue-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
               </div>
             </div>
           </div>
@@ -436,7 +435,7 @@ export default function OnboardingChat({ userName, onComplete, onSkip }: Onboard
         {/* Processing indicator */}
         {isProcessing && (
           <div className="flex justify-center py-4">
-            <div className="flex items-center space-x-3 text-indigo-600">
+            <div className="flex items-center space-x-3 text-blue-600">
               <Loader2 className="w-5 h-5 animate-spin" />
               <span className="text-sm font-medium">Jeffrey is researching your visa requirements...</span>
             </div>
@@ -460,7 +459,7 @@ export default function OnboardingChat({ userName, onComplete, onSkip }: Onboard
               rows={2}
               className="
                 w-full px-4 py-3 rounded-xl
-                border border-gray-300 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200
+                border border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200
                 resize-none
                 disabled:bg-gray-100 disabled:cursor-not-allowed
                 transition-all duration-200
@@ -473,9 +472,9 @@ export default function OnboardingChat({ userName, onComplete, onSkip }: Onboard
             disabled={!inputValue.trim() || isTyping || isProcessing}
             className="
               p-3 rounded-xl
-              bg-gradient-to-r from-indigo-500 to-purple-600
+              bg-gradient-to-r from-blue-500 to-cyan-500
               text-white
-              hover:from-indigo-600 hover:to-purple-700
+              hover:from-blue-600 hover:to-cyan-600
               disabled:opacity-50 disabled:cursor-not-allowed
               transition-all duration-200
               transform hover:scale-105

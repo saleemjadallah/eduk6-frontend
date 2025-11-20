@@ -33,8 +33,8 @@ export const JeffreyRecommendations: React.FC<JeffreyRecommendationsProps> = ({
   return (
     <div
       className={cn(
-        'p-6 rounded-2xl bg-gradient-to-br from-indigo-50 to-purple-50',
-        'border border-indigo-100',
+        'p-6 rounded-2xl bg-gradient-to-br from-blue-50 to-cyan-50',
+        'border border-blue-100',
         className
       )}
     >

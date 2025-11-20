@@ -9,7 +9,7 @@ interface BadgeProps {
 }
 
 const variants = {
-  gradient: 'bg-gradient-to-r from-indigo-500 to-purple-600 text-white',
+  gradient: 'bg-gradient-to-r from-blue-600 to-cyan-500 text-white',
   outline: 'bg-white border border-gray-200 text-gray-700',
   white: 'bg-white/10 backdrop-blur-lg border border-white/20 text-white',
   secondary: 'bg-blue-100 text-blue-700',
