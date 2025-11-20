@@ -26,13 +26,6 @@ export default function JeffreyAvatar({
     xl: 'w-32 h-32 text-5xl',
   };
 
-  const moodEmojis = {
-    happy: '😊',
-    thinking: '🤔',
-    excited: '🎉',
-    waving: '👋',
-    neutral: 'J',
-  };
 
   const moodAnimations = {
     happy: 'animate-bounce',
@@ -65,15 +58,11 @@ export default function JeffreyAvatar({
           overflow-hidden
         `}
       >
-        {currentMood === 'neutral' ? (
-          <img
-            src="/assets/new-jeffrey-removebg-preview.png"
-            alt="Jeffrey AI Assistant"
-            className="w-full h-full object-cover"
-          />
-        ) : (
-          <span className="transform scale-110">{moodEmojis[currentMood]}</span>
-        )}
+        <img
+          src="/assets/new-jeffrey-removebg-preview.png"
+          alt="Jeffrey AI Assistant"
+          className="w-full h-full object-cover"
+        />
 
         {/* Sparkle effects for excited mood */}
         {currentMood === 'excited' && (
