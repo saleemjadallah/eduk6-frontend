@@ -7,7 +7,7 @@ import { onboardingApi, visaDocsApi, formFillerApi } from '../../lib/api';
 import { PDFDocument, StandardFonts } from 'pdf-lib';
 import * as pdfjsLib from 'pdfjs-dist';
 import { profileApi, CompleteProfile } from '../../lib/api-profile';
-import { validateForm } from '../../lib/validation-rules';
+import { validateForm, smartFieldMapper } from '../../lib/validation-rules';
 
 // Set up PDF.js worker - use unpkg which mirrors npm directly
 // react-pdf@10.2.0 uses pdfjs-dist@5.4.296
@@ -153,7 +153,6 @@ export const FormFillerWorkflow: React.FC = () => {
   const [, setProfileCompleteness] = useState(0);
   const [, setIsLoadingProfile] = useState(false);
   const [, setShowProfilePrompt] = useState(false);
-  const [, setValidationErrors] = useState<Array<{ fieldId: string; message: string; severity: 'error' | 'warning' | 'info' }>>([]);
 
   // Gemini Vision validation state
   const [validationAnalysis, setValidationAnalysis] = useState<{
@@ -172,6 +171,7 @@ export const FormFillerWorkflow: React.FC = () => {
     countrySpecificNotes: string[];
   } | null>(null);
   const [isAnalyzingForm, setIsAnalyzingForm] = useState(false);
+  const [visualValidationEnabled, setVisualValidationEnabled] = useState(true);
   const [hoveredArea, setHoveredArea] = useState<string | null>(null);
   const [fieldExplanation, setFieldExplanation] = useState<string | null>(null);
   const [isLoadingExplanation, setIsLoadingExplanation] = useState(false);
@@ -234,23 +234,6 @@ export const FormFillerWorkflow: React.FC = () => {
     setProfileCompleteness(Math.round((score / total) * 100));
   };
 
-  // Run validation when fields change (kept for future use)
-  useEffect(() => {
-    if (currentForm && travelProfile) {
-      const formData: Record<string, string> = {};
-      currentForm.fields.forEach(field => {
-        formData[field.name] = field.value;
-      });
-
-      const validation = validateForm(
-        formData,
-        travelProfile.destinationCountry,
-        travelProfile.visaRequirements?.visaType || ''
-      );
-      setValidationErrors(validation.errors);
-    }
-  }, [currentForm?.fields, travelProfile]);
-
   // Helper function to group fields by base name
   const groupFormFields = (fields: FormField[]) => {
     const fieldGroups = new Map<string, FormField[]>();
@@ -268,6 +251,115 @@ export const FormFillerWorkflow: React.FC = () => {
     });
 
     return fieldGroups;
+  };
+
+  const getFieldDisplayName = (fieldId: string) => {
+    if (!currentForm) return formatFieldLabel(fieldId);
+    const direct = currentForm.fields.find(field => field.name === fieldId);
+    if (direct) return direct.label;
+    const looseMatch = currentForm.fields.find(field =>
+      field.name.toLowerCase().includes(fieldId.toLowerCase())
+    );
+    return looseMatch?.label || formatFieldLabel(fieldId);
+  };
+
+  const getFormCompletionStats = () => {
+    if (!currentForm) {
+      return { total: 0, filled: 0 };
+    }
+    const fieldGroups = groupFormFields(currentForm.fields);
+    const filledGroups = Array.from(fieldGroups.values())
+      .filter(group => group.some((f: FormField) => f.value.trim() !== '')).length;
+    return { total: fieldGroups.size, filled: filledGroups };
+  };
+
+  const buildStructuredFormData = (): Record<string, string> => {
+    if (!currentForm) return {};
+    const data: Record<string, string> = {};
+
+    currentForm.fields.forEach(field => {
+      const trimmedValue = typeof field.value === 'string' ? field.value.trim() : '';
+      if (!trimmedValue) return;
+
+      data[field.name] = trimmedValue;
+
+      const mappedFromName = smartFieldMapper.findBestMatch(field.name);
+      const mappedFromLabel = smartFieldMapper.findBestMatch(field.label || '');
+
+      [mappedFromName, mappedFromLabel].forEach(mapped => {
+        if (mapped && !data[mapped]) {
+          data[mapped] = trimmedValue;
+        }
+      });
+    });
+
+    return data;
+  };
+
+  const mergeUniqueStrings = (existing: string[], incoming: string[]): string[] => {
+    const existingSet = new Set(existing);
+    const filtered = incoming.filter(item => {
+      if (existingSet.has(item)) return false;
+      existingSet.add(item);
+      return true;
+    });
+    return [...existing, ...filtered];
+  };
+
+  const mergeValidationAnalyses = (
+    baseAnalysis: ReturnType<typeof sanitizeValidationResult> | null,
+    incomingAnalysis: ReturnType<typeof sanitizeValidationResult>
+  ) => {
+    if (!baseAnalysis) return incomingAnalysis;
+
+    const existingIssueIds = new Set(
+      (baseAnalysis.issues as ValidationIssue[]).map(issue => issue.id)
+    );
+    const uniqueIncomingIssues = (incomingAnalysis.issues as ValidationIssue[]).filter(
+      issue => !existingIssueIds.has(issue.id)
+    );
+
+    return {
+      overallScore: incomingAnalysis.overallScore || baseAnalysis.overallScore,
+      completedFields: incomingAnalysis.completedFields || baseAnalysis.completedFields,
+      totalFields: incomingAnalysis.totalFields || baseAnalysis.totalFields,
+      issues: [...baseAnalysis.issues, ...uniqueIncomingIssues],
+      recommendations: mergeUniqueStrings(baseAnalysis.recommendations, incomingAnalysis.recommendations),
+      countrySpecificNotes: mergeUniqueStrings(baseAnalysis.countrySpecificNotes, incomingAnalysis.countrySpecificNotes)
+    };
+  };
+
+  const createLocalValidationAnalysis = (structuredData: Record<string, string>) => {
+    const stats = getFormCompletionStats();
+    const localResult = validateForm(
+      structuredData,
+      travelProfile?.destinationCountry || 'Unknown',
+      travelProfile?.visaRequirements?.visaType || ''
+    );
+
+    const localIssues = localResult.errors.map((error, index) => ({
+      id: `local-${error.fieldId}-${index}`,
+      fieldName: getFieldDisplayName(error.fieldId),
+      type: error.severity,
+      message: error.message
+    }));
+
+    const recommendations = localIssues
+      .filter(issue => issue.type === 'error')
+      .map(issue => `Fix ${issue.fieldName}: ${issue.message}`);
+
+    const notes = localIssues
+      .filter(issue => issue.type === 'warning')
+      .map(issue => `${issue.fieldName}: ${issue.message}`);
+
+    return sanitizeValidationResult({
+      overallScore: stats.total > 0 ? Math.round((stats.filled / stats.total) * 100) : 0,
+      completedFields: stats.filled,
+      totalFields: stats.total,
+      issues: localIssues,
+      recommendations,
+      countrySpecificNotes: notes
+    });
   };
 
   // Sanitize validation result to ensure all fields are in correct format
@@ -292,9 +384,21 @@ export const FormFillerWorkflow: React.FC = () => {
     };
   };
 
+  type ValidationIssue = ReturnType<typeof sanitizeValidationResult>['issues'][number];
+
   // Analyze uploaded form with Gemini Vision for validation
-  const analyzeFormForValidation = async (pdfImages: string[]) => {
-    setIsAnalyzingForm(true);
+  const analyzeFormForValidation = async (
+    pdfImages: string[],
+    options?: {
+      structuredData?: Record<string, string>;
+      filledPdfBase64?: string;
+      mergeWithExisting?: boolean;
+      skipSpinner?: boolean;
+    }
+  ) => {
+    if (!options?.skipSpinner) {
+      setIsAnalyzingForm(true);
+    }
     try {
       // Calculate local field statistics for context
       const fieldGroups = currentForm ? groupFormFields(currentForm.fields) : new Map();
@@ -341,7 +445,9 @@ Return ONLY valid JSON, no other text.`;
       const response = await visaDocsApi.analyzeFormValidation({
         pageImages: pdfImages,
         prompt,
-        country: travelProfile?.destinationCountry || ''
+        country: travelProfile?.destinationCountry || '',
+        fieldData: options?.structuredData,
+        filledPdfBase64: options?.filledPdfBase64
       });
 
       if (response.success && response.data) {
@@ -362,8 +468,11 @@ Return ONLY valid JSON, no other text.`;
                 ? Math.round((filledFieldGroups / totalFieldGroups) * 100)
                 : 0)
             };
-
-            setValidationAnalysis(sanitizeValidationResult(adjustedAnalysis));
+            const sanitized = sanitizeValidationResult(adjustedAnalysis);
+            setValidationAnalysis(prev => options?.mergeWithExisting
+              ? mergeValidationAnalyses(prev, sanitized)
+              : sanitized
+            );
           } else if (response.data.validation) {
             // Direct validation object from API - adjust it too
             const adjustedValidation = {
@@ -374,10 +483,14 @@ Return ONLY valid JSON, no other text.`;
                 ? Math.round((filledFieldGroups / totalFieldGroups) * 100)
                 : 0)
             };
-            setValidationAnalysis(sanitizeValidationResult(adjustedValidation));
+            const sanitized = sanitizeValidationResult(adjustedValidation);
+            setValidationAnalysis(prev => options?.mergeWithExisting
+              ? mergeValidationAnalyses(prev, sanitized)
+              : sanitized
+            );
           } else {
             // If no JSON found, create a basic structure with our local counts
-            setValidationAnalysis(sanitizeValidationResult({
+            const fallback = sanitizeValidationResult({
               overallScore: totalFieldGroups > 0
                 ? Math.round((filledFieldGroups / totalFieldGroups) * 100)
                 : 0,
@@ -391,11 +504,15 @@ Return ONLY valid JSON, no other text.`;
               }],
               recommendations: ['Upload a clearer PDF for better analysis'],
               countrySpecificNotes: []
-            }));
+            });
+            setValidationAnalysis(prev => options?.mergeWithExisting
+              ? mergeValidationAnalyses(prev, fallback)
+              : fallback
+            );
           }
         } catch (parseError) {
           console.error('Error parsing validation response:', parseError);
-          setValidationAnalysis(sanitizeValidationResult({
+          const fallback = sanitizeValidationResult({
             overallScore: totalFieldGroups > 0
               ? Math.round((filledFieldGroups / totalFieldGroups) * 100)
               : 50,
@@ -404,13 +521,19 @@ Return ONLY valid JSON, no other text.`;
             issues: [],
             recommendations: ['Form uploaded successfully. Hover over specific areas for detailed validation.'],
             countrySpecificNotes: []
-          }));
+          });
+          setValidationAnalysis(prev => options?.mergeWithExisting
+            ? mergeValidationAnalyses(prev, fallback)
+            : fallback
+          );
         }
       }
     } catch (error) {
       console.error('Error analyzing form:', error);
     } finally {
-      setIsAnalyzingForm(false);
+      if (!options?.skipSpinner) {
+        setIsAnalyzingForm(false);
+      }
     }
   };
 
@@ -504,23 +627,6 @@ Be concise but helpful. Format as a brief paragraph.`;
     }
   };
 
-  // Re-capture current PDF state with filled values
-  const recapturePDFState = async (): Promise<string[]> => {
-    try {
-      const filledPdfBytes = await generateFilledPdfBytes();
-      if (!filledPdfBytes) {
-        return pageImages;
-      }
-
-      const newImages = await convertPDFPagesToImages(filledPdfBytes);
-      console.log(`[FormFiller] Generated ${newImages.length} images from recaptured PDF`);
-      return newImages;
-    } catch (error) {
-      console.error('Error recapturing PDF state:', error);
-      return pageImages; // Fall back to original images
-    }
-  };
-
   // Auto-validation timer effect
   useEffect(() => {
     if (!autoValidationEnabled || viewMode !== 'fill' || !currentForm || isAnalyzingForm) {
@@ -563,12 +669,10 @@ Be concise but helpful. Format as a brief paragraph.`;
     if (isAnalyzingForm || !currentForm) return;
 
     console.log('[FormFiller] Auto-validation triggered');
-    const newImages = await recapturePDFState();
-    if (newImages.length > 0) {
-      setPageImages(newImages);
-      await analyzeFormForValidation(newImages);
-      setLastValidationTime(new Date());
-    }
+    const structuredData = buildStructuredFormData();
+    const localAnalysis = createLocalValidationAnalysis(structuredData);
+    setValidationAnalysis(prev => mergeValidationAnalyses(prev, localAnalysis));
+    setLastValidationTime(new Date());
   };
 
   // Unified validation handler used by both buttons
@@ -760,6 +864,16 @@ Be concise but helpful. Format as a brief paragraph.`;
       console.error('Error converting PDF to images:', error);
       return [];
     }
+  };
+
+  const uint8ToBase64 = (bytes: Uint8Array): string => {
+    let binary = '';
+    const chunkSize = 0x8000;
+    for (let i = 0; i < bytes.length; i += chunkSize) {
+      const chunk = bytes.subarray(i, i + chunkSize);
+      binary += String.fromCharCode(...chunk);
+    }
+    return btoa(binary);
   };
 
   // Extract PDF form fields directly from PDF structure (bypasses character box overlays)
@@ -1258,33 +1372,37 @@ Be concise but helpful. Format as a brief paragraph.`;
   const handleValidateForm = async () => {
     if (!currentForm) return;
 
+    const structuredData = buildStructuredFormData();
+    const localAnalysis = createLocalValidationAnalysis(structuredData);
+    setValidationAnalysis(prev => mergeValidationAnalyses(prev, localAnalysis));
+    setLastValidationTime(new Date());
+
+    if (!visualValidationEnabled) {
+      return;
+    }
+
     setIsAnalyzingForm(true);
     try {
-      console.log('[FormFiller] Validating filled form...');
+      console.log('[FormFiller] Running visual QA...');
 
-      // Extract filled values from PDF (optional, but good for debugging)
       await extractFilledPDFValues();
 
-      // Ensure we have page images
-      // Ensure we have page images of the FILLED form
-      let imagesToAnalyze: string[] = [];
+      let imagesToAnalyze: string[] = pageImages;
+      let filledPdfBytes: Uint8Array | null = null;
 
-      // Always try to recapture state first to get filled values
       try {
-        imagesToAnalyze = await recapturePDFState();
-      } catch (e) {
-        console.warn('[FormFiller] Failed to recapture PDF state, falling back to original images', e);
-        imagesToAnalyze = pageImages;
+        filledPdfBytes = await generateFilledPdfBytes();
+      } catch (error) {
+        console.warn('Unable to regenerate filled PDF before validation:', error);
       }
 
-      if (imagesToAnalyze.length === 0 && currentForm.pdfBytes) {
-        // If still no images, convert original PDF to images
+      if (filledPdfBytes) {
+        imagesToAnalyze = await convertPDFPagesToImages(filledPdfBytes);
+        if (imagesToAnalyze.length > 0) {
+          setPageImages(imagesToAnalyze);
+        }
+      } else if (imagesToAnalyze.length === 0 && currentForm.pdfBytes) {
         imagesToAnalyze = await convertPDFPagesToImages(currentForm.pdfBytes);
-      }
-
-      // Update state with new images so we can see them if needed
-      if (imagesToAnalyze.length > 0) {
-        setPageImages(imagesToAnalyze);
       }
 
       if (imagesToAnalyze.length === 0) {
@@ -1292,29 +1410,16 @@ Be concise but helpful. Format as a brief paragraph.`;
         return;
       }
 
-      // Call validation API
-      const response = await visaDocsApi.analyzeFormValidation({
-        pageImages: imagesToAnalyze,
-        prompt: `Validate this ${travelProfile?.destinationCountry || 'visa'} form. Check for missing required fields, incorrect formats, and consistency.`,
-        country: travelProfile?.destinationCountry || 'Unknown'
+      const filledPdfBase64 = filledPdfBytes ? uint8ToBase64(filledPdfBytes) : undefined;
+
+      await analyzeFormForValidation(imagesToAnalyze, {
+        structuredData,
+        filledPdfBase64,
+        mergeWithExisting: true,
+        skipSpinner: true
       });
 
-      if (response.success && response.data?.validation) {
-        // Update validation analysis with backend results
-        setValidationAnalysis({
-          overallScore: response.data.validation.overallScore,
-          completedFields: response.data.validation.completedFields,
-          totalFields: response.data.validation.totalFields,
-          issues: response.data.validation.issues,
-          recommendations: response.data.validation.recommendations,
-          countrySpecificNotes: response.data.validation.countrySpecificNotes
-        });
-
-        setLastValidationTime(new Date());
-        console.log('[FormFiller] Validation complete:', response.data);
-      } else {
-        throw new Error('Validation failed or returned no data');
-      }
+      setLastValidationTime(new Date());
     } catch (error) {
       console.error('[FormFiller] Validation error:', error);
       alert('Validation failed. Please try again.');
@@ -2027,17 +2132,17 @@ Be concise but helpful. Format as a brief paragraph.`;
                     disabled={isAnalyzingForm}
                     className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg font-medium hover:bg-indigo-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    {isAnalyzingForm ? (
-                      <>
-                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                        Validating...
-                      </>
-                    ) : (
-                      <>
-                        <Shield className="w-4 h-4" />
-                        Validate Form
-                      </>
-                    )}
+                        {isAnalyzingForm ? (
+                          <>
+                            <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                            Checking...
+                          </>
+                        ) : (
+                          <>
+                            <Shield className="w-4 h-4" />
+                            Validate & QA
+                          </>
+                        )}
                   </button>
                 </div>
               </div>
@@ -2092,6 +2197,17 @@ Be concise but helpful. Format as a brief paragraph.`;
                       Next in {validationCountdown}s
                     </span>
                   )}
+                </div>
+                <div className="flex items-center gap-2">
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={visualValidationEnabled}
+                      onChange={(e) => setVisualValidationEnabled(e.target.checked)}
+                      className="w-4 h-4 text-indigo-600 rounded"
+                    />
+                    <span className="text-sm text-gray-700">Include visual QA</span>
+                  </label>
                 </div>
                 <button
                   onClick={handleReanalyze}
@@ -2330,12 +2446,12 @@ Be concise but helpful. Format as a brief paragraph.`;
                   {isAnalyzingForm ? (
                     <>
                       <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                      Validating...
+                      Checking...
                     </>
                   ) : (
                     <>
                       <Shield className="w-4 h-4" />
-                      Validate Form
+                      Validate & QA
                     </>
                   )}
                 </button>

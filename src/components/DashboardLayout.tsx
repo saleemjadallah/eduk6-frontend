@@ -71,7 +71,7 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
         </div>
 
         {/* Top Navigation Bar */}
-        <header className="fixed top-0 left-0 right-0 h-16 bg-white/40 backdrop-blur-xl border-b border-white/30 z-50 shadow-sm">
+        <header className="fixed top-0 left-0 right-0 h-16 bg-white/80 backdrop-blur-xl border-b border-white/50 z-50 shadow-sm">
           <div className="h-full flex items-center justify-between px-6">
             {/* Logo */}
             <Link to="/app" className="flex items-center gap-2">
@@ -134,7 +134,7 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
 
                   {/* Dropdown Menu */}
                   <div
-                    className="absolute right-0 top-full mt-2 w-56 bg-white/60 backdrop-blur-2xl rounded-lg shadow-lg border border-white/40
+                    className="absolute right-0 top-full mt-2 w-56 bg-white/90 backdrop-blur-2xl rounded-lg shadow-lg border border-white/50
                                opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all"
                   >
                     <div className="py-1">
