@@ -194,6 +194,14 @@ export const FormFillerWorkflow: React.FC = () => {
   const autosaveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const originalPdfUploadedRef = useRef(false);
   const draftLoadedRef = useRef(false);
+  const [savedDraft, setSavedDraft] = useState<{
+    formId: string;
+    filledData: any;
+    pdfUrl: string | null;
+    fileName: string;
+    updatedAt: string;
+  } | null>(null);
+  const [isRestoringDraft, setIsRestoringDraft] = useState(false);
 
   // Update Jeffrey's context when entering this workflow
   useEffect(() => {
@@ -367,6 +375,36 @@ export const FormFillerWorkflow: React.FC = () => {
         assignIfEmpty('lastName', parts.slice(1).join(' ') || parts[0]);
       }
     }
+
+    const groupedFields = groupFormFields(currentForm.fields);
+    const matchesText = (text: string, ...keywords: string[]) => {
+      const normalized = text.toLowerCase();
+      return keywords.some(keyword => normalized.includes(keyword.toLowerCase()));
+    };
+
+    groupedFields.forEach((fields, baseKey) => {
+      const sortedFields = [...fields].sort((a, b) => a.name.localeCompare(b.name));
+      const values = sortedFields.map(field => (field.value || '').trim()).filter(Boolean);
+      if (!values.length) return;
+
+      const joinedWithSlash = values.join('/');
+      const joinedDigits = values.join('');
+      const combinedText = `${baseKey} ${sortedFields.map(f => f.label || '').join(' ')}`;
+
+      if (
+        !data.dateOfBirth &&
+        matchesText(combinedText, 'date of birth', 'dob', 'birth date', 'birth')
+      ) {
+        data.dateOfBirth = joinedWithSlash;
+      }
+
+      if (
+        !data.passportNumber &&
+        matchesText(combinedText, 'passport number', 'passport no', 'travel document', 'travel doc')
+      ) {
+        data.passportNumber = joinedDigits || joinedWithSlash;
+      }
+    });
 
     return data;
   };
@@ -885,7 +923,7 @@ Be concise but helpful. Format as a brief paragraph.`;
     } catch (error) {
       console.error('Failed to load form data:', error);
     } finally {
-      await loadDraftFromServer();
+      await loadDraftFromServer(true);
       setIsLoading(false);
     }
   };
@@ -1245,57 +1283,75 @@ Be concise but helpful. Format as a brief paragraph.`;
     return undefined;
   };
 
-  const loadDraftFromServer = async () => {
-    if (draftLoadedRef.current) return;
+  const restoreDraft = async (draft: {
+    formId: string;
+    filledData: any;
+    pdfUrl: string | null;
+    fileName: string;
+    updatedAt: string;
+  }) => {
+    if (!draft.pdfUrl) {
+      alert('Saved draft does not include the original PDF. Please upload the form again.');
+      return;
+    }
+
+    setIsRestoringDraft(true);
     try {
-      const response = await formFillerApi.getDraft();
-      if (!response.success || !response.data) {
-        draftLoadedRef.current = true;
-        return;
-      }
-
-      const { formId: draftId, filledData, pdfUrl, fileName } = response.data;
-      const metadata = filledData?.metadata || {};
-      const valuesRecord = filledData?.values ?? filledData ?? {};
-      const fieldSnapshot: FormField[] = metadata.fields || [];
-
-      if (!pdfUrl || fieldSnapshot.length === 0) {
-        draftLoadedRef.current = true;
-        return;
-      }
-
-      const pdfResponse = await fetch(pdfUrl);
-      const pdfArrayBuffer = await pdfResponse.arrayBuffer();
+      const response = await fetch(draft.pdfUrl);
+      const pdfArrayBuffer = await response.arrayBuffer();
       const pdfDoc = await pdfjsLib.getDocument({ data: pdfArrayBuffer.slice(0) }).promise;
       setPdfDocument(pdfDoc);
 
       const draftBlobUrl = URL.createObjectURL(new Blob([pdfArrayBuffer], { type: 'application/pdf' }));
       setPdfUrl(draftBlobUrl);
 
-      const hydratedFields = fieldSnapshot.map((field) => {
+      const metadata = draft.filledData?.metadata || {};
+      const valuesRecord = draft.filledData?.values ?? draft.filledData ?? {};
+      const fieldSnapshot: FormField[] = metadata.fields || [];
+
+      const hydratedFields = fieldSnapshot.length > 0 ? fieldSnapshot.map((field) => {
         const storedEntry = valuesRecord?.[field.name];
         return {
           ...field,
           value: storedEntry?.value ?? field.value ?? '',
         };
-      });
+      }) : currentForm?.fields || [];
 
       const restoredForm: UploadedForm = {
-        id: draftId,
-        fileName: metadata.fileName || fileName || 'Saved Draft.pdf',
+        id: draft.formId,
+        fileName: metadata.fileName || draft.fileName || 'Saved Draft.pdf',
         pdfBytes: pdfArrayBuffer,
         fields: hydratedFields,
         queryResults: [],
-        extractedAt: new Date(metadata.savedAt || Date.now()),
+        extractedAt: new Date(metadata.savedAt || draft.updatedAt || Date.now()),
       };
 
       setCurrentForm(restoredForm);
-      setFormId(draftId);
+      setFormId(draft.formId);
       setViewMode('fill');
+      setSavedDraft(null);
       originalPdfUploadedRef.current = true;
 
       const images = await convertPDFPagesToImages(pdfArrayBuffer);
       setPageImages(images);
+    } catch (error) {
+      console.error('Error restoring draft:', error);
+      alert('Unable to load the saved draft. Please upload the form again.');
+    } finally {
+      setIsRestoringDraft(false);
+    }
+  };
+
+  const loadDraftFromServer = async (autoRestore = true) => {
+    if (draftLoadedRef.current) return;
+    try {
+      const response = await formFillerApi.getDraft();
+      if (response.success) {
+        setSavedDraft(response.data ?? null);
+        if (autoRestore && !currentForm && response.data && response.data.pdfUrl) {
+          await restoreDraft(response.data);
+        }
+      }
     } catch (error) {
       console.error('Error loading draft:', error);
     } finally {
@@ -1333,6 +1389,7 @@ Be concise but helpful. Format as a brief paragraph.`;
     setFormId(null);
     originalPdfUploadedRef.current = false;
     addRecentAction('Uploaded form', { fileName: file.name });
+    setSavedDraft(null);
 
     try {
       const arrayBuffer = await file.arrayBuffer();
@@ -1392,6 +1449,48 @@ Be concise but helpful. Format as a brief paragraph.`;
 
       setCurrentForm(uploadedForm);
       setViewMode('fill');
+
+      // Auto-fill fields from user profile
+      if (uploadedForm.fields.length > 0 && travelProfile) {
+        try {
+          const autoFillResponse = await profileApi.getAutoFillData({
+            country: travelProfile.destinationCountry,
+            visaType: travelProfile.visaRequirements?.visaType || 'tourist',
+            fields: uploadedForm.fields.map(f => ({
+              id: f.id,
+              name: f.name,
+              label: f.label
+            }))
+          });
+
+          if (autoFillResponse.success && autoFillResponse.data) {
+            const { autoFillData } = autoFillResponse.data;
+
+            // Apply autofill data to fields
+            const autoFilledFields = uploadedForm.fields.map(field => {
+              const autoFillValue = autoFillData[field.id];
+              if (autoFillValue && autoFillValue.value) {
+                return {
+                  ...field,
+                  value: autoFillValue.value,
+                  suggestedValue: autoFillValue.value,
+                  source: autoFillValue.source
+                };
+              }
+              return field;
+            });
+
+            setCurrentForm(prev => prev ? { ...prev, fields: autoFilledFields } : prev);
+            addRecentAction('Auto-filled form from profile', {
+              filledCount: Object.keys(autoFillData).length,
+              totalFields: uploadedForm.fields.length
+            });
+          }
+        } catch (error) {
+          console.error('Error auto-filling form:', error);
+          // Don't fail the whole upload if autofill fails
+        }
+      }
 
       // Trigger Gemini Vision validation analysis
       if (pdfImagesForValidation.length > 0) {
@@ -1885,6 +1984,33 @@ Be concise but helpful. Format as a brief paragraph.`;
           <BreadcrumbItem href="/app">Dashboard</BreadcrumbItem>
           <BreadcrumbItem active>AI Form Filler</BreadcrumbItem>
         </Breadcrumb>
+
+        {savedDraft && (
+          <div className="mb-6 p-4 bg-indigo-50 border border-indigo-200 rounded-2xl flex items-center justify-between">
+            <div>
+              <p className="text-sm text-indigo-700 font-semibold">You have an unsaved draft</p>
+              <p className="text-xs text-indigo-600">
+                {savedDraft.fileName} • Last saved {new Date(savedDraft.updatedAt).toLocaleString()}
+              </p>
+            </div>
+            <div className="flex gap-3">
+              <button
+                onClick={() => restoreDraft(savedDraft)}
+                className="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700 disabled:opacity-50"
+                disabled={isRestoringDraft}
+              >
+                {isRestoringDraft ? 'Resuming...' : 'Resume Draft'}
+              </button>
+              <button
+                onClick={() => setSavedDraft(null)}
+                className="px-4 py-2 border border-indigo-200 text-indigo-700 rounded-lg text-sm font-medium hover:bg-indigo-50"
+                disabled={isRestoringDraft}
+              >
+                Dismiss
+              </button>
+            </div>
+          </div>
+        )}
 
         <div className="mb-8">
           <h1 className="text-4xl font-bold mb-2">AI Form Filler</h1>

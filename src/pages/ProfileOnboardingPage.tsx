@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { User, BookOpen, Briefcase, Users, ChevronRight, Check, SkipForward, Sparkles } from 'lucide-react';
+import { User, BookOpen, Briefcase, Users, ChevronRight, Check, SkipForward, Sparkles, Globe, Calendar } from 'lucide-react';
 import { profileApi, UserProfile, PassportProfile } from '../lib/api-profile';
+import { onboardingApi } from '../lib/api';
 import { cn } from '../utils/cn';
 
-type OnboardingStep = 'welcome' | 'personal' | 'passport' | 'employment' | 'family' | 'complete';
+type OnboardingStep = 'welcome' | 'personal' | 'passport' | 'travel' | 'employment' | 'family' | 'complete';
 
 export const ProfileOnboardingPage: React.FC = () => {
   const navigate = useNavigate();
@@ -14,6 +15,13 @@ export const ProfileOnboardingPage: React.FC = () => {
   // Form states
   const [personalData, setPersonalData] = useState<Partial<UserProfile>>({});
   const [passportData, setPassportData] = useState<Partial<PassportProfile>>({});
+  const [travelData, setTravelData] = useState({
+    destinationCountry: '',
+    travelPurpose: '',
+    nationality: '',
+    travelDates: { start: '', end: '' },
+    specialConcerns: [] as string[],
+  });
   const [wantsToAddEmployment, setWantsToAddEmployment] = useState(false);
   const [wantsToAddFamily, setWantsToAddFamily] = useState(false);
 
@@ -23,6 +31,7 @@ export const ProfileOnboardingPage: React.FC = () => {
   const steps = [
     { id: 'personal', label: 'Personal Info', icon: User, required: true },
     { id: 'passport', label: 'Passport', icon: BookOpen, required: true },
+    { id: 'travel', label: 'Travel Plans', icon: Globe, required: true },
     { id: 'employment', label: 'Employment', icon: Briefcase, required: false },
     { id: 'family', label: 'Family', icon: Users, required: false },
   ];
@@ -55,7 +64,9 @@ export const ProfileOnboardingPage: React.FC = () => {
       } as PassportProfile);
       if (response.success) {
         setCompletedSteps(prev => new Set(prev).add('passport'));
-        setCurrentStep(wantsToAddEmployment ? 'employment' : 'complete');
+        // Use nationality from personal data for travel data
+        setTravelData(prev => ({ ...prev, nationality: personalData.nationality || '' }));
+        setCurrentStep('travel');
       }
     } catch (error) {
       console.error('Error saving passport data:', error);
@@ -64,15 +75,31 @@ export const ProfileOnboardingPage: React.FC = () => {
     }
   };
 
+  const handleSaveTravel = async () => {
+    setIsSaving(true);
+    try {
+      // Save travel profile through onboarding API (Jeffrey research)
+      const response = await onboardingApi.complete(travelData);
+      if (response.success) {
+        setCompletedSteps(prev => new Set(prev).add('travel'));
+        setCurrentStep(wantsToAddEmployment ? 'employment' : 'complete');
+      }
+    } catch (error) {
+      console.error('Error saving travel data:', error);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   const handleComplete = () => {
-    navigate('/app');
+    navigate('/app', { state: { justOnboarded: true } });
   };
 
   const getProgressPercentage = () => {
-    const requiredCompleted = ['personal', 'passport'].filter(s =>
+    const requiredCompleted = ['personal', 'passport', 'travel'].filter(s =>
       completedSteps.has(s as OnboardingStep)
     ).length;
-    return (requiredCompleted / 2) * 100;
+    return (requiredCompleted / 3) * 100;
   };
 
   return (
@@ -336,30 +363,6 @@ export const ProfileOnboardingPage: React.FC = () => {
               </div>
             </div>
 
-            <div className="border-t pt-4 mb-6">
-              <p className="text-sm font-medium text-gray-700 mb-3">Would you like to add:</p>
-              <div className="space-y-2">
-                <label className="flex items-center gap-2">
-                  <input
-                    type="checkbox"
-                    checked={wantsToAddEmployment}
-                    onChange={(e) => setWantsToAddEmployment(e.target.checked)}
-                    className="w-4 h-4 text-indigo-600 rounded border-gray-300 focus:ring-indigo-500"
-                  />
-                  <span className="text-sm text-gray-700">Employment information (for work visas)</span>
-                </label>
-                <label className="flex items-center gap-2">
-                  <input
-                    type="checkbox"
-                    checked={wantsToAddFamily}
-                    onChange={(e) => setWantsToAddFamily(e.target.checked)}
-                    className="w-4 h-4 text-indigo-600 rounded border-gray-300 focus:ring-indigo-500"
-                  />
-                  <span className="text-sm text-gray-700">Family members (for family visas)</span>
-                </label>
-              </div>
-            </div>
-
             <div className="flex items-center justify-between">
               <button
                 onClick={handleSkipAll}
@@ -374,6 +377,122 @@ export const ProfileOnboardingPage: React.FC = () => {
                 className="px-6 py-3 bg-indigo-600 text-white rounded-xl font-semibold hover:bg-indigo-700 transition-colors flex items-center gap-2 disabled:opacity-50"
               >
                 {isSaving ? 'Saving...' : 'Continue'}
+                <ChevronRight className="w-5 h-5" />
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Travel Plans Step */}
+        {currentStep === 'travel' && (
+          <div className="bg-white rounded-2xl shadow-xl p-8">
+            <h2 className="text-2xl font-bold mb-6">Travel Plans</h2>
+            <p className="text-gray-600 mb-6">Tell us about your upcoming travel so we can prepare everything you need</p>
+
+            <div className="space-y-4 mb-6">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Where are you traveling to? *</label>
+                <input
+                  type="text"
+                  value={travelData.destinationCountry}
+                  onChange={(e) => setTravelData({ ...travelData, destinationCountry: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                  placeholder="e.g., United Arab Emirates, Singapore, France"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Purpose of Travel *</label>
+                <select
+                  value={travelData.travelPurpose}
+                  onChange={(e) => setTravelData({ ...travelData, travelPurpose: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                >
+                  <option value="">Select purpose</option>
+                  <option value="Tourism">Tourism / Vacation</option>
+                  <option value="Business">Business</option>
+                  <option value="Visit Family">Visit Family/Friends</option>
+                  <option value="Medical">Medical Treatment</option>
+                  <option value="Study">Study/Education</option>
+                  <option value="Work">Work/Employment</option>
+                  <option value="Transit">Transit</option>
+                </select>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Travel Start Date *</label>
+                  <input
+                    type="date"
+                    value={travelData.travelDates.start}
+                    onChange={(e) => setTravelData({ ...travelData, travelDates: { ...travelData.travelDates, start: e.target.value } })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Travel End Date *</label>
+                  <input
+                    type="date"
+                    value={travelData.travelDates.end}
+                    onChange={(e) => setTravelData({ ...travelData, travelDates: { ...travelData.travelDates, end: e.target.value } })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                  />
+                </div>
+              </div>
+
+              <div className="bg-indigo-50 rounded-lg p-4 border border-indigo-100">
+                <div className="flex items-start gap-3">
+                  <Sparkles className="w-5 h-5 text-indigo-600 mt-0.5 flex-shrink-0" />
+                  <div>
+                    <p className="text-sm font-medium text-indigo-900 mb-1">Jeffrey will research your visa requirements</p>
+                    <p className="text-xs text-indigo-700">
+                      Based on your destination and travel purpose, our AI will analyze visa requirements,
+                      required documents, photo specifications, and create a personalized checklist for you.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="border-t pt-4">
+                <p className="text-sm font-medium text-gray-700 mb-3">Optional: Would you also like to add?</p>
+                <div className="space-y-2">
+                  <label className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      checked={wantsToAddEmployment}
+                      onChange={(e) => setWantsToAddEmployment(e.target.checked)}
+                      className="w-4 h-4 text-indigo-600 rounded border-gray-300 focus:ring-indigo-500"
+                    />
+                    <span className="text-sm text-gray-700">Employment information (helpful for work visas)</span>
+                  </label>
+                  <label className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      checked={wantsToAddFamily}
+                      onChange={(e) => setWantsToAddFamily(e.target.checked)}
+                      className="w-4 h-4 text-indigo-600 rounded border-gray-300 focus:ring-indigo-500"
+                    />
+                    <span className="text-sm text-gray-700">Family members (for family travel)</span>
+                  </label>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between">
+              <button
+                onClick={() => setCurrentStep('passport')}
+                className="text-gray-500 hover:text-gray-700"
+              >
+                Back
+              </button>
+
+              <button
+                onClick={handleSaveTravel}
+                disabled={isSaving || !travelData.destinationCountry || !travelData.travelPurpose || !travelData.travelDates.start || !travelData.travelDates.end}
+                className="px-6 py-3 bg-indigo-600 text-white rounded-xl font-semibold hover:bg-indigo-700 transition-colors flex items-center gap-2 disabled:opacity-50"
+              >
+                {isSaving ? 'Researching...' : 'Continue'}
                 <ChevronRight className="w-5 h-5" />
               </button>
             </div>

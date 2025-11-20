@@ -14,6 +14,7 @@ import { useJeffrey } from '../../contexts/JeffreyContext';
 import { Breadcrumb, BreadcrumbItem } from '../../components/ui/Breadcrumb';
 import { CompletionBadge } from '../../components/ui/CompletionBadge';
 import { cn } from '../../utils/cn';
+import { onboardingApi } from '../../lib/api';
 
 interface Requirement {
   id: string;
@@ -39,6 +40,7 @@ export const DocumentValidatorWorkflow: React.FC = () => {
   const [validationInsights, setValidationInsights] = useState<ValidationInsight[]>([]);
   const [jeffreyRecommendation, setJeffreyRecommendation] = useState('');
   const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   // Calculate completeness
   const totalRequirements = mandatoryRequirements.length + optionalRequirements.length;
@@ -59,16 +61,46 @@ export const DocumentValidatorWorkflow: React.FC = () => {
   const loadValidatorData = async () => {
     setIsLoading(true);
     try {
-      // TODO: Fetch real requirements from API based on user's visa application
-      // For now, start with empty state
+      // Fetch onboarding status to get visa requirements
+      const response = await onboardingApi.getStatus();
+
+      if (response.success && response.data?.travelProfile?.visaRequirements) {
+        const { visaRequirements, destinationCountry, travelPurpose } = response.data.travelProfile;
+        const { requiredDocuments } = visaRequirements;
+
+        // Map required documents to mandatory requirements
+        const mandatoryReqs: Requirement[] = requiredDocuments.map((doc, index) => ({
+          id: `mandatory-${index}`,
+          item: doc,
+          description: `Required for ${destinationCountry} ${travelPurpose} visa`,
+          mandatory: true,
+          status: 'pending' as const,
+        }));
+
+        setMandatoryRequirements(mandatoryReqs);
+        setOptionalRequirements([]);
+        setValidationInsights([]);
+        setJeffreyRecommendation(
+          `I've loaded your document requirements for ${destinationCountry}. You need ${mandatoryReqs.length} mandatory documents for your ${travelPurpose} visa. Start by uploading each document, and I'll validate them for you.`
+        );
+      } else {
+        // No onboarding data
+        setMandatoryRequirements([]);
+        setOptionalRequirements([]);
+        setValidationInsights([]);
+        setJeffreyRecommendation(
+          'Complete your travel profile first to see which documents you need. I\'ll help you understand exactly what\'s required for your destination.'
+        );
+      }
+    } catch (error) {
+      console.error('Failed to load validator data:', error);
+      setLoadError('Unable to load document requirements. Please refresh the page or complete your travel profile first.');
       setMandatoryRequirements([]);
       setOptionalRequirements([]);
       setValidationInsights([]);
       setJeffreyRecommendation(
         'Start by selecting your destination country and visa type. I\'ll help you understand exactly which documents you need to upload.'
       );
-    } catch (error) {
-      console.error('Failed to load validator data:', error);
     } finally {
       setIsLoading(false);
     }
@@ -140,6 +172,23 @@ export const DocumentValidatorWorkflow: React.FC = () => {
 
   return (
     <div className="max-w-7xl mx-auto">
+      {loadError && (
+        <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl">
+          <div className="flex items-start gap-3">
+            <AlertCircle className="w-5 h-5 text-red-600 mt-0.5 flex-shrink-0" />
+            <div>
+              <p className="text-sm font-semibold text-red-800">Error Loading Requirements</p>
+              <p className="text-sm text-red-700 mt-1">{loadError}</p>
+              <button
+                onClick={loadValidatorData}
+                className="mt-2 text-sm font-semibold text-red-600 hover:text-red-700 underline"
+              >
+                Try Again
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       <Breadcrumb>
         <BreadcrumbItem href="/app">Dashboard</BreadcrumbItem>
         <BreadcrumbItem active>Document Validator</BreadcrumbItem>
