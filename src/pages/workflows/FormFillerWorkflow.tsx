@@ -3,7 +3,7 @@ import { FileText, Upload, ExternalLink, Globe, AlertCircle, HelpCircle, Lightbu
 import { useJeffrey } from '../../contexts/JeffreyContext';
 import { Breadcrumb, BreadcrumbItem } from '../../components/ui/Breadcrumb';
 import { cn } from '../../utils/cn';
-import { onboardingApi, visaDocsApi, formFillerApi } from '../../lib/api';
+import { onboardingApi, visaDocsApi, formFillerApi, type FormDraftStatus, type FormDraftSummary } from '../../lib/api';
 import { PDFDocument, StandardFonts } from 'pdf-lib';
 import * as pdfjsLib from 'pdfjs-dist';
 import { profileApi, CompleteProfile } from '../../lib/api-profile';
@@ -118,6 +118,16 @@ interface PageAnnotation {
   widgetValue?: string;
 }
 
+type DraftDetail = {
+  formId: string;
+  filledData: any;
+  pdfUrl: string | null;
+  fileName: string;
+  updatedAt: string;
+  hasPdf?: boolean;
+  status?: FormDraftStatus;
+};
+
 export const FormFillerWorkflow: React.FC = () => {
   const { updateWorkflow, addRecentAction, askJeffrey, formSearchCache, setFormSearchCache } = useJeffrey();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -194,14 +204,13 @@ export const FormFillerWorkflow: React.FC = () => {
   const autosaveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const originalPdfUploadedRef = useRef(false);
   const draftLoadedRef = useRef(false);
-  const [savedDraft, setSavedDraft] = useState<{
-    formId: string;
-    filledData: any;
-    pdfUrl: string | null;
-    fileName: string;
-    updatedAt: string;
-  } | null>(null);
+  const [savedDraft, setSavedDraft] = useState<DraftDetail | null>(null);
   const [isRestoringDraft, setIsRestoringDraft] = useState(false);
+  const [draftSummaries, setDraftSummaries] = useState<FormDraftSummary[]>([]);
+  const [isLoadingDrafts, setIsLoadingDrafts] = useState(false);
+  const [previewingDraftId, setPreviewingDraftId] = useState<string | null>(null);
+  const [resumingDraftId, setResumingDraftId] = useState<string | null>(null);
+  const [discardingDraftId, setDiscardingDraftId] = useState<string | null>(null);
 
   // Update Jeffrey's context when entering this workflow
   useEffect(() => {
@@ -506,7 +515,8 @@ export const FormFillerWorkflow: React.FC = () => {
     };
   };
 
-  type ValidationIssue = ReturnType<typeof sanitizeValidationResult>['issues'][number];
+  type ValidationResult = ReturnType<typeof sanitizeValidationResult>;
+  type ValidationIssue = ValidationResult['issues'][number];
 
   // Analyze uploaded form with Gemini Vision for validation
   const analyzeFormForValidation = async (
@@ -517,7 +527,8 @@ export const FormFillerWorkflow: React.FC = () => {
       mergeWithExisting?: boolean;
       skipSpinner?: boolean;
     }
-  ) => {
+  ): Promise<ValidationResult | null> => {
+    let finalResult: ValidationResult | null = null;
     if (!options?.skipSpinner) {
       setIsAnalyzingForm(true);
     }
@@ -591,6 +602,7 @@ Return ONLY valid JSON, no other text.`;
                 : 0)
             };
             const sanitized = sanitizeValidationResult(adjustedAnalysis);
+            finalResult = sanitized;
             setValidationAnalysis(prev => options?.mergeWithExisting
               ? mergeValidationAnalyses(prev, sanitized)
               : sanitized
@@ -606,6 +618,7 @@ Return ONLY valid JSON, no other text.`;
                 : 0)
             };
             const sanitized = sanitizeValidationResult(adjustedValidation);
+            finalResult = sanitized;
             setValidationAnalysis(prev => options?.mergeWithExisting
               ? mergeValidationAnalyses(prev, sanitized)
               : sanitized
@@ -627,6 +640,7 @@ Return ONLY valid JSON, no other text.`;
               recommendations: ['Upload a clearer PDF for better analysis'],
               countrySpecificNotes: []
             });
+            finalResult = fallback;
             setValidationAnalysis(prev => options?.mergeWithExisting
               ? mergeValidationAnalyses(prev, fallback)
               : fallback
@@ -644,6 +658,7 @@ Return ONLY valid JSON, no other text.`;
             recommendations: ['Form uploaded successfully. Hover over specific areas for detailed validation.'],
             countrySpecificNotes: []
           });
+          finalResult = fallback;
           setValidationAnalysis(prev => options?.mergeWithExisting
             ? mergeValidationAnalyses(prev, fallback)
             : fallback
@@ -657,6 +672,8 @@ Return ONLY valid JSON, no other text.`;
         setIsAnalyzingForm(false);
       }
     }
+
+    return finalResult;
   };
 
   // Get field-specific explanation on hover
@@ -1277,19 +1294,25 @@ Be concise but helpful. Format as a brief paragraph.`;
     if (lowerName.includes('purpose') || lowerName.includes('reason')) {
       return profile.travelPurpose;
     }
-    if (lowerName.includes('visa') && lowerName.includes('type')) {
-      return profile.visaRequirements?.visaType;
+  if (lowerName.includes('visa') && lowerName.includes('type')) {
+    return profile.visaRequirements?.visaType;
+  }
+  return undefined;
+};
+
+  const fetchDraftDetail = async (draftId: string): Promise<DraftDetail | null> => {
+    try {
+      const response = await formFillerApi.getDraftById(draftId);
+      if (response.success && response.data) {
+        return response.data;
+      }
+    } catch (error) {
+      console.error('Error fetching draft detail:', error);
     }
-    return undefined;
+    return null;
   };
 
-  const restoreDraft = async (draft: {
-    formId: string;
-    filledData: any;
-    pdfUrl: string | null;
-    fileName: string;
-    updatedAt: string;
-  }) => {
+  const restoreDraft = async (draft: DraftDetail) => {
     if (!draft.pdfUrl) {
       alert('Saved draft does not include the original PDF. Please upload the form again.');
       return;
@@ -1342,19 +1365,48 @@ Be concise but helpful. Format as a brief paragraph.`;
     }
   };
 
-  const loadDraftFromServer = async (autoRestore = true) => {
-    if (draftLoadedRef.current) return;
+  const loadDraftFromServer = async (autoRestore = true, force = false) => {
+    if (draftLoadedRef.current && !force) return;
+    setIsLoadingDrafts(true);
     try {
-      const response = await formFillerApi.getDraft();
-      if (response.success) {
-        setSavedDraft(response.data ?? null);
-        if (autoRestore && !currentForm && response.data && response.data.pdfUrl) {
-          await restoreDraft(response.data);
+      const response = await formFillerApi.listDrafts();
+      if (response.success && response.data) {
+        const { drafts } = response.data;
+        setDraftSummaries(drafts);
+
+        if (!drafts.length) {
+          setSavedDraft(null);
+          return;
         }
+
+        const latestDraft = drafts[0];
+        let detailedDraft: DraftDetail | null = null;
+
+        if (autoRestore && !currentForm && latestDraft.hasPdf) {
+          detailedDraft = await fetchDraftDetail(latestDraft.id);
+          if (detailedDraft) {
+            await restoreDraft(detailedDraft);
+            return;
+          }
+        }
+
+        if (!detailedDraft) {
+          detailedDraft = await fetchDraftDetail(latestDraft.id);
+        }
+
+        if (detailedDraft) {
+          setSavedDraft(detailedDraft);
+        } else {
+          setSavedDraft(null);
+        }
+      } else {
+        setDraftSummaries([]);
+        setSavedDraft(null);
       }
     } catch (error) {
-      console.error('Error loading draft:', error);
+      console.error('Error loading drafts:', error);
     } finally {
+      setIsLoadingDrafts(false);
       draftLoadedRef.current = true;
     }
   };
@@ -1373,6 +1425,77 @@ Be concise but helpful. Format as a brief paragraph.`;
       .split(' ')
       .map(word => word.charAt(0).toUpperCase() + word.slice(1))
       .join(' ');
+  };
+
+  const handlePreviewDraft = async (draftId: string) => {
+    setPreviewingDraftId(draftId);
+    try {
+      const detail = await fetchDraftDetail(draftId);
+      if (detail) {
+        setSavedDraft(detail);
+      } else {
+        alert('Unable to load draft preview. Please try again.');
+      }
+    } catch (error) {
+      console.error('Error previewing draft:', error);
+      alert('Unable to load draft preview. Please try again.');
+    } finally {
+      setPreviewingDraftId(null);
+    }
+  };
+
+  const handleResumeDraft = async (draftId: string, detailOverride?: DraftDetail) => {
+    setResumingDraftId(draftId);
+    try {
+      const detail = detailOverride || (await fetchDraftDetail(draftId));
+      if (detail) {
+        await restoreDraft(detail);
+      } else {
+        alert('Unable to load this draft. Please try again.');
+      }
+    } catch (error) {
+      console.error('Error resuming draft:', error);
+      alert('Unable to resume the draft. Please try again.');
+    } finally {
+      setResumingDraftId(null);
+    }
+  };
+
+  const handleDiscardDraft = async (draftId: string) => {
+    const confirmDiscard = window.confirm('Discard this saved draft? This action cannot be undone.');
+    if (!confirmDiscard) return;
+
+    setDiscardingDraftId(draftId);
+    try {
+      const response = await formFillerApi.deleteDraft(draftId);
+      if (response.success) {
+        if (savedDraft?.formId === draftId) {
+          setSavedDraft(null);
+        }
+        await loadDraftFromServer(false, true);
+      } else {
+        alert('Unable to discard draft. Please try again.');
+      }
+    } catch (error) {
+      console.error('Error discarding draft:', error);
+      alert('Unable to discard draft. Please try again.');
+    } finally {
+      setDiscardingDraftId(null);
+    }
+  };
+
+  const handleOpenDraftPdf = async (draftId: string) => {
+    try {
+      const detail = savedDraft?.formId === draftId ? savedDraft : await fetchDraftDetail(draftId);
+      if (!detail?.pdfUrl) {
+        alert('Saved draft does not include a PDF. Please upload the form again.');
+        return;
+      }
+      window.open(detail.pdfUrl, '_blank', 'noopener,noreferrer');
+    } catch (error) {
+      console.error('Error opening draft PDF:', error);
+      alert('Unable to open the saved PDF. Please try again.');
+    }
   };
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -1656,7 +1779,7 @@ Be concise but helpful. Format as a brief paragraph.`;
 
       const filledPdfBase64 = filledPdfBytes ? uint8ToBase64(filledPdfBytes) : undefined;
 
-      await analyzeFormForValidation(imagesToAnalyze, {
+      const validationResult = await analyzeFormForValidation(imagesToAnalyze, {
         structuredData,
         filledPdfBase64,
         mergeWithExisting: true,
@@ -1664,6 +1787,11 @@ Be concise but helpful. Format as a brief paragraph.`;
       });
 
       setLastValidationTime(new Date());
+
+      const hasBlockingErrors = validationResult?.issues.some(issue => issue.type === 'error');
+      if (validationResult && !hasBlockingErrors) {
+        await markDraftCompleted('validation');
+      }
     } catch (error) {
       console.error('[FormFiller] Validation error:', error);
       alert('Validation failed. Please try again.');
@@ -1694,6 +1822,8 @@ Be concise but helpful. Format as a brief paragraph.`;
       link.click();
       document.body.removeChild(link);
       URL.revokeObjectURL(url);
+
+      await markDraftCompleted('download');
     } catch (error) {
       console.error('Error downloading filled PDF:', error);
       alert('Failed to download the filled PDF. Please try again.');
@@ -1732,8 +1862,8 @@ Be concise but helpful. Format as a brief paragraph.`;
   };
 
   // Autosave draft
-  const saveFormDraft = async () => {
-    if (!currentForm) return;
+  const saveFormDraft = async (): Promise<string | null> => {
+    if (!currentForm) return formId;
 
     setAutosaveStatus('saving');
     try {
@@ -1751,7 +1881,7 @@ Be concise but helpful. Format as a brief paragraph.`;
 
       if (Object.keys(formData).length === 0) {
         setAutosaveStatus('saved');
-        return;
+        return formId;
       }
 
       const shouldIncludePdf = !originalPdfUploadedRef.current && currentForm.pdfBytes;
@@ -1771,17 +1901,43 @@ Be concise but helpful. Format as a brief paragraph.`;
         if (response.data.formId) {
           setFormId(response.data.formId);
         }
+        const resolvedId = response.data.formId || formId || null;
         setLastSavedAt(new Date(response.data.savedAt));
         setAutosaveStatus('saved');
         if (shouldIncludePdf) {
           originalPdfUploadedRef.current = true;
         }
+        return resolvedId;
       } else {
         setAutosaveStatus('error');
       }
     } catch (error) {
       console.error('Error saving draft:', error);
       setAutosaveStatus('error');
+    }
+
+    return formId;
+  };
+
+  const ensureDraftPersisted = async (): Promise<string | null> => {
+    if (formId) return formId;
+    return await saveFormDraft();
+  };
+
+  const markDraftCompleted = async (context: 'validation' | 'download') => {
+    const resolvedFormId = await ensureDraftPersisted();
+    if (!resolvedFormId) return;
+
+    try {
+      await formFillerApi.updateDraftStatus({
+        formId: resolvedFormId,
+        status: 'completed',
+        context,
+      });
+      setSavedDraft(null);
+      await loadDraftFromServer(false, true);
+    } catch (error) {
+      console.error('Error updating draft status:', error);
     }
   };
 
@@ -1985,29 +2141,183 @@ Be concise but helpful. Format as a brief paragraph.`;
           <BreadcrumbItem active>AI Form Filler</BreadcrumbItem>
         </Breadcrumb>
 
-        {savedDraft && (
-          <div className="mb-6 p-4 bg-indigo-50 border border-indigo-200 rounded-2xl flex items-center justify-between">
-            <div>
-              <p className="text-sm text-indigo-700 font-semibold">You have an unsaved draft</p>
-              <p className="text-xs text-indigo-600">
-                {savedDraft.fileName} • Last saved {new Date(savedDraft.updatedAt).toLocaleString()}
-              </p>
+        {(isLoadingDrafts || draftSummaries.length > 0 || savedDraft) && (
+          <div className="mb-8 grid gap-6 lg:grid-cols-3">
+            <div className="lg:col-span-2 bg-white rounded-2xl border border-gray-200">
+              <div className="flex items-center justify-between border-b border-gray-100 p-4">
+                <div>
+                  <p className="text-sm font-semibold text-gray-900">Saved Drafts</p>
+                  <p className="text-xs text-gray-500">Resume where you left off or clean up old copies</p>
+                </div>
+                <button
+                  onClick={() => loadDraftFromServer(false, true)}
+                  className="text-xs font-medium text-indigo-600 hover:text-indigo-800"
+                >
+                  Refresh
+                </button>
+              </div>
+              <div className="p-4 space-y-3 max-h-[420px] overflow-y-auto">
+                {isLoadingDrafts && (
+                  <div className="flex items-center gap-2 text-sm text-gray-500">
+                    <div className="w-4 h-4 border-2 border-indigo-200 border-t-indigo-600 rounded-full animate-spin" />
+                    Loading drafts...
+                  </div>
+                )}
+                {!isLoadingDrafts && draftSummaries.length === 0 && (
+                  <div className="text-sm text-gray-500">
+                    You don&apos;t have any saved drafts yet. Upload a PDF to start filling forms.
+                  </div>
+                )}
+                {draftSummaries.map((draft) => (
+                  <div
+                    key={draft.id}
+                    className="p-4 border border-gray-200 rounded-xl bg-white shadow-sm"
+                  >
+                    <div className="flex items-start justify-between gap-4">
+                      <div>
+                        <p className="font-semibold text-gray-900">{draft.fileName}</p>
+                        <p className="text-xs text-gray-500">
+                          Updated {new Date(draft.updatedAt).toLocaleString()}
+                        </p>
+                        <p className="text-xs text-gray-500">
+                          {draft.country || 'Unknown'} • {draft.visaType || 'Visa type TBD'}
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-sm font-semibold text-indigo-700">
+                          {draft.completionPercentage}%
+                        </p>
+                        <p className="text-xs text-gray-500">Complete</p>
+                        <span
+                          className={cn(
+                            'inline-flex items-center gap-1 text-[10px] px-2 py-1 rounded-full mt-1',
+                            draft.hasPdf
+                              ? 'bg-green-50 text-green-700'
+                              : 'bg-amber-50 text-amber-700'
+                          )}
+                        >
+                          {draft.hasPdf ? 'PDF saved' : 'PDF missing'}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      <button
+                        onClick={() => handleResumeDraft(draft.id)}
+                        className="px-3 py-1.5 text-xs font-semibold bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50"
+                        disabled={resumingDraftId === draft.id || isRestoringDraft}
+                      >
+                        {resumingDraftId === draft.id ? 'Resuming...' : 'Resume'}
+                      </button>
+                      <button
+                        onClick={() => handlePreviewDraft(draft.id)}
+                        className="px-3 py-1.5 text-xs font-semibold border border-gray-200 rounded-lg hover:bg-gray-50 disabled:opacity-50"
+                        disabled={previewingDraftId === draft.id}
+                      >
+                        {previewingDraftId === draft.id ? 'Loading...' : 'Preview'}
+                      </button>
+                      <button
+                        onClick={() => handleOpenDraftPdf(draft.id)}
+                        className="px-3 py-1.5 text-xs font-semibold border border-gray-200 rounded-lg hover:bg-gray-50 disabled:opacity-50"
+                        disabled={!draft.hasPdf}
+                      >
+                        Open PDF
+                      </button>
+                      <button
+                        onClick={() => handleDiscardDraft(draft.id)}
+                        className="px-3 py-1.5 text-xs font-semibold border border-rose-200 text-rose-700 rounded-lg hover:bg-rose-50 disabled:opacity-50"
+                        disabled={discardingDraftId === draft.id}
+                      >
+                        {discardingDraftId === draft.id ? 'Discarding...' : 'Discard'}
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
-            <div className="flex gap-3">
-              <button
-                onClick={() => restoreDraft(savedDraft)}
-                className="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700 disabled:opacity-50"
-                disabled={isRestoringDraft}
-              >
-                {isRestoringDraft ? 'Resuming...' : 'Resume Draft'}
-              </button>
-              <button
-                onClick={() => setSavedDraft(null)}
-                className="px-4 py-2 border border-indigo-200 text-indigo-700 rounded-lg text-sm font-medium hover:bg-indigo-50"
-                disabled={isRestoringDraft}
-              >
-                Dismiss
-              </button>
+
+            <div className="bg-white rounded-2xl border border-gray-200 flex flex-col">
+              <div className="border-b border-gray-100 p-4">
+                <p className="text-sm font-semibold text-gray-900 flex items-center gap-2">
+                  <FileText className="w-4 h-4 text-indigo-600" />
+                  Last Saved PDF
+                </p>
+                <p className="text-xs text-gray-500">Keep an eye on the most recent autosave</p>
+              </div>
+              <div className="p-4 flex-1 flex flex-col">
+                {savedDraft ? (
+                  <>
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <p className="font-semibold text-gray-900 text-sm">{savedDraft.fileName}</p>
+                        <p className="text-xs text-gray-500">
+                          Updated {new Date(savedDraft.updatedAt).toLocaleString()}
+                        </p>
+                      </div>
+                      <span
+                        className={cn(
+                          'inline-flex items-center gap-1 text-[10px] px-2 py-1 rounded-full',
+                          savedDraft.hasPdf ? 'bg-green-50 text-green-700' : 'bg-amber-50 text-amber-700'
+                        )}
+                      >
+                        {savedDraft.hasPdf ? 'Cloud backup' : 'Needs PDF'}
+                      </span>
+                    </div>
+                    {savedDraft.pdfUrl ? (
+                      <object
+                        data={savedDraft.pdfUrl}
+                        type="application/pdf"
+                        className="mt-4 w-full h-64 border border-gray-200 rounded-xl"
+                      >
+                        <p className="p-4 text-xs text-gray-500">
+                          Preview unavailable.{' '}
+                          <button
+                            onClick={() => handleOpenDraftPdf(savedDraft.formId)}
+                            className="text-indigo-600 hover:underline"
+                          >
+                            Open the saved PDF
+                          </button>
+                          .
+                        </p>
+                      </object>
+                    ) : (
+                      <div className="mt-4 p-4 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-800">
+                        This draft doesn&apos;t include a saved PDF yet. Upload the form again to keep a copy in the
+                        cloud.
+                      </div>
+                    )}
+                    <div className="mt-4 flex flex-wrap gap-2">
+                      <button
+                        onClick={() => handleResumeDraft(savedDraft.formId, savedDraft)}
+                        className="px-3 py-1.5 text-xs font-semibold bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50"
+                        disabled={resumingDraftId === savedDraft.formId || isRestoringDraft}
+                      >
+                        {resumingDraftId === savedDraft.formId ? 'Resuming...' : 'Resume'}
+                      </button>
+                      {savedDraft.pdfUrl && (
+                        <a
+                          href={savedDraft.pdfUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="px-3 py-1.5 text-xs font-semibold border border-gray-200 rounded-lg hover:bg-gray-50"
+                        >
+                          Open saved PDF
+                        </a>
+                      )}
+                      <button
+                        onClick={() => handleDiscardDraft(savedDraft.formId)}
+                        className="px-3 py-1.5 text-xs font-semibold border border-rose-200 text-rose-700 rounded-lg hover:bg-rose-50 disabled:opacity-50"
+                        disabled={discardingDraftId === savedDraft.formId}
+                      >
+                        {discardingDraftId === savedDraft.formId ? 'Discarding...' : 'Discard'}
+                      </button>
+                    </div>
+                  </>
+                ) : (
+                  <div className="flex-1 flex flex-col items-center justify-center text-center text-sm text-gray-500 px-4">
+                    <p>No draft selected. Choose “Preview” on any draft to pin it here.</p>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         )}
@@ -2237,6 +2547,23 @@ Be concise but helpful. Format as a brief paragraph.`;
                     </>
                   )}
                 </div>
+                <button
+                  onClick={() => saveFormDraft()}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50"
+                  disabled={autosaveStatus === 'saving'}
+                >
+                  {autosaveStatus === 'saving' ? (
+                    <>
+                      <div className="w-3 h-3 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin" />
+                      Saving…
+                    </>
+                  ) : (
+                    <>
+                      <FileText className="w-3 h-3" />
+                      Save Draft
+                    </>
+                  )}
+                </button>
                 <div className="text-2xl font-bold text-indigo-600">{completionPercent}%</div>
               </div>
               <div className="text-sm text-gray-500">{filledCount}/{totalFieldGroups} sections</div>

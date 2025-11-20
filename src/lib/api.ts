@@ -483,6 +483,22 @@ export const visaDocsApi = {
 };
 
 // Form Filler API
+export type FormDraftStatus = 'draft' | 'completed' | 'submitted' | 'processing';
+
+export interface FormDraftSummary {
+  id: string;
+  fileName: string;
+  updatedAt: string;
+  createdAt: string;
+  completionPercentage: number;
+  country?: string;
+  visaType?: string;
+  hasPdf: boolean;
+  totalFields: number;
+  filledFields: number;
+  status: FormDraftStatus;
+}
+
 export const formFillerApi = {
   // Save draft (autosave)
   saveDraft: async (data: {
@@ -498,6 +514,7 @@ export const formFillerApi = {
     formId: string;
     savedAt: string;
     persisted?: boolean;
+    hasPdf?: boolean;
   }>> => {
     const response = await api.post('/form-filler/save-draft', data);
     return response.data;
@@ -509,8 +526,51 @@ export const formFillerApi = {
     pdfUrl: string | null;
     fileName: string;
     updatedAt: string;
+    hasPdf?: boolean;
+    status?: FormDraftStatus;
   } | null>> => {
     const response = await api.get('/form-filler/draft');
+    return response.data;
+  },
+
+  listDrafts: async (): Promise<ApiResponse<{
+    drafts: FormDraftSummary[];
+  }>> => {
+    const response = await api.get('/form-filler/drafts');
+    return response.data;
+  },
+
+  getDraftById: async (draftId: string): Promise<ApiResponse<{
+    formId: string;
+    filledData: any;
+    pdfUrl: string | null;
+    fileName: string;
+    updatedAt: string;
+    hasPdf?: boolean;
+    status?: FormDraftStatus;
+  }>> => {
+    const response = await api.get(`/form-filler/drafts/${draftId}`);
+    return response.data;
+  },
+
+  updateDraftStatus: async (input: {
+    formId: string;
+    status: Extract<FormDraftStatus, 'draft' | 'completed'>;
+    context?: string;
+  }): Promise<ApiResponse<{
+    formId: string;
+    status: FormDraftStatus;
+    completedAt?: string;
+  }>> => {
+    const response = await api.patch(`/form-filler/${input.formId}/status`, {
+      status: input.status,
+      context: input.context,
+    });
+    return response.data;
+  },
+
+  deleteDraft: async (formId: string): Promise<ApiResponse<{ formId: string }>> => {
+    const response = await api.delete(`/form-filler/drafts/${formId}`);
     return response.data;
   },
 };

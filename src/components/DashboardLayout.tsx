@@ -74,16 +74,17 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
         <header className="fixed top-0 left-0 right-0 h-16 bg-white/80 backdrop-blur-xl border-b border-white/50 z-50 shadow-sm">
           <div className="h-full flex items-center justify-between px-6">
             {/* Logo */}
-            <Link to="/app" className="flex items-center -ml-2">
+            {/* Logo */}
+            <Link to="/app" className="absolute left-0 top-1/2 -translate-y-1/2 z-50 pl-4">
               <img
                 src="/assets/Logo_wbg-removebg-preview.png"
                 alt="VisaDocs"
-                className="h-14 w-auto object-contain"
+                className="h-24 w-auto object-contain max-w-none"
               />
             </Link>
 
             {/* Main Navigation (visible on larger screens) */}
-            <nav className="hidden lg:flex items-center gap-1">
+            <nav className="hidden lg:flex items-center gap-1 ml-32">
               {navItems.map((item) => {
                 const Icon = item.icon;
                 const isActive = isActiveRoute(item.path);
