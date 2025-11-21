@@ -8,6 +8,7 @@ interface DashboardGammaCardProps {
     title: string;
     description: string;
     image: string;
+    color: 'blue' | 'green' | 'purple' | 'orange';
     stats: {
         total: number;
         label: string;
@@ -22,10 +23,18 @@ interface DashboardGammaCardProps {
     delay?: number;
 }
 
+const colorMap = {
+    blue: 'from-blue-50 to-indigo-50',
+    green: 'from-emerald-50 to-green-50',
+    purple: 'from-purple-50 to-fuchsia-50',
+    orange: 'from-orange-50 to-amber-50',
+};
+
 export const DashboardGammaCard: React.FC<DashboardGammaCardProps> = ({
     title,
     description,
     image,
+    color,
     stats,
     cta,
     onClick,
@@ -56,14 +65,26 @@ export const DashboardGammaCard: React.FC<DashboardGammaCardProps> = ({
             >
                 <div className="flex flex-col h-full">
                     {/* Image Section */}
-                    <div className="relative h-48 bg-gradient-to-br from-neutral-50 to-neutral-100 overflow-hidden flex items-center justify-center p-6">
+                    <div className={cn(
+                        "relative h-48 bg-gradient-to-br overflow-hidden flex items-center justify-center p-6",
+                        colorMap[color]
+                    )}>
                         <motion.img
                             src={image}
                             alt={title}
-                            className="w-full h-full object-contain drop-shadow-xl transition-transform duration-500 group-hover:scale-110 group-hover:rotate-3"
+                            className="w-full h-full object-contain drop-shadow-xl transition-transform duration-500 group-hover:scale-110 group-hover:rotate-3 relative z-10"
                         />
-                    </div>
 
+                        {/* Soft glow behind image */}
+                        <div className="absolute inset-0 bg-white/30 backdrop-blur-[2px]" />
+                        <div className={cn(
+                            "absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-32 h-32 rounded-full blur-3xl opacity-60",
+                            color === 'blue' && "bg-blue-200",
+                            color === 'green' && "bg-emerald-200",
+                            color === 'purple' && "bg-purple-200",
+                            color === 'orange' && "bg-orange-200"
+                        )} />
+                    </div>
                     {/* Content Section */}
                     <div className="p-6 flex-1 flex flex-col">
                         <h3 className="text-xl font-bold text-neutral-900 mb-2 group-hover:text-blue-600 transition-colors">

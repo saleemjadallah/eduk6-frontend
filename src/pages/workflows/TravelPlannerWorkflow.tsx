@@ -140,7 +140,8 @@ export const TravelPlannerWorkflow: React.FC = () => {
       }
     } catch (error) {
       console.error('Failed to generate itinerary:', error);
-      setProviderNote('We could not generate an itinerary. Please try again or adjust your inputs.');
+      const message = error instanceof Error ? error.message : 'We could not generate an itinerary. Please try again or adjust your inputs.';
+      setProviderNote(message);
     } finally {
       setIsGenerating(false);
     }

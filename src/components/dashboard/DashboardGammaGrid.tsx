@@ -37,6 +37,7 @@ export const DashboardGammaGrid: React.FC<DashboardGammaGridProps> = ({
                 title="AI Form Filler"
                 description="Auto-fill visa application forms with AI"
                 image={aiFormFillerImg}
+                color="blue"
                 stats={{
                     total: formProgress,
                     label: 'forms filled',
@@ -55,6 +56,7 @@ export const DashboardGammaGrid: React.FC<DashboardGammaGridProps> = ({
                 title="Document Validator"
                 description="AI-powered document verification & validation"
                 image={documentValidatorImg}
+                color="green"
                 stats={{
                     total: validatedDocs,
                     label: 'docs validated',
@@ -73,6 +75,7 @@ export const DashboardGammaGrid: React.FC<DashboardGammaGridProps> = ({
                 title="AI Photo Compliance"
                 description="Generate visa-compliant photos for any country"
                 image={photoComplianceImg}
+                color="purple"
                 stats={{
                     total: photoProgress,
                     label: 'visa photos',
@@ -91,6 +94,7 @@ export const DashboardGammaGrid: React.FC<DashboardGammaGridProps> = ({
                 title="AI Travel Planner"
                 description="Smart itinerary generation for visa applications"
                 image={travelItineraryImg}
+                color="orange"
                 stats={{
                     total: travelProgress,
                     label: 'itinerary ready',
