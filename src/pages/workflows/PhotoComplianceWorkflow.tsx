@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Camera, Download, Upload, Eye, MessageCircle, Check, Loader2 } from 'lucide-react';
 import { useJeffrey } from '../../contexts/JeffreyContext';
 import { Breadcrumb, BreadcrumbItem } from '../../components/ui/Breadcrumb';
@@ -97,12 +97,8 @@ export const PhotoComplianceWorkflow: React.FC = () => {
 
         setVisaPhotoSpecs(countrySpecs);
 
-        // Determine default format based on destination
-        const formatKey = dest.toLowerCase().includes('uae') ? 'uae' :
-                         dest.toLowerCase().includes('us') ? 'us' :
-                         dest.toLowerCase().includes('schengen') || dest.toLowerCase().includes('europe') ? 'schengen' :
-                         'passport';
-        setSelectedFormat(formatKey);
+        // Force UI to the country-specific format only
+        setSelectedFormat('profile');
       }
 
       // TODO: Fetch user's generated photos from API
@@ -114,6 +110,16 @@ export const PhotoComplianceWorkflow: React.FC = () => {
       setIsLoading(false);
     }
   };
+
+  const formatSpecs = useMemo(() => {
+    if (visaPhotoSpecs) {
+      return { profile: visaPhotoSpecs };
+    }
+    return VISA_PHOTO_SPECS;
+  }, [visaPhotoSpecs]);
+
+  const formatEntries = useMemo(() => Object.entries(formatSpecs), [formatSpecs]);
+  const currentSpec = formatSpecs[selectedFormat] || formatEntries[0]?.[1] || VISA_PHOTO_SPECS.passport;
 
   const getPhotosForFormat = (format: string) => generatedPhotos.filter((p) => p.format === format);
 
@@ -287,18 +293,25 @@ export const PhotoComplianceWorkflow: React.FC = () => {
                 <span className="bg-green-100 text-green-700 px-4 py-2 rounded-full font-semibold">{generatedPhotos.length} photos ready</span>
               </div>
 
-              <div className="flex border-b border-neutral-200 mb-6">
-                {Object.entries(VISA_PHOTO_SPECS).map(([key, specs]) => (
-                  <button key={key} onClick={() => setSelectedFormat(key)} className={cn('px-4 py-3 font-semibold text-sm border-b-2', selectedFormat === key ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-neutral-600')}>
-                    {specs.name}
-                  </button>
-                ))}
-              </div>
+              {formatEntries.length > 1 ? (
+                <div className="flex border-b border-neutral-200 mb-6">
+                  {formatEntries.map(([key, specs]) => (
+                    <button key={key} onClick={() => setSelectedFormat(key)} className={cn('px-4 py-3 font-semibold text-sm border-b-2', selectedFormat === key ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-neutral-600')}>
+                      {specs.name}
+                    </button>
+                  ))}
+                </div>
+              ) : (
+                <div className="mb-4">
+                  <p className="text-sm text-neutral-500">Format</p>
+                  <p className="text-base font-semibold">{currentSpec.name}</p>
+                </div>
+              )}
 
               {getPhotosForFormat(selectedFormat).length === 0 ? (
                 <div className="text-center py-8">
                   <Camera className="w-10 h-10 text-neutral-300 mx-auto mb-3" />
-                  <p className="text-sm text-neutral-500">No photos for {VISA_PHOTO_SPECS[selectedFormat].name} format</p>
+                <p className="text-sm text-neutral-500">No photos for {currentSpec.name} format</p>
                   <p className="text-xs text-neutral-400 mt-1">Generate photos for this format</p>
                 </div>
               ) : (
@@ -334,7 +347,7 @@ export const PhotoComplianceWorkflow: React.FC = () => {
                         </div>
                       </div>
                       <div className="p-3">
-                        <p className="text-xs font-semibold">{VISA_PHOTO_SPECS[selectedFormat].dimensions}</p>
+                        <p className="text-xs font-semibold">{currentSpec.dimensions}</p>
                         <p className="text-xs text-green-600 mt-1">✓ Compliant</p>
                       </div>
                     </div>
@@ -351,9 +364,9 @@ export const PhotoComplianceWorkflow: React.FC = () => {
             {destinationCountry && <span className="text-sm font-normal text-gray-600 ml-2">for {destinationCountry}</span>}
           </h3>
           <div className="space-y-3 mb-6">
-            <div className="p-3 bg-neutral-50 rounded-lg"><p className="text-xs font-semibold text-neutral-500">Dimensions</p><p className="text-sm font-medium">{visaPhotoSpecs?.dimensions || VISA_PHOTO_SPECS[selectedFormat].dimensions}</p></div>
-            <div className="p-3 bg-neutral-50 rounded-lg"><p className="text-xs font-semibold text-neutral-500">Background</p><p className="text-sm font-medium">{visaPhotoSpecs?.background || VISA_PHOTO_SPECS[selectedFormat].background}</p></div>
-            <div className="p-3 bg-neutral-50 rounded-lg"><p className="text-xs font-semibold text-neutral-500">Face Size</p><p className="text-sm font-medium">{visaPhotoSpecs?.faceSize || VISA_PHOTO_SPECS[selectedFormat].faceSize}</p></div>
+            <div className="p-3 bg-neutral-50 rounded-lg"><p className="text-xs font-semibold text-neutral-500">Dimensions</p><p className="text-sm font-medium">{currentSpec.dimensions}</p></div>
+            <div className="p-3 bg-neutral-50 rounded-lg"><p className="text-xs font-semibold text-neutral-500">Background</p><p className="text-sm font-medium">{currentSpec.background}</p></div>
+            <div className="p-3 bg-neutral-50 rounded-lg"><p className="text-xs font-semibold text-neutral-500">Face Size</p><p className="text-sm font-medium">{currentSpec.faceSize}</p></div>
           </div>
           {destinationCountry && (
             <div className="mb-4 p-3 bg-indigo-50 rounded-lg border border-indigo-100">
@@ -362,7 +375,7 @@ export const PhotoComplianceWorkflow: React.FC = () => {
               </p>
             </div>
           )}
-          <button onClick={() => askJeffrey(`Tell me about ${visaPhotoSpecs?.name || VISA_PHOTO_SPECS[selectedFormat].name} photo requirements`)} className="w-full px-4 py-2 rounded-lg border text-sm font-semibold text-indigo-600 hover:bg-indigo-50 flex items-center justify-center gap-2">
+          <button onClick={() => askJeffrey(`Tell me about ${currentSpec.name} photo requirements`)} className="w-full px-4 py-2 rounded-lg border text-sm font-semibold text-indigo-600 hover:bg-indigo-50 flex items-center justify-center gap-2">
             <MessageCircle className="w-4 h-4" />Ask Jeffrey
           </button>
           {generatedPhotos.length > 0 && (
