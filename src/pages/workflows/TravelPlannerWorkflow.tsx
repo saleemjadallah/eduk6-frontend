@@ -1,19 +1,58 @@
 import React, { useEffect, useState } from 'react';
-import { Plane, Building, MapPin, Calendar, DollarSign, Download, MessageCircle, RefreshCw, Sparkles, Shield } from 'lucide-react';
+import {
+  Plane,
+  Building,
+  MapPin,
+  Calendar,
+  DollarSign,
+  Download,
+  MessageCircle,
+  RefreshCw,
+  Sparkles,
+  Shield,
+  Info,
+  Users,
+  Settings2,
+} from 'lucide-react';
 import { useJeffrey } from '../../contexts/JeffreyContext';
 import { Breadcrumb, BreadcrumbItem } from '../../components/ui/Breadcrumb';
 import { onboardingApi } from '../../lib/api';
-import { generateItinerary, GeneratedItinerary } from '../../lib/gemini';
+import { generateTravelPlan, ItineraryProvider, NormalizedItinerary } from '../../lib/travelPlanner';
+
+const SPECIAL_CONCERNS_PRESETS = [
+  'First-time visa applicant',
+  'Previous visa rejection',
+  'Tight deadline/urgent',
+  'Multiple destinations',
+  'Traveling with family',
+];
 
 export const TravelPlannerWorkflow: React.FC = () => {
   const { updateWorkflow, addRecentAction, askJeffrey } = useJeffrey();
+  const defaultProvider =
+    (import.meta.env.VITE_DEFAULT_ITINERARY_PROVIDER as ItineraryProvider) === 'perplexity'
+      ? 'perplexity'
+      : 'gemini';
+
   const [currentStep, setCurrentStep] = useState(1);
   const [destination, setDestination] = useState('');
+  const [countriesInput, setCountriesInput] = useState('');
   const [travelDates, setTravelDates] = useState({ start: '', end: '' });
   const [tripPurpose, setTripPurpose] = useState('');
   const [budget, setBudget] = useState('');
+  const [departureCity, setDepartureCity] = useState('Dubai, UAE');
+  const [travelerCount, setTravelerCount] = useState('1');
+  const [accommodation, setAccommodation] = useState('4-star / business');
+  const [pace, setPace] = useState('Balanced');
+  const [interests, setInterests] = useState('');
+  const [planningNotes, setPlanningNotes] = useState('');
+  const [nationality, setNationality] = useState('');
+  const [specialConcerns, setSpecialConcerns] = useState<string[]>([]);
+  const [provider, setProvider] = useState<ItineraryProvider>(defaultProvider);
+  const [prefilledFromOnboarding, setPrefilledFromOnboarding] = useState(false);
+  const [providerNote, setProviderNote] = useState<string | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
-  const [generatedItinerary, setGeneratedItinerary] = useState<GeneratedItinerary | null>(null);
+  const [generatedItinerary, setGeneratedItinerary] = useState<NormalizedItinerary | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -25,19 +64,26 @@ export const TravelPlannerWorkflow: React.FC = () => {
   const loadTravelData = async () => {
     setIsLoading(true);
     try {
-      // Fetch onboarding status to pre-fill travel data
       const response = await onboardingApi.getStatus();
 
       if (response.success && response.data?.travelProfile) {
-        const { destinationCountry, travelPurpose, travelDates: dates } = response.data.travelProfile;
+        const {
+          destinationCountry,
+          travelPurpose,
+          travelDates: dates,
+          nationality: onboardingNationality,
+          specialConcerns: onboardingConcerns,
+        } = response.data.travelProfile;
 
-        // Pre-fill form with onboarding data
-        setDestination(destinationCountry);
-        setTripPurpose(travelPurpose);
+        setDestination((prev) => prev || destinationCountry);
+        setTripPurpose((prev) => prev || travelPurpose);
         setTravelDates({
           start: dates.start,
           end: dates.end,
         });
+        setNationality(onboardingNationality);
+        setSpecialConcerns(onboardingConcerns || []);
+        setPrefilledFromOnboarding(true);
 
         addRecentAction('Pre-filled travel information from profile');
       }
@@ -50,29 +96,67 @@ export const TravelPlannerWorkflow: React.FC = () => {
 
   const handleGenerateItinerary = async () => {
     setIsGenerating(true);
-    addRecentAction('Generating travel itinerary', { destination });
+    setProviderNote(null);
+    addRecentAction('Generating travel itinerary', { destination, provider });
+
+    const parsedCountries = countriesInput
+      .split(',')
+      .map((country) => country.trim())
+      .filter(Boolean);
+    const parsedInterests = interests
+      .split(',')
+      .map((interest) => interest.trim())
+      .filter(Boolean);
+    const travelers = Number.parseInt(travelerCount, 10);
 
     try {
-      const itinerary = await generateItinerary({
-        destination,
-        dates: travelDates,
-        purpose: tripPurpose,
-        budget,
-      });
+      const itinerary = await generateTravelPlan(
+        {
+          destination,
+          dates: travelDates,
+          purpose: tripPurpose,
+          budget,
+          countries: parsedCountries,
+          nationality,
+          specialConcerns,
+          departureCity,
+          travelers: Number.isNaN(travelers) ? undefined : travelers,
+          preferences: {
+            accommodation,
+            pace,
+            interests: parsedInterests.length ? parsedInterests : undefined,
+            notes: planningNotes || undefined,
+          },
+        },
+        { provider }
+      );
 
       setGeneratedItinerary(itinerary);
       setCurrentStep(2);
-      addRecentAction('Generated itinerary successfully');
+      addRecentAction('Generated itinerary successfully', { provider: itinerary.provider });
+
+      if (provider === 'perplexity' && itinerary.provider !== 'perplexity') {
+        setProviderNote('Perplexity was unavailable, so we used Gemini for this draft.');
+      }
     } catch (error) {
       console.error('Failed to generate itinerary:', error);
-      // Ideally show a toast or error message here
+      setProviderNote('We could not generate an itinerary. Please try again or adjust your inputs.');
     } finally {
       setIsGenerating(false);
     }
   };
 
-  const tripDuration = travelDates.start && travelDates.end ? Math.ceil((new Date(travelDates.end).getTime() - new Date(travelDates.start).getTime()) / 86400000) : 0;
-  const estimatedCost = generatedItinerary ? generatedItinerary.flights.reduce((s, f) => s + f.price, 0) + generatedItinerary.hotels.reduce((s, h) => s + h.price, 0) : 0;
+  const tripDuration =
+    travelDates.start && travelDates.end
+      ? Math.ceil((new Date(travelDates.end).getTime() - new Date(travelDates.start).getTime()) / 86400000)
+      : 0;
+
+  const estimatedCost = generatedItinerary
+    ? generatedItinerary.flights.reduce((s, f) => s + (f.price || 0), 0) +
+      generatedItinerary.hotels.reduce((s, h) => s + (h.price || 0), 0)
+    : 0;
+
+  const readyToGenerate = Boolean(destination && travelDates.start && travelDates.end && tripPurpose) && !isGenerating;
 
   if (isLoading) {
     return (
@@ -102,45 +186,247 @@ export const TravelPlannerWorkflow: React.FC = () => {
           {currentStep === 1 && (
             <div>
               <h3 className="text-2xl font-bold mb-6">Trip Details</h3>
-              <div className="space-y-6">
-                <div>
-                  <label className="block text-sm font-semibold text-neutral-700 mb-2">Destination Country</label>
-                  <select value={destination} onChange={(e) => setDestination(e.target.value)} className="w-full px-4 py-3 rounded-lg border border-neutral-300">
-                    <option value="">Select destination</option>
-                    <option value="UAE">United Arab Emirates</option>
-                    <option value="Schengen">Schengen Area</option>
-                    <option value="USA">United States</option>
-                    <option value="UK">United Kingdom</option>
-                    <option value="Japan">Japan</option>
-                    <option value="France">France</option>
-                    <option value="Italy">Italy</option>
-                  </select>
+
+              {prefilledFromOnboarding && (
+                <div className="flex items-start gap-3 p-4 mb-6 rounded-xl bg-indigo-50 border border-indigo-100 text-indigo-900">
+                  <Info className="w-5 h-5 mt-1" />
+                  <div>
+                    <p className="font-semibold">Pulled from Jeffrey&apos;s onboarding</p>
+                    <p className="text-sm mt-1">Destination, dates, and nationality were pre-filled. Update anything that changed and regenerate.</p>
+                  </div>
                 </div>
+              )}
+
+              <div className="space-y-6">
+                <div className="grid md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-semibold text-neutral-700 mb-2">Destination Country</label>
+                    <input
+                      type="text"
+                      value={destination}
+                      onChange={(e) => setDestination(e.target.value)}
+                      placeholder="e.g., France, UAE, Schengen"
+                      className="w-full px-4 py-3 rounded-lg border border-neutral-300"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-semibold text-neutral-700 mb-2">Cities/Regions to Cover (optional)</label>
+                    <input
+                      type="text"
+                      value={countriesInput}
+                      onChange={(e) => setCountriesInput(e.target.value)}
+                      placeholder="Paris, Lyon, Nice"
+                      className="w-full px-4 py-3 rounded-lg border border-neutral-300"
+                    />
+                  </div>
+                </div>
+
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-semibold text-neutral-700 mb-2">Start Date</label>
-                    <input type="date" value={travelDates.start} onChange={(e) => setTravelDates({ ...travelDates, start: e.target.value })} className="w-full px-4 py-3 rounded-lg border border-neutral-300" />
+                    <input
+                      type="date"
+                      value={travelDates.start}
+                      onChange={(e) => setTravelDates({ ...travelDates, start: e.target.value })}
+                      className="w-full px-4 py-3 rounded-lg border border-neutral-300"
+                    />
                   </div>
                   <div>
                     <label className="block text-sm font-semibold text-neutral-700 mb-2">End Date</label>
-                    <input type="date" value={travelDates.end} onChange={(e) => setTravelDates({ ...travelDates, end: e.target.value })} className="w-full px-4 py-3 rounded-lg border border-neutral-300" />
+                    <input
+                      type="date"
+                      value={travelDates.end}
+                      onChange={(e) => setTravelDates({ ...travelDates, end: e.target.value })}
+                      className="w-full px-4 py-3 rounded-lg border border-neutral-300"
+                    />
                   </div>
                 </div>
-                <div>
-                  <label className="block text-sm font-semibold text-neutral-700 mb-2">Trip Purpose</label>
-                  <select value={tripPurpose} onChange={(e) => setTripPurpose(e.target.value)} className="w-full px-4 py-3 rounded-lg border border-neutral-300">
-                    <option value="">Select purpose</option>
-                    <option value="Tourism">Tourism</option>
-                    <option value="Business">Business</option>
-                    <option value="Visit Family">Visit Family</option>
-                    <option value="Medical">Medical</option>
-                  </select>
+
+                <div className="grid md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-semibold text-neutral-700 mb-2">Trip Purpose</label>
+                    <select
+                      value={tripPurpose}
+                      onChange={(e) => setTripPurpose(e.target.value)}
+                      className="w-full px-4 py-3 rounded-lg border border-neutral-300"
+                    >
+                      <option value="">Select purpose</option>
+                      <option value="Tourism">Tourism</option>
+                      <option value="Business">Business</option>
+                      <option value="Visit Family">Visit Family</option>
+                      <option value="Medical">Medical</option>
+                      <option value="Study">Study</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-semibold text-neutral-700 mb-2">Budget (per trip, optional)</label>
+                    <input
+                      type="number"
+                      placeholder="e.g., 5000"
+                      value={budget}
+                      onChange={(e) => setBudget(e.target.value)}
+                      className="w-full px-4 py-3 rounded-lg border border-neutral-300"
+                    />
+                  </div>
                 </div>
-                <div>
-                  <label className="block text-sm font-semibold text-neutral-700 mb-2">Budget (Optional)</label>
-                  <input type="number" placeholder="e.g., 5000" value={budget} onChange={(e) => setBudget(e.target.value)} className="w-full px-4 py-3 rounded-lg border border-neutral-300" />
+
+                <div className="grid md:grid-cols-3 gap-4">
+                  <div>
+                    <label className="block text-sm font-semibold text-neutral-700 mb-2">Departure City / Airport</label>
+                    <input
+                      type="text"
+                      value={departureCity}
+                      onChange={(e) => setDepartureCity(e.target.value)}
+                      placeholder="e.g., Dubai (DXB)"
+                      className="w-full px-4 py-3 rounded-lg border border-neutral-300"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-semibold text-neutral-700 mb-2">Travelers</label>
+                    <input
+                      type="number"
+                      min={1}
+                      value={travelerCount}
+                      onChange={(e) => setTravelerCount(e.target.value)}
+                      className="w-full px-4 py-3 rounded-lg border border-neutral-300"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-semibold text-neutral-700 mb-2">Nationality</label>
+                    <input
+                      type="text"
+                      value={nationality}
+                      onChange={(e) => setNationality(e.target.value)}
+                      placeholder="e.g., Jordanian"
+                      className="w-full px-4 py-3 rounded-lg border border-neutral-300"
+                    />
+                  </div>
                 </div>
-                <button onClick={handleGenerateItinerary} disabled={!destination || !travelDates.start || !travelDates.end || isGenerating} className="w-full inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl font-semibold bg-gradient-to-r from-indigo-500 to-purple-600 text-white hover:shadow-lg disabled:opacity-50 transition-all">
+
+                <div className="grid md:grid-cols-3 gap-4">
+                  <div>
+                    <label className="block text-sm font-semibold text-neutral-700 mb-2">Accommodation Preference</label>
+                    <select
+                      value={accommodation}
+                      onChange={(e) => setAccommodation(e.target.value)}
+                      className="w-full px-4 py-3 rounded-lg border border-neutral-300"
+                    >
+                      <option value="3-star / budget">3-star / budget</option>
+                      <option value="4-star / business">4-star / business</option>
+                      <option value="5-star / premium">5-star / premium</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-semibold text-neutral-700 mb-2">Pace</label>
+                    <select
+                      value={pace}
+                      onChange={(e) => setPace(e.target.value)}
+                      className="w-full px-4 py-3 rounded-lg border border-neutral-300"
+                    >
+                      <option value="Relaxed">Relaxed</option>
+                      <option value="Balanced">Balanced</option>
+                      <option value="Packed">Packed</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-semibold text-neutral-700 mb-2">Preferred Interests</label>
+                    <input
+                      type="text"
+                      value={interests}
+                      onChange={(e) => setInterests(e.target.value)}
+                      placeholder="Museums, food tours, kid-friendly"
+                      className="w-full px-4 py-3 rounded-lg border border-neutral-300"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-semibold text-neutral-700 mb-2">Special Considerations</label>
+                    <input
+                      type="text"
+                      value={specialConcerns.join(', ')}
+                      onChange={(e) =>
+                        setSpecialConcerns(
+                          e.target.value
+                            .split(',')
+                            .map((value) => value.trim())
+                            .filter(Boolean)
+                        )
+                      }
+                      placeholder="Previous visa rejection, family travel, urgent timeline"
+                      className="w-full px-4 py-3 rounded-lg border border-neutral-300"
+                    />
+                    <div className="flex flex-wrap gap-2 mt-2">
+                      {SPECIAL_CONCERNS_PRESETS.map((preset) => (
+                        <button
+                          key={preset}
+                          onClick={() =>
+                            setSpecialConcerns((prev) =>
+                              prev.includes(preset) ? prev : [...prev, preset]
+                            )
+                          }
+                          type="button"
+                          className="px-3 py-1 text-xs rounded-full border border-neutral-200 hover:border-indigo-300 hover:text-indigo-700 transition-colors"
+                        >
+                          + {preset}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-semibold text-neutral-700 mb-2">Planning Notes (optional)</label>
+                    <textarea
+                      value={planningNotes}
+                      onChange={(e) => setPlanningNotes(e.target.value)}
+                      placeholder="Anything else Jeffrey should consider? (e.g., need embassies nearby, child-friendly evenings...)"
+                      rows={3}
+                      className="w-full px-4 py-3 rounded-lg border border-neutral-300"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-neutral-700 mb-2">Itinerary Provider</label>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <button
+                      type="button"
+                      onClick={() => setProvider('gemini')}
+                      className={`p-4 rounded-xl border text-left transition-all ${
+                        provider === 'gemini'
+                          ? 'border-indigo-500 bg-indigo-50'
+                          : 'border-neutral-200 hover:border-neutral-300'
+                      }`}
+                    >
+                      <div className="flex items-center gap-2 font-semibold">
+                        <Sparkles className="w-4 h-4" />
+                        Gemini (fast draft)
+                      </div>
+                      <p className="text-sm text-neutral-600 mt-1">Runs in the browser, great for quick iterations.</p>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setProvider('perplexity')}
+                      className={`p-4 rounded-xl border text-left transition-all ${
+                        provider === 'perplexity'
+                          ? 'border-indigo-500 bg-indigo-50'
+                          : 'border-neutral-200 hover:border-neutral-300'
+                      }`}
+                    >
+                      <div className="flex items-center gap-2 font-semibold">
+                        <Settings2 className="w-4 h-4" />
+                        Perplexity (visa-focused)
+                      </div>
+                      <p className="text-sm text-neutral-600 mt-1">Uses server-side real-world data for embassy-ready plans.</p>
+                    </button>
+                  </div>
+                </div>
+
+                <button
+                  onClick={handleGenerateItinerary}
+                  disabled={!readyToGenerate}
+                  className="w-full inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl font-semibold bg-gradient-to-r from-indigo-500 to-purple-600 text-white hover:shadow-lg disabled:opacity-50 transition-all"
+                >
                   {isGenerating ? (
                     <>
                       <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
@@ -148,7 +434,8 @@ export const TravelPlannerWorkflow: React.FC = () => {
                     </>
                   ) : (
                     <>
-                      <Sparkles className="w-5 h-5" />Generate AI Itinerary
+                      <Sparkles className="w-5 h-5" />
+                      Generate AI Itinerary
                     </>
                   )}
                 </button>
@@ -159,9 +446,15 @@ export const TravelPlannerWorkflow: React.FC = () => {
           {currentStep === 2 && (
             <div>
               <div className="flex items-center justify-between mb-6">
-                <h3 className="text-2xl font-bold">Your Travel Itinerary</h3>
+                <div>
+                  <h3 className="text-2xl font-bold">Your Travel Itinerary</h3>
+                  {providerNote && <p className="text-sm text-amber-700 mt-1">{providerNote}</p>}
+                </div>
                 {generatedItinerary ? (
-                  <span className="bg-green-100 text-green-700 px-4 py-2 rounded-full font-semibold">Visa-Ready</span>
+                  <span className="bg-green-100 text-green-700 px-4 py-2 rounded-full font-semibold flex items-center gap-2">
+                    <Shield className="w-4 h-4" />
+                    Visa-ready draft
+                  </span>
                 ) : (
                   <span className="bg-yellow-100 text-yellow-700 px-4 py-2 rounded-full font-semibold">Pending Generation</span>
                 )}
@@ -184,6 +477,52 @@ export const TravelPlannerWorkflow: React.FC = () => {
                 </div>
               ) : (
                 <div className="space-y-6">
+                  <div className="flex flex-wrap gap-2 items-center">
+                    <span className="px-3 py-1 rounded-full text-xs font-semibold bg-neutral-100 text-neutral-800">
+                      Provider: {generatedItinerary.provider === 'perplexity' ? 'Perplexity (server)' : generatedItinerary.provider === 'gemini' ? 'Gemini' : 'Gemini mock'}
+                    </span>
+                    {generatedItinerary.notes && (
+                      <span className="px-3 py-1 rounded-full text-xs font-semibold bg-amber-100 text-amber-800">
+                        {generatedItinerary.notes}
+                      </span>
+                    )}
+                  </div>
+
+                  {generatedItinerary.dailyPlan?.length ? (
+                    <div>
+                      <h4 className="text-lg font-semibold flex items-center gap-2 mb-4">
+                        <MapPin className="w-5 h-5 text-indigo-600" />
+                        Daily Plan
+                      </h4>
+                      <div className="grid md:grid-cols-2 gap-3">
+                        {generatedItinerary.dailyPlan.map((dayPlan) => (
+                          <div key={dayPlan.day} className="p-4 bg-neutral-50 rounded-xl border">
+                            <div className="flex items-center justify-between mb-2">
+                              <p className="text-xs font-semibold text-indigo-600">Day {dayPlan.day}</p>
+                              <p className="text-xs text-neutral-500">{dayPlan.date}</p>
+                            </div>
+                            <p className="font-semibold text-neutral-900">
+                              {dayPlan.city || 'City TBD'} {dayPlan.country ? `• ${dayPlan.country}` : ''}
+                            </p>
+                            <ul className="mt-3 space-y-2">
+                              {dayPlan.activities.map((activity, index) => (
+                                <li key={`${dayPlan.day}-${index}`} className="text-sm text-neutral-700">
+                                  <span className="text-neutral-500">{activity.time || 'Time TBD'} • </span>
+                                  <span className="font-semibold">{activity.name}</span>
+                                  {activity.location ? ` — ${activity.location}` : ''}
+                                  {activity.description ? ` (${activity.description})` : ''}
+                                </li>
+                              ))}
+                            </ul>
+                            {dayPlan.accommodation && (
+                              <p className="text-xs text-neutral-600 mt-3">Hotel: {dayPlan.accommodation}</p>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ) : null}
+
                   <div>
                     <h4 className="text-lg font-semibold flex items-center gap-2 mb-4"><Plane className="w-5 h-5 text-indigo-600" />Flights</h4>
                     <div className="space-y-3">
@@ -217,13 +556,14 @@ export const TravelPlannerWorkflow: React.FC = () => {
                   </div>
 
                   <div>
-                    <h4 className="text-lg font-semibold flex items-center gap-2 mb-4"><MapPin className="w-5 h-5 text-indigo-600" />Activities</h4>
+                    <h4 className="text-lg font-semibold flex items-center gap-2 mb-4"><Users className="w-5 h-5 text-indigo-600" />Activities</h4>
                     <div className="space-y-3">
                       {generatedItinerary.activities.map((activity) => (
                         <div key={activity.id} className="p-4 bg-neutral-50 rounded-xl border">
                           <p className="text-xs font-semibold text-indigo-600 mb-1">Day {activity.day}</p>
                           <p className="font-semibold">{activity.name}</p>
                           <p className="text-sm text-neutral-600">{activity.description}</p>
+                          {activity.time && <p className="text-xs text-neutral-500 mt-1">{activity.time} {activity.location ? `• ${activity.location}` : ''}</p>}
                         </div>
                       ))}
                     </div>
@@ -257,6 +597,14 @@ export const TravelPlannerWorkflow: React.FC = () => {
               <div className="flex items-center gap-3 p-3 bg-neutral-50 rounded-lg">
                 <DollarSign className="w-5 h-5 text-indigo-600" />
                 <div><p className="text-xs text-neutral-500">Est. Total Cost</p><p className="font-semibold">${estimatedCost}</p></div>
+              </div>
+              <div className="flex items-center gap-3 p-3 bg-neutral-50 rounded-lg">
+                <Users className="w-5 h-5 text-indigo-600" />
+                <div><p className="text-xs text-neutral-500">Travelers</p><p className="font-semibold">{travelerCount}</p></div>
+              </div>
+              <div className="flex items-center gap-3 p-3 bg-neutral-50 rounded-lg">
+                <Shield className="w-5 h-5 text-indigo-600" />
+                <div><p className="text-xs text-neutral-500">Special concerns</p><p className="font-semibold">{specialConcerns.length ? specialConcerns.join(', ') : 'None'}</p></div>
               </div>
               <div className="flex items-center gap-3 p-3 bg-neutral-50 rounded-lg">
                 <Plane className="w-5 h-5 text-indigo-600" />
