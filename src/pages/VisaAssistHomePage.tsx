@@ -6,7 +6,6 @@ import {
   Clock,
   Users,
   Sparkles,
-  FileCheck,
   AlertCircle,
   DollarSign,
   FileX,
@@ -17,10 +16,6 @@ import {
   CheckCircle2,
   Camera,
   Plane,
-  MapPin,
-  Hotel,
-  Calendar,
-  FileSearch,
   Check,
   Bell,
   Upload,
@@ -38,6 +33,7 @@ import Badge from '../components/gamma/Badge';
 import FloatingOrb from '../components/gamma/FloatingOrb';
 import GradientMesh from '../components/gamma/GradientMesh';
 import SectionHeader from '../components/gamma/SectionHeader';
+import GammaOfferings from '../components/gamma/GammaOfferings';
 
 // Visa-specific components
 import PainPointCard from '../components/visa/PainPointCard';
@@ -297,179 +293,8 @@ export default function VisaAssistHomePage() {
           </SectionHeader>
 
           {/* Bento Grid Layout */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {/* Feature 1: AI Form Filler - LARGE FEATURED */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.5 }}
-              className="lg:col-span-2 bg-gradient-to-br from-blue-500 to-cyan-600 text-white rounded-3xl p-8 shadow-2xl overflow-hidden relative group hover:scale-[1.02] transition-transform duration-500"
-            >
-              <div className="relative z-10">
-                <Badge variant="white" className="mb-4">
-                  <Sparkles className="w-4 h-4 mr-2" />
-                  Most Popular
-                </Badge>
-                <h3 className="text-3xl font-bold mb-3">AI Form Filler</h3>
-                <p className="text-blue-100 mb-6 max-w-xl">
-                  Upload your passport, CV, or existing documents. Our AI extracts data and helps auto-fill complex
-                  government forms with high accuracy.
-                </p>
-
-                {/* Feature highlights */}
-                <div className="space-y-2 mb-6">
-                  <div className="flex items-center gap-3">
-                    <FileCheck className="w-5 h-5" />
-                    <span>Supports UAE ICP, KSA Muqeem, and 20+ government forms</span>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <Zap className="w-5 h-5" />
-                    <span>10-minute processing vs 2-hour manual entry</span>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <Shield className="w-5 h-5" />
-                    <span>Advanced AI validation to minimize errors</span>
-                  </div>
-                </div>
-
-                <div className="flex items-baseline gap-2">
-                  <span className="text-2xl font-bold">AED 75</span>
-                  <span className="text-sm text-blue-200">per form</span>
-                </div>
-              </div>
-
-              {/* Decorative gradient orb */}
-              <div className="absolute -bottom-20 -right-20 w-96 h-96 bg-gradient-radial from-white/20 to-transparent blur-3xl" />
-            </motion.div>
-
-            {/* Feature 2 & 3 Container for Bento Layout */}
-            <div className="lg:col-span-1 flex flex-col gap-6">
-              {/* Feature 2: Document Validator */}
-              <Link to="/document-validator" className="flex-1">
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ duration: 0.5, delay: 0.1 }}
-                  className="bg-white/80 backdrop-blur-sm rounded-3xl p-8 shadow-lg hover:shadow-xl hover:-translate-y-2 transition-all duration-300 cursor-pointer group h-full border border-neutral-100"
-                >
-                  <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-green-400 to-emerald-500 flex items-center justify-center mb-4 shadow-lg shadow-green-500/30 group-hover:scale-110 transition-transform">
-                    <CheckCircle2 className="w-7 h-7 text-white" />
-                  </div>
-                  <h3 className="text-xl font-bold mb-2 text-neutral-900">Document Validator</h3>
-                  <p className="text-neutral-600 text-sm mb-4">
-                    AI checks for required stamps, signatures, and formatting.
-                  </p>
-                  <div className="flex items-baseline gap-2 mt-auto">
-                    <span className="text-lg font-bold text-neutral-900">AED 40</span>
-                    <span className="text-xs text-neutral-500">per doc</span>
-                  </div>
-                </motion.div>
-              </Link>
-
-              {/* Feature 3: AI Photo Compliance */}
-              <Link to="/photo-compliance" className="flex-1">
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ duration: 0.5, delay: 0.2 }}
-                  className="bg-white/80 backdrop-blur-sm rounded-3xl p-8 shadow-lg hover:shadow-xl hover:-translate-y-2 transition-all duration-300 cursor-pointer group h-full border border-neutral-100"
-                >
-                  <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-cyan-400 to-blue-500 flex items-center justify-center mb-4 shadow-lg shadow-cyan-500/30 group-hover:scale-110 transition-transform">
-                    <Camera className="w-7 h-7 text-white" />
-                  </div>
-                  <h3 className="text-xl font-bold mb-2 text-neutral-900">AI Photo Compliance</h3>
-                  <p className="text-neutral-600 text-sm mb-4">
-                    Ensures photos meet exact size and background requirements.
-                  </p>
-                  <div className="flex items-baseline gap-2 mt-auto">
-                    <span className="text-lg font-bold text-neutral-900">AED 20</span>
-                    <span className="text-xs text-neutral-500">per set</span>
-                  </div>
-                </motion.div>
-              </Link>
-            </div>
-
-            {/* Feature 4: AI Travel Itinerary Generator - LARGE FEATURED */}
-            <Link to="/travel-itinerary" className="lg:col-span-2">
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.5, delay: 0.3 }}
-                className="bg-gradient-to-br from-amber-500 to-orange-600 text-white rounded-3xl p-8 shadow-2xl relative overflow-hidden group hover:scale-[1.02] transition-transform duration-500 cursor-pointer"
-              >
-                <div className="relative z-10">
-                  <Badge variant="white" className="mb-4">
-                    <Plane className="w-4 h-4 mr-2" />
-                    NEW Feature
-                  </Badge>
-                  <h3 className="text-3xl font-bold mb-3">AI Travel Itinerary Generator</h3>
-                  <p className="text-orange-100 mb-6 max-w-2xl">
-                    Generates a compliant, detailed, and verifiable travel itinerary (flights, hotels, activities) that
-                    aligns with your stated purpose and duration. Mandatory for Schengen and tourist visas.
-                  </p>
-
-                  <div className="grid grid-cols-2 gap-3 mb-6">
-                    <div className="flex items-center gap-2">
-                      <MapPin className="w-5 h-5" />
-                      <span>Realistic daily plans</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Hotel className="w-5 h-5" />
-                      <span>Verified hotel bookings</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Plane className="w-5 h-5" />
-                      <span>Flight confirmations</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Calendar className="w-5 h-5" />
-                      <span>Duration-aligned activities</span>
-                    </div>
-                  </div>
-
-                  <div className="flex items-baseline gap-2">
-                    <span className="text-2xl font-bold">AED 125</span>
-                    <span className="text-sm text-orange-200">per itinerary</span>
-                  </div>
-                </div>
-
-                {/* Background pattern */}
-                <div
-                  className="absolute inset-0 opacity-10"
-                  style={{
-                    backgroundImage: `linear-gradient(rgba(255, 255, 255, 0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(255, 255, 255, 0.1) 1px, transparent 1px)`,
-                    backgroundSize: '20px 20px',
-                  }}
-                />
-              </motion.div>
-            </Link>
-
-            {/* Feature 5: Smart PDF Analysis - Spans full width on mobile, 1 col on desktop */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.5, delay: 0.4 }}
-              className="bg-gradient-to-br from-cyan-50 to-blue-50 rounded-3xl p-8 shadow-lg hover:shadow-xl hover:-translate-y-2 transition-all duration-300 border border-cyan-100"
-            >
-              <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-400 to-cyan-500 flex items-center justify-center mb-6 shadow-lg shadow-blue-500/30">
-                <FileSearch className="w-8 h-8 text-white" />
-              </div>
-              <h3 className="text-2xl font-bold mb-3 text-neutral-900">Smart PDF Analysis</h3>
-              <p className="text-neutral-600 text-lg mb-6">
-                Upload visa requirements PDFs. Ask questions. Get instant answers.
-              </p>
-
-              <div className="flex items-baseline gap-2 mt-auto">
-                <span className="text-xl font-bold text-neutral-900">Free</span>
-                <span className="text-sm text-neutral-500">included</span>
-              </div>
-            </motion.div>
-          </div>
+          {/* Gamma Offerings Grid */}
+          <GammaOfferings />
         </div>
       </section>
 
