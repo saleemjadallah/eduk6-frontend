@@ -879,7 +879,6 @@ export const wardrobeApi = {
 export const photoComplianceApi = {
   // Process a single photo for compliance
   processCompliance: async (file: File): Promise<ApiResponse<{
-    success: boolean;
     message: string;
     originalFileName: string;
     requirements: {
