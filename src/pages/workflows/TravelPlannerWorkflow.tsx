@@ -3,10 +3,7 @@ import { Plane, Building, MapPin, Calendar, DollarSign, Download, MessageCircle,
 import { useJeffrey } from '../../contexts/JeffreyContext';
 import { Breadcrumb, BreadcrumbItem } from '../../components/ui/Breadcrumb';
 import { onboardingApi } from '../../lib/api';
-
-interface Flight { id: string; airline: string; departure: string; arrival: string; price: number; }
-interface Hotel { id: string; name: string; location: string; nights: number; price: number; }
-interface Activity { id: string; day: number; name: string; description: string; }
+import { generateItinerary, GeneratedItinerary } from '../../lib/gemini';
 
 export const TravelPlannerWorkflow: React.FC = () => {
   const { updateWorkflow, addRecentAction, askJeffrey } = useJeffrey();
@@ -16,11 +13,7 @@ export const TravelPlannerWorkflow: React.FC = () => {
   const [tripPurpose, setTripPurpose] = useState('');
   const [budget, setBudget] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
-  const [generatedItinerary, setGeneratedItinerary] = useState<{
-    flights: Flight[];
-    hotels: Hotel[];
-    activities: Activity[];
-  } | null>(null);
+  const [generatedItinerary, setGeneratedItinerary] = useState<GeneratedItinerary | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -60,16 +53,19 @@ export const TravelPlannerWorkflow: React.FC = () => {
     addRecentAction('Generating travel itinerary', { destination });
 
     try {
-      // TODO: Call real API to generate itinerary based on user inputs
-      // For now, simulate API call delay
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      const itinerary = await generateItinerary({
+        destination,
+        dates: travelDates,
+        purpose: tripPurpose,
+        budget,
+      });
 
-      // This would be replaced with actual API response
-      // For now, just move to step 2 with empty state to show the structure
-      setGeneratedItinerary(null);
+      setGeneratedItinerary(itinerary);
       setCurrentStep(2);
+      addRecentAction('Generated itinerary successfully');
     } catch (error) {
       console.error('Failed to generate itinerary:', error);
+      // Ideally show a toast or error message here
     } finally {
       setIsGenerating(false);
     }
@@ -115,6 +111,9 @@ export const TravelPlannerWorkflow: React.FC = () => {
                     <option value="Schengen">Schengen Area</option>
                     <option value="USA">United States</option>
                     <option value="UK">United Kingdom</option>
+                    <option value="Japan">Japan</option>
+                    <option value="France">France</option>
+                    <option value="Italy">Italy</option>
                   </select>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
