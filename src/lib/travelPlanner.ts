@@ -239,9 +239,11 @@ export const generateTravelPlan = async (
         countries: request.countries,
       });
 
-      if (response.success && response.data) {
-        return normalizePerplexityItinerary(response.data as PerplexityPreviewResponse);
+      if (!response.success || !response.data) {
+        throw new Error(response.error || 'Perplexity preview failed');
       }
+
+      return normalizePerplexityItinerary(response.data as PerplexityPreviewResponse);
     } catch (error) {
       console.warn('[Travel Planner] Perplexity generation failed, falling back to Gemini', error);
     }
