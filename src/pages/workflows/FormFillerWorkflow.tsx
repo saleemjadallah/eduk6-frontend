@@ -58,6 +58,7 @@ interface FormField {
   placeholder?: string;
   options?: string[];
   appearance?: FieldAppearance;
+  canonicalKey?: string | null;
 }
 
 interface UploadedForm {
@@ -1249,30 +1250,38 @@ Be concise but helpful. Format as a brief paragraph.`;
           value = fieldAny?.getSelected?.() || '';
         }
 
-        // Get AI-identified label if available (field numbers are 1-based in AI response)
         const aiField = aiFieldMap.get(index + 1);
-        let label = '';
 
-        if (aiField && aiField.confidence > 0.5) {
-          // Use AI-identified label with high confidence
-          label = aiField.label;
-        } else {
-          // Fallback to parsing field name
-          label = fieldName
-            .replace(/([A-Z])/g, ' $1')
-            .replace(/[_-]/g, ' ')
-            .replace(/\s+/g, ' ')
-            .trim()
-            .split(' ')
-            .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
-            .join(' ');
+        const buildLabelFromName = () => fieldName
+          .replace(/([A-Z])/g, ' $1')
+          .replace(/[_-]/g, ' ')
+          .replace(/\s+/g, ' ')
+          .trim()
+          .split(' ')
+          .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+          .join(' ');
 
-          // If field name is generic/undefined, try to find label from text
-          if (label.toLowerCase().includes('undefined') || label.length <= 2) {
-            const foundLabel = findLabelForField(index, pdfFields.length, textLines);
-            if (foundLabel) {
-              label = foundLabel;
-            }
+        let label = buildLabelFromName();
+        if (label.toLowerCase().includes('undefined') || label.length <= 2) {
+          const foundLabel = findLabelForField(index, pdfFields.length, textLines);
+          if (foundLabel) {
+            label = foundLabel;
+          }
+        }
+
+        let canonicalKey =
+          smartFieldMapper.findBestMatch(fieldName) ||
+          smartFieldMapper.findBestMatch(label) ||
+          null;
+
+        if (aiField && aiField.confidence >= 0.7) {
+          const aiCanonical = smartFieldMapper.findBestMatch(aiField.label) || null;
+          if (!canonicalKey && aiCanonical) {
+            label = aiField.label;
+            canonicalKey = aiCanonical;
+          } else if (aiCanonical && canonicalKey === aiCanonical) {
+            label = aiField.label;
+            canonicalKey = aiCanonical;
           }
         }
 
@@ -1292,7 +1301,8 @@ Be concise but helpful. Format as a brief paragraph.`;
           required: fieldName.toLowerCase().includes('required') || !fieldName.toLowerCase().includes('optional'),
           placeholder: `Enter ${label.toLowerCase()}`,
           options,
-          appearance: Object.keys(appearance).length > 0 ? appearance : undefined
+          appearance: Object.keys(appearance).length > 0 ? appearance : undefined,
+          canonicalKey,
         };
       });
 
@@ -3245,6 +3255,7 @@ Be concise but helpful. Format as a brief paragraph.`;
                     {Array.from({ length: pdfDocument.numPages }, (_, index) => {
                       const pageNum = index + 1;
                       const annotationsForPage = pageAnnotations[pageNum] || [];
+                      const usedCanonicalKeys = new Set<string>();
 
                       return (
                         <div
@@ -3272,6 +3283,7 @@ Be concise but helpful. Format as a brief paragraph.`;
                                 ? `${annotation.appearance.fontSize}px`
                                 : '12px';
                               const canonicalKey =
+                                fieldState?.canonicalKey ||
                                 smartFieldMapper.findBestMatch(annotation.fieldName) ||
                                 smartFieldMapper.findBestMatch(fieldState?.label || '');
                               const badgeClass = canonicalKey
@@ -3300,6 +3312,14 @@ Be concise but helpful. Format as a brief paragraph.`;
                               };
                               const isHighlighted = highlightedField === annotation.fieldName;
                               const overlayKey = `${pageNum}-${annotation.fieldName}-${annotation.rect.left}-${annotation.rect.top}`;
+                              let showBadge = true;
+                              if (canonicalKey) {
+                                if (usedCanonicalKeys.has(canonicalKey)) {
+                                  showBadge = isHighlighted;
+                                } else {
+                                  usedCanonicalKeys.add(canonicalKey);
+                                }
+                              }
 
                               const registerRef = (element: HTMLInputElement | HTMLTextAreaElement | null) => {
                                 if (!element) {
@@ -3311,7 +3331,7 @@ Be concise but helpful. Format as a brief paragraph.`;
                                 }
                               };
 
-                              const badgeNode = (
+                              const badgeNode = showBadge ? (
                                 <span
                                   className={cn(
                                     'absolute -top-5 left-0 text-[10px] px-2 py-0.5 rounded-full shadow pointer-events-none transition-opacity duration-150',
@@ -3324,7 +3344,7 @@ Be concise but helpful. Format as a brief paragraph.`;
                                 >
                                   {badgeLabel}
                                 </span>
-                              );
+                              ) : null;
 
                               if (isCheckbox) {
                                 return (
@@ -3422,11 +3442,11 @@ Be concise but helpful. Format as a brief paragraph.`;
                                 <div
                                   key={overlayKey}
                                   style={baseStyle}
-                                  className={cn(
-                                    'absolute pointer-events-auto group',
-                                    isHighlighted && 'ring-2 ring-yellow-300 rounded-md ring-offset-1'
-                                  )}
-                                >
+                                className={cn(
+                                  'absolute pointer-events-auto group',
+                                  isHighlighted && 'ring-2 ring-yellow-300 rounded-md ring-offset-1'
+                                )}
+                              >
                                   {badgeNode}
                                   <input
                                     type="text"
