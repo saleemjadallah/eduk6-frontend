@@ -10,8 +10,6 @@ import {
   DollarSign,
   FileX,
   FileText,
-  Image,
-  AlertTriangle,
   Zap,
   CheckCircle2,
   Camera,
@@ -43,6 +41,9 @@ import JeffreyShowcase from '../components/visa/JeffreyShowcase';
 
 // Assets
 import gammaClouds from '../assets/gamma-travel-bg.png';
+import iconIncompleteDocs from '../assets/icons/icon_incomplete_docs.png';
+import iconPhotoError from '../assets/icons/icon_photo_error.png';
+import iconFormError from '../assets/icons/icon_form_error.png';
 
 export default function VisaAssistHomePage() {
   return (
@@ -249,21 +250,21 @@ export default function VisaAssistHomePage() {
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
               <RejectionReasonCard
-                icon={<FileText className="w-10 h-10" />}
+                image={iconIncompleteDocs}
                 title="Incomplete Documents"
                 description="Missing attestations, wrong formats, expired certificates"
                 percentage="42%"
               />
 
               <RejectionReasonCard
-                icon={<Image className="w-10 h-10" />}
+                image={iconPhotoError}
                 title="Photo Non-Compliance"
                 description="Wrong dimensions, background color, or facial requirements"
                 percentage="28%"
               />
 
               <RejectionReasonCard
-                icon={<AlertTriangle className="w-10 h-10" />}
+                image={iconFormError}
                 title="Form Errors"
                 description="Typos, inconsistent dates, missing signatures"
                 percentage="30%"

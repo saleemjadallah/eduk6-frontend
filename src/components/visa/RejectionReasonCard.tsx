@@ -2,13 +2,14 @@ import { motion } from 'framer-motion';
 import { ReactNode } from 'react';
 
 interface RejectionReasonCardProps {
-  icon: ReactNode;
+  icon?: ReactNode;
+  image?: string;
   title: string;
   description: string;
   percentage: string;
 }
 
-export default function RejectionReasonCard({ icon, title, description, percentage }: RejectionReasonCardProps) {
+export default function RejectionReasonCard({ icon, image, title, description, percentage }: RejectionReasonCardProps) {
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -26,9 +27,15 @@ export default function RejectionReasonCard({ icon, title, description, percenta
       "
     >
       <div className="flex items-start justify-between mb-6">
-        <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-red-400 to-red-600 flex items-center justify-center shadow-lg shadow-red-500/30">
-          <div className="text-white">{icon}</div>
-        </div>
+        {image ? (
+          <div className="w-20 h-20 -mt-2 -ml-2">
+            <img src={image} alt={title} className="w-full h-full object-contain drop-shadow-lg" />
+          </div>
+        ) : (
+          <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-red-400 to-red-600 flex items-center justify-center shadow-lg shadow-red-500/30">
+            <div className="text-white">{icon}</div>
+          </div>
+        )}
         <div className="text-right">
           <div className="text-4xl font-bold text-red-600">{percentage}</div>
           <div className="text-sm text-neutral-500">of rejections</div>
