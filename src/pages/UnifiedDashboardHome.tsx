@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { FileText, CheckCircle, Camera, Plane, Globe, MapPin, Calendar, ChevronDown, ChevronUp } from 'lucide-react';
 import { useJeffrey } from '../contexts/JeffreyContext';
 import { useLocation } from 'react-router-dom';
-import { ServiceCard } from '../components/dashboard/ServiceCard';
+import { DashboardGammaGrid } from '../components/dashboard/DashboardGammaGrid';
 import { ProgressBar } from '../components/dashboard/ProgressBar';
 import { ActivityTimeline } from '../components/dashboard/ActivityTimeline';
 import { JeffreyRecommendations } from '../components/dashboard/JeffreyRecommendations';
@@ -41,15 +41,15 @@ interface TravelProfile {
 const normalizeTravelProfile = (profile: Partial<TravelProfile> | null): TravelProfile => {
   const safeVisaRequirements = profile?.visaRequirements
     ? {
-        ...profile.visaRequirements,
-        requiredDocuments: profile.visaRequirements.requiredDocuments ?? [],
-        photoRequirements: {
-          dimensions: profile.visaRequirements.photoRequirements?.dimensions ?? '',
-          background: profile.visaRequirements.photoRequirements?.background ?? '',
-          specifications: profile.visaRequirements.photoRequirements?.specifications ?? [],
-        },
-        additionalNotes: profile.visaRequirements.additionalNotes ?? [],
-      }
+      ...profile.visaRequirements,
+      requiredDocuments: profile.visaRequirements.requiredDocuments ?? [],
+      photoRequirements: {
+        dimensions: profile.visaRequirements.photoRequirements?.dimensions ?? '',
+        background: profile.visaRequirements.photoRequirements?.background ?? '',
+        specifications: profile.visaRequirements.photoRequirements?.specifications ?? [],
+      },
+      additionalNotes: profile.visaRequirements.additionalNotes ?? [],
+    }
     : undefined;
 
   return {
@@ -63,7 +63,7 @@ const normalizeTravelProfile = (profile: Partial<TravelProfile> | null): TravelP
   };
 };
 
-const safePercentage = (value: number, total: number) => (total > 0 ? Math.round((value / total) * 100) : 0);
+
 
 const formatDate = (value?: string) => {
   if (!value) return 'TBD';
@@ -405,11 +405,10 @@ export const UnifiedDashboardHome: React.FC<UnifiedDashboardHomeProps> = ({ user
                       className="w-5 h-5 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 focus:ring-offset-0 cursor-pointer"
                     />
                     <span
-                      className={`flex-1 text-sm ${
-                        checkedDocuments.has(doc)
-                          ? 'text-gray-500 line-through'
-                          : 'text-gray-700 group-hover:text-gray-900'
-                      }`}
+                      className={`flex-1 text-sm ${checkedDocuments.has(doc)
+                        ? 'text-gray-500 line-through'
+                        : 'text-gray-700 group-hover:text-gray-900'
+                        }`}
                     >
                       {doc}
                     </span>
@@ -453,79 +452,16 @@ export const UnifiedDashboardHome: React.FC<UnifiedDashboardHomeProps> = ({ user
       </div>
 
       {/* 4 Service Cards - Entry points to each workflow */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-        {/* 1. AI Form Filler */}
-        <ServiceCard
-          icon={FileText}
-          title="AI Form Filler"
-          description="Auto-fill visa application forms with AI"
-          gradient="from-blue-500 to-indigo-600"
-          stats={{
-            total: formProgress,
-            label: 'forms filled',
-            completeness: safePercentage(formProgress, totalForms),
-          }}
-          cta={{
-            label: formProgress < totalForms ? 'Continue Filling' : 'View Forms',
-            href: '/app/form-filler',
-          }}
-          onClick={() => handleNavigateToWorkflow('form-filler')}
-        />
-
-        {/* 2. Document Validator */}
-        <ServiceCard
-          icon={CheckCircle}
-          title="Document Validator"
-          description="AI-powered document verification & validation"
-          gradient="from-green-500 to-emerald-600"
-          stats={{
-            total: validatedDocs,
-            label: 'docs validated',
-            completeness: safePercentage(validatedDocs, totalDocs),
-          }}
-          cta={{
-            label: validatedDocs < totalDocs ? 'Validate Documents' : 'Review Documents',
-            href: '/app/validator',
-          }}
-          onClick={() => handleNavigateToWorkflow('validator')}
-        />
-
-        {/* 3. AI Photo Compliance */}
-        <ServiceCard
-          icon={Camera}
-          title="AI Photo Compliance"
-          description="Generate visa-compliant photos for any country"
-          gradient="from-purple-500 to-pink-600"
-          stats={{
-            total: photoProgress,
-            label: 'visa photos',
-            completeness: safePercentage(photoProgress, requiredPhotos),
-          }}
-          cta={{
-            label: photoProgress === 0 ? 'Generate Photos' : 'View Photos',
-            href: '/app/photo-compliance',
-          }}
-          onClick={() => handleNavigateToWorkflow('photo')}
-        />
-
-        {/* 4. AI Travel Itinerary */}
-        <ServiceCard
-          icon={Plane}
-          title="AI Travel Planner"
-          description="Smart itinerary generation for visa applications"
-          gradient="from-orange-500 to-red-600"
-          stats={{
-            total: travelProgress,
-            label: 'itinerary ready',
-            completeness: travelProgress * 100,
-          }}
-          cta={{
-            label: travelProgress === 0 ? 'Create Itinerary' : 'View Itinerary',
-            href: '/app/travel-planner',
-          }}
-          onClick={() => handleNavigateToWorkflow('travel')}
-        />
-      </div>
+      <DashboardGammaGrid
+        formProgress={formProgress}
+        totalForms={totalForms}
+        validatedDocs={validatedDocs}
+        totalDocs={totalDocs}
+        photoProgress={photoProgress}
+        requiredPhotos={requiredPhotos}
+        travelProgress={travelProgress}
+        handleNavigateToWorkflow={handleNavigateToWorkflow}
+      />
 
       {/* Recent Activity Timeline */}
       <div className="bg-white/80 backdrop-blur-xl p-6 rounded-2xl border border-white/50 mb-8 shadow-sm">

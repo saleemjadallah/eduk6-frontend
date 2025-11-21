@@ -10,6 +10,17 @@ export interface ItineraryRequest {
     dates: { start: string; end: string };
     purpose: string;
     budget?: string;
+    countries?: string[];
+    nationality?: string;
+    specialConcerns?: string[];
+    departureCity?: string;
+    travelers?: number;
+    preferences?: {
+        accommodation?: string;
+        pace?: string;
+        interests?: string[];
+        notes?: string;
+    };
 }
 
 export interface GeneratedItinerary {
@@ -51,6 +62,15 @@ export const generateItinerary = async (request: ItineraryRequest): Promise<Gene
       - Dates: ${request.dates.start} to ${request.dates.end}
       - Purpose: ${request.purpose}
       - Budget: ${request.budget ? `$${request.budget}` : 'Standard'}
+      - Departure City: ${request.departureCity || 'Not specified'}
+      - Traveler Count: ${request.travelers || 1}
+      - Traveler Nationality: ${request.nationality || 'Not specified'}
+      - Regions/Cities to cover: ${request.countries?.length ? request.countries.join(', ') : 'Main destination only'}
+      - Visa/Travel Concerns: ${request.specialConcerns?.length ? request.specialConcerns.join(', ') : 'None specified'}
+      - Accommodation Preference: ${request.preferences?.accommodation || 'Mix of 3-4 star, centrally located'}
+      - Pace Preference: ${request.preferences?.pace || 'Balanced'}
+      - Interests: ${request.preferences?.interests?.length ? request.preferences.interests.join(', ') : 'General highlights'}
+      - Notes: ${request.preferences?.notes || 'Keep the plan visa-application friendly'}
       
       Please generate a JSON response with the following structure:
       {
@@ -67,8 +87,9 @@ export const generateItinerary = async (request: ItineraryRequest): Promise<Gene
       
       Ensure the response is valid JSON. Do not include markdown formatting like \`\`\`json.
       Provide realistic options suitable for the destination and purpose.
-      For flights, estimate prices. For hotels, suggest 1-2 options.
-      For activities, plan for each day of the trip (up to 7 days).
+      Align activities and hotel choices with the stated budget and preferences.
+      For flights, estimate prices from the departure city where possible. For hotels, suggest 1-2 options that fit the budget.
+      For activities, plan for each day of the trip (up to 7 days) with visa-friendly confirmations (day/region + purpose-aligned experiences).
     `;
 
         const result = await model.generateContent(prompt);

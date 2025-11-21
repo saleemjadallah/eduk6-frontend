@@ -831,6 +831,62 @@ export const onboardingApi = {
   },
 };
 
+// Travel Itinerary API (Perplexity-powered backend generation)
+export const travelItineraryApi = {
+  preview: async (data: {
+    destination: string;
+    startDate: string;
+    endDate: string;
+    travelPurpose?: string;
+    budget?: string;
+    countries?: string[];
+  }): Promise<ApiResponse<{
+    itinerary: Array<{
+      day: number;
+      date: string;
+      city: string;
+      country: string;
+      activities: Array<{
+        time: string;
+        activity: string;
+        location: string;
+        description: string;
+      }>;
+      accommodation: {
+        name: string;
+        address: string;
+        checkIn: string;
+        checkOut: string;
+        confirmationNumber: string;
+      };
+      transportation: Array<{
+        type: string;
+        from: string;
+        to: string;
+        time: string;
+        details: string;
+      }>;
+    }>;
+    flightDetails: {
+      outbound: {
+        airline: string;
+        flightNumber: string;
+        departure: { airport: string; time: string; date: string };
+        arrival: { airport: string; time: string; date: string };
+      };
+      return: {
+        airline: string;
+        flightNumber: string;
+        departure: { airport: string; time: string; date: string };
+        arrival: { airport: string; time: string; date: string };
+      };
+    };
+  }>> => {
+    const response = await api.post('/travel-itinerary/preview', data);
+    return response.data;
+  },
+};
+
 // Wardrobe API
 export const wardrobeApi = {
   // Get available professional outfits
