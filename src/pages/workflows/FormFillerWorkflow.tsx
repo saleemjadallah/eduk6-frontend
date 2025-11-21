@@ -3314,8 +3314,11 @@ Be concise but helpful. Format as a brief paragraph.`;
                               const badgeNode = (
                                 <span
                                   className={cn(
-                                    'absolute -top-5 left-0 text-[10px] px-2 py-0.5 rounded-full shadow',
-                                    badgeClass
+                                    'absolute -top-5 left-0 text-[10px] px-2 py-0.5 rounded-full shadow pointer-events-none transition-opacity duration-150',
+                                    badgeClass,
+                                    isHighlighted
+                                      ? 'opacity-100'
+                                      : 'opacity-0 group-hover:opacity-100 group-focus-within:opacity-100'
                                   )}
                                   title={tooltipText}
                                 >
@@ -3329,7 +3332,7 @@ Be concise but helpful. Format as a brief paragraph.`;
                                     key={overlayKey}
                                     style={baseStyle}
                                     className={cn(
-                                      'absolute pointer-events-auto flex items-center justify-center',
+                                      'absolute pointer-events-auto flex items-center justify-center group',
                                       isHighlighted && 'ring-2 ring-yellow-300 rounded-md ring-offset-1'
                                     )}
                                   >
@@ -3362,7 +3365,7 @@ Be concise but helpful. Format as a brief paragraph.`;
                                     key={overlayKey}
                                     style={baseStyle}
                                     className={cn(
-                                      'absolute pointer-events-auto flex items-center justify-center',
+                                      'absolute pointer-events-auto flex items-center justify-center group',
                                       isHighlighted && 'ring-2 ring-yellow-300 rounded-md ring-offset-1'
                                     )}
                                   >
@@ -3395,7 +3398,7 @@ Be concise but helpful. Format as a brief paragraph.`;
                                     key={overlayKey}
                                     style={baseStyle}
                                     className={cn(
-                                      'absolute pointer-events-auto',
+                                      'absolute pointer-events-auto group',
                                       isHighlighted && 'ring-2 ring-yellow-300 rounded-md ring-offset-1'
                                     )}
                                   >
@@ -3420,7 +3423,7 @@ Be concise but helpful. Format as a brief paragraph.`;
                                   key={overlayKey}
                                   style={baseStyle}
                                   className={cn(
-                                    'absolute pointer-events-auto',
+                                    'absolute pointer-events-auto group',
                                     isHighlighted && 'ring-2 ring-yellow-300 rounded-md ring-offset-1'
                                   )}
                                 >
