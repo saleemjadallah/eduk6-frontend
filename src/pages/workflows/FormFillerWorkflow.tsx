@@ -1704,6 +1704,11 @@ Be concise but helpful. Format as a brief paragraph.`;
     }
   };
 
+  const handleAskJeffreyForField = (fieldLabel: string) => {
+    const prompt = `Jeffrey, I need help filling the "${fieldLabel}" field on my visa form. What should I enter and what format is expected?`;
+    askJeffrey(prompt);
+  };
+
   const handleDownloadHistoryForm = async (formId: string, fileName?: string) => {
     try {
       await downloadFilledPDF(formId, fileName || 'filled-form.pdf');
@@ -3345,6 +3350,18 @@ Be concise but helpful. Format as a brief paragraph.`;
                                   {badgeLabel}
                                 </span>
                               ) : null;
+                              const askButton = (
+                                <button
+                                  type="button"
+                                  onClick={(event) => {
+                                    event.stopPropagation();
+                                    handleAskJeffreyForField(fieldState?.label || badgeLabel || annotation.fieldName);
+                                  }}
+                                  className="absolute -top-6 right-0 text-[10px] px-2 py-0.5 rounded-full bg-indigo-600 text-white opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity duration-150 shadow"
+                                >
+                                  Ask Jeffrey
+                                </button>
+                              );
 
                               if (isCheckbox) {
                                 return (
@@ -3357,6 +3374,7 @@ Be concise but helpful. Format as a brief paragraph.`;
                                     )}
                                   >
                                     {badgeNode}
+                                    {askButton}
                                     <input
                                       type="checkbox"
                                       name={annotation.fieldName}
@@ -3390,6 +3408,7 @@ Be concise but helpful. Format as a brief paragraph.`;
                                     )}
                                   >
                                     {badgeNode}
+                                    {askButton}
                                     <input
                                       type="radio"
                                       name={annotation.fieldName}
@@ -3423,6 +3442,7 @@ Be concise but helpful. Format as a brief paragraph.`;
                                     )}
                                   >
                                     {badgeNode}
+                                    {askButton}
                                     <textarea
                                       name={annotation.fieldName}
                                       value={fieldValue}
@@ -3446,10 +3466,11 @@ Be concise but helpful. Format as a brief paragraph.`;
                                   'absolute pointer-events-auto group',
                                   isHighlighted && 'ring-2 ring-yellow-300 rounded-md ring-offset-1'
                                 )}
-                              >
-                                  {badgeNode}
-                                  <input
-                                    type="text"
+                                  >
+                                    {badgeNode}
+                                    {askButton}
+                                    <input
+                                      type="text"
                                     name={annotation.fieldName}
                                     value={fieldValue}
                                     onChange={(event) =>
