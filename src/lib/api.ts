@@ -882,7 +882,7 @@ export const travelItineraryApi = {
       };
     };
   }>> => {
-    const response = await api.post('/travel-itinerary/preview', data);
+    const response = await api.post('/mydscvr/travel-itinerary/preview', data);
     return response.data;
   },
 };
