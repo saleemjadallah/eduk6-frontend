@@ -213,7 +213,6 @@ export default function VisaAssistHomePage() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-20">
             <PainPointCard
               icon={<AlertCircle className="w-8 h-8 text-red-500" />}
-              image="https://cdn3d.iconscout.com/3d/premium/thumb/rejected-document-5354268-4461826.png"
               stat="40%"
               label="Rejection Rate"
               description="of first-time visa applications get rejected due to document errors"
@@ -222,7 +221,6 @@ export default function VisaAssistHomePage() {
 
             <PainPointCard
               icon={<Clock className="w-8 h-8 text-orange-500" />}
-              image="https://cdn3d.iconscout.com/3d/premium/thumb/time-is-money-5354269-4461827.png"
               stat="3-6 months"
               label="Wasted Time"
               description="average delay from rejection to successful reapplication"
@@ -231,7 +229,6 @@ export default function VisaAssistHomePage() {
 
             <PainPointCard
               icon={<DollarSign className="w-8 h-8 text-amber-500" />}
-              image="https://cdn3d.iconscout.com/3d/premium/thumb/money-bag-4952513-4133917.png"
               stat="AED 5,000+"
               label="Hidden Costs"
               description="in reapplication fees, document updates, and lost opportunities"
@@ -240,7 +237,6 @@ export default function VisaAssistHomePage() {
 
             <PainPointCard
               icon={<FileX className="w-8 h-8 text-cyan-500" />}
-              image="https://cdn3d.iconscout.com/3d/premium/thumb/document-error-5354270-4461828.png"
               stat="127"
               label="Form Fields"
               description="average number of fields in a GCC visa application"

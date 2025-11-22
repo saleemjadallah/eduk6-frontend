@@ -1203,9 +1203,9 @@ Be concise but helpful. Format as a brief paragraph.`;
       const form = pdfDoc.getForm();
       const pdfFields = form.getFields();
 
-      // Analyze form with Gemini Vision AI to get accurate field labels
-      const aiAnalysis = await analyzeFormWithAI(bytesForAI, pdfFields.length);
-      const aiFieldMap = aiAnalysis.fieldMap;
+      // Analyze with Azure DI / Vision for downstream QA, but avoid using its field ordering
+      // to override PDF-native field names (ordering mismatches can mislabel fields).
+      await analyzeFormWithAI(bytesForAI, pdfFields.length);
 
       const extractedFields: FormField[] = pdfFields.map((field, index) => {
         const fieldName = field.getName();
@@ -1250,8 +1250,6 @@ Be concise but helpful. Format as a brief paragraph.`;
           value = fieldAny?.getSelected?.() || '';
         }
 
-        const aiField = aiFieldMap.get(index + 1);
-
         const buildLabelFromName = () => fieldName
           .replace(/([A-Z])/g, ' $1')
           .replace(/[_-]/g, ' ')
@@ -1261,29 +1259,18 @@ Be concise but helpful. Format as a brief paragraph.`;
           .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
           .join(' ');
 
-        let label = buildLabelFromName();
-        if (label.toLowerCase().includes('undefined') || label.length <= 2) {
-          const foundLabel = findLabelForField(index, pdfFields.length, textLines);
-          if (foundLabel) {
-            label = foundLabel;
-          }
+      let label = buildLabelFromName();
+      if (label.toLowerCase().includes('undefined') || label.length <= 2) {
+        const foundLabel = findLabelForField(index, pdfFields.length, textLines);
+        if (foundLabel) {
+          label = foundLabel;
         }
+      }
 
-        let canonicalKey =
-          smartFieldMapper.findBestMatch(fieldName) ||
-          smartFieldMapper.findBestMatch(label) ||
-          null;
-
-        if (aiField && aiField.confidence >= 0.7) {
-          const aiCanonical = smartFieldMapper.findBestMatch(aiField.label) || null;
-          if (!canonicalKey && aiCanonical) {
-            label = aiField.label;
-            canonicalKey = aiCanonical;
-          } else if (aiCanonical && canonicalKey === aiCanonical) {
-            label = aiField.label;
-            canonicalKey = aiCanonical;
-          }
-        }
+      let canonicalKey =
+        smartFieldMapper.findBestMatch(fieldName) ||
+        smartFieldMapper.findBestMatch(label) ||
+        null;
 
         // Generate contextual hints based on field name patterns
         const hint = generateFieldHint(fieldName, label);
