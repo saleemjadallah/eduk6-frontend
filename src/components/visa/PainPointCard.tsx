@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { ReactNode } from 'react';
+import { ReactNode, useState } from 'react';
 
 interface PainPointCardProps {
   icon: ReactNode;
@@ -39,6 +39,7 @@ const colorClasses = {
 
 export default function PainPointCard({ icon, image, stat, label, description, color }: PainPointCardProps) {
   const colors = colorClasses[color];
+  const [imgError, setImgError] = useState(false);
 
   return (
     <motion.div
@@ -59,12 +60,25 @@ export default function PainPointCard({ icon, image, stat, label, description, c
   `}
     >
       <div className="mb-6">
-        {image ? (
+        {image && !imgError ? (
           <div className="w-20 h-20 -mt-2 -ml-2">
-            <img src={image} alt={label} className="w-full h-full object-contain drop-shadow-lg" />
+            <img
+              src={image}
+              alt={label}
+              className="w-full h-full object-contain drop-shadow-lg"
+              onError={() => setImgError(true)}
+            />
           </div>
         ) : (
-          <div className="w-12 h-12 flex items-center justify-center">{icon}</div>
+          <div className={`
+            w-16 h-16 rounded-2xl 
+            flex items-center justify-center 
+            shadow-lg shadow-${color}-500/20
+            bg-white/80 backdrop-blur-sm
+            border border-${color}-200
+          `}>
+            <div className={`transform scale-125 ${colors.text.replace('900', '500')}`}>{icon}</div>
+          </div>
         )}
       </div>
       <div className={`text-5xl font-extrabold mb-2 ${colors.text}`}>{stat}</div>
