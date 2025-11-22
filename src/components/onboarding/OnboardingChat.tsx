@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { Send, Loader2 } from 'lucide-react';
 import JeffreyAvatar from './JeffreyAvatar';
 import { onboardingApi } from '@/lib/api';
-import { profileApi, type UserProfile, type PassportProfile } from '@/lib/api-profile';
+import { profileApi, type UserProfile } from '@/lib/api-profile';
 
 interface Message {
   id: string;
