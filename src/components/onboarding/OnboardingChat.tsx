@@ -79,7 +79,6 @@ export default function OnboardingChat({ userName, onComplete, onSkip }: Onboard
 
   // Profile Data State
   const [profileData, setProfileData] = useState<Partial<UserProfile>>({});
-  const [passportData, setPassportData] = useState<Partial<PassportProfile>>({});
   const [recommendations, setRecommendations] = useState<any[]>([]); // Store recommendations to pass later
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
