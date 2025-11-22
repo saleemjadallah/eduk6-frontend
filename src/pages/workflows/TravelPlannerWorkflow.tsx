@@ -13,12 +13,15 @@ import {
   Info,
   Users,
   Settings2,
+  Copy,
+  Check,
 } from 'lucide-react';
 import { useJeffrey } from '../../contexts/JeffreyContext';
 import { Breadcrumb, BreadcrumbItem } from '../../components/ui/Breadcrumb';
 import { onboardingApi } from '../../lib/api';
 import { generateTravelPlan, ItineraryProvider, NormalizedItinerary } from '../../lib/travelPlanner';
 import { generateItineraryPDF } from '../../lib/pdfGenerator';
+import { copyItineraryToClipboard } from '../../lib/clipboardFormatter';
 
 const SPECIAL_CONCERNS_PRESETS = [
   'First-time visa applicant',
@@ -55,6 +58,7 @@ export const TravelPlannerWorkflow: React.FC = () => {
   const [isGenerating, setIsGenerating] = useState(false);
   const [generatedItinerary, setGeneratedItinerary] = useState<NormalizedItinerary | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [copySuccess, setCopySuccess] = useState(false);
 
   useEffect(() => {
     updateWorkflow('travel');
@@ -95,9 +99,29 @@ export const TravelPlannerWorkflow: React.FC = () => {
     }
   };
 
+  const handleCopyToClipboard = async () => {
+    if (!generatedItinerary) return;
+
+    const success = await copyItineraryToClipboard(generatedItinerary, {
+      destination,
+      travelDates,
+      tripPurpose,
+      budget,
+      nationality,
+      travelerCount,
+    });
+
+    if (success) {
+      setCopySuccess(true);
+      addRecentAction('Copied itinerary to clipboard');
+      setTimeout(() => setCopySuccess(false), 3000);
+    }
+  };
+
   const handleGenerateItinerary = async () => {
     setIsGenerating(true);
     setProviderNote(null);
+    setCopySuccess(false);
     addRecentAction('Generating travel itinerary', { destination, provider });
 
     const parsedCountries = countriesInput
@@ -638,32 +662,64 @@ export const TravelPlannerWorkflow: React.FC = () => {
       </div>
 
       {currentStep === 2 && (
-        <div className="flex items-center gap-4 mt-8">
-          <button
-            onClick={() => {
-              if (generatedItinerary) {
-                generateItineraryPDF(generatedItinerary, {
-                  destination,
-                  travelDates,
-                  tripPurpose,
-                  budget,
-                  nationality,
-                  travelerCount,
-                });
-                addRecentAction('Downloaded itinerary PDF');
-              }
-            }}
-            disabled={!generatedItinerary}
-            className="inline-flex items-center gap-2 px-6 py-3 rounded-xl font-semibold bg-gradient-to-r from-indigo-500 to-purple-600 text-white hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all"
-          >
-            <Download className="w-5 h-5" />Download PDF Itinerary
-          </button>
-          <button onClick={() => askJeffrey('Review my itinerary')} className="inline-flex items-center gap-2 px-6 py-3 rounded-xl font-semibold border border-neutral-300 text-neutral-700 hover:bg-neutral-50 transition-all">
-            <MessageCircle className="w-5 h-5" />Ask Jeffrey to Review
-          </button>
-          <button onClick={() => setCurrentStep(1)} className="inline-flex items-center gap-2 px-6 py-3 rounded-xl font-semibold border border-neutral-300 text-neutral-700 hover:bg-neutral-50 transition-all">
-            <RefreshCw className="w-5 h-5" />Regenerate
-          </button>
+        <div className="space-y-4 mt-8">
+          <div className="flex flex-wrap items-center gap-4">
+            <button
+              onClick={() => {
+                if (generatedItinerary) {
+                  generateItineraryPDF(generatedItinerary, {
+                    destination,
+                    travelDates,
+                    tripPurpose,
+                    budget,
+                    nationality,
+                    travelerCount,
+                  });
+                  addRecentAction('Downloaded itinerary PDF');
+                }
+              }}
+              disabled={!generatedItinerary}
+              className="inline-flex items-center gap-2 px-6 py-3 rounded-xl font-semibold bg-gradient-to-r from-indigo-500 to-purple-600 text-white hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+            >
+              <Download className="w-5 h-5" />Download PDF Itinerary
+            </button>
+
+            <button
+              onClick={handleCopyToClipboard}
+              disabled={!generatedItinerary}
+              className={`inline-flex items-center gap-2 px-6 py-3 rounded-xl font-semibold border-2 transition-all ${
+                copySuccess
+                  ? 'border-green-500 bg-green-50 text-green-700'
+                  : 'border-indigo-300 text-indigo-700 hover:bg-indigo-50'
+              } disabled:opacity-50 disabled:cursor-not-allowed`}
+            >
+              {copySuccess ? (
+                <>
+                  <Check className="w-5 h-5" />
+                  Copied to Clipboard!
+                </>
+              ) : (
+                <>
+                  <Copy className="w-5 h-5" />
+                  Copy to Clipboard
+                </>
+              )}
+            </button>
+
+            <button onClick={() => askJeffrey('Review my itinerary')} className="inline-flex items-center gap-2 px-6 py-3 rounded-xl font-semibold border border-neutral-300 text-neutral-700 hover:bg-neutral-50 transition-all">
+              <MessageCircle className="w-5 h-5" />Ask Jeffrey to Review
+            </button>
+            <button onClick={() => setCurrentStep(1)} className="inline-flex items-center gap-2 px-6 py-3 rounded-xl font-semibold border border-neutral-300 text-neutral-700 hover:bg-neutral-50 transition-all">
+              <RefreshCw className="w-5 h-5" />Regenerate
+            </button>
+          </div>
+
+          {copySuccess && (
+            <div className="flex items-center gap-2 p-3 bg-green-50 border border-green-200 rounded-xl text-green-800 text-sm">
+              <Check className="w-4 h-4" />
+              <span>Itinerary copied! You can now paste it into your visa application form.</span>
+            </div>
+          )}
         </div>
       )}
     </div>
