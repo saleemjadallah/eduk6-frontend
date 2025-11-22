@@ -3,6 +3,7 @@ import { GoogleGenerativeAI } from '@google/generative-ai';
 // Initialize the Google Generative AI client
 // Note: In production, API calls should be proxied through the backend to secure the API key
 const API_KEY = import.meta.env.VITE_GEMINI_API_KEY || '';
+const DEFAULT_GEMINI_MODEL = (import.meta.env.VITE_GEMINI_MODEL as string)?.trim() || 'gemini-1.5-flash-latest';
 const genAI = new GoogleGenerativeAI(API_KEY);
 
 export interface ItineraryRequest {
@@ -53,7 +54,11 @@ export const generateItinerary = async (request: ItineraryRequest): Promise<Gene
     }
 
     try {
-        const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+        const modelCandidates = [
+            DEFAULT_GEMINI_MODEL,
+            'gemini-1.5-pro-latest',
+            'gemini-1.5-flash',
+        ].filter(Boolean);
 
         const prompt = `
       You are an expert travel agent. Create a detailed travel itinerary for a trip to ${request.destination}.
@@ -92,14 +97,25 @@ export const generateItinerary = async (request: ItineraryRequest): Promise<Gene
       For activities, plan for each day of the trip (up to 7 days) with visa-friendly confirmations (day/region + purpose-aligned experiences).
     `;
 
-        const result = await model.generateContent(prompt);
-        const response = await result.response;
-        const text = response.text();
+        let lastError: unknown;
+        for (const modelName of modelCandidates) {
+            try {
+                const model = genAI.getGenerativeModel({ model: modelName });
+                const result = await model.generateContent(prompt);
+                const response = await result.response;
+                const text = response.text();
 
-        // Clean up markdown if present
-        const jsonStr = text.replace(/```json/g, '').replace(/```/g, '').trim();
+                // Clean up markdown if present
+                const jsonStr = text.replace(/```json/g, '').replace(/```/g, '').trim();
 
-        return JSON.parse(jsonStr) as GeneratedItinerary;
+                return JSON.parse(jsonStr) as GeneratedItinerary;
+            } catch (error) {
+                lastError = error;
+                console.warn(`[Gemini] Model "${modelName}" failed, trying next fallback.`, error);
+            }
+        }
+
+        throw lastError || new Error('All Gemini models failed');
     } catch (error) {
         console.error('Failed to generate itinerary with Gemini:', error);
         // Fallback to mock data on error
