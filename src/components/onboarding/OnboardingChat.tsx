@@ -39,8 +39,6 @@ type Stage =
   | 'profile-offer'
   | 'profile-name'
   | 'profile-dob'
-  | 'profile-passport-number'
-  | 'profile-passport-expiry'
   | 'profile-save'
   | 'complete';
 
@@ -361,28 +359,6 @@ export default function OnboardingChat({ userName, onComplete, onSkip }: Onboard
 
       case 'profile-dob':
         setProfileData(prev => ({ ...prev, dateOfBirth: input }));
-        setCurrentStage('profile-passport-number');
-        
-        setTimeout(() => {
-          addJeffreyMessage(
-            'Got it. 🎂\n\nNow, what is your **Passport Number**?'
-          );
-        }, 500);
-        break;
-
-      case 'profile-passport-number':
-        setPassportData(prev => ({ ...prev, passportNumber: input }));
-        setCurrentStage('profile-passport-expiry');
-        
-        setTimeout(() => {
-          addJeffreyMessage(
-            'Almost done! 🏁\n\nWhen does your passport **expire**?\n(YYYY-MM-DD)'
-          );
-        }, 500);
-        break;
-
-      case 'profile-passport-expiry':
-        setPassportData(prev => ({ ...prev, expiryDate: input }));
         setCurrentStage('profile-save');
         setJeffreyMood('thinking');
         
@@ -404,16 +380,6 @@ export default function OnboardingChat({ userName, onComplete, onSkip }: Onboard
                street: '', city: '', country: travelProfile.nationality, postalCode: '', fromDate: new Date().toISOString()
             }
           } as UserProfile);
-
-          // 2. Save Passport
-          await profileApi.savePassport({
-            ...passportData,
-            passportType: 'Regular',
-            issuingCountry: travelProfile.nationality, // Assume same as nationality for quick setup
-            issueDate: new Date().toISOString(), // Placeholder
-            placeOfIssue: '',
-            isActive: true
-          } as PassportProfile);
           
           setJeffreyMood('excited');
           setTimeout(() => {
@@ -467,8 +433,6 @@ export default function OnboardingChat({ userName, onComplete, onSkip }: Onboard
       'profile-offer',
       'profile-name',
       'profile-dob',
-      'profile-passport-number',
-      'profile-passport-expiry',
       'profile-save',
       'complete'
     ];
