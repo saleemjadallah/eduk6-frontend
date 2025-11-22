@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { Send, Loader2 } from 'lucide-react';
 import JeffreyAvatar from './JeffreyAvatar';
 import { onboardingApi } from '@/lib/api';
+import { profileApi, type UserProfile, type PassportProfile } from '@/lib/api-profile';
 
 interface Message {
   id: string;
@@ -26,7 +27,22 @@ interface OnboardingChatProps {
 }
 
 // Conversation stages
-type Stage = 'welcome' | 'destination' | 'purpose' | 'nationality' | 'dates' | 'concerns' | 'summary' | 'researching' | 'complete';
+type Stage = 
+  | 'welcome' 
+  | 'destination' 
+  | 'purpose' 
+  | 'nationality' 
+  | 'dates' 
+  | 'concerns' 
+  | 'summary' 
+  | 'researching' 
+  | 'profile-offer'
+  | 'profile-name'
+  | 'profile-dob'
+  | 'profile-passport-number'
+  | 'profile-passport-expiry'
+  | 'profile-save'
+  | 'complete';
 
 const TRAVEL_PURPOSES = [
   'Tourism/Holiday',
@@ -62,6 +78,11 @@ export default function OnboardingChat({ userName, onComplete, onSkip }: Onboard
     travelDates: { start: '', end: '' },
     specialConcerns: [],
   });
+
+  // Profile Data State
+  const [profileData, setProfileData] = useState<Partial<UserProfile>>({});
+  const [passportData, setPassportData] = useState<Partial<PassportProfile>>({});
+  const [recommendations, setRecommendations] = useState<any[]>([]); // Store recommendations to pass later
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -263,21 +284,17 @@ export default function OnboardingChat({ userName, onComplete, onSkip }: Onboard
 
             if (response.success && response.data) {
               const responseData = response.data;
-              setCurrentStage('complete');
+              setRecommendations(responseData.recommendations || []); // Store for later
+              setCurrentStage('profile-offer'); // Move to profile offer instead of complete
               setJeffreyMood('excited');
 
               setTimeout(() => {
                 const requirements = responseData.travelProfile.visaRequirements;
                 addJeffreyMessage(
-                  `🎉 **Great news!** I've found everything you need!\n\n**${requirements.visaType}**\n\n⏱️ **Processing Time:** ${requirements.processingTime}\n💰 **Fees:** ${requirements.fees}\n📋 **Documents Needed:** ${requirements.requiredDocuments.length} items\n📸 **Photo Size:** ${requirements.photoRequirements.dimensions}\n\nI've set up your dashboard with personalized recommendations. Ready to see it?`,
-                  ['Take me to my dashboard!']
+                  `🎉 **Great news!** I've found everything you need for your **${requirements.visaType}**!\n\nProcessing: ${requirements.processingTime} • Documents: ${requirements.requiredDocuments.length} items\n\n📝 **One last thing:** To help you fill the application forms automatically, shall I save your basic details now? It takes 30 seconds.`,
+                  ['Yes, set up my profile', 'No, skip for now']
                 );
               }, 2000);
-
-              // Complete after showing results
-              setTimeout(() => {
-                onComplete(responseData.travelProfile, responseData.recommendations);
-              }, 5000);
             } else {
               throw new Error('Failed to complete onboarding');
             }
@@ -305,8 +322,123 @@ export default function OnboardingChat({ userName, onComplete, onSkip }: Onboard
         }
         break;
 
+      // ===========================================
+      // NEW PROFILE SETUP STAGES
+      // ===========================================
+      
+      case 'profile-offer':
+        if (input.toLowerCase().includes('yes') || input.toLowerCase().includes('set up')) {
+          setCurrentStage('profile-name');
+          setJeffreyMood('happy');
+          setTimeout(() => {
+            addJeffreyMessage(
+              'Smart choice! 🧠 This will save you typing later.\n\nFirst, what is your **Full Name** as it appears on your passport?'
+            );
+          }, 500);
+        } else {
+          // Skip profile setup
+          addJeffreyMessage('No problem! You can always add your details later in your settings. Taking you to your dashboard now! 🚀');
+          setTimeout(() => {
+            onComplete(travelProfile, recommendations);
+          }, 2000);
+        }
+        break;
+
+      case 'profile-name':
+        const nameParts = input.trim().split(' ');
+        const firstName = nameParts[0];
+        const lastName = nameParts.length > 1 ? nameParts.slice(1).join(' ') : '';
+        
+        setProfileData(prev => ({ ...prev, firstName, lastName }));
+        setCurrentStage('profile-dob');
+        
+        setTimeout(() => {
+          addJeffreyMessage(
+            `Nice to meet you officially, ${firstName}! 👋\n\nWhat is your **Date of Birth**?\n(YYYY-MM-DD, e.g. 1990-05-20)`
+          );
+        }, 500);
+        break;
+
+      case 'profile-dob':
+        setProfileData(prev => ({ ...prev, dateOfBirth: input }));
+        setCurrentStage('profile-passport-number');
+        
+        setTimeout(() => {
+          addJeffreyMessage(
+            'Got it. 🎂\n\nNow, what is your **Passport Number**?'
+          );
+        }, 500);
+        break;
+
+      case 'profile-passport-number':
+        setPassportData(prev => ({ ...prev, passportNumber: input }));
+        setCurrentStage('profile-passport-expiry');
+        
+        setTimeout(() => {
+          addJeffreyMessage(
+            'Almost done! 🏁\n\nWhen does your passport **expire**?\n(YYYY-MM-DD)'
+          );
+        }, 500);
+        break;
+
+      case 'profile-passport-expiry':
+        setPassportData(prev => ({ ...prev, expiryDate: input }));
+        setCurrentStage('profile-save');
+        setJeffreyMood('thinking');
+        
+        setTimeout(() => {
+          addJeffreyMessage('Saving your Master Profile...');
+        }, 200);
+        
+        // Save profile data
+        try {
+          setIsProcessing(true);
+          
+          // 1. Save Main Profile
+          await profileApi.saveProfile({
+            ...profileData,
+            nationality: travelProfile.nationality, // We already have this
+            email: 'user@example.com', // Ideally we get this from auth context, but for now placeholder or backend handles it
+            phone: '', // Optional for quick setup
+            currentAddress: { // Minimal required
+               street: '', city: '', country: travelProfile.nationality, postalCode: '', fromDate: new Date().toISOString()
+            }
+          } as UserProfile);
+
+          // 2. Save Passport
+          await profileApi.savePassport({
+            ...passportData,
+            passportType: 'Regular',
+            issuingCountry: travelProfile.nationality, // Assume same as nationality for quick setup
+            issueDate: new Date().toISOString(), // Placeholder
+            placeOfIssue: '',
+            isActive: true
+          } as PassportProfile);
+          
+          setJeffreyMood('excited');
+          setTimeout(() => {
+            addJeffreyMessage(
+              '**Profile Saved!** 🎉\n\nI\'ve set up your dashboard and I\'m ready to help you fill your visa forms automatically.\n\nLet\'s go!',
+              ['Go to Dashboard']
+            );
+            setCurrentStage('complete');
+          }, 1000);
+          
+        } catch (error) {
+          console.error('Error saving profile:', error);
+          addJeffreyMessage('I saved your travel plans, but had a glitch saving your profile details. You can add them later in settings!');
+          setTimeout(() => {
+             setCurrentStage('complete');
+             // Proceed anyway
+             onComplete(travelProfile, recommendations);
+          }, 2000);
+        } finally {
+           setIsProcessing(false);
+        }
+        break;
+
       case 'complete':
-        onComplete(travelProfile, []);
+        onComplete(travelProfile, recommendations);
         break;
 
       default:
@@ -323,7 +455,23 @@ export default function OnboardingChat({ userName, onComplete, onSkip }: Onboard
 
   // Progress indicator
   const getProgress = () => {
-    const stages: Stage[] = ['welcome', 'destination', 'purpose', 'nationality', 'dates', 'concerns', 'summary', 'researching', 'complete'];
+    const stages: Stage[] = [
+      'welcome', 
+      'destination', 
+      'purpose', 
+      'nationality', 
+      'dates', 
+      'concerns', 
+      'summary', 
+      'researching',
+      'profile-offer',
+      'profile-name',
+      'profile-dob',
+      'profile-passport-number',
+      'profile-passport-expiry',
+      'profile-save',
+      'complete'
+    ];
     const currentIndex = stages.indexOf(currentStage);
     return Math.round((currentIndex / (stages.length - 1)) * 100);
   };
