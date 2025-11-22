@@ -18,6 +18,7 @@ import { useJeffrey } from '../../contexts/JeffreyContext';
 import { Breadcrumb, BreadcrumbItem } from '../../components/ui/Breadcrumb';
 import { onboardingApi } from '../../lib/api';
 import { generateTravelPlan, ItineraryProvider, NormalizedItinerary } from '../../lib/travelPlanner';
+import { generateItineraryPDF } from '../../lib/pdfGenerator';
 
 const SPECIAL_CONCERNS_PRESETS = [
   'First-time visa applicant',
@@ -639,7 +640,19 @@ export const TravelPlannerWorkflow: React.FC = () => {
       {currentStep === 2 && (
         <div className="flex items-center gap-4 mt-8">
           <button
-            onClick={() => addRecentAction('Downloaded itinerary PDF')}
+            onClick={() => {
+              if (generatedItinerary) {
+                generateItineraryPDF(generatedItinerary, {
+                  destination,
+                  travelDates,
+                  tripPurpose,
+                  budget,
+                  nationality,
+                  travelerCount,
+                });
+                addRecentAction('Downloaded itinerary PDF');
+              }
+            }}
             disabled={!generatedItinerary}
             className="inline-flex items-center gap-2 px-6 py-3 rounded-xl font-semibold bg-gradient-to-r from-indigo-500 to-purple-600 text-white hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all"
           >
