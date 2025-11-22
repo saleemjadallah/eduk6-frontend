@@ -3,6 +3,7 @@ import { ReactNode } from 'react';
 
 interface PainPointCardProps {
   icon: ReactNode;
+  image?: string;
   stat: string;
   label: string;
   description: string;
@@ -36,7 +37,7 @@ const colorClasses = {
   },
 };
 
-export default function PainPointCard({ icon, stat, label, description, color }: PainPointCardProps) {
+export default function PainPointCard({ icon, image, stat, label, description, color }: PainPointCardProps) {
   const colors = colorClasses[color];
 
   return (
@@ -57,7 +58,15 @@ export default function PainPointCard({ icon, stat, label, description, color }:
         transition-all duration-300
   `}
     >
-      <div className="mb-4">{icon}</div>
+      <div className="mb-6">
+        {image ? (
+          <div className="w-20 h-20 -mt-2 -ml-2">
+            <img src={image} alt={label} className="w-full h-full object-contain drop-shadow-lg" />
+          </div>
+        ) : (
+          <div className="w-12 h-12 flex items-center justify-center">{icon}</div>
+        )}
+      </div>
       <div className={`text-5xl font-extrabold mb-2 ${colors.text}`}>{stat}</div>
       <div className={`text-lg font-semibold mb-3 ${colors.text}`}>{label}</div>
       <p className="text-neutral-600 leading-relaxed">{description}</p>
