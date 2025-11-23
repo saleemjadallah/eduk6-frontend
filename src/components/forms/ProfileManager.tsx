@@ -8,6 +8,54 @@ interface ProfileManagerProps {
   className?: string;
 }
 
+const createEmptyCurrentAddress = () => ({
+  street: '',
+  apartment: '',
+  city: '',
+  state: '',
+  country: '',
+  postalCode: '',
+  fromDate: '',
+  toDate: '',
+});
+
+const createEmptyPersonalForm = (): Partial<UserProfile> => ({
+  countryOfBirth: '',
+  currentAddress: createEmptyCurrentAddress(),
+});
+
+const createEmptyEmployerAddress = () => ({
+  street: '',
+  city: '',
+  state: '',
+  country: '',
+  postalCode: '',
+});
+
+const createEmptyEmploymentForm = (): Partial<EmploymentProfile> => ({
+  isCurrent: false,
+  employerAddress: createEmptyEmployerAddress(),
+});
+
+const normalizePersonalForm = (data?: Partial<UserProfile>) => ({
+  ...createEmptyPersonalForm(),
+  ...data,
+  countryOfBirth: data?.countryOfBirth || data?.nationality || '',
+  currentAddress: {
+    ...createEmptyCurrentAddress(),
+    ...(data?.currentAddress || {}),
+  },
+});
+
+const normalizeEmploymentForm = (data?: Partial<EmploymentProfile>) => ({
+  ...createEmptyEmploymentForm(),
+  ...data,
+  employerAddress: {
+    ...createEmptyEmployerAddress(),
+    ...(data?.employerAddress || {}),
+  },
+});
+
 export const ProfileManager: React.FC<ProfileManagerProps> = ({ onProfileUpdate, className }) => {
   const [activeTab, setActiveTab] = useState<'personal' | 'passport' | 'employment' | 'education' | 'family'>('personal');
   const [profile, setProfile] = useState<CompleteProfile | null>(null);
@@ -16,9 +64,9 @@ export const ProfileManager: React.FC<ProfileManagerProps> = ({ onProfileUpdate,
   const [saveMessage, setSaveMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
   // Form states
-  const [personalForm, setPersonalForm] = useState<Partial<UserProfile>>({});
+  const [personalForm, setPersonalForm] = useState<Partial<UserProfile>>(createEmptyPersonalForm());
   const [passportForm, setPassportForm] = useState<Partial<PassportProfile>>({});
-  const [employmentForm, setEmploymentForm] = useState<Partial<EmploymentProfile>>({ isCurrent: false });
+  const [employmentForm, setEmploymentForm] = useState<Partial<EmploymentProfile>>(createEmptyEmploymentForm());
   const [educationForm, setEducationForm] = useState<Partial<EducationProfile>>({});
   const [familyForm, setFamilyForm] = useState<Partial<FamilyProfile>>({});
 
@@ -31,23 +79,40 @@ export const ProfileManager: React.FC<ProfileManagerProps> = ({ onProfileUpdate,
     loadProfile();
   }, []);
 
-  const loadProfile = async () => {
+  const loadProfile = async (): Promise<CompleteProfile | null> => {
     setIsLoading(true);
     try {
       const response = await profileApi.getProfile();
       if (response.success && response.data) {
         setProfile(response.data);
         if (response.data.profile) {
-          setPersonalForm(response.data.profile);
+          setPersonalForm(normalizePersonalForm(response.data.profile));
+        } else {
+          setPersonalForm(createEmptyPersonalForm());
         }
         if (response.data.passports?.[0]) {
           setPassportForm(response.data.passports[0]);
         }
+        return response.data;
       }
     } catch (error) {
       console.error('Error loading profile:', error);
+      setProfile(null);
+      setPersonalForm(createEmptyPersonalForm());
+      return null;
     } finally {
       setIsLoading(false);
+    }
+
+    setProfile(null);
+    setPersonalForm(createEmptyPersonalForm());
+    return null;
+  };
+
+  const refreshProfile = async () => {
+    const updatedProfile = await loadProfile();
+    if (updatedProfile && onProfileUpdate) {
+      onProfileUpdate(updatedProfile);
     }
   };
 
@@ -56,16 +121,80 @@ export const ProfileManager: React.FC<ProfileManagerProps> = ({ onProfileUpdate,
     setTimeout(() => setSaveMessage(null), 3000);
   };
 
+  const validatePersonalForm = () => {
+    const requiredFields: [string, string | undefined][] = [
+      ['First name', personalForm.firstName],
+      ['Last name', personalForm.lastName],
+      ['Date of birth', personalForm.dateOfBirth],
+      ['Place of birth', personalForm.placeOfBirth],
+      ['Gender', personalForm.gender],
+      ['Marital status', personalForm.maritalStatus],
+      ['Nationality', personalForm.nationality],
+      ['Email', personalForm.email],
+      ['Phone', personalForm.phone],
+      ['Country of birth', personalForm.countryOfBirth],
+    ];
+
+    for (const [label, value] of requiredFields) {
+      if (!value || value.toString().trim() === '') {
+        return `${label} is required`;
+      }
+    }
+
+    const address = personalForm.currentAddress || createEmptyCurrentAddress();
+    const addressFields: [string, string | undefined][] = [
+      ['Street address', address.street],
+      ['City', address.city],
+      ['Postal code', address.postalCode],
+      ['Country', address.country],
+      ['Move-in date', address.fromDate],
+    ];
+
+    for (const [label, value] of addressFields) {
+      if (!value || value.toString().trim() === '') {
+        return `Current address ${label.toLowerCase()} is required`;
+      }
+    }
+
+    return null;
+  };
+
+  const validateEmploymentForm = () => {
+    const address = employmentForm.employerAddress || createEmptyEmployerAddress();
+    const addressFields: [string, string | undefined][] = [
+      ['Street address', address.street],
+      ['City', address.city],
+      ['Postal code', address.postalCode],
+      ['Country', address.country],
+    ];
+
+    if (!employmentForm.employerName?.trim()) return 'Employer name is required';
+    if (!employmentForm.jobTitle?.trim()) return 'Job title is required';
+    if (!employmentForm.startDate?.trim()) return 'Employment start date is required';
+
+    for (const [label, value] of addressFields) {
+      if (!value || value.toString().trim() === '') {
+        return `Employer ${label.toLowerCase()} is required`;
+      }
+    }
+
+    return null;
+  };
+
   const handleSavePersonal = async () => {
+    const validationError = validatePersonalForm();
+    if (validationError) {
+      showSaveMessage('error', validationError);
+      return;
+    }
+
     setIsSaving(true);
     try {
-      const response = await profileApi.saveProfile(personalForm as UserProfile);
+      const preparedProfile = normalizePersonalForm(personalForm);
+      const response = await profileApi.saveProfile(preparedProfile as UserProfile);
       if (response.success) {
         showSaveMessage('success', 'Personal information saved successfully');
-        await loadProfile();
-        if (profile && onProfileUpdate) {
-          onProfileUpdate(profile);
-        }
+        await refreshProfile();
       } else {
         showSaveMessage('error', response.error || 'Failed to save personal information');
       }
@@ -82,7 +211,7 @@ export const ProfileManager: React.FC<ProfileManagerProps> = ({ onProfileUpdate,
       const response = await profileApi.savePassport({ ...passportForm, isActive: true } as PassportProfile);
       if (response.success) {
         showSaveMessage('success', 'Passport information saved successfully');
-        await loadProfile();
+        await refreshProfile();
       } else {
         showSaveMessage('error', response.error || 'Failed to save passport information');
       }
@@ -94,14 +223,21 @@ export const ProfileManager: React.FC<ProfileManagerProps> = ({ onProfileUpdate,
   };
 
   const handleSaveEmployment = async () => {
+    const validationError = validateEmploymentForm();
+    if (validationError) {
+      showSaveMessage('error', validationError);
+      return;
+    }
+
     setIsSaving(true);
     try {
-      const response = await profileApi.saveEmployment(employmentForm as EmploymentProfile);
+      const preparedEmployment = normalizeEmploymentForm(employmentForm);
+      const response = await profileApi.saveEmployment(preparedEmployment as EmploymentProfile);
       if (response.success) {
         showSaveMessage('success', 'Employment record saved successfully');
-        setEmploymentForm({ isCurrent: false });
+        setEmploymentForm(createEmptyEmploymentForm());
         setEditingEmploymentId(null);
-        await loadProfile();
+        await refreshProfile();
       } else {
         showSaveMessage('error', response.error || 'Failed to save employment record');
       }
@@ -119,7 +255,7 @@ export const ProfileManager: React.FC<ProfileManagerProps> = ({ onProfileUpdate,
       if (response.success) {
         showSaveMessage('success', 'Education record saved successfully');
         setEducationForm({});
-        await loadProfile();
+        await refreshProfile();
       } else {
         showSaveMessage('error', response.error || 'Failed to save education record');
       }
@@ -138,7 +274,7 @@ export const ProfileManager: React.FC<ProfileManagerProps> = ({ onProfileUpdate,
         showSaveMessage('success', 'Family member added successfully');
         setFamilyForm({});
         setEditingFamilyId(null);
-        await loadProfile();
+        await refreshProfile();
       } else {
         showSaveMessage('error', response.error || 'Failed to add family member');
       }
@@ -167,6 +303,9 @@ export const ProfileManager: React.FC<ProfileManagerProps> = ({ onProfileUpdate,
       </div>
     );
   }
+
+  const currentAddress = personalForm.currentAddress || createEmptyCurrentAddress();
+  const employerAddress = employmentForm.employerAddress || createEmptyEmployerAddress();
 
   return (
     <div className={cn("bg-white rounded-2xl border border-gray-200", className)}>
@@ -236,7 +375,7 @@ export const ProfileManager: React.FC<ProfileManagerProps> = ({ onProfileUpdate,
                 <input
                   type="text"
                   value={personalForm.firstName || ''}
-                  onChange={(e) => setPersonalForm({ ...personalForm, firstName: e.target.value })}
+                  onChange={(e) => setPersonalForm(prev => ({ ...prev, firstName: e.target.value }))}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                   placeholder="John"
                 />
@@ -247,7 +386,7 @@ export const ProfileManager: React.FC<ProfileManagerProps> = ({ onProfileUpdate,
                 <input
                   type="text"
                   value={personalForm.lastName || ''}
-                  onChange={(e) => setPersonalForm({ ...personalForm, lastName: e.target.value })}
+                  onChange={(e) => setPersonalForm(prev => ({ ...prev, lastName: e.target.value }))}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                   placeholder="Doe"
                 />
@@ -258,7 +397,7 @@ export const ProfileManager: React.FC<ProfileManagerProps> = ({ onProfileUpdate,
                 <input
                   type="text"
                   value={personalForm.middleName || ''}
-                  onChange={(e) => setPersonalForm({ ...personalForm, middleName: e.target.value })}
+                  onChange={(e) => setPersonalForm(prev => ({ ...prev, middleName: e.target.value }))}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                   placeholder="Middle name"
                 />
@@ -269,7 +408,7 @@ export const ProfileManager: React.FC<ProfileManagerProps> = ({ onProfileUpdate,
                 <input
                   type="date"
                   value={personalForm.dateOfBirth || ''}
-                  onChange={(e) => setPersonalForm({ ...personalForm, dateOfBirth: e.target.value })}
+                  onChange={(e) => setPersonalForm(prev => ({ ...prev, dateOfBirth: e.target.value }))}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                 />
               </div>
@@ -279,9 +418,20 @@ export const ProfileManager: React.FC<ProfileManagerProps> = ({ onProfileUpdate,
                 <input
                   type="text"
                   value={personalForm.placeOfBirth || ''}
-                  onChange={(e) => setPersonalForm({ ...personalForm, placeOfBirth: e.target.value })}
+                  onChange={(e) => setPersonalForm(prev => ({ ...prev, placeOfBirth: e.target.value }))}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                   placeholder="City, Country"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Country of Birth *</label>
+                <input
+                  type="text"
+                  value={personalForm.countryOfBirth || ''}
+                  onChange={(e) => setPersonalForm(prev => ({ ...prev, countryOfBirth: e.target.value }))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                  placeholder="Country where you were born"
                 />
               </div>
 
@@ -289,7 +439,7 @@ export const ProfileManager: React.FC<ProfileManagerProps> = ({ onProfileUpdate,
                 <label className="block text-sm font-medium text-gray-700 mb-1">Gender *</label>
                 <select
                   value={personalForm.gender || ''}
-                  onChange={(e) => setPersonalForm({ ...personalForm, gender: e.target.value })}
+                  onChange={(e) => setPersonalForm(prev => ({ ...prev, gender: e.target.value }))}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                 >
                   <option value="">Select...</option>
@@ -303,7 +453,7 @@ export const ProfileManager: React.FC<ProfileManagerProps> = ({ onProfileUpdate,
                 <label className="block text-sm font-medium text-gray-700 mb-1">Marital Status *</label>
                 <select
                   value={personalForm.maritalStatus || ''}
-                  onChange={(e) => setPersonalForm({ ...personalForm, maritalStatus: e.target.value })}
+                  onChange={(e) => setPersonalForm(prev => ({ ...prev, maritalStatus: e.target.value }))}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                 >
                   <option value="">Select...</option>
@@ -319,7 +469,7 @@ export const ProfileManager: React.FC<ProfileManagerProps> = ({ onProfileUpdate,
                 <input
                   type="text"
                   value={personalForm.nationality || ''}
-                  onChange={(e) => setPersonalForm({ ...personalForm, nationality: e.target.value })}
+                  onChange={(e) => setPersonalForm(prev => ({ ...prev, nationality: e.target.value }))}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                   placeholder="e.g., United States"
                 />
@@ -330,7 +480,7 @@ export const ProfileManager: React.FC<ProfileManagerProps> = ({ onProfileUpdate,
                 <input
                   type="email"
                   value={personalForm.email || ''}
-                  onChange={(e) => setPersonalForm({ ...personalForm, email: e.target.value })}
+                  onChange={(e) => setPersonalForm(prev => ({ ...prev, email: e.target.value }))}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                   placeholder="john@example.com"
                 />
@@ -341,9 +491,132 @@ export const ProfileManager: React.FC<ProfileManagerProps> = ({ onProfileUpdate,
                 <input
                   type="tel"
                   value={personalForm.phone || ''}
-                  onChange={(e) => setPersonalForm({ ...personalForm, phone: e.target.value })}
+                  onChange={(e) => setPersonalForm(prev => ({ ...prev, phone: e.target.value }))}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                   placeholder="+1 234 567 8900"
+                />
+              </div>
+
+              <div className="md:col-span-2 pt-2">
+                <p className="text-sm font-semibold text-gray-900">Current Address</p>
+                <p className="text-xs text-gray-500">Stored to auto-fill residential history on applications</p>
+              </div>
+
+              <div className="md:col-span-2">
+                <label className="block text-sm font-medium text-gray-700 mb-1">Street Address *</label>
+                <input
+                  type="text"
+                  value={currentAddress.street || ''}
+                  onChange={(e) => setPersonalForm(prev => ({
+                    ...prev,
+                    currentAddress: {
+                      ...(prev.currentAddress || createEmptyCurrentAddress()),
+                      street: e.target.value
+                    }
+                  }))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                  placeholder="123 Main St"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Apartment/Unit</label>
+                <input
+                  type="text"
+                  value={currentAddress.apartment || ''}
+                  onChange={(e) => setPersonalForm(prev => ({
+                    ...prev,
+                    currentAddress: {
+                      ...(prev.currentAddress || createEmptyCurrentAddress()),
+                      apartment: e.target.value
+                    }
+                  }))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                  placeholder="Apt, suite, etc."
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">City *</label>
+                <input
+                  type="text"
+                  value={currentAddress.city || ''}
+                  onChange={(e) => setPersonalForm(prev => ({
+                    ...prev,
+                    currentAddress: {
+                      ...(prev.currentAddress || createEmptyCurrentAddress()),
+                      city: e.target.value
+                    }
+                  }))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                  placeholder="City"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">State/Province</label>
+                <input
+                  type="text"
+                  value={currentAddress.state || ''}
+                  onChange={(e) => setPersonalForm(prev => ({
+                    ...prev,
+                    currentAddress: {
+                      ...(prev.currentAddress || createEmptyCurrentAddress()),
+                      state: e.target.value
+                    }
+                  }))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                  placeholder="State or region"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Postal Code *</label>
+                <input
+                  type="text"
+                  value={currentAddress.postalCode || ''}
+                  onChange={(e) => setPersonalForm(prev => ({
+                    ...prev,
+                    currentAddress: {
+                      ...(prev.currentAddress || createEmptyCurrentAddress()),
+                      postalCode: e.target.value
+                    }
+                  }))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                  placeholder="Postal / ZIP code"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Country *</label>
+                <input
+                  type="text"
+                  value={currentAddress.country || ''}
+                  onChange={(e) => setPersonalForm(prev => ({
+                    ...prev,
+                    currentAddress: {
+                      ...(prev.currentAddress || createEmptyCurrentAddress()),
+                      country: e.target.value
+                    }
+                  }))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                  placeholder="Country"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Move-in Date *</label>
+                <input
+                  type="date"
+                  value={currentAddress.fromDate || ''}
+                  onChange={(e) => setPersonalForm(prev => ({
+                    ...prev,
+                    currentAddress: {
+                      ...(prev.currentAddress || createEmptyCurrentAddress()),
+                      fromDate: e.target.value
+                    }
+                  }))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                 />
               </div>
             </div>
@@ -476,7 +749,7 @@ export const ProfileManager: React.FC<ProfileManagerProps> = ({ onProfileUpdate,
                   <input
                     type="checkbox"
                     checked={employmentForm.isCurrent || false}
-                    onChange={(e) => setEmploymentForm({ ...employmentForm, isCurrent: e.target.checked })}
+                    onChange={(e) => setEmploymentForm(prev => ({ ...prev, isCurrent: e.target.checked }))}
                     className="w-4 h-4 text-indigo-600 rounded border-gray-300 focus:ring-indigo-500"
                   />
                   <span className="text-sm font-medium text-gray-700">This is my current job</span>
@@ -488,7 +761,7 @@ export const ProfileManager: React.FC<ProfileManagerProps> = ({ onProfileUpdate,
                 <input
                   type="text"
                   value={employmentForm.employerName || ''}
-                  onChange={(e) => setEmploymentForm({ ...employmentForm, employerName: e.target.value })}
+                  onChange={(e) => setEmploymentForm(prev => ({ ...prev, employerName: e.target.value }))}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                   placeholder="Company Name"
                 />
@@ -499,7 +772,7 @@ export const ProfileManager: React.FC<ProfileManagerProps> = ({ onProfileUpdate,
                 <input
                   type="text"
                   value={employmentForm.jobTitle || ''}
-                  onChange={(e) => setEmploymentForm({ ...employmentForm, jobTitle: e.target.value })}
+                  onChange={(e) => setEmploymentForm(prev => ({ ...prev, jobTitle: e.target.value }))}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                   placeholder="Software Engineer"
                 />
@@ -510,7 +783,7 @@ export const ProfileManager: React.FC<ProfileManagerProps> = ({ onProfileUpdate,
                 <input
                   type="date"
                   value={employmentForm.startDate || ''}
-                  onChange={(e) => setEmploymentForm({ ...employmentForm, startDate: e.target.value })}
+                  onChange={(e) => setEmploymentForm(prev => ({ ...prev, startDate: e.target.value }))}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                 />
               </div>
@@ -521,11 +794,101 @@ export const ProfileManager: React.FC<ProfileManagerProps> = ({ onProfileUpdate,
                   <input
                     type="date"
                     value={employmentForm.endDate || ''}
-                    onChange={(e) => setEmploymentForm({ ...employmentForm, endDate: e.target.value })}
+                    onChange={(e) => setEmploymentForm(prev => ({ ...prev, endDate: e.target.value }))}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                   />
                 </div>
               )}
+
+              <div className="md:col-span-2 pt-2">
+                <p className="text-sm font-semibold text-gray-900">Employer Address</p>
+                <p className="text-xs text-gray-500">Used when auto-filling employment history</p>
+              </div>
+
+              <div className="md:col-span-2">
+                <label className="block text-sm font-medium text-gray-700 mb-1">Street Address *</label>
+                <input
+                  type="text"
+                  value={employerAddress.street || ''}
+                  onChange={(e) => setEmploymentForm(prev => ({
+                    ...prev,
+                    employerAddress: {
+                      ...(prev.employerAddress || createEmptyEmployerAddress()),
+                      street: e.target.value
+                    }
+                  }))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                  placeholder="123 Business Ave"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">City *</label>
+                <input
+                  type="text"
+                  value={employerAddress.city || ''}
+                  onChange={(e) => setEmploymentForm(prev => ({
+                    ...prev,
+                    employerAddress: {
+                      ...(prev.employerAddress || createEmptyEmployerAddress()),
+                      city: e.target.value
+                    }
+                  }))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                  placeholder="City"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">State/Province</label>
+                <input
+                  type="text"
+                  value={employerAddress.state || ''}
+                  onChange={(e) => setEmploymentForm(prev => ({
+                    ...prev,
+                    employerAddress: {
+                      ...(prev.employerAddress || createEmptyEmployerAddress()),
+                      state: e.target.value
+                    }
+                  }))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                  placeholder="State or region"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Postal Code *</label>
+                <input
+                  type="text"
+                  value={employerAddress.postalCode || ''}
+                  onChange={(e) => setEmploymentForm(prev => ({
+                    ...prev,
+                    employerAddress: {
+                      ...(prev.employerAddress || createEmptyEmployerAddress()),
+                      postalCode: e.target.value
+                    }
+                  }))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                  placeholder="Postal / ZIP code"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Country *</label>
+                <input
+                  type="text"
+                  value={employerAddress.country || ''}
+                  onChange={(e) => setEmploymentForm(prev => ({
+                    ...prev,
+                    employerAddress: {
+                      ...(prev.employerAddress || createEmptyEmployerAddress()),
+                      country: e.target.value
+                    }
+                  }))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                  placeholder="Country"
+                />
+              </div>
             </div>
 
             <button
