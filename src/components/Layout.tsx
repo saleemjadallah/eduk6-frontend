@@ -27,9 +27,9 @@ export default function Layout({ children, user }: LayoutProps) {
             {/* Logo */}
             <Link to="/" className="flex items-center space-x-3 group">
               <img
-                src="/assets/Logo_wbg-removebg-preview.png"
+                src="/assets/new_logo.png"
                 alt="VisaDocs Logo"
-                className="h-24 md:h-32 w-auto transition-transform group-hover:scale-105 -ml-4"
+                className="h-16 md:h-20 w-auto object-contain transition-transform group-hover:scale-105"
               />
               <div className="hidden sm:inline">
                 <div className="font-bold text-xl md:text-2xl text-gray-900">MyDscvr</div>
