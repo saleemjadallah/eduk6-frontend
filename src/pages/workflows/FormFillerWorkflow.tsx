@@ -3328,6 +3328,7 @@ Be concise but helpful. Format as a brief paragraph.`;
                                       ? 'opacity-100'
                                       : 'opacity-0 group-hover:opacity-100 group-focus-within:opacity-100'
                                   )}
+                                  title=""
                                 >
                                   {badgeLabel}
                                 </span>
@@ -3340,6 +3341,7 @@ Be concise but helpful. Format as a brief paragraph.`;
                                     handleAskJeffreyForField(fieldState?.label || badgeLabel || annotation.fieldName);
                                   }}
                                   className="absolute -top-6 right-0 text-[10px] px-2 py-0.5 rounded-full bg-indigo-600 text-white opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity duration-150 shadow"
+                                  title=""
                                 >
                                   Ask Jeffrey
                                 </button>
