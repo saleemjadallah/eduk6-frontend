@@ -492,28 +492,6 @@ export const FormFillerWorkflow: React.FC = () => {
     };
   };
 
-  const getFieldTooltipText = (canonicalKey?: string | null, value?: string) => {
-    const countryKey = travelProfile?.destinationCountry?.toLowerCase() || '';
-    const countryRules = countryKey ? countryValidationRules[countryKey] : undefined;
-    const safeValue = value && value.trim() ? value : 'Not provided';
-
-    switch (canonicalKey) {
-      case 'dateOfBirth':
-        return `Expected format: ${countryRules?.dateFormat || 'DD/MM/YYYY'}. Current: ${safeValue}`;
-      case 'passportNumber':
-        return `Passport number must match your travel document. Current entry: ${safeValue}`;
-      case 'nationality':
-        return `Use the nationality shown on your passport. Current entry: ${safeValue}`;
-      case 'firstName':
-      case 'lastName':
-        return `Match exactly as in your passport. Current entry: ${safeValue}`;
-      case 'phone':
-        return `Use international format (e.g., +971 5...). Current entry: ${safeValue}`;
-      default:
-        return value ? `Current entry: ${safeValue}` : 'No value entered yet. Click to fill this field.';
-    }
-  };
-
   const fieldBadgeVariants: Record<string, string> = {
     dateOfBirth: 'bg-indigo-600 text-white',
     passportNumber: 'bg-emerald-600 text-white',
@@ -3304,10 +3282,6 @@ Be concise but helpful. Format as a brief paragraph.`;
                                 shouldUseCanonicalLabel && canonicalKey
                                   ? fieldBadgeVariants[canonicalKey] || fieldBadgeVariants.default
                                   : fieldBadgeVariants.default;
-                              const tooltipText = getFieldTooltipText(
-                                shouldUseCanonicalLabel ? canonicalKey : null,
-                                fieldValue
-                              );
                               const baseStyle: React.CSSProperties = {
                                 position: 'absolute',
                                 left: `${annotation.rect.left}px`,
@@ -3354,7 +3328,6 @@ Be concise but helpful. Format as a brief paragraph.`;
                                       ? 'opacity-100'
                                       : 'opacity-0 group-hover:opacity-100 group-focus-within:opacity-100'
                                   )}
-                                  title={tooltipText}
                                 >
                                   {badgeLabel}
                                 </span>
@@ -3399,7 +3372,6 @@ Be concise but helpful. Format as a brief paragraph.`;
                                       ref={registerRef}
                                       className="rounded-sm accent-indigo-600"
                                       style={{ width: '60%', height: '60%' }}
-                                      title={tooltipText}
                                     />
                                   </div>
                                 );
@@ -3434,7 +3406,6 @@ Be concise but helpful. Format as a brief paragraph.`;
                                       ref={registerRef}
                                       className="accent-indigo-600"
                                       style={{ width: '60%', height: '60%' }}
-                                      title={tooltipText}
                                     />
                                   </div>
                                 );
@@ -3461,7 +3432,6 @@ Be concise but helpful. Format as a brief paragraph.`;
                                       style={{ ...inputStyle, resize: 'none' }}
                                       className="rounded-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
                                       ref={registerRef}
-                                      title={tooltipText}
                                     />
                                   </div>
                                 );
@@ -3488,7 +3458,6 @@ Be concise but helpful. Format as a brief paragraph.`;
                                     style={inputStyle}
                                     className="rounded-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
                                     ref={registerRef}
-                                    title={tooltipText}
                                   />
                                 </div>
                               );
