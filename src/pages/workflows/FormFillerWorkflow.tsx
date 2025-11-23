@@ -1521,6 +1521,20 @@ Be concise but helpful. Format as a brief paragraph.`;
       .join(' ');
   };
 
+  const isGenericLabel = (label?: string | null): boolean => {
+    if (!label) return true;
+    const normalized = label.trim().toLowerCase();
+
+    return (
+      normalized === '' ||
+      normalized === 'field' ||
+      /^field\s*\d*$/.test(normalized) ||
+      /^text\s*\d*$/.test(normalized) ||
+      normalized === 'undefined' ||
+      normalized.startsWith('untitled')
+    );
+  };
+
   const hydrateFieldsFromDraftData = (
     draftData: DraftDetail['filledData'],
     fallbackFields: FormField[] = []
@@ -3278,14 +3292,22 @@ Be concise but helpful. Format as a brief paragraph.`;
                                 fieldState?.canonicalKey ||
                                 smartFieldMapper.findBestMatch(annotation.fieldName) ||
                                 smartFieldMapper.findBestMatch(fieldState?.label || '');
-                              const badgeClass = canonicalKey
-                                ? fieldBadgeVariants[canonicalKey] || fieldBadgeVariants.default
-                                : fieldBadgeVariants.default;
-                              const badgeLabel =
-                                canonicalKey
-                                  ? formatFieldLabel(canonicalKey)
-                                  : fieldState?.label || formatFieldLabel(annotation.fieldName);
-                              const tooltipText = getFieldTooltipText(canonicalKey, fieldValue);
+                              const baseLabel = fieldState?.label?.trim() || formatFieldLabel(annotation.fieldName);
+                              const canonicalLabel = canonicalKey ? formatFieldLabel(canonicalKey) : null;
+                              const shouldUseCanonicalLabel =
+                                !!canonicalLabel &&
+                                (isGenericLabel(baseLabel) ||
+                                  baseLabel.toLowerCase().includes(canonicalLabel.toLowerCase()) ||
+                                  canonicalLabel.toLowerCase().includes(baseLabel.toLowerCase()));
+                              const badgeLabel = shouldUseCanonicalLabel ? canonicalLabel : baseLabel;
+                              const badgeClass =
+                                shouldUseCanonicalLabel && canonicalKey
+                                  ? fieldBadgeVariants[canonicalKey] || fieldBadgeVariants.default
+                                  : fieldBadgeVariants.default;
+                              const tooltipText = getFieldTooltipText(
+                                shouldUseCanonicalLabel ? canonicalKey : null,
+                                fieldValue
+                              );
                               const baseStyle: React.CSSProperties = {
                                 position: 'absolute',
                                 left: `${annotation.rect.left}px`,
@@ -3305,7 +3327,7 @@ Be concise but helpful. Format as a brief paragraph.`;
                               const isHighlighted = highlightedField === annotation.fieldName;
                               const overlayKey = `${pageNum}-${annotation.fieldName}-${annotation.rect.left}-${annotation.rect.top}`;
                               let showBadge = true;
-                              if (canonicalKey) {
+                              if (shouldUseCanonicalLabel && canonicalKey) {
                                 if (usedCanonicalKeys.has(canonicalKey)) {
                                   showBadge = isHighlighted;
                                 } else {
