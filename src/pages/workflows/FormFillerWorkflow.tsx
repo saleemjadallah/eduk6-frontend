@@ -3335,34 +3335,10 @@ Be concise but helpful. Format as a brief paragraph.`;
                                 }
                               };
 
-                              const badgeNode = showBadge ? (
-                                <span
-                                  className={cn(
-                                    'absolute -top-5 left-0 text-[10px] px-2 py-0.5 rounded-full shadow pointer-events-none transition-opacity duration-150 select-none overflow-hidden text-ellipsis whitespace-nowrap',
-                                    badgeClass,
-                                    isHighlighted
-                                      ? 'opacity-100'
-                                      : 'opacity-0 group-hover:opacity-100 group-focus-within:opacity-100'
-                                  )}
-                                  title=""
-                                  aria-label=""
-                                >
-                                  {badgeLabel}
-                                </span>
-                              ) : null;
-                              const askButton = (
-                                <button
-                                  type="button"
-                                  onClick={(event) => {
-                                    event.stopPropagation();
-                                    handleAskJeffreyForField(fieldState?.label || badgeLabel || annotation.fieldName);
-                                  }}
-                                  className="absolute -top-6 right-0 text-[10px] px-2 py-0.5 rounded-full bg-indigo-600 text-white opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity duration-150 shadow"
-                                  title=""
-                                >
-                                  Ask Jeffrey
-                                </button>
-                              );
+                              // Completely disable badge rendering
+                              const badgeNode = null;
+                              // Completely disable Ask Jeffrey button
+                              const askButton = null;
 
                               if (isCheckbox) {
                                 return (
