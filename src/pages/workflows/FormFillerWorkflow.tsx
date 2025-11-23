@@ -3356,6 +3356,7 @@ Be concise but helpful. Format as a brief paragraph.`;
                                       'absolute pointer-events-auto flex items-center justify-center group',
                                       isHighlighted && 'ring-2 ring-yellow-300 rounded-md ring-offset-1'
                                     )}
+                                    title=""
                                   >
                                     {badgeNode}
                                     {askButton}
@@ -3374,6 +3375,7 @@ Be concise but helpful. Format as a brief paragraph.`;
                                       ref={registerRef}
                                       className="rounded-sm accent-indigo-600"
                                       style={{ width: '60%', height: '60%' }}
+                                      title=""
                                     />
                                   </div>
                                 );
@@ -3389,6 +3391,7 @@ Be concise but helpful. Format as a brief paragraph.`;
                                       'absolute pointer-events-auto flex items-center justify-center group',
                                       isHighlighted && 'ring-2 ring-yellow-300 rounded-md ring-offset-1'
                                     )}
+                                    title=""
                                   >
                                     {badgeNode}
                                     {askButton}
@@ -3408,6 +3411,7 @@ Be concise but helpful. Format as a brief paragraph.`;
                                       ref={registerRef}
                                       className="accent-indigo-600"
                                       style={{ width: '60%', height: '60%' }}
+                                      title=""
                                     />
                                   </div>
                                 );
@@ -3422,6 +3426,7 @@ Be concise but helpful. Format as a brief paragraph.`;
                                       'absolute pointer-events-auto group',
                                       isHighlighted && 'ring-2 ring-yellow-300 rounded-md ring-offset-1'
                                     )}
+                                    title=""
                                   >
                                     {badgeNode}
                                     {askButton}
@@ -3434,6 +3439,7 @@ Be concise but helpful. Format as a brief paragraph.`;
                                       style={{ ...inputStyle, resize: 'none' }}
                                       className="rounded-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
                                       ref={registerRef}
+                                      title=""
                                     />
                                   </div>
                                 );
@@ -3447,6 +3453,7 @@ Be concise but helpful. Format as a brief paragraph.`;
                                   'absolute pointer-events-auto group',
                                   isHighlighted && 'ring-2 ring-yellow-300 rounded-md ring-offset-1'
                                 )}
+                                  title=""
                                   >
                                     {badgeNode}
                                     {askButton}
@@ -3460,6 +3467,7 @@ Be concise but helpful. Format as a brief paragraph.`;
                                     style={inputStyle}
                                     className="rounded-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
                                     ref={registerRef}
+                                    title=""
                                   />
                                 </div>
                               );
