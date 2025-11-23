@@ -1042,7 +1042,8 @@ Be concise but helpful. Format as a brief paragraph.`;
         await page.render({
           canvasContext: context,
           viewport: viewport,
-          canvas: canvas
+          canvas: canvas,
+          renderInteractiveForms: false
         } as Parameters<typeof page.render>[0]).promise;
 
         // Convert to base64 PNG (remove the data:image/png;base64, prefix)
@@ -2329,7 +2330,8 @@ Be concise but helpful. Format as a brief paragraph.`;
       await page.render({
         canvasContext: context,
         viewport: viewport,
-        canvas: canvas
+        canvas: canvas,
+        renderInteractiveForms: false
       } as Parameters<typeof page.render>[0]).promise;
 
       // Get annotations (form fields)
@@ -2339,6 +2341,12 @@ Be concise but helpful. Format as a brief paragraph.`;
 
       annotations.forEach((annotation: any) => {
         if (!annotation.fieldType || !annotation.rect) return;
+
+        // Debug: Log first annotation to see all properties
+        if (pageNum === 1 && annotations.indexOf(annotation) === 0) {
+          console.log('PDF Annotation properties:', Object.keys(annotation));
+          console.log('Full annotation:', annotation);
+        }
 
         const [x1, y1, x2, y2] = annotation.rect;
         const fieldName = annotation.fieldName || `field_${pageNum}_${x1}_${y1}`;
@@ -3255,8 +3263,9 @@ Be concise but helpful. Format as a brief paragraph.`;
                                 canvasRefs.current.delete(pageNum);
                               }
                             }}
-                            className="block"
+                            className="block pointer-events-none"
                             title=""
+                            style={{ pointerEvents: 'none' }}
                           />
                           <div className="absolute top-0 left-0 w-full h-full" title="">
                             {annotationsForPage.map(annotation => {
