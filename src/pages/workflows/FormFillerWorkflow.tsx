@@ -3322,13 +3322,14 @@ Be concise but helpful. Format as a brief paragraph.`;
                               const badgeNode = showBadge ? (
                                 <span
                                   className={cn(
-                                    'absolute -top-5 left-0 text-[10px] px-2 py-0.5 rounded-full shadow pointer-events-none transition-opacity duration-150',
+                                    'absolute -top-5 left-0 text-[10px] px-2 py-0.5 rounded-full shadow pointer-events-none transition-opacity duration-150 select-none overflow-hidden text-ellipsis whitespace-nowrap',
                                     badgeClass,
                                     isHighlighted
                                       ? 'opacity-100'
                                       : 'opacity-0 group-hover:opacity-100 group-focus-within:opacity-100'
                                   )}
                                   title=""
+                                  aria-label=""
                                 >
                                   {badgeLabel}
                                 </span>
