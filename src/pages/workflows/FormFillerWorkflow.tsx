@@ -3245,6 +3245,7 @@ Be concise but helpful. Format as a brief paragraph.`;
                         <div
                           key={`pdf-page-${pageNum}`}
                           className="relative w-fit mx-auto bg-white rounded-xl shadow border border-gray-200"
+                          title=""
                         >
                           <canvas
                             ref={(canvas) => {
@@ -3255,8 +3256,9 @@ Be concise but helpful. Format as a brief paragraph.`;
                               }
                             }}
                             className="block"
+                            title=""
                           />
-                          <div className="absolute top-0 left-0 w-full h-full">
+                          <div className="absolute top-0 left-0 w-full h-full" title="">
                             {annotationsForPage.map(annotation => {
                               const fieldState = currentForm.fields.find(f => f.name === annotation.fieldName);
                               const fieldValue = fieldState?.value || '';
@@ -3359,7 +3361,7 @@ Be concise but helpful. Format as a brief paragraph.`;
                                     )}
                                     title=""
                                   >
-                                    {null}
+                                    {badgeNode}
                                     {askButton}
                                     <input
                                       type="checkbox"
@@ -3394,7 +3396,7 @@ Be concise but helpful. Format as a brief paragraph.`;
                                     )}
                                     title=""
                                   >
-                                    {null}
+                                    {badgeNode}
                                     {askButton}
                                     <input
                                       type="radio"
@@ -3429,7 +3431,7 @@ Be concise but helpful. Format as a brief paragraph.`;
                                     )}
                                     title=""
                                   >
-                                    {null}
+                                    {badgeNode}
                                     {askButton}
                                     <textarea
                                       name={annotation.fieldName}
@@ -3456,7 +3458,7 @@ Be concise but helpful. Format as a brief paragraph.`;
                                 )}
                                   title=""
                                   >
-                                    {null}
+                                    {badgeNode}
                                     {askButton}
                                     <input
                                       type="text"
