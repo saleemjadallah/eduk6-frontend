@@ -2334,18 +2334,23 @@ Be concise but helpful. Format as a brief paragraph.`;
         renderInteractiveForms: false
       } as Parameters<typeof page.render>[0]).promise;
 
-      // Get annotations (form fields)
-      const annotations = await page.getAnnotations();
+      // Get annotations (form fields) - without rendering intent
+      const annotations = await page.getAnnotations({ intent: 'display' });
 
       const annotationData: PageAnnotation[] = [];
 
       annotations.forEach((annotation: any) => {
         if (!annotation.fieldType || !annotation.rect) return;
 
-        // Debug: Log first annotation to see all properties
-        if (pageNum === 1 && annotations.indexOf(annotation) === 0) {
-          console.log('PDF Annotation properties:', Object.keys(annotation));
-          console.log('Full annotation:', annotation);
+        // Clear alternativeText to prevent browser tooltips
+        if (annotation.alternativeText) {
+          console.log(`Clearing alternativeText: "${annotation.alternativeText}" for field: ${annotation.fieldName}`);
+          annotation.alternativeText = '';
+        }
+
+        // Also clear contentsObj if it exists
+        if (annotation.contentsObj) {
+          annotation.contentsObj = '';
         }
 
         const [x1, y1, x2, y2] = annotation.rect;
@@ -3267,7 +3272,7 @@ Be concise but helpful. Format as a brief paragraph.`;
                             title=""
                             style={{ pointerEvents: 'none' }}
                           />
-                          <div className="absolute top-0 left-0 w-full h-full" title="">
+                          <div className="absolute top-0 left-0 w-full h-full" title="" aria-label="" data-tooltip="" role="presentation">
                             {annotationsForPage.map(annotation => {
                               const fieldState = currentForm.fields.find(f => f.name === annotation.fieldName);
                               const fieldValue = fieldState?.value || '';
