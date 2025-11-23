@@ -3359,7 +3359,7 @@ Be concise but helpful. Format as a brief paragraph.`;
                                     )}
                                     title=""
                                   >
-                                    {badgeNode}
+                                    {null}
                                     {askButton}
                                     <input
                                       type="checkbox"
@@ -3394,7 +3394,7 @@ Be concise but helpful. Format as a brief paragraph.`;
                                     )}
                                     title=""
                                   >
-                                    {badgeNode}
+                                    {null}
                                     {askButton}
                                     <input
                                       type="radio"
@@ -3429,7 +3429,7 @@ Be concise but helpful. Format as a brief paragraph.`;
                                     )}
                                     title=""
                                   >
-                                    {badgeNode}
+                                    {null}
                                     {askButton}
                                     <textarea
                                       name={annotation.fieldName}
@@ -3456,7 +3456,7 @@ Be concise but helpful. Format as a brief paragraph.`;
                                 )}
                                   title=""
                                   >
-                                    {badgeNode}
+                                    {null}
                                     {askButton}
                                     <input
                                       type="text"
