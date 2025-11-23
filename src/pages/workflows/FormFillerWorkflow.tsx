@@ -492,17 +492,18 @@ export const FormFillerWorkflow: React.FC = () => {
     };
   };
 
-  const fieldBadgeVariants: Record<string, string> = {
-    dateOfBirth: 'bg-indigo-600 text-white',
-    passportNumber: 'bg-emerald-600 text-white',
-    nationality: 'bg-sky-600 text-white',
-    firstName: 'bg-purple-600 text-white',
-    lastName: 'bg-purple-600 text-white',
-    phone: 'bg-amber-600 text-white',
-    email: 'bg-rose-600 text-white',
-    address: 'bg-teal-600 text-white',
-    default: 'bg-gray-700 text-white',
-  };
+  // Commented out - not needed since badges are disabled
+  // const fieldBadgeVariants: Record<string, string> = {
+  //   dateOfBirth: 'bg-indigo-600 text-white',
+  //   passportNumber: 'bg-emerald-600 text-white',
+  //   nationality: 'bg-sky-600 text-white',
+  //   firstName: 'bg-purple-600 text-white',
+  //   lastName: 'bg-purple-600 text-white',
+  //   phone: 'bg-amber-600 text-white',
+  //   email: 'bg-rose-600 text-white',
+  //   address: 'bg-teal-600 text-white',
+  //   default: 'bg-gray-700 text-white',
+  // };
 
   interface NormalizedValidationAnalysis {
     overallScore: number;
@@ -1500,19 +1501,20 @@ Be concise but helpful. Format as a brief paragraph.`;
       .join(' ');
   };
 
-  const isGenericLabel = (label?: string | null): boolean => {
-    if (!label) return true;
-    const normalized = label.trim().toLowerCase();
-
-    return (
-      normalized === '' ||
-      normalized === 'field' ||
-      /^field\s*\d*$/.test(normalized) ||
-      /^text\s*\d*$/.test(normalized) ||
-      normalized === 'undefined' ||
-      normalized.startsWith('untitled')
-    );
-  };
+  // Commented out - not needed since badges are disabled
+  // const isGenericLabel = (label?: string | null): boolean => {
+  //   if (!label) return true;
+  //   const normalized = label.trim().toLowerCase();
+  //
+  //   return (
+  //     normalized === '' ||
+  //     normalized === 'field' ||
+  //     /^field\s*\d*$/.test(normalized) ||
+  //     /^text\s*\d*$/.test(normalized) ||
+  //     normalized === 'undefined' ||
+  //     normalized.startsWith('untitled')
+  //   );
+  // };
 
   const hydrateFieldsFromDraftData = (
     draftData: DraftDetail['filledData'],
@@ -1684,10 +1686,11 @@ Be concise but helpful. Format as a brief paragraph.`;
     }
   };
 
-  const handleAskJeffreyForField = (fieldLabel: string) => {
-    const prompt = `Jeffrey, I need help filling the "${fieldLabel}" field on my visa form. What should I enter and what format is expected?`;
-    askJeffrey(prompt);
-  };
+  // Temporarily disabled - commented out to avoid TypeScript errors
+  // const handleAskJeffreyForField = (fieldLabel: string) => {
+  //   const prompt = `Jeffrey, I need help filling the "${fieldLabel}" field on my visa form. What should I enter and what format is expected?`;
+  //   askJeffrey(prompt);
+  // };
 
   const handleDownloadHistoryForm = async (formId: string, fileName?: string) => {
     try {
@@ -2264,6 +2267,13 @@ Be concise but helpful. Format as a brief paragraph.`;
     fieldInputRefs.current.clear();
   }, [currentForm]);
 
+  // Clear any stale canvas refs/annotations when a new PDF is loaded
+  useEffect(() => {
+    if (!pdfDocument) return;
+    canvasRefs.current.clear();
+    setPageAnnotations({});
+  }, [pdfDocument]);
+
   useEffect(() => {
     if (!saveToast) return;
     const timeout = setTimeout(() => setSaveToast(null), 4000);
@@ -2392,17 +2402,37 @@ Be concise but helpful. Format as a brief paragraph.`;
 
   // Effect to render PDF when document is loaded and expanded
   useEffect(() => {
-    if (pdfDocument && pdfViewExpanded) {
-      (async () => {
-        for (let i = 1; i <= pdfDocument.numPages; i++) {
-          const canvas = canvasRefs.current.get(i);
-          if (canvas) {
-            await renderPDFPage(i, canvas);
-          }
+    if (!pdfDocument || !pdfViewExpanded) return;
+
+    let cancelled = false;
+
+    const renderPages = async (attempt: number = 0) => {
+      if (cancelled) return;
+
+      const canvasesReady = canvasRefs.current.size >= pdfDocument.numPages;
+
+      // When replacing a PDF while the viewer is already open, the render can run
+      // before the new canvases mount. Retry a few times to avoid showing
+      // "No fillable fields detected" until the user leaves and comes back.
+      if (!canvasesReady && attempt < 5) {
+        requestAnimationFrame(() => renderPages(attempt + 1));
+        return;
+      }
+
+      for (let i = 1; i <= pdfDocument.numPages; i++) {
+        const canvas = canvasRefs.current.get(i);
+        if (canvas) {
+          await renderPDFPage(i, canvas);
         }
-      })();
-    }
-  }, [pdfDocument, pdfViewExpanded]);
+      }
+    };
+
+    renderPages();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [pdfDocument, pdfViewExpanded, pdfUrl]);
 
   // Cleanup PDF URL on unmount
   useEffect(() => {
@@ -3252,7 +3282,7 @@ Be concise but helpful. Format as a brief paragraph.`;
                     {Array.from({ length: pdfDocument.numPages }, (_, index) => {
                       const pageNum = index + 1;
                       const annotationsForPage = pageAnnotations[pageNum] || [];
-                      const usedCanonicalKeys = new Set<string>();
+                      // const usedCanonicalKeys = new Set<string>(); // Commented out - not needed since badges are disabled
 
                       return (
                         <div
@@ -3282,22 +3312,23 @@ Be concise but helpful. Format as a brief paragraph.`;
                               const fontSize = annotation.appearance?.fontSize
                                 ? `${annotation.appearance.fontSize}px`
                                 : '12px';
-                              const canonicalKey =
-                                fieldState?.canonicalKey ||
-                                smartFieldMapper.findBestMatch(annotation.fieldName) ||
-                                smartFieldMapper.findBestMatch(fieldState?.label || '');
-                              const baseLabel = fieldState?.label?.trim() || formatFieldLabel(annotation.fieldName);
-                              const canonicalLabel = canonicalKey ? formatFieldLabel(canonicalKey) : null;
-                              const shouldUseCanonicalLabel =
-                                !!canonicalLabel &&
-                                (isGenericLabel(baseLabel) ||
-                                  baseLabel.toLowerCase().includes(canonicalLabel.toLowerCase()) ||
-                                  canonicalLabel.toLowerCase().includes(baseLabel.toLowerCase()));
-                              const badgeLabel = shouldUseCanonicalLabel ? canonicalLabel : baseLabel;
-                              const badgeClass =
-                                shouldUseCanonicalLabel && canonicalKey
-                                  ? fieldBadgeVariants[canonicalKey] || fieldBadgeVariants.default
-                                  : fieldBadgeVariants.default;
+                              // Badge-related variables commented out since badges are disabled
+                              // const canonicalKey =
+                              //   fieldState?.canonicalKey ||
+                              //   smartFieldMapper.findBestMatch(annotation.fieldName) ||
+                              //   smartFieldMapper.findBestMatch(fieldState?.label || '');
+                              // const baseLabel = fieldState?.label?.trim() || formatFieldLabel(annotation.fieldName);
+                              // const canonicalLabel = canonicalKey ? formatFieldLabel(canonicalKey) : null;
+                              // const shouldUseCanonicalLabel =
+                              //   !!canonicalLabel &&
+                              //   (isGenericLabel(baseLabel) ||
+                              //     baseLabel.toLowerCase().includes(canonicalLabel.toLowerCase()) ||
+                              //     canonicalLabel.toLowerCase().includes(baseLabel.toLowerCase()));
+                              // const badgeLabel = shouldUseCanonicalLabel ? canonicalLabel : baseLabel;
+                              // const badgeClass =
+                              //   shouldUseCanonicalLabel && canonicalKey
+                              //     ? fieldBadgeVariants[canonicalKey] || fieldBadgeVariants.default
+                              //     : fieldBadgeVariants.default;
                               const baseStyle: React.CSSProperties = {
                                 position: 'absolute',
                                 left: `${annotation.rect.left}px`,
@@ -3316,14 +3347,15 @@ Be concise but helpful. Format as a brief paragraph.`;
                               };
                               const isHighlighted = highlightedField === annotation.fieldName;
                               const overlayKey = `${pageNum}-${annotation.fieldName}-${annotation.rect.left}-${annotation.rect.top}`;
-                              let showBadge = true;
-                              if (shouldUseCanonicalLabel && canonicalKey) {
-                                if (usedCanonicalKeys.has(canonicalKey)) {
-                                  showBadge = isHighlighted;
-                                } else {
-                                  usedCanonicalKeys.add(canonicalKey);
-                                }
-                              }
+                              // Badge display logic commented out since badges are disabled
+                              // let showBadge = true;
+                              // if (shouldUseCanonicalLabel && canonicalKey) {
+                              //   if (usedCanonicalKeys.has(canonicalKey)) {
+                              //     showBadge = isHighlighted;
+                              //   } else {
+                              //     usedCanonicalKeys.add(canonicalKey);
+                              //   }
+                              // }
 
                               const registerRef = (element: HTMLInputElement | HTMLTextAreaElement | null) => {
                                 if (!element) {
