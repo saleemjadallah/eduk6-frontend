@@ -9,7 +9,7 @@ import type { FilledForm } from '../../types/formfiller';
 import { PDFDocument, StandardFonts } from 'pdf-lib';
 import * as pdfjsLib from 'pdfjs-dist';
 import { profileApi, CompleteProfile } from '../../lib/api-profile';
-import { validateForm, smartFieldMapper, countryValidationRules } from '../../lib/validation-rules';
+import { validateForm, smartFieldMapper } from '../../lib/validation-rules';
 
 // Set up PDF.js worker - use unpkg which mirrors npm directly
 // react-pdf@10.2.0 uses pdfjs-dist@5.4.296
