@@ -27,7 +27,7 @@ export default function Layout({ children, user }: LayoutProps) {
             {/* Logo */}
             <Link to="/" className="flex items-center space-x-3 group">
               <img
-                src="/assets/new_logo.png"
+                src="/assets/new_logo_v2.png"
                 alt="VisaDocs Logo"
                 className="h-16 md:h-20 w-auto object-contain transition-transform group-hover:scale-105"
               />
