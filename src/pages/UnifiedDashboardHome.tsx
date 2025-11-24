@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import { FileText, CheckCircle, Camera, Plane, Globe, MapPin, Calendar, ChevronDown, ChevronUp } from 'lucide-react';
+import { FileText, CheckCircle, Camera, Plane, Globe, MapPin, Calendar, ChevronDown, ChevronUp, Plus } from 'lucide-react';
 import { useJeffrey } from '../contexts/JeffreyContext';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { DashboardGammaGrid } from '../components/dashboard/DashboardGammaGrid';
 import { ProgressBar } from '../components/dashboard/ProgressBar';
 import { ActivityTimeline } from '../components/dashboard/ActivityTimeline';
@@ -79,6 +79,7 @@ const formatDate = (value?: string) => {
 export const UnifiedDashboardHome: React.FC<UnifiedDashboardHomeProps> = ({ user }) => {
   const { updateWorkflow, addRecentAction } = useJeffrey();
   const location = useLocation();
+  const navigate = useNavigate();
 
   // Real data state - starts empty, will be populated from API or user actions
   const [overallCompleteness, setOverallCompleteness] = useState(0);
@@ -269,6 +270,10 @@ export const UnifiedDashboardHome: React.FC<UnifiedDashboardHomeProps> = ({ user
     addRecentAction(`Navigated to ${workflow}`);
   };
 
+  const handleStartNewProcess = () => {
+    navigate('/app/onboarding', { state: { forceOnboarding: true } });
+  };
+
   const handleDocumentCheck = (document: string) => {
     setCheckedDocuments((prev) => {
       const newSet = new Set(prev);
@@ -323,14 +328,23 @@ export const UnifiedDashboardHome: React.FC<UnifiedDashboardHomeProps> = ({ user
       )}
 
       {/* Welcome Header */}
-      <div className="mb-8">
-        <h1 className="text-4xl font-bold mb-2">
-          Welcome back,{' '}
-          <span className="bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
-            {user.firstName || user.name || 'there'}
-          </span>
-        </h1>
-        <p className="text-xl text-neutral-600">Continue your visa application journey</p>
+      <div className="mb-8 flex flex-col md:flex-row md:items-end md:justify-between gap-4">
+        <div>
+          <h1 className="text-4xl font-bold mb-2">
+            Welcome back,{' '}
+            <span className="bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
+              {user.firstName || user.name || 'there'}
+            </span>
+          </h1>
+          <p className="text-xl text-neutral-600">Continue your visa application journey</p>
+        </div>
+        <button
+          onClick={handleStartNewProcess}
+          className="inline-flex items-center px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors shadow-sm"
+        >
+          <Plus className="w-5 h-5 mr-2" />
+          Start New Visa Process
+        </button>
       </div>
 
       {/* Travel Profile Summary - shown if onboarding completed */}
@@ -341,7 +355,10 @@ export const UnifiedDashboardHome: React.FC<UnifiedDashboardHomeProps> = ({ user
               <Globe className="w-5 h-5 mr-2 text-indigo-600" />
               Your Travel Profile
             </h2>
-            <button className="text-sm text-indigo-600 hover:text-indigo-700 font-medium">
+            <button
+              onClick={handleStartNewProcess}
+              className="text-sm text-indigo-600 hover:text-indigo-700 font-medium"
+            >
               Edit Profile
             </button>
           </div>
@@ -474,3 +491,4 @@ export const UnifiedDashboardHome: React.FC<UnifiedDashboardHomeProps> = ({ user
     </div>
   );
 };
+
