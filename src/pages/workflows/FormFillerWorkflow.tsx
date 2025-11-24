@@ -1257,6 +1257,17 @@ Be concise but helpful. Format as a brief paragraph.`;
           const label = azureField.label;
           const fieldName = matchedPdfFieldNames.length > 0 ? matchedPdfFieldNames[0] : `azure_field_${index}`;
           
+          const sanitizeFieldValue = (val: string | undefined): string => {
+            if (!val) return '';
+            const trimmed = val.trim();
+            if (['undefined', 'null'].includes(trimmed.toLowerCase())) return '';
+            // Check for placeholders like "______", "......", "-----"
+            if (/^[_.\-\s]+$/.test(trimmed)) return '';
+            return trimmed;
+          };
+
+          const sanitizedValue = sanitizeFieldValue(azureField.value);
+
           const canonicalKey =
             smartFieldMapper.findBestMatch(fieldName) ||
             smartFieldMapper.findBestMatch(label) ||
@@ -1268,10 +1279,10 @@ Be concise but helpful. Format as a brief paragraph.`;
             pdfFieldNames: matchedPdfFieldNames, // Store all matched fields for filling
             type,
             label,
-            value: azureField.value || '',
+            value: sanitizedValue,
             hint: generateFieldHint(fieldName, label),
             suggestedValue: generateSuggestedValue(fieldName, travelProfile),
-            source: azureField.value ? 'Document' : undefined,
+            source: sanitizedValue ? 'Document' : undefined,
             required: false,
             placeholder: `Enter ${label.toLowerCase()}`,
             canonicalKey,
