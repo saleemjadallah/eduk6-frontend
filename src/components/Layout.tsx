@@ -29,7 +29,7 @@ export default function Layout({ children, user }: LayoutProps) {
               <img
                 src="/assets/new_logo_v2.png"
                 alt="VisaDocs Logo"
-                className="h-16 md:h-20 w-auto object-contain transition-transform group-hover:scale-105"
+                className="h-16 md:h-20 w-auto object-contain transition-transform group-hover:scale-105 mix-blend-multiply"
               />
               <div className="hidden sm:inline">
                 <div className="font-bold text-xl md:text-2xl text-gray-900">MyDscvr</div>

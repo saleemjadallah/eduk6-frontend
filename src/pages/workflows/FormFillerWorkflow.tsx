@@ -59,6 +59,7 @@ interface FormField {
   options?: string[];
   appearance?: FieldAppearance;
   canonicalKey?: string | null;
+  pdfFieldNames?: string[];
 }
 
 interface UploadedForm {
@@ -766,42 +767,50 @@ Be concise but helpful. Format as a brief paragraph.`;
       const helveticaFont = await pdfDoc.embedFont(StandardFonts.Helvetica);
 
       currentForm.fields.forEach(field => {
-        try {
-          const pdfField = form.getField(field.name);
-          const fieldApi = pdfField as Record<string, any>;
+        // Use pdfFieldNames if available (grouped fields), otherwise fall back to single name
+        const targetFieldNames = field.pdfFieldNames && field.pdfFieldNames.length > 0
+          ? field.pdfFieldNames
+          : [field.name];
 
-          if (
-            (field.type === 'text' || field.type === 'textarea' || field.type === 'date') &&
-            field.appearance?.fontSize &&
-            typeof fieldApi.setFontSize === 'function'
-          ) {
-            try {
-              fieldApi.setFontSize(field.appearance.fontSize);
-            } catch {
-              // Ignore font size errors and continue
-            }
-          }
+        targetFieldNames.forEach(targetName => {
+          try {
+            const pdfField = form.getField(targetName);
+            const fieldApi = pdfField as Record<string, any>;
 
-          if ((field.type === 'text' || field.type === 'textarea' || field.type === 'date') && typeof fieldApi.setText === 'function') {
-            fieldApi.setText(field.value || '');
-          } else if (field.type === 'checkbox') {
-            if (field.value === 'true' && typeof fieldApi.check === 'function') {
-              fieldApi.check();
-            } else if (field.value !== 'true' && typeof fieldApi.uncheck === 'function') {
-              fieldApi.uncheck();
+            if (
+              (field.type === 'text' || field.type === 'textarea' || field.type === 'date') &&
+              field.appearance?.fontSize &&
+              typeof fieldApi.setFontSize === 'function'
+            ) {
+              try {
+                fieldApi.setFontSize(field.appearance.fontSize);
+              } catch {
+                // Ignore font size errors and continue
+              }
             }
-          } else if (field.type === 'select' && typeof fieldApi.select === 'function') {
-            fieldApi.select(field.value);
-          } else if (field.type === 'radio') {
-            if (field.value && typeof fieldApi.select === 'function') {
+
+            if ((field.type === 'text' || field.type === 'textarea' || field.type === 'date') && typeof fieldApi.setText === 'function') {
+              fieldApi.setText(field.value || '');
+            } else if (field.type === 'checkbox') {
+              if (field.value === 'true' && typeof fieldApi.check === 'function') {
+                fieldApi.check();
+              } else if (field.value !== 'true' && typeof fieldApi.uncheck === 'function') {
+                fieldApi.uncheck();
+              }
+            } else if (field.type === 'select' && typeof fieldApi.select === 'function') {
               fieldApi.select(field.value);
-            } else if (!field.value && typeof fieldApi.clear === 'function') {
-              fieldApi.clear();
+            } else if (field.type === 'radio') {
+              if (field.value && typeof fieldApi.select === 'function') {
+                fieldApi.select(field.value);
+              } else if (!field.value && typeof fieldApi.clear === 'function') {
+                fieldApi.clear();
+              }
             }
+          } catch {
+            // Field might not exist or cannot be set
+            console.warn(`Could not set field: ${targetName}`);
           }
-        } catch {
-          // Field might not exist or cannot be set
-        }
+        });
       });
 
       try {
@@ -1073,6 +1082,7 @@ Be concise but helpful. Format as a brief paragraph.`;
   // Extract PDF form fields directly from PDF structure (bypasses character box overlays)
   const analyzeFormWithAI = async (pdfBytes: ArrayBuffer, _fieldCount: number): Promise<{
     fieldMap: Map<number, { label: string; fieldType: string; confidence: number }>;
+    fields: Array<{ label: string; fieldType: string; confidence: number; value: string }>;
     queryResults?: Array<{ field: string; value: string; confidence: number }>;
     tables?: any[];
     selectionMarks?: any[];
@@ -1081,6 +1091,7 @@ Be concise but helpful. Format as a brief paragraph.`;
   }> => {
     setAnalyzingWithAI(true);
     const fieldMap = new Map<number, { label: string; fieldType: string; confidence: number }>();
+    let fields: Array<{ label: string; fieldType: string; confidence: number; value: string }> = [];
     let queryResults: any[] = [];
     let tables: any[] = [];
     let selectionMarks: any[] = [];
@@ -1104,7 +1115,15 @@ Be concise but helpful. Format as a brief paragraph.`;
       if (response.success && response.data) {
         console.log(`Azure analysis complete. Found ${response.data.fields.length} fields.`);
 
-        // Map fields
+        // Store raw fields
+        fields = response.data.fields.map(f => ({
+          label: f.label,
+          fieldType: f.fieldType,
+          confidence: f.confidence,
+          value: f.value
+        }));
+
+        // Map fields by index (legacy support)
         response.data.fields.forEach((field, index) => {
           fieldMap.set(index + 1, { // Azure doesn't give field numbers easily, so we use index
             label: field.label,
@@ -1131,7 +1150,7 @@ Be concise but helpful. Format as a brief paragraph.`;
       setAnalyzingWithAI(false);
     }
 
-    return { fieldMap, queryResults, tables, selectionMarks, barcodes, markdownOutput };
+    return { fieldMap, fields, queryResults, tables, selectionMarks, barcodes, markdownOutput };
   };
 
   // Try to match field position with nearby text labels
@@ -1171,7 +1190,6 @@ Be concise but helpful. Format as a brief paragraph.`;
   const extractPDFFields = async (pdfBytes: ArrayBuffer): Promise<FormField[]> => {
     try {
       // Create copies of ArrayBuffer to avoid detachment issues
-      // Each PDF library operation can detach the original ArrayBuffer
       const bytesForText = pdfBytes.slice(0);
       const bytesForPdfLib = pdfBytes.slice(0);
       const bytesForAI = pdfBytes.slice(0);
@@ -1183,10 +1201,90 @@ Be concise but helpful. Format as a brief paragraph.`;
       const form = pdfDoc.getForm();
       const pdfFields = form.getFields();
 
-      // Analyze with Azure DI / Vision for downstream QA, but avoid using its field ordering
-      // to override PDF-native field names (ordering mismatches can mislabel fields).
-      await analyzeFormWithAI(bytesForAI, pdfFields.length);
+      // Analyze with Azure DI / Vision
+      const azureAnalysis = await analyzeFormWithAI(bytesForAI, pdfFields.length);
+      const azureFields = azureAnalysis.fields || [];
 
+      console.log(`[FormFiller] Consolidating fields: ${azureFields.length} Azure fields vs ${pdfFields.length} PDF fields`);
+
+      // If Azure found fields, use them as the primary source of truth for the UI
+      if (azureFields.length > 0) {
+        const consolidatedFields: FormField[] = [];
+        const assignedPdfFields = new Set<string>();
+
+        // Helper for fuzzy matching
+        const cleanLabel = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, '');
+
+        azureFields.forEach((azureField, index) => {
+          const azureLabelClean = cleanLabel(azureField.label);
+          const matchedPdfFieldNames: string[] = [];
+          let primaryPdfField: any = null;
+
+          // Find all PDF fields that match this Azure field
+          for (const pdfField of pdfFields) {
+            const pdfName = pdfField.getName();
+            const pdfNameClean = cleanLabel(pdfName);
+            
+            // Match logic:
+            // 1. Exact match (cleaned)
+            // 2. Azure label contains PDF name (e.g. "Passport Number" matches "Passport")
+            // 3. PDF name contains Azure label (e.g. "Passport_Number_1" matches "Passport Number")
+            // 4. Special handling for character boxes (often named Field1, Field2, etc. near each other - harder to do without bbox)
+            
+            if (
+              azureLabelClean === pdfNameClean ||
+              (azureLabelClean.length > 3 && pdfNameClean.includes(azureLabelClean)) ||
+              (pdfNameClean.length > 3 && azureLabelClean.includes(pdfNameClean))
+            ) {
+              matchedPdfFieldNames.push(pdfName);
+              assignedPdfFields.add(pdfName);
+              if (!primaryPdfField) primaryPdfField = pdfField;
+            }
+          }
+
+          // Determine type based on Azure or fallback to primary matched PDF field
+          let type: FormField['type'] = 'text';
+          if (azureField.fieldType === 'selectionMark' || azureField.fieldType === 'checkbox') {
+            type = 'checkbox';
+          } else if (primaryPdfField) {
+            const constructorName = primaryPdfField.constructor.name;
+             if (constructorName === 'PDFCheckBox') type = 'checkbox';
+             else if (constructorName === 'PDFRadioGroup') type = 'radio';
+             else if (constructorName === 'PDFDropdown') type = 'select';
+          }
+
+          // Create the consolidated field
+          const label = azureField.label;
+          const fieldName = matchedPdfFieldNames.length > 0 ? matchedPdfFieldNames[0] : `azure_field_${index}`;
+          
+          const canonicalKey =
+            smartFieldMapper.findBestMatch(fieldName) ||
+            smartFieldMapper.findBestMatch(label) ||
+            null;
+
+          consolidatedFields.push({
+            id: `field-${index}`,
+            name: fieldName, // Use the first matched PDF field name for compatibility
+            pdfFieldNames: matchedPdfFieldNames, // Store all matched fields for filling
+            type,
+            label,
+            value: azureField.value || '',
+            hint: generateFieldHint(fieldName, label),
+            suggestedValue: generateSuggestedValue(fieldName, travelProfile),
+            source: azureField.value ? 'Document' : undefined,
+            required: false,
+            placeholder: `Enter ${label.toLowerCase()}`,
+            canonicalKey,
+          });
+        });
+
+        // Optionally add unassigned PDF fields if they seem important (skipping for now to ensure strict consistency with Azure)
+        // Users requested "consistency across the board", so we hide fields Azure didn't find.
+
+        return consolidatedFields;
+      }
+
+      // Fallback to PDF fields if Azure failed
       const extractedFields: FormField[] = pdfFields.map((field, index) => {
         const fieldName = field.getName();
         const fieldType = field.constructor.name;
