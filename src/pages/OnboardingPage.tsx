@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { Plane, Globe, FileCheck, Camera, MapPin } from 'lucide-react';
 import OnboardingChat from '@/components/onboarding/OnboardingChat';
 import JeffreyAvatar from '@/components/onboarding/JeffreyAvatar';
@@ -12,6 +12,7 @@ interface OnboardingPageProps {
 
 export default function OnboardingPage({ user }: OnboardingPageProps) {
   const navigate = useNavigate();
+  const location = useLocation();
   const [showChat, setShowChat] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -20,6 +21,13 @@ export default function OnboardingPage({ user }: OnboardingPageProps) {
     const checkOnboardingStatus = async () => {
       if (!user) {
         navigate('/login');
+        return;
+      }
+
+      // If forcing onboarding (e.g. new visa application), skip status check
+      if (location.state?.forceOnboarding) {
+        setIsLoading(false);
+        setShowChat(true);
         return;
       }
 
@@ -41,7 +49,7 @@ export default function OnboardingPage({ user }: OnboardingPageProps) {
     };
 
     checkOnboardingStatus();
-  }, [user, navigate]);
+  }, [user, navigate, location.state]);
 
   const handleComplete = (travelProfile: any, recommendations: any[]) => {
     console.log('Onboarding complete:', { travelProfile, recommendations });
