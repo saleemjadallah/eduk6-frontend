@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { FileText, Upload, ExternalLink, Globe, AlertCircle, HelpCircle, Lightbulb, Download, ArrowLeft, ChevronDown, ChevronUp, Shield, ArrowUpRight } from 'lucide-react';
+import { FileText, Upload, ExternalLink, Globe, AlertCircle, HelpCircle, Lightbulb, Download, ArrowLeft, ChevronDown, ChevronUp, Shield, ArrowUpRight, Sparkles } from 'lucide-react';
 import { useJeffrey } from '../../contexts/JeffreyContext';
 import { Breadcrumb, BreadcrumbItem } from '../../components/ui/Breadcrumb';
 import { cn } from '../../utils/cn';
@@ -216,6 +216,8 @@ export const FormFillerWorkflow: React.FC = () => {
   const savedDraftsPanelRef = useRef<HTMLDivElement | null>(null);
   const [showVersionHistory, setShowVersionHistory] = useState(false);
   const [saveToast, setSaveToast] = useState<string | null>(null);
+  const [autofillToast, setAutofillToast] = useState<string | null>(null);
+  const [isAutofilling, setIsAutofilling] = useState(false);
   const [restoringVersionId, setRestoringVersionId] = useState<string | null>(null);
   const [recentForms, setRecentForms] = useState<FilledForm[]>([]);
   const [isLoadingHistory, setIsLoadingHistory] = useState(false);
@@ -233,6 +235,12 @@ export const FormFillerWorkflow: React.FC = () => {
     loadUserProfile();
     loadRecentHistory();
   }, [updateWorkflow, addRecentAction]);
+
+  useEffect(() => {
+    if (!autofillToast) return;
+    const timer = setTimeout(() => setAutofillToast(null), 5000);
+    return () => clearTimeout(timer);
+  }, [autofillToast]);
 
   // Load user profile for auto-fill
   const loadUserProfile = async () => {
@@ -1260,9 +1268,18 @@ Be concise but helpful. Format as a brief paragraph.`;
           const sanitizeFieldValue = (val: string | undefined): string => {
             if (!val) return '';
             const trimmed = val.trim();
-            if (['undefined', 'null'].includes(trimmed.toLowerCase())) return '';
+            const lower = trimmed.toLowerCase();
+            
+            // Handle explicit empty/null string representations
+            if (['undefined', 'null', 'none', 'n/a'].includes(lower)) return '';
+            
+            // Handle Azure/PDF selection states
+            if (['unselected', ':unselected:', 'unchecked', 'off', 'false'].includes(lower)) return '';
+            if (['selected', ':selected:', 'checked', 'on'].includes(lower)) return 'true';
+            
             // Check for placeholders like "______", "......", "-----"
             if (/^[_.\-\s]+$/.test(trimmed)) return '';
+            
             return trimmed;
           };
 
@@ -2057,6 +2074,65 @@ Be concise but helpful. Format as a brief paragraph.`;
         fields: [...prev.fields, newField]
       };
     });
+  };
+
+  const handleAutofillFromProfile = async () => {
+    if (!currentForm) return;
+    if (!travelProfile) {
+      setAutofillToast('Add your travel profile to autofill this form.');
+      return;
+    }
+
+    setIsAutofilling(true);
+    setAutofillToast(null);
+
+    try {
+      const response = await profileApi.getAutoFillData({
+        country: travelProfile.destinationCountry,
+        visaType: travelProfile.visaRequirements?.visaType || travelProfile.travelPurpose || 'tourist',
+        fields: currentForm.fields.map((f) => ({
+          id: f.id,
+          name: f.name,
+          label: f.label
+        }))
+      });
+
+      if (response.success && response.data) {
+        const { autoFillData, completionRate, validationErrors } = response.data;
+
+        setCurrentForm((prev) => {
+          if (!prev) return prev;
+          const updatedFields = prev.fields.map((field) => {
+            const autoFillValue = autoFillData[field.id] || autoFillData[field.name];
+            if (autoFillValue?.value && (!field.value || field.value.trim() === '')) {
+              return {
+                ...field,
+                value: autoFillValue.value,
+                suggestedValue: autoFillValue.value,
+                source: autoFillValue.source || 'profile'
+              };
+            }
+            return field;
+          });
+          return { ...prev, fields: updatedFields };
+        });
+
+        const filledCount = Object.values(autoFillData || {}).filter((v) => v?.value).length;
+        const validationNote =
+          validationErrors && validationErrors.length > 0
+            ? ` • ${validationErrors.length} validation note${validationErrors.length > 1 ? 's' : ''}`
+            : '';
+        setAutofillToast(`Filled ${filledCount} fields from your profile (${completionRate}% coverage)${validationNote}`);
+        addRecentAction('Manual autofill applied', { filledCount, completionRate });
+      } else {
+        setAutofillToast('Autofill unavailable for this form. Please complete fields manually.');
+      }
+    } catch (error) {
+      console.error('Error auto-filling form:', error);
+      setAutofillToast('Autofill failed. Please try again.');
+    } finally {
+      setIsAutofilling(false);
+    }
   };
 
   // Extract filled values from PDF
@@ -3216,6 +3292,11 @@ Be concise but helpful. Format as a brief paragraph.`;
             {saveToast}
           </div>
         )}
+        {autofillToast && (
+          <div className="mt-4 mb-2 rounded-lg border border-blue-200 bg-blue-50 px-4 py-2 text-sm text-blue-800">
+            {autofillToast}
+          </div>
+        )}
 
         {/* Header with progress */}
         <div className="mb-6">
@@ -3319,6 +3400,24 @@ Be concise but helpful. Format as a brief paragraph.`;
                           )}
                         </div>
                       )}
+                      <button
+                        onClick={handleAutofillFromProfile}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold border border-indigo-200 rounded-lg bg-indigo-50 text-indigo-700 hover:bg-indigo-100 disabled:opacity-50"
+                        disabled={isAutofilling || !travelProfile}
+                        title={travelProfile ? 'Fill matching fields from your saved profile' : 'Add your travel profile to enable autofill'}
+                      >
+                        {isAutofilling ? (
+                          <>
+                            <div className="w-3 h-3 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin" />
+                            Autofilling…
+                          </>
+                        ) : (
+                          <>
+                            <Sparkles className="w-3 h-3" />
+                            Autofill from profile
+                          </>
+                        )}
+                      </button>
                       <button
                         onClick={() => saveFormDraft()}
                         className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50"
