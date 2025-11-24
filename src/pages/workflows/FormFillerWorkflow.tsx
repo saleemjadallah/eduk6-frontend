@@ -695,8 +695,9 @@ Return ONLY valid JSON, no other text.`;
             // This handles cases where AI still counts character boxes individually
             const adjustedAnalysis = {
               ...analysisData,
-              totalFields: totalFieldGroups || analysisData.totalFields,
-              completedFields: filledFieldGroups || analysisData.completedFields,
+              // Strictly enforce local counts if they exist to prevent "double counting" or character box confusion
+              totalFields: totalFieldGroups > 0 ? totalFieldGroups : analysisData.totalFields,
+              completedFields: filledFieldGroups >= 0 ? filledFieldGroups : analysisData.completedFields,
               // Recalculate score based on our field groups if needed
               overallScore: analysisData.overallScore || (totalFieldGroups > 0
                 ? Math.round((filledFieldGroups / totalFieldGroups) * 100)
@@ -708,8 +709,8 @@ Return ONLY valid JSON, no other text.`;
             // Direct validation object from API - adjust it too
             const adjustedValidation = {
               ...response.data.validation,
-              totalFields: totalFieldGroups || response.data.validation.totalFields,
-              completedFields: filledFieldGroups || response.data.validation.completedFields,
+              totalFields: totalFieldGroups > 0 ? totalFieldGroups : response.data.validation.totalFields,
+              completedFields: filledFieldGroups >= 0 ? filledFieldGroups : response.data.validation.completedFields,
               overallScore: response.data.validation.overallScore || (totalFieldGroups > 0
                 ? Math.round((filledFieldGroups / totalFieldGroups) * 100)
                 : 0)
@@ -1271,11 +1272,19 @@ Be concise but helpful. Format as a brief paragraph.`;
             const lower = trimmed.toLowerCase();
             
             // Handle explicit empty/null string representations
-            if (['undefined', 'null', 'none', 'n/a'].includes(lower)) return '';
+            if (['undefined', 'null', 'none', 'n/a', '0'].includes(lower)) return '';
             
             // Handle Azure/PDF selection states
-            if (['unselected', ':unselected:', 'unchecked', 'off', 'false'].includes(lower)) return '';
-            if (['selected', ':selected:', 'checked', 'on'].includes(lower)) return 'true';
+            if (['unselected', ':unselected:', 'unchecked', 'off', 'false', 'no'].includes(lower)) return '';
+            if (['selected', ':selected:', 'checked', 'on', 'true', 'yes'].includes(lower)) return 'true';
+
+            // Handle generic prompts/placeholders
+            if (
+              lower.startsWith('select') || 
+              lower.startsWith('choose') || 
+              lower.includes('click to') ||
+              lower.includes('enter text')
+            ) return '';
             
             // Check for placeholders like "______", "......", "-----"
             if (/^[_.\-\s]+$/.test(trimmed)) return '';
