@@ -99,7 +99,7 @@ const StudyPage = () => {
 
     return (
         <MainLayout
-            className={!currentLesson ? "bg-gradient-to-b from-blue-100 to-blue-200" : undefined}
+            className={!currentLesson ? "bg-blue-50" : undefined}
             showClouds={!currentLesson}
         >
             {/* Progress Widget - Top bar */}

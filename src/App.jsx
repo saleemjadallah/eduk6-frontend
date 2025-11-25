@@ -5,9 +5,11 @@ import { FlashcardProvider } from './context/FlashcardContext';
 import { ChatProvider } from './context/ChatContext';
 import { AuthProvider } from './context/AuthContext';
 import { ModeProvider } from './context/ModeContext';
+import { SelectionProvider } from './context/SelectionContext';
 
 // Pages
 import HomePage from './pages/HomePage';
+import ChildDashboard from './pages/ChildDashboard';
 import StudyPage from './pages/StudyPage';
 import AchievementsPage from './pages/AchievementsPage';
 import FlashcardsPage from './pages/FlashcardsPage';
@@ -26,9 +28,10 @@ function App() {
         <AuthProvider>
             <LessonProvider>
                 <GamificationProvider>
-                    <FlashcardProvider>
-                        <ChatProvider>
-                            <Router>
+                    <SelectionProvider>
+                        <FlashcardProvider>
+                            <ChatProvider>
+                                <Router>
                                 <ModeProvider>
                                     <Routes>
                                         {/* Public routes */}
@@ -55,7 +58,7 @@ function App() {
                                                 </ProtectedRoute>
                                             }
                                         >
-                                            <Route index element={<HomePage />} />
+                                            <Route index element={<ChildDashboard />} />
                                             <Route path="study" element={<StudyPage />} />
                                             <Route path="study/:lessonId" element={<StudyPage />} />
                                             <Route path="achievements" element={<AchievementsPage />} />
@@ -115,11 +118,12 @@ function App() {
                                         <Route path="*" element={<Navigate to="/learn" replace />} />
                                     </Routes>
                                 </ModeProvider>
-                            </Router>
-                            {/* Global reward popup for celebrations */}
-                            <RewardPopup />
-                        </ChatProvider>
-                    </FlashcardProvider>
+                                </Router>
+                                {/* Global reward popup for celebrations */}
+                                <RewardPopup />
+                            </ChatProvider>
+                        </FlashcardProvider>
+                    </SelectionProvider>
                 </GamificationProvider>
             </LessonProvider>
         </AuthProvider>
