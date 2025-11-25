@@ -1,0 +1,253 @@
+.pin-verification-screen {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.pin-verification-container {
+  width: 100%;
+  max-width: 400px;
+  background: white;
+  border-radius: 24px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.1);
+  padding: 40px 32px;
+  text-align: center;
+}
+
+/* Header */
+.pin-header {
+  margin-bottom: 32px;
+}
+
+.parent-icon {
+  margin-bottom: 16px;
+}
+
+.pin-header h2 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #333;
+  margin: 0 0 8px;
+}
+
+.pin-description {
+  font-size: 0.9375rem;
+  color: #666;
+  margin: 0;
+}
+
+/* PIN Input Group */
+.pin-input-group {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.pin-input {
+  width: 56px;
+  height: 64px;
+  font-size: 1.75rem;
+  font-weight: 700;
+  text-align: center;
+  border: 3px solid #e0e0e0;
+  border-radius: 12px;
+  outline: none;
+  transition: all 0.2s ease;
+  -webkit-text-security: disc;
+  background: white;
+}
+
+.pin-input:focus {
+  border-color: #2196f3;
+  box-shadow: 0 0 0 4px rgba(33, 150, 243, 0.15);
+}
+
+.pin-input.error {
+  border-color: #f44336;
+  animation: shake 0.5s ease-in-out;
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-8px); }
+  75% { transform: translateX(8px); }
+}
+
+.pin-input:disabled {
+  background: #f5f5f5;
+  cursor: not-allowed;
+}
+
+/* Error Message */
+.pin-error {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: #ffebee;
+  color: #c62828;
+  padding: 12px 16px;
+  border-radius: 12px;
+  font-size: 0.875rem;
+  margin-bottom: 20px;
+}
+
+.error-icon {
+  width: 20px;
+  height: 20px;
+  background: #f44336;
+  color: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  font-size: 0.75rem;
+  flex-shrink: 0;
+}
+
+/* Verifying State */
+.pin-verifying {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  color: #666;
+  font-size: 0.9375rem;
+  margin-bottom: 20px;
+}
+
+.verifying-spinner {
+  width: 20px;
+  height: 20px;
+  border: 2px solid #e0e0e0;
+  border-top-color: #2196f3;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Lockout Message */
+.lockout-message {
+  background: #ffebee;
+  border-radius: 16px;
+  padding: 24px;
+  margin-bottom: 24px;
+}
+
+.lockout-icon {
+  font-size: 2.5rem;
+  display: block;
+  margin-bottom: 12px;
+}
+
+.lockout-message p {
+  margin: 0;
+  color: #c62828;
+}
+
+.lockout-message .lockout-time {
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin-top: 8px;
+}
+
+/* Actions */
+.pin-actions {
+  margin-bottom: 24px;
+}
+
+.cancel-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 24px;
+  background: #f5f5f5;
+  border: none;
+  border-radius: 12px;
+  font-size: 0.9375rem;
+  font-weight: 500;
+  color: #666;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.cancel-button:hover:not(:disabled) {
+  background: #eeeeee;
+  color: #333;
+}
+
+.cancel-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.back-icon {
+  font-size: 1.25rem;
+}
+
+/* Setup Notice */
+.pin-setup-notice {
+  display: flex;
+  gap: 12px;
+  background: #fff8e1;
+  border-radius: 12px;
+  padding: 16px;
+  text-align: left;
+  margin-bottom: 16px;
+}
+
+.notice-icon {
+  font-size: 1.5rem;
+  flex-shrink: 0;
+}
+
+.notice-content p {
+  margin: 0;
+  font-size: 0.8125rem;
+  color: #f57c00;
+}
+
+.notice-content p:first-child {
+  color: #e65100;
+  margin-bottom: 4px;
+}
+
+/* Security Notice */
+.pin-security-notice {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-size: 0.75rem;
+  color: #4caf50;
+}
+
+.lock-icon {
+  font-size: 0.875rem;
+}
+
+/* Responsive */
+@media (max-width: 480px) {
+  .pin-verification-container {
+    padding: 32px 24px;
+  }
+
+  .pin-input {
+    width: 48px;
+    height: 56px;
+    font-size: 1.5rem;
+  }
+
+  .pin-input-group {
+    gap: 8px;
+  }
+}
