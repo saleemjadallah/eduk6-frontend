@@ -11,6 +11,7 @@ import { ProgressWidget } from '../components/Gamification';
 import { PDFViewer, SelectedTextPreview } from '../components/PDF';
 import { HighlightProvider } from '../context/HighlightContext';
 import { useLessonContext } from '../context/LessonContext';
+import { useLessonActions } from '../hooks/useLessonActions';
 import { useGameProgress } from '../hooks/useGameProgress';
 import { useFlashcardContext } from '../context/FlashcardContext';
 
@@ -18,7 +19,8 @@ const StudyPage = () => {
     const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
     const [studyStartTime, setStudyStartTime] = useState(null);
     const [chatInput, setChatInput] = useState('');
-    const { currentLesson } = useLessonContext();
+    const { currentLesson, markLessonComplete, updateLessonProgress } = useLessonContext();
+    const { formatTimeSpent } = useLessonActions();
     const { recordLessonComplete, recordStudyTime, recordChatInteraction } = useGameProgress();
     const { createDeck, addCards } = useFlashcardContext();
     const studyStartTimeRef = useRef(null);
@@ -81,6 +83,11 @@ const StudyPage = () => {
             const duration = studyStartTime
                 ? Math.floor((Date.now() - studyStartTime) / 60000)
                 : 0;
+
+            // Mark lesson as complete in LessonContext (persists to localStorage)
+            markLessonComplete(currentLesson.id);
+
+            // Record for gamification
             recordLessonComplete(currentLesson.subject || 'general', duration);
         }
     };
