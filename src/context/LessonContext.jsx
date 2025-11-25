@@ -328,6 +328,11 @@ export function LessonProvider({ children }) {
     dispatch({ type: ACTIONS.SET_CURRENT_LESSON, payload: lessonId });
   }, []);
 
+  const clearCurrentLesson = useCallback(() => {
+    dispatch({ type: ACTIONS.SET_CURRENT_LESSON, payload: null });
+    localStorage.removeItem(STORAGE_KEYS.CURRENT_LESSON_ID);
+  }, []);
+
   const updateLesson = useCallback((lessonId, updates) => {
     dispatch({ type: ACTIONS.UPDATE_LESSON, payload: { id: lessonId, updates } });
   }, []);
@@ -412,6 +417,7 @@ export function LessonProvider({ children }) {
     // Lesson CRUD
     addLesson,
     setCurrentLesson,
+    clearCurrentLesson,
     updateLesson,
     deleteLesson,
 
@@ -434,6 +440,7 @@ export function LessonProvider({ children }) {
     resetProcessing,
     addLesson,
     setCurrentLesson,
+    clearCurrentLesson,
     updateLesson,
     deleteLesson,
     updateLessonProgress,

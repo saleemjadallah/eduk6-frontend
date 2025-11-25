@@ -1,11 +1,21 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Sparkles, MessageCircle, Zap, ArrowRight } from 'lucide-react';
 import LessonView from '../components/Lesson/LessonView';
 import ChatInterface from '../components/Chat/ChatInterface';
+import { useLessonContext } from '../context/LessonContext';
 
 const HomePage = () => {
+    const navigate = useNavigate();
+    const { clearCurrentLesson } = useLessonContext();
+
+    const handleStartStudy = () => {
+        // Clear current lesson to start fresh
+        clearCurrentLesson();
+        navigate('/study');
+    };
+
     return (
         <div className="min-h-screen bg-white font-sans text-gray-900">
             {/* Navbar */}
@@ -48,13 +58,13 @@ const HomePage = () => {
                                 animate={{ opacity: 1, y: 0 }}
                                 transition={{ delay: 0.4 }}
                             >
-                                <Link
-                                    to="/study"
+                                <button
+                                    onClick={handleStartStudy}
                                     className="inline-flex items-center gap-3 bg-nanobanana-green text-white text-xl font-bold px-8 py-4 rounded-2xl border-4 border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] hover:translate-y-[-2px] hover:shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] transition-all active:translate-y-[2px] active:shadow-none"
                                 >
                                     Start Your Study
                                     <ArrowRight className="w-6 h-6" />
-                                </Link>
+                                </button>
                             </motion.div>
                         </div>
 
@@ -213,9 +223,9 @@ const HomePage = () => {
             <footer className="bg-black text-white py-12">
                 <div className="max-w-7xl mx-auto px-6 text-center">
                     <h2 className="text-3xl font-comic font-bold mb-6">Ready to learn?</h2>
-                    <Link to="/study" className="inline-block bg-white text-black font-bold px-8 py-3 rounded-full hover:bg-gray-200 transition-colors">
+                    <button onClick={handleStartStudy} className="inline-block bg-white text-black font-bold px-8 py-3 rounded-full hover:bg-gray-200 transition-colors">
                         Get Started Now
-                    </Link>
+                    </button>
                     <p className="mt-8 text-gray-500 text-sm">© 2024 K-6 AI Tutor. Made with ❤️ and 🍌</p>
                 </div>
             </footer>

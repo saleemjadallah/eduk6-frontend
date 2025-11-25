@@ -21,7 +21,7 @@ const UploadButton = ({ onClick, variant = 'primary', size = 'medium' }) => {
                 whileHover={{ scale: 1.1 }}
                 whileTap={{ scale: 0.95 }}
                 onClick={onClick}
-                className="fixed bottom-6 right-6 w-16 h-16 bg-nanobanana-green text-white rounded-full border-4 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] flex items-center justify-center z-50 hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] transition-shadow"
+                className="fixed bottom-6 left-6 w-16 h-16 bg-nanobanana-green text-white rounded-full border-4 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] flex items-center justify-center z-50 hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] transition-shadow"
             >
                 <Plus className="w-8 h-8" />
             </motion.button>
