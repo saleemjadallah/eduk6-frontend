@@ -1,63 +1,201 @@
-import React from 'react';
+import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { BookOpen, PlayCircle, Star } from 'lucide-react';
+import { BookOpen, PlayCircle, Star, Clock, FileText, Layers, Sparkles } from 'lucide-react';
+import { FlashcardCreator } from '../Flashcards';
+import { useFlashcards } from '../../hooks/useFlashcards';
 
-const LessonView = () => {
+const LessonView = ({ lesson, onComplete }) => {
+    const [isCreatorOpen, setIsCreatorOpen] = useState(false);
+    const { canCreateDeckFromLesson, getDeckForLesson, createDeckFromLesson } = useFlashcards();
+
+    const existingDeck = lesson ? getDeckForLesson(lesson.id) : null;
+    const canCreateDeck = lesson ? canCreateDeckFromLesson(lesson) : false;
+
+    const handleCreateFlashcards = () => {
+        if (canCreateDeck) {
+            createDeckFromLesson(lesson);
+        } else {
+            setIsCreatorOpen(true);
+        }
+    };
+    // Fallback to default content if no lesson provided
+    const displayLesson = lesson || {
+        title: 'The Solar System Adventure',
+        subject: 'science',
+        content: {
+            summary: 'The Solar System is our home in the galaxy! It consists of the Sun and everything that orbits around it.',
+            keyPoints: [
+                'The Sun contains 99.86% of the Solar System\'s known mass!',
+                'Gravity keeps all objects in orbit around the Sun.',
+            ],
+        },
+    };
+
+    const subjectEmoji = {
+        math: '🔢',
+        science: '🔬',
+        english: '📚',
+        arabic: '🌙',
+        islamic: '☪️',
+        social: '🌍',
+        other: '📝',
+    };
+
     return (
         <div className="flex-[1.5] bg-white rounded-3xl shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] border-4 border-black overflow-hidden flex flex-col">
             {/* Lesson Header */}
             <div className="bg-nanobanana-green border-b-4 border-black p-6">
                 <div className="flex items-center gap-2 mb-2">
-                    <span className="bg-black text-white px-3 py-1 rounded-full text-xs font-bold">SCIENCE</span>
-                    <div className="flex gap-1">
-                        <Star className="w-4 h-4 fill-yellow-400 text-black" />
-                        <Star className="w-4 h-4 fill-yellow-400 text-black" />
-                        <Star className="w-4 h-4 fill-yellow-400 text-black" />
-                    </div>
+                    <span className="bg-black text-white px-3 py-1 rounded-full text-xs font-bold uppercase">
+                        {subjectEmoji[displayLesson.subject] || '📝'} {displayLesson.subject || 'Lesson'}
+                    </span>
+                    {displayLesson.content?.estimatedReadTime && (
+                        <span className="flex items-center gap-1 text-white/80 text-xs font-bold">
+                            <Clock className="w-3 h-3" />
+                            {displayLesson.content.estimatedReadTime} min read
+                        </span>
+                    )}
                 </div>
                 <h1 className="text-3xl font-black font-comic text-white drop-shadow-[2px_2px_0px_rgba(0,0,0,1)]">
-                    The Solar System Adventure
+                    {displayLesson.title}
                 </h1>
             </div>
 
             {/* Content Area */}
             <div className="flex-1 p-6 overflow-y-auto bg-[url('https://www.transparenttextures.com/patterns/graphy.png')]">
                 <div className="space-y-6">
-                    {/* Video Placeholder */}
-                    <div className="aspect-video bg-black rounded-2xl border-4 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] relative group cursor-pointer overflow-hidden">
-                        <img
-                            src="https://images.unsplash.com/photo-1614730341194-75c607ae82b3?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80"
-                            alt="Space"
-                            className="w-full h-full object-cover opacity-80 group-hover:scale-105 transition-transform duration-500"
-                        />
-                        <div className="absolute inset-0 flex items-center justify-center">
-                            <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center border-4 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] group-hover:scale-110 transition-transform">
-                                <PlayCircle className="w-8 h-8 ml-1" />
+                    {/* Video if YouTube source */}
+                    {displayLesson.sourceType === 'youtube' && displayLesson.sourceVideo && (
+                        <div className="aspect-video bg-black rounded-2xl border-4 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] relative group cursor-pointer overflow-hidden">
+                            <img
+                                src={displayLesson.sourceVideo.thumbnail}
+                                alt={displayLesson.sourceVideo.title}
+                                className="w-full h-full object-cover opacity-80 group-hover:scale-105 transition-transform duration-500"
+                            />
+                            <div className="absolute inset-0 flex items-center justify-center">
+                                <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center border-4 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] group-hover:scale-110 transition-transform">
+                                    <PlayCircle className="w-8 h-8 ml-1" />
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Summary */}
+                    {displayLesson.content?.summary && (
+                        <div className="prose prose-lg max-w-none">
+                            <h3 className="font-comic font-bold text-2xl mb-4 flex items-center gap-2">
+                                <BookOpen className="w-6 h-6" />
+                                Summary
+                            </h3>
+                            <p className="font-medium text-gray-700 leading-relaxed">
+                                {displayLesson.content.summary}
+                            </p>
+                        </div>
+                    )}
+
+                    {/* Key Points */}
+                    {displayLesson.content?.keyPoints?.length > 0 && (
+                        <div className="my-6 p-4 bg-yellow-50 border-l-8 border-nanobanana-yellow rounded-r-xl">
+                            <h4 className="font-bold text-lg mb-3 flex items-center gap-2">
+                                <Star className="w-5 h-5 fill-yellow-400 text-black" />
+                                Key Points
+                            </h4>
+                            <ul className="space-y-2">
+                                {displayLesson.content.keyPoints.map((point, index) => (
+                                    <li key={index} className="flex items-start gap-2">
+                                        <span className="w-6 h-6 bg-nanobanana-yellow rounded-full border-2 border-black flex items-center justify-center text-xs font-bold flex-shrink-0 mt-0.5">
+                                            {index + 1}
+                                        </span>
+                                        <span className="font-medium text-gray-700">{point}</span>
+                                    </li>
+                                ))}
+                            </ul>
+                        </div>
+                    )}
+
+                    {/* Vocabulary */}
+                    {displayLesson.content?.vocabulary?.length > 0 && (
+                        <div className="mt-6">
+                            <h4 className="font-bold text-lg mb-3 flex items-center gap-2">
+                                <FileText className="w-5 h-5" />
+                                Vocabulary
+                            </h4>
+                            <div className="grid gap-3">
+                                {displayLesson.content.vocabulary.map((item, index) => (
+                                    <div
+                                        key={index}
+                                        className="p-3 bg-blue-50 rounded-xl border-2 border-blue-200"
+                                    >
+                                        <span className="font-bold text-blue-800">{item.term}:</span>{' '}
+                                        <span className="text-blue-600">{item.definition}</span>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Flashcard Actions */}
+                    <div className="mt-8 p-4 bg-gradient-to-r from-purple-50 to-blue-50 rounded-2xl border-2 border-purple-200">
+                        <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 bg-purple-100 rounded-xl flex items-center justify-center">
+                                    <Layers className="w-5 h-5 text-purple-600" />
+                                </div>
+                                <div>
+                                    <h4 className="font-bold text-purple-800">Study with Flashcards</h4>
+                                    <p className="text-sm text-purple-600">
+                                        {existingDeck
+                                            ? `${existingDeck.cardCount || 0} cards ready to review`
+                                            : 'Turn this lesson into flashcards!'}
+                                    </p>
+                                </div>
+                            </div>
+                            <div className="flex gap-2">
+                                {existingDeck ? (
+                                    <Link
+                                        to="/flashcards"
+                                        className="px-4 py-2 bg-purple-500 text-white font-bold rounded-xl border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] flex items-center gap-2 hover:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-shadow"
+                                    >
+                                        <Layers className="w-4 h-4" />
+                                        Study
+                                    </Link>
+                                ) : (
+                                    <motion.button
+                                        whileHover={{ scale: 1.02 }}
+                                        whileTap={{ scale: 0.98 }}
+                                        onClick={handleCreateFlashcards}
+                                        className="px-4 py-2 bg-purple-500 text-white font-bold rounded-xl border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] flex items-center gap-2"
+                                    >
+                                        <Sparkles className="w-4 h-4" />
+                                        Create Cards
+                                    </motion.button>
+                                )}
                             </div>
                         </div>
                     </div>
 
-                    {/* Text Content */}
-                    <div className="prose prose-lg max-w-none">
-                        <h3 className="font-comic font-bold text-2xl mb-4">What is the Solar System?</h3>
-                        <p className="font-medium text-gray-700 leading-relaxed">
-                            The Solar System is our home in the galaxy! It consists of the Sun and everything that orbits around it, including eight planets, many moons, asteroids, comets, and meteoroids.
-                        </p>
-
-                        <div className="my-6 p-4 bg-yellow-50 border-l-8 border-nanobanana-yellow rounded-r-xl">
-                            <h4 className="font-bold text-lg mb-2 flex items-center gap-2">
-                                <BookOpen className="w-5 h-5" />
-                                Fun Fact!
-                            </h4>
-                            <p>The Sun contains 99.86% of the Solar System's known mass!</p>
-                        </div>
-
-                        <p className="font-medium text-gray-700 leading-relaxed">
-                            Gravity is the force that keeps all these objects in orbit around the Sun. Without the Sun's gravity, the planets would fly off into deep space!
-                        </p>
-                    </div>
+                    {/* Complete Lesson Button */}
+                    {onComplete && (
+                        <motion.button
+                            whileHover={{ scale: 1.02 }}
+                            whileTap={{ scale: 0.98 }}
+                            onClick={onComplete}
+                            className="mt-6 w-full py-3 bg-nanobanana-green text-white font-bold font-comic rounded-xl border-4 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] flex items-center justify-center gap-2"
+                        >
+                            <Star className="w-5 h-5" />
+                            I've Finished This Lesson!
+                        </motion.button>
+                    )}
                 </div>
             </div>
+
+            {/* Flashcard Creator Modal */}
+            <FlashcardCreator
+                isOpen={isCreatorOpen}
+                onClose={() => setIsCreatorOpen(false)}
+                lessonContent={displayLesson.content}
+            />
         </div>
     );
 };

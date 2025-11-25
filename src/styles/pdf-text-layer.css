@@ -1,0 +1,102 @@
+/* PDF Text Layer Styles */
+.react-pdf__Page__textContent {
+    position: absolute;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    overflow: hidden;
+    opacity: 0.2;
+    line-height: 1.0;
+    pointer-events: auto;
+}
+
+/* Make text selectable */
+.react-pdf__Page__textContent span {
+    color: transparent;
+    position: absolute;
+    white-space: pre;
+    transform-origin: 0% 0%;
+    cursor: text;
+    user-select: text;
+    -webkit-user-select: text;
+    -moz-user-select: text;
+    -ms-user-select: text;
+}
+
+/* Selection highlight */
+.react-pdf__Page__textContent span::selection {
+    background-color: rgba(0, 102, 204, 0.4);
+}
+
+.react-pdf__Page__textContent span::-moz-selection {
+    background-color: rgba(0, 102, 204, 0.4);
+}
+
+/* PDF Page container */
+.react-pdf__Page {
+    position: relative;
+    display: flex;
+    justify-content: center;
+}
+
+.react-pdf__Page canvas {
+    display: block;
+}
+
+/* Child-friendly selection color - Gold/Yellow */
+.pdf-page ::selection {
+    background-color: rgba(255, 215, 0, 0.5);
+}
+
+.pdf-page ::-moz-selection {
+    background-color: rgba(255, 215, 0, 0.5);
+}
+
+/* PDF Document wrapper */
+.react-pdf__Document {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+/* Loading state */
+.pdf-loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 400px;
+}
+
+/* Error state */
+.pdf-error {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 400px;
+    text-align: center;
+}
+
+/* Highlight overlay animations */
+.highlight-overlay {
+    transition: all 0.2s ease-in-out;
+}
+
+.highlight-overlay:hover {
+    transform: scale(1.02);
+    filter: brightness(1.1);
+}
+
+/* Context menu styles */
+.context-menu-item {
+    transition: all 0.2s ease-in-out;
+}
+
+.context-menu-item:hover {
+    transform: translateX(4px);
+}
+
+.context-menu-item:active {
+    transform: translateX(2px) translateY(2px);
+}
