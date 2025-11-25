@@ -4,16 +4,13 @@ import { Link, useNavigate } from 'react-router-dom';
 import { Sparkles, MessageCircle, Zap, ArrowRight } from 'lucide-react';
 import LessonView from '../components/Lesson/LessonView';
 import ChatInterface from '../components/Chat/ChatInterface';
-import { useLessonContext } from '../context/LessonContext';
 
 const HomePage = () => {
     const navigate = useNavigate();
-    const { clearCurrentLesson } = useLessonContext();
 
     const handleStartStudy = () => {
-        // Clear current lesson to start fresh
-        clearCurrentLesson();
-        navigate('/study');
+        // Navigate to learn dashboard (will redirect to onboarding if not authenticated)
+        navigate('/learn');
     };
 
     return (
@@ -28,7 +25,7 @@ const HomePage = () => {
                     <a href="#features" className="hover:text-nanobanana-blue transition-colors">Features</a>
                     <a href="#about" className="hover:text-nanobanana-blue transition-colors">About</a>
                 </div>
-                <Link to="/study" className="bg-black text-white px-6 py-2 rounded-full font-bold hover:bg-nanobanana-blue transition-colors">
+                <Link to="/onboarding" className="bg-black text-white px-6 py-2 rounded-full font-bold hover:bg-nanobanana-blue transition-colors">
                     Login
                 </Link>
             </nav>
