@@ -1,0 +1,292 @@
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { motion, AnimatePresence } from 'framer-motion';
+import { useAuth } from '../../context/AuthContext';
+import SignUpStep from './SignUpStep';
+import EmailVerificationStep from './EmailVerificationStep';
+import ConsentMethodStep from './ConsentMethodStep';
+import CreditCardVerificationStep from './CreditCardVerificationStep';
+import KBQVerificationStep from './KBQVerificationStep';
+import CreateProfileStep from './CreateProfileStep';
+import WelcomeStep from './WelcomeStep';
+import './OnboardingFlow.css';
+
+const STEPS = {
+  SIGNUP: 'signup',
+  SIGNIN: 'signin',
+  EMAIL_VERIFICATION: 'email_verification',
+  CONSENT_METHOD: 'consent_method',
+  CREDIT_CARD: 'credit_card',
+  KBQ: 'kbq',
+  CREATE_PROFILE: 'create_profile',
+  WELCOME: 'welcome',
+};
+
+const OnboardingFlow = ({ initialStep = STEPS.SIGNUP }) => {
+  const navigate = useNavigate();
+  const {
+    user,
+    isAuthenticated,
+    hasConsent,
+    children,
+    needsEmailVerification,
+    needsConsent,
+    needsChildProfile,
+  } = useAuth();
+
+  const [currentStep, setCurrentStep] = useState(initialStep);
+  const [consentMethod, setConsentMethod] = useState(null);
+  const [consentId, setConsentId] = useState(null);
+  const [direction, setDirection] = useState(1); // 1 = forward, -1 = backward
+
+  // Determine initial step based on user state
+  useEffect(() => {
+    if (!isAuthenticated) {
+      if (currentStep !== STEPS.SIGNUP && currentStep !== STEPS.SIGNIN) {
+        setCurrentStep(STEPS.SIGNUP);
+      }
+      return;
+    }
+
+    if (needsEmailVerification) {
+      setCurrentStep(STEPS.EMAIL_VERIFICATION);
+      return;
+    }
+
+    if (needsConsent) {
+      setCurrentStep(STEPS.CONSENT_METHOD);
+      return;
+    }
+
+    if (needsChildProfile) {
+      setCurrentStep(STEPS.CREATE_PROFILE);
+      return;
+    }
+
+    // All steps complete - show welcome or redirect
+    if (hasConsent && children.length > 0) {
+      if (currentStep === STEPS.CREATE_PROFILE) {
+        setCurrentStep(STEPS.WELCOME);
+      } else if (currentStep === STEPS.WELCOME) {
+        // Stay on welcome
+      } else {
+        // User is fully set up, redirect to home
+        navigate('/');
+      }
+    }
+  }, [
+    isAuthenticated,
+    needsEmailVerification,
+    needsConsent,
+    needsChildProfile,
+    hasConsent,
+    children.length,
+    navigate,
+    currentStep,
+  ]);
+
+  const goToStep = (step) => {
+    const stepOrder = Object.values(STEPS);
+    const currentIndex = stepOrder.indexOf(currentStep);
+    const newIndex = stepOrder.indexOf(step);
+    setDirection(newIndex > currentIndex ? 1 : -1);
+    setCurrentStep(step);
+  };
+
+  const handleSignUpComplete = () => {
+    goToStep(STEPS.EMAIL_VERIFICATION);
+  };
+
+  const handleSignInComplete = () => {
+    // After sign in, the useEffect will handle redirecting based on user state
+  };
+
+  const handleSwitchToSignIn = () => {
+    goToStep(STEPS.SIGNIN);
+  };
+
+  const handleSwitchToSignUp = () => {
+    goToStep(STEPS.SIGNUP);
+  };
+
+  const handleEmailVerified = () => {
+    goToStep(STEPS.CONSENT_METHOD);
+  };
+
+  const handleConsentMethodSelected = (method, id) => {
+    setConsentMethod(method);
+    setConsentId(id);
+    goToStep(method === 'credit_card' ? STEPS.CREDIT_CARD : STEPS.KBQ);
+  };
+
+  const handleConsentVerified = () => {
+    goToStep(STEPS.CREATE_PROFILE);
+  };
+
+  const handleConsentBack = () => {
+    goToStep(STEPS.CONSENT_METHOD);
+  };
+
+  const handleProfileCreated = () => {
+    goToStep(STEPS.WELCOME);
+  };
+
+  const handleWelcomeComplete = () => {
+    navigate('/');
+  };
+
+  const getCurrentStepNumber = () => {
+    const stepGroups = {
+      [STEPS.SIGNUP]: 1,
+      [STEPS.SIGNIN]: 1,
+      [STEPS.EMAIL_VERIFICATION]: 2,
+      [STEPS.CONSENT_METHOD]: 3,
+      [STEPS.CREDIT_CARD]: 3,
+      [STEPS.KBQ]: 3,
+      [STEPS.CREATE_PROFILE]: 4,
+      [STEPS.WELCOME]: 5,
+    };
+    return stepGroups[currentStep] || 1;
+  };
+
+  const stepNumber = getCurrentStepNumber();
+
+  const pageVariants = {
+    enter: (direction) => ({
+      x: direction > 0 ? 300 : -300,
+      opacity: 0,
+    }),
+    center: {
+      x: 0,
+      opacity: 1,
+    },
+    exit: (direction) => ({
+      x: direction < 0 ? 300 : -300,
+      opacity: 0,
+    }),
+  };
+
+  return (
+    <div className="onboarding-flow">
+      <div className="onboarding-container">
+        {/* Logo/Branding */}
+        <div className="onboarding-header">
+          <div className="onboarding-logo">
+            <span className="logo-icon">🍌</span>
+            <span className="logo-text">NanoBanana</span>
+          </div>
+        </div>
+
+        {/* Progress indicator */}
+        <div className="onboarding-progress">
+          <div className={`progress-step ${stepNumber >= 1 ? 'active' : ''} ${stepNumber > 1 ? 'completed' : ''}`}>
+            <div className="step-circle">
+              {stepNumber > 1 ? '✓' : '1'}
+            </div>
+            <span className="step-label">Account</span>
+          </div>
+          <div className="progress-line" />
+          <div className={`progress-step ${stepNumber >= 2 ? 'active' : ''} ${stepNumber > 2 ? 'completed' : ''}`}>
+            <div className="step-circle">
+              {stepNumber > 2 ? '✓' : '2'}
+            </div>
+            <span className="step-label">Verify</span>
+          </div>
+          <div className="progress-line" />
+          <div className={`progress-step ${stepNumber >= 3 ? 'active' : ''} ${stepNumber > 3 ? 'completed' : ''}`}>
+            <div className="step-circle">
+              {stepNumber > 3 ? '✓' : '3'}
+            </div>
+            <span className="step-label">Consent</span>
+          </div>
+          <div className="progress-line" />
+          <div className={`progress-step ${stepNumber >= 4 ? 'active' : ''} ${stepNumber > 4 ? 'completed' : ''}`}>
+            <div className="step-circle">
+              {stepNumber > 4 ? '✓' : '4'}
+            </div>
+            <span className="step-label">Profile</span>
+          </div>
+        </div>
+
+        {/* Step content */}
+        <div className="onboarding-content">
+          <AnimatePresence mode="wait" custom={direction}>
+            <motion.div
+              key={currentStep}
+              custom={direction}
+              variants={pageVariants}
+              initial="enter"
+              animate="center"
+              exit="exit"
+              transition={{ duration: 0.3 }}
+              className="step-wrapper"
+            >
+              {currentStep === STEPS.SIGNUP && (
+                <SignUpStep
+                  onComplete={handleSignUpComplete}
+                  onSwitchToSignIn={handleSwitchToSignIn}
+                />
+              )}
+
+              {currentStep === STEPS.SIGNIN && (
+                <SignUpStep
+                  isSignIn
+                  onComplete={handleSignInComplete}
+                  onSwitchToSignUp={handleSwitchToSignUp}
+                />
+              )}
+
+              {currentStep === STEPS.EMAIL_VERIFICATION && (
+                <EmailVerificationStep onVerified={handleEmailVerified} />
+              )}
+
+              {currentStep === STEPS.CONSENT_METHOD && (
+                <ConsentMethodStep onMethodSelected={handleConsentMethodSelected} />
+              )}
+
+              {currentStep === STEPS.CREDIT_CARD && (
+                <CreditCardVerificationStep
+                  consentId={consentId}
+                  onVerified={handleConsentVerified}
+                  onBack={handleConsentBack}
+                />
+              )}
+
+              {currentStep === STEPS.KBQ && (
+                <KBQVerificationStep
+                  consentId={consentId}
+                  onVerified={handleConsentVerified}
+                  onBack={handleConsentBack}
+                />
+              )}
+
+              {currentStep === STEPS.CREATE_PROFILE && (
+                <CreateProfileStep onComplete={handleProfileCreated} />
+              )}
+
+              {currentStep === STEPS.WELCOME && (
+                <WelcomeStep onComplete={handleWelcomeComplete} />
+              )}
+            </motion.div>
+          </AnimatePresence>
+        </div>
+
+        {/* Footer */}
+        <div className="onboarding-footer">
+          <p className="privacy-text">
+            By creating an account, you agree to our{' '}
+            <a href="/terms" target="_blank" rel="noopener noreferrer">Terms of Service</a>
+            {' '}and{' '}
+            <a href="/privacy" target="_blank" rel="noopener noreferrer">Privacy Policy</a>.
+          </p>
+          <p className="coppa-text">
+            We take your child's privacy seriously.{' '}
+            <a href="/coppa" target="_blank" rel="noopener noreferrer">Learn about our COPPA compliance</a>.
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default OnboardingFlow;

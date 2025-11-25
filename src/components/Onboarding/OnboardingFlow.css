@@ -1,0 +1,379 @@
+/* OnboardingFlow.css - Main onboarding styles */
+
+.onboarding-flow {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #fff8e1 0%, #e3f2fd 50%, #f3e5f5 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.onboarding-container {
+  width: 100%;
+  max-width: 520px;
+  background: white;
+  border-radius: 24px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+}
+
+/* Header */
+.onboarding-header {
+  padding: 24px 32px 0;
+  text-align: center;
+}
+
+.onboarding-logo {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #ffc107;
+}
+
+.logo-icon {
+  font-size: 2rem;
+}
+
+.logo-text {
+  background: linear-gradient(135deg, #ffc107, #ff9800);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Progress indicator */
+.onboarding-progress {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px 32px;
+  gap: 8px;
+}
+
+.progress-step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  opacity: 0.4;
+  transition: opacity 0.3s ease;
+}
+
+.progress-step.active,
+.progress-step.completed {
+  opacity: 1;
+}
+
+.step-circle {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: #e0e0e0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 0.875rem;
+  color: #666;
+  transition: all 0.3s ease;
+}
+
+.progress-step.active .step-circle {
+  background: #ffc107;
+  color: white;
+  transform: scale(1.1);
+}
+
+.progress-step.completed .step-circle {
+  background: #4caf50;
+  color: white;
+}
+
+.step-label {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: #666;
+}
+
+.progress-step.active .step-label {
+  color: #333;
+  font-weight: 600;
+}
+
+.progress-line {
+  flex: 1;
+  height: 2px;
+  background: #e0e0e0;
+  max-width: 40px;
+}
+
+/* Content */
+.onboarding-content {
+  padding: 0 32px 24px;
+  min-height: 400px;
+  position: relative;
+  overflow: hidden;
+}
+
+.step-wrapper {
+  width: 100%;
+}
+
+/* Footer */
+.onboarding-footer {
+  padding: 16px 32px 24px;
+  background: #f9f9f9;
+  text-align: center;
+}
+
+.privacy-text,
+.coppa-text {
+  font-size: 0.75rem;
+  color: #666;
+  margin: 4px 0;
+}
+
+.privacy-text a,
+.coppa-text a {
+  color: #2196f3;
+  text-decoration: none;
+}
+
+.privacy-text a:hover,
+.coppa-text a:hover {
+  text-decoration: underline;
+}
+
+/* Step common styles */
+.step-header {
+  text-align: center;
+  margin-bottom: 24px;
+}
+
+.step-header h2 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #333;
+  margin: 0 0 8px;
+}
+
+.step-header .subtitle {
+  font-size: 0.9375rem;
+  color: #666;
+  margin: 0;
+}
+
+/* Form styles */
+.form-group {
+  margin-bottom: 16px;
+}
+
+.form-label {
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 6px;
+}
+
+.form-input {
+  width: 100%;
+  padding: 12px 16px;
+  font-size: 1rem;
+  border: 2px solid #e0e0e0;
+  border-radius: 12px;
+  transition: all 0.2s ease;
+  outline: none;
+  box-sizing: border-box;
+}
+
+.form-input:focus {
+  border-color: #ffc107;
+  box-shadow: 0 0 0 3px rgba(255, 193, 7, 0.15);
+}
+
+.form-input.error {
+  border-color: #f44336;
+}
+
+.form-input::placeholder {
+  color: #999;
+}
+
+.form-hint {
+  font-size: 0.75rem;
+  color: #666;
+  margin-top: 4px;
+}
+
+.form-error {
+  font-size: 0.75rem;
+  color: #f44336;
+  margin-top: 4px;
+}
+
+/* Buttons */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 14px 24px;
+  font-size: 1rem;
+  font-weight: 600;
+  border-radius: 12px;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  gap: 8px;
+  width: 100%;
+}
+
+.btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, #ffc107, #ff9800);
+  color: white;
+  box-shadow: 0 4px 12px rgba(255, 152, 0, 0.3);
+}
+
+.btn-primary:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(255, 152, 0, 0.4);
+}
+
+.btn-secondary {
+  background: #f5f5f5;
+  color: #333;
+}
+
+.btn-secondary:hover:not(:disabled) {
+  background: #eeeeee;
+}
+
+.btn-outline {
+  background: transparent;
+  border: 2px solid #e0e0e0;
+  color: #333;
+}
+
+.btn-outline:hover:not(:disabled) {
+  border-color: #ffc107;
+  background: rgba(255, 193, 7, 0.05);
+}
+
+/* Error message */
+.error-message {
+  background: #ffebee;
+  color: #c62828;
+  padding: 12px 16px;
+  border-radius: 12px;
+  font-size: 0.875rem;
+  margin-bottom: 16px;
+  text-align: center;
+}
+
+/* Success message */
+.success-message {
+  background: #e8f5e9;
+  color: #2e7d32;
+  padding: 12px 16px;
+  border-radius: 12px;
+  font-size: 0.875rem;
+  margin-bottom: 16px;
+  text-align: center;
+}
+
+/* Loading spinner */
+.loading-spinner {
+  width: 20px;
+  height: 20px;
+  border: 2px solid #fff;
+  border-top-color: transparent;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Divider */
+.divider {
+  display: flex;
+  align-items: center;
+  margin: 20px 0;
+}
+
+.divider::before,
+.divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: #e0e0e0;
+}
+
+.divider span {
+  padding: 0 16px;
+  font-size: 0.875rem;
+  color: #999;
+}
+
+/* Link button */
+.link-btn {
+  background: none;
+  border: none;
+  color: #2196f3;
+  font-size: 0.875rem;
+  cursor: pointer;
+  padding: 0;
+}
+
+.link-btn:hover {
+  text-decoration: underline;
+}
+
+/* Responsive */
+@media (max-width: 560px) {
+  .onboarding-flow {
+    padding: 0;
+  }
+
+  .onboarding-container {
+    max-width: 100%;
+    min-height: 100vh;
+    border-radius: 0;
+  }
+
+  .onboarding-header {
+    padding: 20px 20px 0;
+  }
+
+  .onboarding-progress {
+    padding: 20px;
+  }
+
+  .onboarding-content {
+    padding: 0 20px 20px;
+  }
+
+  .onboarding-footer {
+    padding: 16px 20px 24px;
+  }
+
+  .step-label {
+    display: none;
+  }
+
+  .progress-line {
+    max-width: 24px;
+  }
+}
