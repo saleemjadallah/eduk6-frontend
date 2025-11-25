@@ -21,7 +21,7 @@ const MainLayout = ({ children, className = "bg-nanobanana-blue", showClouds = f
                             transition={{ duration: 1 }}
                             src="/assets/images/cloud_backdrop_top.png"
                             alt=""
-                            className="absolute top-0 left-0 w-full object-contain opacity-60"
+                            className="absolute top-0 left-0 w-full h-1/2 object-cover opacity-60"
                         />
                         <motion.img
                             initial={{ opacity: 0, y: 20 }}
@@ -29,7 +29,7 @@ const MainLayout = ({ children, className = "bg-nanobanana-blue", showClouds = f
                             transition={{ duration: 1 }}
                             src="/assets/images/cloud_backdrop_bottom.png"
                             alt=""
-                            className="absolute bottom-0 left-0 w-full object-contain opacity-80"
+                            className="absolute bottom-0 left-0 w-full h-2/3 object-cover opacity-80"
                         />
                     </>
                 )}

@@ -7,6 +7,7 @@ import { useFlashcards } from '../../hooks/useFlashcards';
 import { useLessonContext } from '../../context/LessonContext';
 import { useLessonActions } from '../../hooks/useLessonActions';
 import ProcessingAnimation from '../Upload/ProcessingAnimation';
+import { HighlightableContent, SelectionToolbar } from '../Selection';
 
 const LessonView = ({ lesson, onComplete }) => {
     const [isCreatorOpen, setIsCreatorOpen] = useState(false);
@@ -163,6 +164,13 @@ const LessonView = ({ lesson, onComplete }) => {
 
             {/* Content Area */}
             <div className="flex-1 p-6 overflow-y-auto bg-[url('https://www.transparenttextures.com/patterns/graphy.png')]">
+                <HighlightableContent
+                    lessonId={displayLesson.id}
+                    contentType="html"
+                    onSelectionAction={(result) => {
+                        console.log('Selection action result:', result);
+                    }}
+                >
                 <div className="space-y-6">
                     {/* Video if YouTube source */}
                     {displayLesson.sourceType === 'youtube' && displayLesson.sourceVideo && (
@@ -344,6 +352,10 @@ const LessonView = ({ lesson, onComplete }) => {
                         </div>
                     )}
                 </div>
+
+                    {/* Selection Toolbar */}
+                    <SelectionToolbar />
+                </HighlightableContent>
             </div>
 
             {/* Flashcard Creator Modal */}

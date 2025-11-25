@@ -1,0 +1,577 @@
+/* ===========================================
+   Text Selection & Context Menu Styles
+   Child-friendly interactive learning feature
+   =========================================== */
+
+/* ============================================
+   HIGHLIGHTABLE CONTENT
+   ============================================ */
+
+.highlightable-content {
+    position: relative;
+    user-select: text;
+    -webkit-user-select: text;
+    -moz-user-select: text;
+    -ms-user-select: text;
+    cursor: text;
+    line-height: 1.8;
+}
+
+/* Selection highlight - bright yellow for visibility */
+.highlightable-content ::selection {
+    background-color: #FFD93D;
+    color: #000;
+}
+
+.highlightable-content ::-moz-selection {
+    background-color: #FFD93D;
+    color: #000;
+}
+
+/* Selecting state */
+.highlightable-content.is-selecting {
+    cursor: text;
+}
+
+/* ============================================
+   SELECTION PARTICLES
+   ============================================ */
+
+.selection-particles {
+    position: fixed;
+    pointer-events: none;
+    z-index: 999;
+}
+
+.selection-particle {
+    position: absolute;
+    width: 8px;
+    height: 8px;
+    background: #FFD93D;
+    border-radius: 50%;
+    box-shadow: 0 0 6px rgba(255, 217, 61, 0.6);
+}
+
+/* ============================================
+   CONTEXT MENU
+   ============================================ */
+
+.context-menu {
+    background: white;
+    border-radius: 20px;
+    padding: 16px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.25);
+    min-width: 280px;
+    max-width: 340px;
+    border: 4px solid #000;
+    position: relative;
+}
+
+/* Speech bubble pointer */
+.context-menu::before {
+    content: '';
+    position: absolute;
+    bottom: -14px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 0;
+    height: 0;
+    border-left: 14px solid transparent;
+    border-right: 14px solid transparent;
+    border-top: 14px solid #000;
+}
+
+.context-menu::after {
+    content: '';
+    position: absolute;
+    bottom: -10px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 0;
+    height: 0;
+    border-left: 11px solid transparent;
+    border-right: 11px solid transparent;
+    border-top: 11px solid white;
+}
+
+/* ============================================
+   JEFFREY AVATAR
+   ============================================ */
+
+.jeffrey-avatar {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 12px;
+}
+
+.jeffrey-image {
+    flex-shrink: 0;
+}
+
+.speech-bubble {
+    background: #F7F7F7;
+    padding: 8px 14px;
+    border-radius: 16px;
+    font-size: 14px;
+    font-weight: 600;
+    color: #333;
+    position: relative;
+    flex: 1;
+}
+
+.speech-bubble::before {
+    content: '';
+    position: absolute;
+    left: -8px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 0;
+    height: 0;
+    border-top: 8px solid transparent;
+    border-bottom: 8px solid transparent;
+    border-right: 8px solid #F7F7F7;
+}
+
+/* ============================================
+   SELECTED TEXT PREVIEW
+   ============================================ */
+
+.selected-text-preview {
+    background: #FFF9E6;
+    border: 2px solid #FFD93D;
+    border-radius: 10px;
+    padding: 8px 12px;
+    margin-bottom: 12px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* ============================================
+   MENU ACTIONS
+   ============================================ */
+
+.menu-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+/* ============================================
+   MENU BUTTON
+   ============================================ */
+
+.menu-button {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 16px;
+    border: 3px solid #000;
+    border-radius: 14px;
+    font-size: 16px;
+    font-weight: 700;
+    color: #000;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    min-height: 56px;
+    position: relative;
+    overflow: hidden;
+    text-align: left;
+    width: 100%;
+    background: inherit;
+}
+
+.menu-button:hover:not(.disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.menu-button:active:not(.disabled) {
+    transform: translateY(0);
+    box-shadow: none;
+}
+
+.menu-button.disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    pointer-events: none;
+}
+
+.menu-button.loading::after {
+    content: '';
+    position: absolute;
+    right: 16px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 20px;
+    height: 20px;
+    border: 3px solid rgba(0, 0, 0, 0.2);
+    border-top-color: #000;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+}
+
+.menu-button-icon {
+    font-size: 24px;
+    min-width: 32px;
+    text-align: center;
+    line-height: 1;
+}
+
+.menu-button-label {
+    flex: 1;
+    font-family: 'Comic Sans MS', 'Comic Neue', 'Nunito', cursive, sans-serif;
+}
+
+/* ============================================
+   QUESTION INPUT
+   ============================================ */
+
+.question-input {
+    margin-top: 12px;
+    padding: 12px;
+    background: #F0F0F0;
+    border-radius: 14px;
+    border: 2px solid #000;
+    overflow: hidden;
+}
+
+.question-input input {
+    width: 100%;
+    padding: 12px;
+    font-size: 16px;
+    border: none;
+    background: white;
+    border-radius: 10px;
+    border: 2px solid #000;
+    font-family: 'Comic Sans MS', 'Comic Neue', 'Nunito', cursive, sans-serif;
+}
+
+.question-input input:focus {
+    outline: none;
+    border-color: #4ECDC4;
+    box-shadow: 0 0 0 3px rgba(78, 205, 196, 0.25);
+}
+
+.question-input input::placeholder {
+    color: #999;
+}
+
+/* ============================================
+   DISMISS BUTTON
+   ============================================ */
+
+.dismiss-button {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: #f0f0f0;
+    border: 2px solid #ccc;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    color: #666;
+    transition: all 0.2s;
+}
+
+.dismiss-button:hover {
+    background: #e0e0e0;
+    border-color: #999;
+    color: #333;
+}
+
+/* ============================================
+   SELECTION RESULT MODAL
+   ============================================ */
+
+.selection-result-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    z-index: 2000;
+    backdrop-filter: blur(4px);
+}
+
+.selection-result-content {
+    background: white;
+    border-radius: 24px;
+    padding: 28px;
+    max-width: 500px;
+    width: 100%;
+    max-height: 85vh;
+    overflow-y: auto;
+    border: 5px solid #000;
+    box-shadow: 8px 8px 0 #000;
+    position: relative;
+}
+
+/* ============================================
+   XP GAIN ANIMATION
+   ============================================ */
+
+.xp-gain-animation {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    padding: 16px 24px;
+    background: linear-gradient(135deg, #FFD93D 0%, #FFA500 100%);
+    border-radius: 16px;
+    border: 3px solid #000;
+    box-shadow: 4px 4px 0 #000;
+}
+
+.xp-icon {
+    font-size: 32px;
+    animation: bounce 0.5s ease-in-out 3;
+}
+
+.xp-text {
+    font-size: 24px;
+    font-weight: 800;
+    color: #000;
+    font-family: 'Comic Sans MS', 'Comic Neue', 'Nunito', cursive, sans-serif;
+}
+
+/* ============================================
+   JEFFREY RESPONSE VIEW
+   ============================================ */
+
+.jeffrey-response-view {
+    padding: 8px 0;
+}
+
+/* ============================================
+   FLASHCARD PREVIEW
+   ============================================ */
+
+.flashcard-preview {
+    padding: 8px 0;
+}
+
+.flashcard-container {
+    perspective: 1000px;
+    margin: 16px 0;
+}
+
+.flashcard {
+    width: 100%;
+    min-height: 180px;
+    position: relative;
+    transform-style: preserve-3d;
+}
+
+.flashcard-face {
+    position: absolute;
+    width: 100%;
+    min-height: 180px;
+    backface-visibility: hidden;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    border-radius: 16px;
+    border: 3px solid #000;
+}
+
+.flashcard-front {
+    background: linear-gradient(135deg, #E8DAFF 0%, #F0E6FF 100%);
+}
+
+.flashcard-back {
+    background: linear-gradient(135deg, #FFF3CD 0%, #FFEAA7 100%);
+}
+
+.flashcard-face.hidden {
+    visibility: hidden;
+}
+
+/* ============================================
+   QUIZ PREVIEW
+   ============================================ */
+
+.quiz-preview {
+    padding: 8px 0;
+}
+
+/* ============================================
+   CONTINUE BUTTON
+   ============================================ */
+
+.continue-button {
+    width: 100%;
+    padding: 16px;
+    background: #4ECDC4;
+    border: 4px solid #000;
+    border-radius: 16px;
+    font-size: 18px;
+    font-weight: 800;
+    color: #000;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    margin-top: 20px;
+    transition: all 0.2s ease;
+    font-family: 'Comic Sans MS', 'Comic Neue', 'Nunito', cursive, sans-serif;
+}
+
+.continue-button:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
+}
+
+.continue-button:active {
+    transform: translateY(0);
+    box-shadow: none;
+}
+
+/* ============================================
+   ANIMATIONS
+   ============================================ */
+
+@keyframes spin {
+    to {
+        transform: translateY(-50%) rotate(360deg);
+    }
+}
+
+@keyframes bounce {
+    0%, 100% {
+        transform: translateY(0);
+    }
+    50% {
+        transform: translateY(-10px);
+    }
+}
+
+@keyframes highlightPulse {
+    0% {
+        opacity: 0;
+        transform: scale(0.95);
+    }
+    50% {
+        opacity: 0.8;
+    }
+    100% {
+        opacity: 0.6;
+        transform: scale(1);
+    }
+}
+
+/* ============================================
+   RESPONSIVE DESIGN
+   ============================================ */
+
+@media (max-width: 768px) {
+    .context-menu {
+        min-width: 90vw;
+        max-width: 400px;
+        padding: 14px;
+    }
+
+    .selection-result-content {
+        padding: 20px;
+        max-width: 95vw;
+        border-width: 4px;
+        box-shadow: 6px 6px 0 #000;
+    }
+
+    .menu-button {
+        font-size: 17px;
+        padding: 12px 14px;
+        min-height: 52px;
+    }
+
+    .menu-button-icon {
+        font-size: 22px;
+        min-width: 28px;
+    }
+
+    .xp-text {
+        font-size: 20px;
+    }
+
+    .xp-icon {
+        font-size: 28px;
+    }
+}
+
+@media (max-width: 480px) {
+    .context-menu {
+        min-width: calc(100vw - 40px);
+        padding: 12px;
+    }
+
+    .menu-button {
+        padding: 10px 12px;
+        min-height: 48px;
+    }
+}
+
+/* ============================================
+   ACCESSIBILITY
+   ============================================ */
+
+.context-menu:focus-visible,
+.menu-button:focus-visible {
+    outline: 3px solid #4ECDC4;
+    outline-offset: 2px;
+}
+
+.menu-button:focus-visible {
+    box-shadow: 0 0 0 4px rgba(78, 205, 196, 0.4);
+}
+
+/* High contrast mode */
+@media (prefers-contrast: high) {
+    .context-menu {
+        border-width: 5px;
+    }
+
+    .menu-button {
+        border-width: 4px;
+    }
+
+    .selection-result-content {
+        border-width: 6px;
+    }
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+    .menu-button,
+    .context-menu,
+    .selection-result-content,
+    .xp-icon {
+        animation: none;
+        transition: none;
+    }
+
+    .selection-particle {
+        display: none;
+    }
+}
+
+/* ============================================
+   DARK MODE SUPPORT (future)
+   ============================================ */
+
+@media (prefers-color-scheme: dark) {
+    /* Could add dark mode styles here */
+}
