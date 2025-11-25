@@ -1,7 +1,10 @@
 import { pdfjs } from 'react-pdf';
 
-// Configure PDF.js worker using CDN
-pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
+// Configure PDF.js worker - use local worker from node_modules
+pdfjs.GlobalWorkerOptions.workerSrc = new URL(
+  'pdfjs-dist/build/pdf.worker.min.mjs',
+  import.meta.url
+).toString();
 
 // Configure text layer options
 export const PDF_TEXT_LAYER_OPTIONS = {
