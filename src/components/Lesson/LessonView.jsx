@@ -1,16 +1,23 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { Link } from 'react-router-dom';
-import { motion } from 'framer-motion';
-import { BookOpen, PlayCircle, Star, Clock, FileText, Layers, Sparkles, CheckCircle } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { BookOpen, PlayCircle, Star, Clock, FileText, Layers, Sparkles, CheckCircle, Image as ImageIcon, FileType } from 'lucide-react';
 import { FlashcardCreator } from '../Flashcards';
 import { useFlashcards } from '../../hooks/useFlashcards';
 import { useLessonContext } from '../../context/LessonContext';
 import { useLessonActions } from '../../hooks/useLessonActions';
 import ProcessingAnimation from '../Upload/ProcessingAnimation';
 import { HighlightableContent, SelectionToolbar } from '../Selection';
+import { detectContentType, getContentTypeDisplayInfo } from '../../utils/contentDetection';
+import ContentRenderer from '../LessonView/ContentRenderer';
+import { VocabularyPanel } from '../LessonView/Metadata';
 
-const LessonView = ({ lesson, onComplete }) => {
+const LessonView = ({ lesson, onComplete, showContentViewer = false }) => {
     const [isCreatorOpen, setIsCreatorOpen] = useState(false);
+    const [showVocabulary, setShowVocabulary] = useState(false);
+    const [viewMode, setViewMode] = useState('structured'); // 'structured' | 'content'
+    const [viewPreferences, setViewPreferences] = useState({ zoom: 1, currentPage: 1 });
+
     const { canCreateDeckFromLesson, getDeckForLesson, createDeckFromLesson } = useFlashcards();
 
     // Use context for enhanced features
@@ -19,10 +26,35 @@ const LessonView = ({ lesson, onComplete }) => {
         processingStage,
         processingProgress,
         currentStageInfo,
-        hasLessons
+        hasLessons,
+        updateLessonProgress,
     } = useLessonContext();
 
     const { formatTimeSpent } = useLessonActions();
+
+    // Detect content type and check if we have actual file content
+    const contentType = lesson ? detectContentType(lesson) : 'unknown';
+    const hasFileContent = lesson?.contentUrl || lesson?.source?.url || lesson?.fileUrl;
+    const contentTypeInfo = getContentTypeDisplayInfo(contentType);
+
+    // Toggle vocabulary sidebar
+    const toggleVocabulary = useCallback(() => {
+        setShowVocabulary(prev => !prev);
+    }, []);
+
+    // Handle view mode toggle
+    const toggleViewMode = useCallback(() => {
+        setViewMode(prev => prev === 'structured' ? 'content' : 'structured');
+    }, []);
+
+    // Handle zoom/page changes
+    const handleZoomChange = useCallback((zoom) => {
+        setViewPreferences(prev => ({ ...prev, zoom }));
+    }, []);
+
+    const handlePageChange = useCallback((page) => {
+        setViewPreferences(prev => ({ ...prev, currentPage: page }));
+    }, []);
 
     const existingDeck = lesson ? getDeckForLesson(lesson.id) : null;
     const canCreateDeck = lesson ? canCreateDeckFromLesson(lesson) : false;
@@ -118,28 +150,77 @@ const LessonView = ({ lesson, onComplete }) => {
         <div className="flex-[1.5] bg-white rounded-3xl shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] border-4 border-black overflow-hidden flex flex-col">
             {/* Lesson Header */}
             <div className="bg-nanobanana-green border-b-4 border-black p-6">
-                <div className="flex items-center gap-2 mb-2 flex-wrap">
-                    <span className="bg-black text-white px-3 py-1 rounded-full text-xs font-bold uppercase">
-                        {subjectEmoji[displayLesson.subject?.toLowerCase()] || '📝'} {displayLesson.subject || 'Lesson'}
-                    </span>
-                    {displayLesson.gradeLevel && (
-                        <span className="bg-white/20 text-white px-3 py-1 rounded-full text-xs font-bold">
-                            {displayLesson.gradeLevel}
+                {/* Top row with view toggle and vocabulary */}
+                <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-2 flex-wrap">
+                        <span className="bg-black text-white px-3 py-1 rounded-full text-xs font-bold uppercase">
+                            {subjectEmoji[displayLesson.subject?.toLowerCase()] || '📝'} {displayLesson.subject || 'Lesson'}
                         </span>
-                    )}
-                    {(displayLesson.content?.estimatedReadTime || timeSpent) && (
-                        <span className="flex items-center gap-1 text-white/80 text-xs font-bold">
-                            <Clock className="w-3 h-3" />
-                            {timeSpent || `${displayLesson.content.estimatedReadTime} min read`}
-                        </span>
-                    )}
-                    {progressPercent === 100 && (
-                        <span className="flex items-center gap-1 bg-white text-green-600 px-2 py-1 rounded-full text-xs font-bold">
-                            <CheckCircle className="w-3 h-3" />
-                            Completed
-                        </span>
-                    )}
+                        {displayLesson.gradeLevel && (
+                            <span className="bg-white/20 text-white px-3 py-1 rounded-full text-xs font-bold">
+                                {displayLesson.gradeLevel}
+                            </span>
+                        )}
+                        {/* Content type badge */}
+                        {hasFileContent && (
+                            <span className="bg-white/20 text-white px-2 py-1 rounded-full text-xs font-bold flex items-center gap-1">
+                                {contentTypeInfo.emoji} {contentTypeInfo.label}
+                            </span>
+                        )}
+                        {(displayLesson.content?.estimatedReadTime || timeSpent) && (
+                            <span className="flex items-center gap-1 text-white/80 text-xs font-bold">
+                                <Clock className="w-3 h-3" />
+                                {timeSpent || `${displayLesson.content.estimatedReadTime} min read`}
+                            </span>
+                        )}
+                        {progressPercent === 100 && (
+                            <span className="flex items-center gap-1 bg-white text-green-600 px-2 py-1 rounded-full text-xs font-bold">
+                                <CheckCircle className="w-3 h-3" />
+                                Completed
+                            </span>
+                        )}
+                    </div>
+
+                    {/* Right side actions */}
+                    <div className="flex items-center gap-2">
+                        {/* View mode toggle (if file content exists) */}
+                        {hasFileContent && (
+                            <motion.button
+                                whileHover={{ scale: 1.05 }}
+                                whileTap={{ scale: 0.95 }}
+                                onClick={toggleViewMode}
+                                className={`
+                                    px-3 py-1 rounded-full text-xs font-bold border-2 border-white/30 transition-colors
+                                    ${viewMode === 'content'
+                                        ? 'bg-white text-green-600'
+                                        : 'bg-white/20 text-white hover:bg-white/30'
+                                    }
+                                `}
+                            >
+                                {viewMode === 'content' ? '📖 Summary' : `${contentTypeInfo.emoji} View File`}
+                            </motion.button>
+                        )}
+
+                        {/* Vocabulary toggle */}
+                        {(displayLesson.vocabulary?.length > 0 || displayLesson.content?.vocabulary?.length > 0) && (
+                            <motion.button
+                                whileHover={{ scale: 1.05 }}
+                                whileTap={{ scale: 0.95 }}
+                                onClick={toggleVocabulary}
+                                className={`
+                                    px-3 py-1 rounded-full text-xs font-bold border-2 border-white/30 transition-colors
+                                    ${showVocabulary
+                                        ? 'bg-white text-green-600'
+                                        : 'bg-white/20 text-white hover:bg-white/30'
+                                    }
+                                `}
+                            >
+                                📖 Words ({(displayLesson.vocabulary || displayLesson.content?.vocabulary || []).length})
+                            </motion.button>
+                        )}
+                    </div>
                 </div>
+
                 <h1 className="text-3xl font-black font-comic text-white drop-shadow-[2px_2px_0px_rgba(0,0,0,1)]">
                     {displayLesson.title}
                 </h1>
@@ -162,9 +243,25 @@ const LessonView = ({ lesson, onComplete }) => {
                 )}
             </div>
 
-            {/* Content Area */}
-            <div className="flex-1 p-6 overflow-y-auto bg-[url('https://www.transparenttextures.com/patterns/graphy.png')]">
-                <HighlightableContent
+            {/* Main content area with optional vocabulary sidebar */}
+            <div className="flex-1 flex overflow-hidden">
+                {/* Content Area */}
+                <div className={`flex-1 overflow-y-auto transition-all duration-300 ${showVocabulary ? 'lg:mr-0' : ''}`}>
+                    {/* Show ContentRenderer for file view mode */}
+                    {viewMode === 'content' && hasFileContent ? (
+                        <ContentRenderer
+                            lesson={displayLesson}
+                            viewPreferences={viewPreferences}
+                            onZoomChange={handleZoomChange}
+                            onPageChange={handlePageChange}
+                            onSelectionAction={(result) => {
+                                console.log('Selection action result:', result);
+                            }}
+                        />
+                    ) : (
+                        /* Show structured content view */
+                        <div className="p-6 bg-[url('https://www.transparenttextures.com/patterns/graphy.png')]">
+                            <HighlightableContent
                     lessonId={displayLesson.id}
                     contentType="html"
                     onSelectionAction={(result) => {
@@ -356,6 +453,28 @@ const LessonView = ({ lesson, onComplete }) => {
                     {/* Selection Toolbar */}
                     <SelectionToolbar />
                 </HighlightableContent>
+                        </div>
+                    )}
+                </div>
+
+                {/* Vocabulary Sidebar */}
+                <AnimatePresence>
+                    {showVocabulary && (displayLesson.vocabulary?.length > 0 || displayLesson.content?.vocabulary?.length > 0) && (
+                        <motion.div
+                            initial={{ width: 0, opacity: 0 }}
+                            animate={{ width: 280, opacity: 1 }}
+                            exit={{ width: 0, opacity: 0 }}
+                            transition={{ duration: 0.3 }}
+                            className="hidden lg:block border-l-4 border-black overflow-hidden"
+                        >
+                            <VocabularyPanel
+                                vocabulary={displayLesson.vocabulary || displayLesson.content?.vocabulary || []}
+                                lessonId={displayLesson.id}
+                                onClose={() => setShowVocabulary(false)}
+                            />
+                        </motion.div>
+                    )}
+                </AnimatePresence>
             </div>
 
             {/* Flashcard Creator Modal */}
