@@ -35,17 +35,8 @@ function App() {
                                 <ModeProvider>
                                     <Routes>
                                         {/* Public routes */}
+                                        <Route path="/" element={<HomePage />} />
                                         <Route path="/onboarding" element={<OnboardingPage />} />
-
-                                        {/* Redirect root to learn */}
-                                        <Route
-                                            path="/"
-                                            element={
-                                                <ProtectedRoute>
-                                                    <Navigate to="/learn" replace />
-                                                </ProtectedRoute>
-                                            }
-                                        />
 
                                         {/* Child routes - wrapped in ChildLayout */}
                                         <Route
