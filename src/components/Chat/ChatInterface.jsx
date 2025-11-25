@@ -1,8 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { motion } from 'framer-motion';
-import { Send, Image, Video, FileText, Sparkles, Clock } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Send, Image, Video, FileText, Sparkles, Clock, RefreshCw, Trash2 } from 'lucide-react';
 import Jeffrey from '../Avatar/Jeffrey';
+import SafetyIndicator from './SafetyIndicator';
 import { useLessonContext } from '../../context/LessonContext';
+import { useChatContext } from '../../context/ChatContext';
 import { useLessonActions } from '../../hooks/useLessonActions';
 
 const ChatInterface = ({
@@ -12,22 +14,40 @@ const ChatInterface = ({
     initialInput = '',
     onInputChange
 }) => {
-    const [messages, setMessages] = useState([]);
     const [input, setInput] = useState(initialInput);
-    const [isTyping, setIsTyping] = useState(false);
     const messagesEndRef = useRef(null);
+    const inputRef = useRef(null);
 
     // Use context for enhanced features
-    const { isReady, currentStageInfo, isProcessing } = useLessonContext();
+    const lessonContext = useLessonContext();
+    const { isReady, currentStageInfo, isProcessing } = lessonContext || {};
+
+    // Get chat context - may not be available in demo mode
+    let chatContext = null;
+    try {
+        chatContext = useChatContext();
+    } catch (e) {
+        // ChatContext not available (demo mode or not wrapped in provider)
+    }
+
     const {
-        getSuggestedQuestions,
-        addChatMessage,
         getCurrentLessonTimeSpent,
-        getChatContext
     } = useLessonActions();
 
     // Use prop lesson or get from context
-    const activeLesson = lesson;
+    const activeLesson = lesson || lessonContext?.currentLesson;
+
+    // Demo mode state (local state for demo)
+    const [demoMessages, setDemoMessages] = useState([]);
+    const [demoTyping, setDemoTyping] = useState(false);
+
+    // Get messages and state from ChatContext if available
+    const messages = chatContext?.messages || demoMessages;
+    const isTyping = chatContext?.isLoading && !chatContext?.isStreaming;
+    const isStreaming = chatContext?.isStreaming || false;
+    const safetyFlags = chatContext?.safetyFlags || [];
+    const error = chatContext?.error;
+    const suggestedQuestions = chatContext?.suggestedQuestions || [];
 
     // Sync with external input
     useEffect(() => {
@@ -49,38 +69,47 @@ const ChatInterface = ({
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     }, [messages]);
 
-    // Initialize with context-aware greeting
+    // Initialize with context-aware greeting for demo mode
     useEffect(() => {
-        if (activeLesson) {
-            setMessages([{
-                id: 1,
-                type: 'bot',
-                text: `Hi! I'm Jeffrey! I just read "${activeLesson.title}" and I'm ready to help you learn! What would you like to know?`
-            }]);
-        } else {
-            setMessages([{
-                id: 1,
-                type: 'bot',
-                text: "Hi! I'm Jeffrey. Upload a lesson and I'll help you learn!"
-            }]);
+        if (demoMode) {
+            if (activeLesson) {
+                setDemoMessages([{
+                    id: 1,
+                    role: 'assistant',
+                    content: `Hi! I'm Jeffrey! I just read "${activeLesson.title}" and I'm ready to help you learn! What would you like to know?`,
+                    timestamp: new Date(),
+                }]);
+            } else {
+                setDemoMessages([{
+                    id: 1,
+                    role: 'assistant',
+                    content: "Hi! I'm Jeffrey. Upload a lesson and I'll help you learn!",
+                    timestamp: new Date(),
+                }]);
+            }
         }
-    }, [activeLesson?.id]);
+    }, [demoMode, activeLesson?.id]);
 
     // Demo mode sequence
     useEffect(() => {
         if (demoMode) {
             const demoSequence = [
-                { delay: 1000, type: 'user', text: "Tell me about the sun!" },
-                { delay: 2500, type: 'bot', text: "The Sun is a giant star at the center of our Solar System!" },
-                { delay: 4500, type: 'bot', text: "It gives us light and heat. Without it, Earth would be frozen!" },
-                { delay: 6000, type: 'user', text: "Wow, that's hot!" },
-                { delay: 7500, type: 'bot', text: "Super hot! It's about 27 million degrees Fahrenheit at the core!" }
+                { delay: 1000, role: 'user', content: "Tell me about the sun!" },
+                { delay: 2500, role: 'assistant', content: "The Sun is a giant star at the center of our Solar System!" },
+                { delay: 4500, role: 'assistant', content: "It gives us light and heat. Without it, Earth would be frozen!" },
+                { delay: 6000, role: 'user', content: "Wow, that's hot!" },
+                { delay: 7500, role: 'assistant', content: "Super hot! It's about 27 million degrees Fahrenheit at the core!" }
             ];
 
             let timeouts = [];
-            demoSequence.forEach(({ delay, type, text }, index) => {
+            demoSequence.forEach(({ delay, role, content }, index) => {
                 const timeout = setTimeout(() => {
-                    setMessages(prev => [...prev, { id: Date.now() + index, type, text }]);
+                    setDemoMessages(prev => [...prev, {
+                        id: Date.now() + index,
+                        role,
+                        content,
+                        timestamp: new Date(),
+                    }]);
                 }, delay);
                 timeouts.push(timeout);
             });
@@ -92,13 +121,32 @@ const ChatInterface = ({
     const handleSend = async () => {
         if (!input.trim()) return;
 
-        const userMessage = { id: Date.now(), type: 'user', text: input };
-        setMessages(prev => [...prev, userMessage]);
+        const messageContent = input;
         handleInputChange('');
 
-        // Track chat message in lesson context
-        if (activeLesson) {
-            addChatMessage({ role: 'user', content: input });
+        // Use ChatContext if available
+        if (chatContext?.sendMessage) {
+            await chatContext.sendMessage(messageContent);
+        } else if (demoMode) {
+            // Demo mode - add user message locally
+            setDemoMessages(prev => [...prev, {
+                id: Date.now(),
+                role: 'user',
+                content: messageContent,
+                timestamp: new Date(),
+            }]);
+
+            // Simulate bot response for demo
+            setDemoTyping(true);
+            setTimeout(() => {
+                setDemoMessages(prev => [...prev, {
+                    id: Date.now() + 1,
+                    role: 'assistant',
+                    content: generateDemoResponse(messageContent, activeLesson),
+                    timestamp: new Date(),
+                }]);
+                setDemoTyping(false);
+            }, 1000);
         }
 
         // Notify parent of interaction (for gamification)
@@ -106,35 +154,20 @@ const ChatInterface = ({
             onInteraction();
         }
 
-        // Show typing indicator
-        setIsTyping(true);
-
-        // Simulate bot response (replace with actual Gemini API call)
+        // Refocus input
         setTimeout(() => {
-            const botResponse = {
-                id: Date.now() + 1,
-                type: 'bot',
-                text: generateContextualResponse(input, activeLesson)
-            };
-            setMessages(prev => [...prev, botResponse]);
-            setIsTyping(false);
-
-            // Track bot response
-            if (activeLesson) {
-                addChatMessage({ role: 'assistant', content: botResponse.text });
-            }
-        }, 1000);
+            inputRef.current?.focus();
+        }, 100);
     };
 
-    // Generate a contextual response based on the lesson
-    const generateContextualResponse = (question, lesson) => {
+    // Generate a demo response (fallback for demo mode)
+    const generateDemoResponse = (question, lesson) => {
         if (!lesson) {
             return "Upload a lesson first, and I'll help you learn about it!";
         }
 
         const lowercaseQuestion = question.toLowerCase();
 
-        // Simple contextual responses (replace with actual AI)
         if (lowercaseQuestion.includes('summary') || lowercaseQuestion.includes('about')) {
             return lesson.content?.summary || "Let me help you understand this lesson better!";
         }
@@ -144,25 +177,54 @@ const ChatInterface = ({
                 return `Here are the key points:\n${keyPoints.map((p, i) => `${i + 1}. ${p}`).join('\n')}`;
             }
         }
-        if (lowercaseQuestion.includes('vocabulary') || lowercaseQuestion.includes('word')) {
-            const vocab = lesson.content?.vocabulary || [];
-            if (vocab.length > 0) {
-                return `Let me explain some key terms:\n${vocab.slice(0, 3).map(v => `- ${v.term}: ${v.definition}`).join('\n')}`;
-            }
-        }
 
         return "That's a great question! Let me help you understand this better.";
     };
 
-    // Get suggested questions
-    const suggestedQuestions = getSuggestedQuestions();
-
     const handleSuggestedQuestion = (question) => {
         handleInputChange(question);
+        inputRef.current?.focus();
+    };
+
+    const handleKeyDown = (e) => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            handleSend();
+        }
+    };
+
+    const handleClearChat = () => {
+        if (chatContext?.clearChat) {
+            chatContext.clearChat();
+        } else if (demoMode) {
+            setDemoMessages([{
+                id: Date.now(),
+                role: 'assistant',
+                content: "Hi! I'm Jeffrey. What would you like to learn about?",
+                timestamp: new Date(),
+            }]);
+        }
+    };
+
+    const handleRetry = () => {
+        if (chatContext?.retryLastMessage) {
+            chatContext.retryLastMessage();
+        }
     };
 
     // Determine if chat should be disabled
     const isChatDisabled = !demoMode && !activeLesson && !isProcessing;
+    const isInputDisabled = isChatDisabled || chatContext?.isLoading;
+
+    // Get display messages with proper format
+    const displayMessages = messages.map(msg => ({
+        id: msg.id || msg.timestamp?.getTime() || Date.now(),
+        type: msg.role === 'user' ? 'user' : 'bot',
+        text: msg.content,
+        isStreaming: msg.isStreaming,
+        isError: msg.isError,
+        safetyFlags: msg.metadata?.safetyFlags,
+    }));
 
     return (
         <div className={`flex-1 flex flex-col bg-white rounded-3xl shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] border-4 border-black overflow-hidden ${demoMode ? 'h-full' : ''}`}>
@@ -188,35 +250,103 @@ const ChatInterface = ({
                         </div>
                     </div>
                 </div>
-                {!demoMode && (
-                    <button className="p-2 hover:bg-black/10 rounded-full transition-colors">
-                        <Sparkles className="w-6 h-6" />
-                    </button>
-                )}
+
+                <div className="flex items-center gap-2">
+                    {/* Safety Indicator */}
+                    {!demoMode && (
+                        <SafetyIndicator flags={safetyFlags} showDetails={true} />
+                    )}
+
+                    {/* Clear Chat Button */}
+                    {!demoMode && messages.length > 1 && (
+                        <button
+                            onClick={handleClearChat}
+                            className="p-2 hover:bg-black/10 rounded-full transition-colors"
+                            title="Clear chat"
+                        >
+                            <Trash2 className="w-5 h-5 text-gray-600" />
+                        </button>
+                    )}
+
+                    {!demoMode && (
+                        <button className="p-2 hover:bg-black/10 rounded-full transition-colors">
+                            <Sparkles className="w-6 h-6" />
+                        </button>
+                    )}
+                </div>
             </div>
+
+            {/* Error Banner */}
+            <AnimatePresence>
+                {error && (
+                    <motion.div
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: 'auto' }}
+                        exit={{ opacity: 0, height: 0 }}
+                        className="bg-amber-50 border-b-2 border-amber-200 px-4 py-2 flex items-center justify-between"
+                    >
+                        <span className="text-sm text-amber-800">{error}</span>
+                        <button
+                            onClick={handleRetry}
+                            className="text-xs font-medium text-amber-700 hover:text-amber-900 flex items-center gap-1"
+                        >
+                            <RefreshCw className="w-3 h-3" />
+                            Retry
+                        </button>
+                    </motion.div>
+                )}
+            </AnimatePresence>
 
             {/* Messages Area */}
             <div className="flex-1 overflow-y-auto p-4 space-y-4 no-scrollbar">
-                {messages.map((msg) => (
+                {/* Welcome message if no messages */}
+                {displayMessages.length === 0 && chatContext?.welcomeMessage && (
                     <motion.div
-                        key={msg.id}
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="flex justify-start"
+                    >
+                        <div className="max-w-[80%] p-3 rounded-2xl border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] bg-gray-100 text-black rounded-bl-none">
+                            <p className="font-medium text-sm whitespace-pre-wrap">
+                                {chatContext.welcomeMessage}
+                            </p>
+                        </div>
+                    </motion.div>
+                )}
+
+                {displayMessages.map((msg, index) => (
+                    <motion.div
+                        key={msg.id || index}
                         initial={{ opacity: 0, y: 10 }}
                         animate={{ opacity: 1, y: 0 }}
                         className={`flex ${msg.type === 'user' ? 'justify-end' : 'justify-start'}`}
                     >
                         <div
-                            className={`max-w-[80%] p-3 rounded-2xl border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] ${msg.type === 'user'
-                                ? 'bg-nanobanana-blue text-white rounded-br-none'
-                                : 'bg-gray-100 text-black rounded-bl-none'
-                                }`}
+                            className={`max-w-[80%] p-3 rounded-2xl border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] ${
+                                msg.type === 'user'
+                                    ? 'bg-nanobanana-blue text-white rounded-br-none'
+                                    : msg.isError
+                                        ? 'bg-red-50 text-red-800 rounded-bl-none border-red-300'
+                                        : 'bg-gray-100 text-black rounded-bl-none'
+                            }`}
                         >
-                            <p className="font-medium text-sm whitespace-pre-wrap">{msg.text}</p>
+                            <p className="font-medium text-sm whitespace-pre-wrap">
+                                {msg.text}
+                                {msg.isStreaming && (
+                                    <span className="inline-block w-1.5 h-4 ml-1 bg-current animate-pulse" />
+                                )}
+                            </p>
+                            {msg.safetyFlags && msg.safetyFlags.length > 0 && (
+                                <div className="mt-2 pt-2 border-t border-gray-300 flex items-center gap-1 text-xs text-gray-500">
+                                    <span>Content reviewed for safety</span>
+                                </div>
+                            )}
                         </div>
                     </motion.div>
                 ))}
 
                 {/* Typing indicator */}
-                {isTyping && (
+                {(isTyping || demoTyping) && !isStreaming && (
                     <motion.div
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
@@ -248,11 +378,11 @@ const ChatInterface = ({
             </div>
 
             {/* Suggested Questions */}
-            {!demoMode && activeLesson && messages.length <= 2 && (
+            {!demoMode && activeLesson && displayMessages.length <= 2 && suggestedQuestions.length > 0 && (
                 <div className="px-4 pb-2">
                     <p className="text-xs font-bold text-gray-500 mb-2">Try asking:</p>
                     <div className="flex flex-wrap gap-2">
-                        {suggestedQuestions.slice(0, 3).map((question, index) => (
+                        {suggestedQuestions.slice(0, 4).map((question, index) => (
                             <button
                                 key={index}
                                 onClick={() => handleSuggestedQuestion(question)}
@@ -301,21 +431,34 @@ const ChatInterface = ({
                 ) : (
                     <div className="flex gap-2">
                         <input
+                            ref={inputRef}
                             type="text"
                             value={input}
                             onChange={(e) => handleInputChange(e.target.value)}
-                            onKeyPress={(e) => e.key === 'Enter' && handleSend()}
+                            onKeyDown={handleKeyDown}
                             placeholder={activeLesson ? "Ask Jeffrey about the lesson..." : "Upload a lesson to start chatting..."}
-                            disabled={isChatDisabled}
+                            disabled={isInputDisabled}
                             className="flex-1 p-3 border-2 border-black rounded-xl focus:outline-none focus:ring-2 focus:ring-nanobanana-yellow shadow-[2px_2px_0px_0px_rgba(0,0,0,0.1)] disabled:bg-gray-100 disabled:cursor-not-allowed"
                         />
                         <button
                             onClick={handleSend}
-                            disabled={isChatDisabled || !input.trim()}
+                            disabled={isInputDisabled || !input.trim()}
                             className="p-3 bg-nanobanana-blue text-white border-2 border-black rounded-xl hover:bg-blue-600 transition-colors shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] active:translate-y-[2px] active:shadow-none disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                             <Send className="w-5 h-5" />
                         </button>
+                    </div>
+                )}
+
+                {/* Input hints */}
+                {!demoMode && !isChatDisabled && (
+                    <div className="mt-1 flex items-center justify-between text-[10px] text-gray-400 px-1">
+                        <span>Press Enter to send</span>
+                        {safetyFlags.length > 0 && (
+                            <span className="flex items-center gap-1">
+                                Safety filters active
+                            </span>
+                        )}
                     </div>
                 )}
             </div>
