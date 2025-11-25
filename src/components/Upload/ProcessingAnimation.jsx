@@ -1,19 +1,57 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Sparkles, BookOpen, Brain, Lightbulb, CheckCircle } from 'lucide-react';
+import { Sparkles, BookOpen, Brain, Lightbulb, CheckCircle, AlertCircle } from 'lucide-react';
+import { PROCESSING_STAGES, LOADING_MESSAGES } from '../../constants/lessonConstants';
 
-const stages = [
-    { key: 'uploading', label: 'Uploading your lesson...', icon: BookOpen, color: 'bg-blue-500' },
-    { key: 'extracting', label: 'Reading the content...', icon: BookOpen, color: 'bg-purple-500' },
-    { key: 'analyzing', label: 'Jeffrey is thinking...', icon: Brain, color: 'bg-pink-500' },
-    { key: 'generating', label: 'Creating your study guide...', icon: Lightbulb, color: 'bg-orange-500' },
-    { key: 'complete', label: 'All done! 🎉', icon: CheckCircle, color: 'bg-green-500' },
-];
+// Map stages to icons
+const stageIcons = {
+    idle: Sparkles,
+    uploading: BookOpen,
+    extracting: BookOpen,
+    analyzing: Brain,
+    generating: Lightbulb,
+    complete: CheckCircle,
+    error: AlertCircle,
+};
 
-const ProcessingAnimation = ({ stage, progress }) => {
-    const currentStageIndex = stages.findIndex(s => s.key === stage);
-    const CurrentIcon = stages[currentStageIndex]?.icon || Sparkles;
-    const currentColor = stages[currentStageIndex]?.color || 'bg-nanobanana-yellow';
+// Map stages to colors
+const stageColors = {
+    idle: 'bg-gray-400',
+    uploading: 'bg-blue-500',
+    extracting: 'bg-purple-500',
+    analyzing: 'bg-pink-500',
+    generating: 'bg-orange-500',
+    complete: 'bg-green-500',
+    error: 'bg-red-500',
+};
+
+const ProcessingAnimation = ({ stage, progress, useChildLabels = true }) => {
+    const [funMessage, setFunMessage] = useState('');
+
+    // Rotate through fun messages during processing
+    useEffect(() => {
+        if (stage === 'idle' || stage === 'complete' || stage === 'error') {
+            setFunMessage('');
+            return;
+        }
+
+        // Set initial message
+        setFunMessage(LOADING_MESSAGES[Math.floor(Math.random() * LOADING_MESSAGES.length)]);
+
+        // Rotate messages every 3 seconds
+        const interval = setInterval(() => {
+            setFunMessage(LOADING_MESSAGES[Math.floor(Math.random() * LOADING_MESSAGES.length)]);
+        }, 3000);
+
+        return () => clearInterval(interval);
+    }, [stage]);
+
+    const currentStageInfo = PROCESSING_STAGES[stage] || PROCESSING_STAGES.idle;
+    const stageKeys = Object.keys(PROCESSING_STAGES).filter(k => k !== 'idle' && k !== 'error');
+    const currentStageIndex = stageKeys.indexOf(stage);
+    const CurrentIcon = stageIcons[stage] || Sparkles;
+    const currentColor = stageColors[stage] || 'bg-nanobanana-yellow';
+    const displayLabel = useChildLabels ? currentStageInfo.childLabel : currentStageInfo.label;
 
     return (
         <div className="flex flex-col items-center py-8 px-4">
@@ -29,8 +67,8 @@ const ProcessingAnimation = ({ stage, progress }) => {
                     ease: 'easeInOut',
                 }}
                 className={`
-                    w-24 h-24 ${currentColor} 
-                    rounded-full border-4 border-black 
+                    w-24 h-24 ${currentColor}
+                    rounded-full border-4 border-black
                     shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]
                     flex items-center justify-center
                     text-white mb-6
@@ -46,7 +84,7 @@ const ProcessingAnimation = ({ stage, progress }) => {
                 animate={{ opacity: 1, y: 0 }}
                 className="text-xl font-bold font-comic mb-6 text-center"
             >
-                {stages[currentStageIndex]?.label || 'Processing...'}
+                {displayLabel || 'Processing...'}
             </motion.p>
 
             {/* Progress Bar */}
@@ -66,11 +104,11 @@ const ProcessingAnimation = ({ stage, progress }) => {
 
             {/* Stage Progress Dots */}
             <div className="flex gap-2">
-                {stages.map((s, index) => (
+                {stageKeys.map((key, index) => (
                     <motion.div
-                        key={s.key}
+                        key={key}
                         initial={{ scale: 0 }}
-                        animate={{ 
+                        animate={{
                             scale: 1,
                             backgroundColor: index <= currentStageIndex ? '#22c55e' : '#e5e7eb'
                         }}
@@ -81,24 +119,32 @@ const ProcessingAnimation = ({ stage, progress }) => {
             </div>
 
             {/* Fun Messages */}
-            <motion.div
-                key={stage + '-fun'}
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 0.5 }}
-                className="mt-6 text-center"
-            >
-                {stage === 'analyzing' && (
+            {funMessage && (
+                <motion.div
+                    key={funMessage}
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ delay: 0.2 }}
+                    className="mt-6 text-center"
+                >
                     <p className="text-gray-500 text-sm italic">
-                        ✨ Jeffrey is finding the coolest facts for you!
+                        {funMessage}
                     </p>
-                )}
-                {stage === 'generating' && (
-                    <p className="text-gray-500 text-sm italic">
-                        🎨 Making everything look awesome...
+                </motion.div>
+            )}
+
+            {/* Error State */}
+            {stage === 'error' && (
+                <motion.div
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    className="mt-4 p-4 bg-red-50 border-2 border-red-200 rounded-xl"
+                >
+                    <p className="text-red-600 font-medium text-center">
+                        Don't worry! Let's try again.
                     </p>
-                )}
-            </motion.div>
+                </motion.div>
+            )}
         </div>
     );
 };

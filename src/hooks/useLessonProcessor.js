@@ -1,9 +1,13 @@
 import { useCallback } from 'react';
 import { useLessonContext } from '../context/LessonContext';
-import { extractTextFromPDF, extractTextFromImage } from '../utils/fileProcessors';
-import { getYouTubeTranscript } from '../utils/youtubeUtils';
-import { processWithGemini } from '../services/geminiService';
+import { extractText, validateFile, getFileTypeCategory } from '../utils/fileProcessors';
+import { getYouTubeTranscript, getVideoMetadata, getYouTubeThumbnail } from '../utils/youtubeUtils';
+import { analyzeContent, processWithGemini } from '../services/geminiService';
 
+/**
+ * Hook for processing uploaded content (files and YouTube videos)
+ * into structured lessons for the LessonContext
+ */
 export function useLessonProcessor() {
     const {
         startProcessing,
@@ -14,65 +18,108 @@ export function useLessonProcessor() {
         resetProcessing,
     } = useLessonContext();
 
-    const processFile = useCallback(async (file, title, subject) => {
+    /**
+     * Process a file upload and create a lesson
+     * @param {File} file - The uploaded file
+     * @param {string} title - User-provided title
+     * @param {string} subject - Subject category
+     * @param {string} gradeLevel - Grade level
+     * @returns {Promise<Object>} The created lesson
+     */
+    const processFile = useCallback(async (file, title, subject, gradeLevel) => {
         try {
+            // Validate the file first
+            validateFile(file);
+
+            // Start processing
             startProcessing();
 
             // Stage 1: Upload (simulated - file is already in memory)
             setProcessingStage('uploading');
             updateProgress(10);
-            await delay(500);
+            await delay(300);
 
             // Stage 2: Extract text
             setProcessingStage('extracting');
-            updateProgress(25);
-            
-            let extractedText = '';
-            if (file.type === 'application/pdf') {
-                extractedText = await extractTextFromPDF(file);
-            } else if (file.type.startsWith('image/')) {
-                extractedText = await extractTextFromImage(file);
-            } else if (file.type === 'text/plain') {
-                extractedText = await file.text();
+
+            const extractResult = await extractText(file, (extractProgress) => {
+                // Map extraction progress (0-100) to overall progress (15-40)
+                const overallProgress = 15 + Math.round(extractProgress * 0.25);
+                updateProgress(overallProgress);
+            });
+
+            const { text: extractedText, metadata: extractionMetadata } = extractResult;
+
+            // Check if we got any text
+            if (!extractedText || extractedText.trim().length < 10) {
+                throw new Error('Could not extract enough text from this file. Try a different file.');
             }
-            
+
             updateProgress(45);
 
             // Stage 3: Analyze with AI
             setProcessingStage('analyzing');
-            updateProgress(55);
-            
-            const analysis = await processWithGemini(extractedText, 'analyze');
+
+            const analysis = await analyzeContent(extractedText, {
+                subject,
+                gradeLevel,
+                onProgress: (analyzeProgress) => {
+                    const overallProgress = 45 + Math.round(analyzeProgress * 0.25);
+                    updateProgress(overallProgress);
+                },
+            });
+
             updateProgress(70);
 
             // Stage 4: Generate study materials
             setProcessingStage('generating');
-            updateProgress(80);
-            
-            const studyGuide = await processWithGemini(extractedText, 'study_guide');
-            updateProgress(95);
 
-            // Stage 5: Complete
+            const studyGuide = await processWithGemini(extractedText, 'study_guide');
+            updateProgress(90);
+
+            // Stage 5: Complete - Create the lesson
             setProcessingStage('complete');
             updateProgress(100);
 
             const lesson = addLesson({
-                title,
-                subject,
-                sourceType: 'file',
-                sourceFile: {
-                    name: file.name,
-                    type: file.type,
-                    size: file.size,
+                // Use provided title or AI-generated title
+                title: title || analysis.title,
+                subject: subject || analysis.subject,
+                gradeLevel: gradeLevel || analysis.gradeLevel,
+
+                // Source info
+                sourceType: getFileTypeCategory(file),
+                source: {
+                    type: getFileTypeCategory(file),
+                    originalName: file.name,
+                    fileSize: file.size,
+                    mimeType: file.type,
                 },
+
+                // Raw text
+                rawText: extractedText,
+
+                // AI-analyzed content
                 content: {
                     rawText: extractedText,
                     summary: analysis.summary,
-                    keyPoints: analysis.keyPoints,
-                    chapters: analysis.chapters,
-                    studyGuide: studyGuide,
+                    keyPoints: analysis.keyConceptsForChat || [],
+                    chapters: analysis.chapters || [],
                     vocabulary: analysis.vocabulary || [],
+                    studyGuide: studyGuide,
+                    estimatedReadTime: analysis.estimatedReadTime || 5,
                 },
+
+                // Lesson-level data
+                summary: analysis.summary,
+                chapters: analysis.chapters || [],
+                keyConceptsForChat: analysis.keyConceptsForChat || [],
+                vocabulary: analysis.vocabulary || [],
+                suggestedQuestions: analysis.suggestedQuestions || [],
+                relatedTopics: analysis.relatedTopics || [],
+
+                // Extraction metadata
+                extractionMetadata,
             });
 
             await delay(500); // Let user see "complete" state
@@ -80,59 +127,114 @@ export function useLessonProcessor() {
 
         } catch (error) {
             console.error('Error processing file:', error);
-            setError(error.message || 'Failed to process file');
+            setError({
+                message: error.message || 'Failed to process file',
+                code: 'FILE_PROCESSING_ERROR',
+                timestamp: new Date().toISOString(),
+            });
             resetProcessing();
             throw error;
         }
     }, [startProcessing, updateProgress, setProcessingStage, addLesson, setError, resetProcessing]);
 
-    const processYouTube = useCallback(async (video, title, subject) => {
+    /**
+     * Process a YouTube video and create a lesson
+     * @param {Object} video - Video object with id, title, etc.
+     * @param {string} title - User-provided title
+     * @param {string} subject - Subject category
+     * @param {string} gradeLevel - Grade level
+     * @returns {Promise<Object>} The created lesson
+     */
+    const processYouTube = useCallback(async (video, title, subject, gradeLevel) => {
         try {
             startProcessing();
 
             // Stage 1: Fetch video info
             setProcessingStage('uploading');
             updateProgress(10);
-            await delay(500);
+
+            const videoMetadata = await getVideoMetadata(video.id);
+            updateProgress(20);
 
             // Stage 2: Get transcript
             setProcessingStage('extracting');
             updateProgress(25);
-            
+
             const transcript = await getYouTubeTranscript(video.id);
             updateProgress(45);
 
+            // Check if we got any transcript
+            if (!transcript || transcript.trim().length < 10) {
+                throw new Error('Could not get transcript for this video. Try a different video.');
+            }
+
             // Stage 3: Analyze with AI
             setProcessingStage('analyzing');
-            updateProgress(55);
-            
-            const analysis = await processWithGemini(transcript, 'analyze');
+
+            const analysis = await analyzeContent(transcript, {
+                subject,
+                gradeLevel,
+                onProgress: (analyzeProgress) => {
+                    const overallProgress = 45 + Math.round(analyzeProgress * 0.25);
+                    updateProgress(overallProgress);
+                },
+            });
+
             updateProgress(70);
 
             // Stage 4: Generate study materials
             setProcessingStage('generating');
-            updateProgress(80);
-            
+
             const studyGuide = await processWithGemini(transcript, 'study_guide');
-            updateProgress(95);
+            updateProgress(90);
 
             // Stage 5: Complete
             setProcessingStage('complete');
             updateProgress(100);
 
             const lesson = addLesson({
-                title,
-                subject,
+                // Use provided title or video title
+                title: title || video.title || videoMetadata.title || 'YouTube Lesson',
+                subject: subject || analysis.subject,
+                gradeLevel: gradeLevel || analysis.gradeLevel,
+
+                // Source info
                 sourceType: 'youtube',
-                sourceVideo: video,
+                source: {
+                    type: 'youtube',
+                    originalName: video.title || videoMetadata.title,
+                    youtubeId: video.id,
+                    thumbnailUrl: getYouTubeThumbnail(video.id, 'high'),
+                },
+                sourceVideo: {
+                    id: video.id,
+                    title: video.title || videoMetadata.title,
+                    thumbnail: getYouTubeThumbnail(video.id, 'high'),
+                    duration: videoMetadata.duration,
+                    channel: videoMetadata.channel,
+                },
+
+                // Raw text
+                rawText: transcript,
+
+                // AI-analyzed content
                 content: {
                     rawText: transcript,
                     summary: analysis.summary,
-                    keyPoints: analysis.keyPoints,
-                    chapters: analysis.chapters,
-                    studyGuide: studyGuide,
+                    keyPoints: analysis.keyConceptsForChat || [],
+                    chapters: analysis.chapters || [],
                     vocabulary: analysis.vocabulary || [],
+                    studyGuide: studyGuide,
+                    estimatedReadTime: analysis.estimatedReadTime || 5,
                 },
+
+                // Lesson-level data
+                summary: analysis.summary,
+                chapters: analysis.chapters || [],
+                keyConceptsForChat: analysis.keyConceptsForChat || [],
+                vocabulary: analysis.vocabulary || [],
+                suggestedQuestions: analysis.suggestedQuestions || [],
+                relatedTopics: analysis.relatedTopics || [],
             });
 
             await delay(500);
@@ -140,7 +242,107 @@ export function useLessonProcessor() {
 
         } catch (error) {
             console.error('Error processing YouTube video:', error);
-            setError(error.message || 'Failed to process video');
+            setError({
+                message: error.message || 'Failed to process video',
+                code: 'YOUTUBE_PROCESSING_ERROR',
+                timestamp: new Date().toISOString(),
+            });
+            resetProcessing();
+            throw error;
+        }
+    }, [startProcessing, updateProgress, setProcessingStage, addLesson, setError, resetProcessing]);
+
+    /**
+     * Process raw text content (pasted text)
+     * @param {string} text - Raw text content
+     * @param {string} title - User-provided title
+     * @param {string} subject - Subject category
+     * @param {string} gradeLevel - Grade level
+     * @returns {Promise<Object>} The created lesson
+     */
+    const processText = useCallback(async (text, title, subject, gradeLevel) => {
+        try {
+            if (!text || text.trim().length < 10) {
+                throw new Error('Please enter some text to create a lesson.');
+            }
+
+            startProcessing();
+
+            // Stage 1: "Upload" (instant for text)
+            setProcessingStage('uploading');
+            updateProgress(15);
+            await delay(300);
+
+            // Stage 2: Skip extraction (already text)
+            setProcessingStage('extracting');
+            updateProgress(30);
+            await delay(300);
+
+            // Stage 3: Analyze with AI
+            setProcessingStage('analyzing');
+
+            const analysis = await analyzeContent(text, {
+                subject,
+                gradeLevel,
+                onProgress: (analyzeProgress) => {
+                    const overallProgress = 30 + Math.round(analyzeProgress * 0.4);
+                    updateProgress(overallProgress);
+                },
+            });
+
+            updateProgress(70);
+
+            // Stage 4: Generate study materials
+            setProcessingStage('generating');
+
+            const studyGuide = await processWithGemini(text, 'study_guide');
+            updateProgress(90);
+
+            // Stage 5: Complete
+            setProcessingStage('complete');
+            updateProgress(100);
+
+            const lesson = addLesson({
+                title: title || analysis.title || 'New Lesson',
+                subject: subject || analysis.subject,
+                gradeLevel: gradeLevel || analysis.gradeLevel,
+
+                sourceType: 'text',
+                source: {
+                    type: 'text',
+                    originalName: title || 'Pasted Text',
+                },
+
+                rawText: text,
+
+                content: {
+                    rawText: text,
+                    summary: analysis.summary,
+                    keyPoints: analysis.keyConceptsForChat || [],
+                    chapters: analysis.chapters || [],
+                    vocabulary: analysis.vocabulary || [],
+                    studyGuide: studyGuide,
+                    estimatedReadTime: analysis.estimatedReadTime || 5,
+                },
+
+                summary: analysis.summary,
+                chapters: analysis.chapters || [],
+                keyConceptsForChat: analysis.keyConceptsForChat || [],
+                vocabulary: analysis.vocabulary || [],
+                suggestedQuestions: analysis.suggestedQuestions || [],
+                relatedTopics: analysis.relatedTopics || [],
+            });
+
+            await delay(500);
+            return lesson;
+
+        } catch (error) {
+            console.error('Error processing text:', error);
+            setError({
+                message: error.message || 'Failed to process text',
+                code: 'TEXT_PROCESSING_ERROR',
+                timestamp: new Date().toISOString(),
+            });
             resetProcessing();
             throw error;
         }
@@ -149,6 +351,7 @@ export function useLessonProcessor() {
     return {
         processFile,
         processYouTube,
+        processText,
     };
 }
 
@@ -156,3 +359,5 @@ export function useLessonProcessor() {
 function delay(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
 }
+
+export default useLessonProcessor;

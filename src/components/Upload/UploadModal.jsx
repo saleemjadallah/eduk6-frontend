@@ -1,9 +1,11 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, FileText, Youtube, Camera, Sparkles } from 'lucide-react';
+import { X, FileText, Youtube, Camera, Sparkles, AlertCircle } from 'lucide-react';
 import FileDropzone from './FileDropzone';
 import YouTubeInput from './YouTubeInput';
 import ProcessingAnimation from './ProcessingAnimation';
+import SubjectSelector from './SubjectSelector';
+import GradeLevelSelector from './GradeLevelSelector';
 import { useLessonContext } from '../../context/LessonContext';
 import { useLessonProcessor } from '../../hooks/useLessonProcessor';
 
@@ -19,12 +21,27 @@ const UploadModal = ({ isOpen, onClose }) => {
     const [selectedVideo, setSelectedVideo] = useState(null);
     const [lessonTitle, setLessonTitle] = useState('');
     const [subject, setSubject] = useState('');
+    const [gradeLevel, setGradeLevel] = useState('');
+    const [localError, setLocalError] = useState(null);
 
-    const { isProcessing, processingStage, processingProgress } = useLessonContext();
+    const { isProcessing, processingStage, processingProgress, error: contextError } = useLessonContext();
     const { processFile, processYouTube } = useLessonProcessor();
+
+    // Clear local error when tab changes
+    useEffect(() => {
+        setLocalError(null);
+    }, [activeTab]);
+
+    // Handle context errors
+    useEffect(() => {
+        if (contextError) {
+            setLocalError(contextError.message || 'Something went wrong');
+        }
+    }, [contextError]);
 
     const handleFileSelect = useCallback((file) => {
         setSelectedFile(file);
+        setLocalError(null);
         // Auto-fill title from filename
         const nameWithoutExtension = file.name.replace(/\.[^/.]+$/, '');
         setLessonTitle(nameWithoutExtension);
@@ -32,6 +49,7 @@ const UploadModal = ({ isOpen, onClose }) => {
 
     const handleVideoSelect = useCallback((video) => {
         setSelectedVideo(video);
+        setLocalError(null);
         setLessonTitle(video.title);
     }, []);
 
@@ -46,27 +64,48 @@ const UploadModal = ({ isOpen, onClose }) => {
     }, [selectedFile]);
 
     const handleSubmit = async () => {
-        if (!lessonTitle.trim()) return;
-
-        if (selectedFile) {
-            await processFile(selectedFile, lessonTitle, subject);
-        } else if (selectedVideo) {
-            await processYouTube(selectedVideo, lessonTitle, subject);
+        if (!lessonTitle.trim()) {
+            setLocalError('Please enter a lesson title');
+            return;
         }
 
-        // Reset and close on success
-        if (!isProcessing) {
-            handleReset();
-            onClose();
+        setLocalError(null);
+
+        try {
+            if (selectedFile) {
+                await processFile(selectedFile, lessonTitle, subject, gradeLevel);
+            } else if (selectedVideo) {
+                await processYouTube(selectedVideo, lessonTitle, subject, gradeLevel);
+            }
+
+            // Reset and close on success (after processing completes)
+            // Note: The modal will close automatically when processingStage becomes 'complete'
+        } catch (error) {
+            // Error is already handled in the processor and set in context
+            console.error('Upload failed:', error);
         }
     };
+
+    // Auto-close modal when processing completes successfully
+    useEffect(() => {
+        if (processingStage === 'complete' && !contextError) {
+            // Delay slightly to let user see completion
+            const timer = setTimeout(() => {
+                handleReset();
+                onClose();
+            }, 800);
+            return () => clearTimeout(timer);
+        }
+    }, [processingStage, contextError, onClose]);
 
     const handleReset = () => {
         setSelectedFile(null);
         setSelectedVideo(null);
         setLessonTitle('');
         setSubject('');
+        setGradeLevel('');
         setActiveTab('file');
+        setLocalError(null);
     };
 
     const canSubmit = (selectedFile || selectedVideo) && lessonTitle.trim() && !isProcessing;
@@ -120,9 +159,9 @@ const UploadModal = ({ isOpen, onClose }) => {
                                         animate={{ opacity: 1 }}
                                         exit={{ opacity: 0 }}
                                     >
-                                        <ProcessingAnimation 
-                                            stage={processingStage} 
-                                            progress={processingProgress} 
+                                        <ProcessingAnimation
+                                            stage={processingStage}
+                                            progress={processingProgress}
                                         />
                                     </motion.div>
                                 ) : (
@@ -133,6 +172,18 @@ const UploadModal = ({ isOpen, onClose }) => {
                                         exit={{ opacity: 0 }}
                                         className="space-y-6"
                                     >
+                                        {/* Error Message */}
+                                        {localError && (
+                                            <motion.div
+                                                initial={{ opacity: 0, y: -10 }}
+                                                animate={{ opacity: 1, y: 0 }}
+                                                className="p-3 bg-red-50 border-2 border-red-300 rounded-xl flex items-start gap-2"
+                                            >
+                                                <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
+                                                <p className="text-red-700 text-sm font-medium">{localError}</p>
+                                            </motion.div>
+                                        )}
+
                                         {/* Tabs */}
                                         <div className="flex gap-2 p-1 bg-gray-100 rounded-xl">
                                             {tabs.map((tab) => (
@@ -140,7 +191,7 @@ const UploadModal = ({ isOpen, onClose }) => {
                                                     key={tab.id}
                                                     onClick={() => setActiveTab(tab.id)}
                                                     className={`
-                                                        flex-1 flex items-center justify-center gap-2 
+                                                        flex-1 flex items-center justify-center gap-2
                                                         px-4 py-2 rounded-lg font-bold text-sm
                                                         transition-all
                                                         ${activeTab === tab.id
@@ -219,25 +270,17 @@ const UploadModal = ({ isOpen, onClose }) => {
                                                 />
                                             </div>
 
-                                            <div>
-                                                <label className="block text-sm font-bold mb-2">
-                                                    Subject
-                                                </label>
-                                                <select
-                                                    value={subject}
-                                                    onChange={(e) => setSubject(e.target.value)}
-                                                    className="w-full px-4 py-3 border-4 border-black rounded-xl font-medium shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] focus:outline-none focus:ring-2 focus:ring-nanobanana-yellow bg-white"
-                                                >
-                                                    <option value="">Select a subject...</option>
-                                                    <option value="math">🔢 Math</option>
-                                                    <option value="science">🔬 Science</option>
-                                                    <option value="english">📚 English</option>
-                                                    <option value="arabic">🌙 Arabic</option>
-                                                    <option value="islamic">☪️ Islamic Studies</option>
-                                                    <option value="social">🌍 Social Studies</option>
-                                                    <option value="other">📝 Other</option>
-                                                </select>
-                                            </div>
+                                            {/* Subject Selector */}
+                                            <SubjectSelector
+                                                value={subject}
+                                                onChange={setSubject}
+                                            />
+
+                                            {/* Grade Level Selector */}
+                                            <GradeLevelSelector
+                                                value={gradeLevel}
+                                                onChange={setGradeLevel}
+                                            />
                                         </div>
                                     </motion.div>
                                 )}
