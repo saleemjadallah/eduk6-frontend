@@ -1,13 +1,30 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { Send, Image, Video, FileText, Sparkles } from 'lucide-react';
 import Jeffrey from '../Avatar/Jeffrey';
 
-const ChatInterface = ({ demoMode = false }) => {
-    const [messages, setMessages] = useState([
-        { id: 1, type: 'bot', text: "Hi! I'm Jeffrey. What are we learning today?" }
-    ]);
+const ChatInterface = ({ demoMode = false, lesson = null }) => {
+    const [messages, setMessages] = useState([]);
     const [input, setInput] = useState('');
+    const [isTyping, setIsTyping] = useState(false);
+    const messagesEndRef = useRef(null);
+
+    // Initialize with context-aware greeting
+    useEffect(() => {
+        if (lesson) {
+            setMessages([{
+                id: 1,
+                type: 'bot',
+                text: `Hi! I'm Jeffrey! 🎉 I just read "${lesson.title}" and I'm ready to help you learn! What would you like to know?`
+            }]);
+        } else {
+            setMessages([{
+                id: 1,
+                type: 'bot',
+                text: "Hi! I'm Jeffrey. Upload a lesson and I'll help you learn! 📚"
+            }]);
+        }
+    }, [lesson?.id]);
 
     useEffect(() => {
         if (demoMode) {
