@@ -2,8 +2,9 @@ import React, { createContext, useContext, useState, useCallback, useEffect, use
 import { ChatService } from '../services/chat/chatService';
 import { useLessonContext } from './LessonContext';
 import { useGamificationContext } from './GamificationContext';
+import { useAuth } from './AuthContext';
 
-// Default user profile for demo/development mode
+// Default user profile for demo/development mode (fallback when no auth)
 const DEFAULT_USER_PROFILE = {
   id: 'demo-user-001',
   name: 'Young Learner',
@@ -19,7 +20,7 @@ const DEFAULT_USER_PROFILE = {
 const ChatContext = createContext(null);
 
 // Provider component
-export function ChatProvider({ children, userProfile = DEFAULT_USER_PROFILE }) {
+export function ChatProvider({ children, userProfile: propUserProfile }) {
   // State
   const [messages, setMessages] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -35,6 +36,38 @@ export function ChatProvider({ children, userProfile = DEFAULT_USER_PROFILE }) {
   // Get context from other providers
   const lessonContext = useLessonContext();
   const gamificationContext = useGamificationContext();
+
+  // Get auth context - use try/catch to handle case where AuthProvider is not available
+  let authContext = null;
+  try {
+    authContext = useAuth();
+  } catch (e) {
+    // AuthProvider not available, will use default profile
+  }
+
+  // Build user profile from AuthContext's currentProfile or fallback to props/default
+  const userProfile = useMemo(() => {
+    // Priority: AuthContext > props > default
+    if (authContext?.currentProfile) {
+      const profile = authContext.currentProfile;
+      return {
+        id: profile.id,
+        name: profile.displayName,
+        age: profile.age,
+        grade: profile.grade,
+        learningStyle: profile.learningStyle || 'visual',
+        interests: profile.interests || [],
+        language: profile.language || 'en',
+        curriculumType: profile.curriculumType || 'american',
+      };
+    }
+
+    if (propUserProfile) {
+      return propUserProfile;
+    }
+
+    return DEFAULT_USER_PROFILE;
+  }, [authContext?.currentProfile, propUserProfile]);
 
   // Extract relevant data from LessonContext
   const currentLesson = lessonContext?.currentLesson;
@@ -72,10 +105,7 @@ export function ChatProvider({ children, userProfile = DEFAULT_USER_PROFILE }) {
   // Initialize ChatService
   useEffect(() => {
     const config = {
-      userProfile: {
-        ...DEFAULT_USER_PROFILE,
-        ...userProfile,
-      },
+      userProfile,
       lessonContext: buildLessonContext(),
       conversationContext: buildConversationContext(),
       enableStreaming: true,
@@ -93,6 +123,21 @@ export function ChatProvider({ children, userProfile = DEFAULT_USER_PROFILE }) {
     // Set suggested questions
     setSuggestedQuestions(chatServiceRef.current.getSuggestedQuestions());
   }, [userProfile]);
+
+  // Update ChatService when user profile changes (e.g., profile switch)
+  useEffect(() => {
+    if (chatServiceRef.current) {
+      chatServiceRef.current.updateConfig({
+        userProfile,
+      });
+
+      // Clear chat history when switching profiles to maintain privacy
+      if (userProfile.id !== chatServiceRef.current.getConfig().userProfile?.id) {
+        chatServiceRef.current.clearHistory();
+        setMessages([]);
+      }
+    }
+  }, [userProfile.id]);
 
   // Update ChatService when lesson context changes
   useEffect(() => {
