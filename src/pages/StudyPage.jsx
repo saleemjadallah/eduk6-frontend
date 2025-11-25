@@ -98,7 +98,10 @@ const StudyPage = () => {
     };
 
     return (
-        <MainLayout>
+        <MainLayout
+            className={!currentLesson ? "bg-gradient-to-b from-blue-100 to-blue-200" : undefined}
+            showClouds={!currentLesson}
+        >
             {/* Progress Widget - Top bar */}
             <div className="absolute top-0 left-0 right-0 bg-white border-b-4 border-black p-3 z-20">
                 <div className="flex items-center justify-between gap-4">
