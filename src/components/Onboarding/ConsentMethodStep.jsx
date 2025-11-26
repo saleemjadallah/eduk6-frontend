@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
-import { mockConsentAPI } from '../../services/api/consentAPI';
+import { consentAPI } from '../../services/api/consentAPI';
 
 const ConsentMethodStep = ({ onMethodSelected }) => {
   const { user } = useAuth();
@@ -16,16 +16,17 @@ const ConsentMethodStep = ({ onMethodSelected }) => {
     setError('');
 
     try {
-      // Use mock API for demo mode
-      const response = await mockConsentAPI.initiateConsent({
-        parentId: user.id,
-        method,
-      });
-
-      if (response.success && response.consentId) {
-        onMethodSelected?.(method, response.consentId);
+      // For credit card, initiate the payment intent
+      if (method === 'credit_card') {
+        const response = await consentAPI.initiateCreditCardConsent();
+        if (response.success && response.data?.clientSecret) {
+          onMethodSelected?.(method, response.data.clientSecret);
+        } else {
+          setError(response.error || 'Failed to initiate verification');
+        }
       } else {
-        setError(response.error || 'Failed to initiate verification');
+        // For KBQ, just proceed to the questions step
+        onMethodSelected?.(method, null);
       }
     } catch (err) {
       setError(err.message || 'An error occurred');

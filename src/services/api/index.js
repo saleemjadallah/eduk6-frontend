@@ -4,5 +4,5 @@
  */
 
 export { authAPI, default as auth } from './authAPI';
-export { consentAPI, mockConsentAPI, default as consent } from './consentAPI';
-export { profileAPI, mockProfileAPI, default as profile } from './profileAPI';
+export { consentAPI, default as consent } from './consentAPI';
+export { profileAPI, default as profile } from './profileAPI';

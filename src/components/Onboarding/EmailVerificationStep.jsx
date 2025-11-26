@@ -1,25 +1,23 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../../context/AuthContext';
+import { authAPI } from '../../services/api/authAPI';
 
-const EmailVerificationStep = ({ onVerified }) => {
-  const { user, verifyEmail } = useAuth();
+const EmailVerificationStep = ({ onVerified, email }) => {
+  const { verifyEmail } = useAuth();
+  const [otp, setOtp] = useState(['', '', '', '', '', '']);
+  const [isVerifying, setIsVerifying] = useState(false);
   const [isResending, setIsResending] = useState(false);
   const [resendCooldown, setResendCooldown] = useState(0);
   const [message, setMessage] = useState('');
+  const [error, setError] = useState('');
+  const inputRefs = useRef([]);
 
-  // For demo mode, auto-verify after 3 seconds
+  // Focus first input on mount
   useEffect(() => {
-    const DEMO_MODE = true; // Match AuthContext
-
-    if (DEMO_MODE && user) {
-      const timer = setTimeout(async () => {
-        await verifyEmail('demo-token');
-        onVerified?.();
-      }, 3000);
-
-      return () => clearTimeout(timer);
+    if (inputRefs.current[0]) {
+      inputRefs.current[0].focus();
     }
-  }, [user, verifyEmail, onVerified]);
+  }, []);
 
   // Cooldown timer for resend
   useEffect(() => {
@@ -32,30 +30,125 @@ const EmailVerificationStep = ({ onVerified }) => {
     }
   }, [resendCooldown]);
 
+  // Handle OTP input change
+  const handleOtpChange = (index, value) => {
+    // Only allow numbers
+    if (value && !/^\d$/.test(value)) return;
+
+    const newOtp = [...otp];
+    newOtp[index] = value;
+    setOtp(newOtp);
+    setError('');
+
+    // Auto-focus next input
+    if (value && index < 5) {
+      inputRefs.current[index + 1]?.focus();
+    }
+
+    // Auto-submit when all digits entered
+    if (value && index === 5 && newOtp.every(digit => digit !== '')) {
+      handleVerify(newOtp.join(''));
+    }
+  };
+
+  // Handle backspace
+  const handleKeyDown = (index, e) => {
+    if (e.key === 'Backspace' && !otp[index] && index > 0) {
+      inputRefs.current[index - 1]?.focus();
+    }
+  };
+
+  // Handle paste
+  const handlePaste = (e) => {
+    e.preventDefault();
+    const pastedData = e.clipboardData.getData('text').slice(0, 6);
+    if (!/^\d+$/.test(pastedData)) return;
+
+    const newOtp = [...otp];
+    for (let i = 0; i < pastedData.length && i < 6; i++) {
+      newOtp[i] = pastedData[i];
+    }
+    setOtp(newOtp);
+    setError('');
+
+    // Focus appropriate input
+    const nextEmpty = newOtp.findIndex(digit => !digit);
+    if (nextEmpty !== -1) {
+      inputRefs.current[nextEmpty]?.focus();
+    } else {
+      // All filled, auto-submit
+      handleVerify(newOtp.join(''));
+    }
+  };
+
+  // Verify OTP
+  const handleVerify = async (code) => {
+    if (!email) {
+      setError('Email not found. Please go back and try again.');
+      return;
+    }
+
+    setIsVerifying(true);
+    setError('');
+
+    try {
+      const response = await verifyEmail(email, code);
+
+      if (response.success) {
+        setMessage('Email verified successfully!');
+        setTimeout(() => {
+          onVerified?.();
+        }, 1000);
+      } else {
+        setError(response.error || 'Invalid verification code. Please try again.');
+        // Clear OTP on error
+        setOtp(['', '', '', '', '', '']);
+        inputRefs.current[0]?.focus();
+      }
+    } catch (err) {
+      setError(err.message || 'Verification failed. Please try again.');
+      setOtp(['', '', '', '', '', '']);
+      inputRefs.current[0]?.focus();
+    } finally {
+      setIsVerifying(false);
+    }
+  };
+
+  // Resend OTP
   const handleResend = async () => {
-    if (resendCooldown > 0) return;
+    if (resendCooldown > 0 || !email) return;
 
     setIsResending(true);
     setMessage('');
+    setError('');
 
     try {
-      // In production, call API to resend email
-      // await authAPI.resendVerificationEmail(user.email);
+      const response = await authAPI.resendVerificationEmail(email);
 
-      // Simulate success
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      setMessage('Verification email sent! Check your inbox.');
-      setResendCooldown(60); // 60 second cooldown
+      if (response.success) {
+        setMessage('A new verification code has been sent to your email.');
+        setResendCooldown(60); // 60 second cooldown
+        // Clear any existing OTP
+        setOtp(['', '', '', '', '', '']);
+        inputRefs.current[0]?.focus();
+      } else {
+        setError(response.error || 'Failed to resend code. Please try again.');
+      }
     } catch (err) {
-      setMessage('Failed to resend email. Please try again.');
+      setError(err.message || 'Failed to resend code. Please try again.');
     } finally {
       setIsResending(false);
     }
   };
 
-  const handleSkipForDemo = async () => {
-    await verifyEmail('demo-token');
-    onVerified?.();
+  // Manual submit button
+  const handleSubmit = () => {
+    const code = otp.join('');
+    if (code.length === 6) {
+      handleVerify(code);
+    } else {
+      setError('Please enter all 6 digits.');
+    }
   };
 
   return (
@@ -91,37 +184,51 @@ const EmailVerificationStep = ({ onVerified }) => {
             />
           </svg>
         </div>
-        <h2>Check Your Email</h2>
+        <h2>Verify Your Email</h2>
         <p className="subtitle">
-          We've sent a verification link to:
+          We've sent a 6-digit verification code to:
         </p>
-        <p className="email-display">{user?.email || 'your@email.com'}</p>
+        <p className="email-display">{email || 'your@email.com'}</p>
       </div>
 
-      <div className="verification-instructions">
-        <div className="instruction">
-          <span className="instruction-icon">1</span>
-          <span>Open the email we just sent you</span>
+      {/* OTP Input */}
+      <div className="otp-container">
+        <p className="otp-label">Enter verification code</p>
+        <div className="otp-inputs">
+          {otp.map((digit, index) => (
+            <input
+              key={index}
+              ref={el => inputRefs.current[index] = el}
+              type="text"
+              inputMode="numeric"
+              maxLength={1}
+              value={digit}
+              onChange={(e) => handleOtpChange(index, e.target.value)}
+              onKeyDown={(e) => handleKeyDown(index, e)}
+              onPaste={index === 0 ? handlePaste : undefined}
+              className={`otp-input ${error ? 'otp-input-error' : ''}`}
+              disabled={isVerifying}
+              autoComplete="one-time-code"
+            />
+          ))}
         </div>
-        <div className="instruction">
-          <span className="instruction-icon">2</span>
-          <span>Click the verification link</span>
-        </div>
-        <div className="instruction">
-          <span className="instruction-icon">3</span>
-          <span>Return here to continue setup</span>
-        </div>
+        {error && <p className="error-message">{error}</p>}
+        {message && <p className="success-message">{message}</p>}
       </div>
 
-      {message && (
-        <div className={message.includes('Failed') ? 'error-message' : 'success-message'}>
-          {message}
-        </div>
-      )}
+      {/* Verify Button */}
+      <button
+        type="button"
+        className="btn btn-primary verify-btn"
+        onClick={handleSubmit}
+        disabled={isVerifying || otp.some(d => !d)}
+      >
+        {isVerifying ? 'Verifying...' : 'Verify Email'}
+      </button>
 
       <div className="verification-actions">
         <p className="resend-text">
-          Didn't receive the email?{' '}
+          Didn't receive the code?{' '}
           <button
             type="button"
             className="link-btn"
@@ -132,7 +239,7 @@ const EmailVerificationStep = ({ onVerified }) => {
               ? 'Sending...'
               : resendCooldown > 0
                 ? `Resend in ${resendCooldown}s`
-                : 'Resend email'}
+                : 'Resend code'}
           </button>
         </p>
 
@@ -141,19 +248,9 @@ const EmailVerificationStep = ({ onVerified }) => {
           <ul>
             <li>Check your spam or junk folder</li>
             <li>Make sure you entered the correct email</li>
-            <li>Add noreply@nanobanana.com to your contacts</li>
+            <li>Add support@orbitlearn.app to your contacts</li>
           </ul>
         </div>
-
-        {/* Demo mode skip button */}
-        <button
-          type="button"
-          className="btn btn-secondary"
-          onClick={handleSkipForDemo}
-          style={{ marginTop: '16px' }}
-        >
-          Skip for Demo (Auto-verifying...)
-        </button>
       </div>
 
       <style>{`
@@ -172,37 +269,53 @@ const EmailVerificationStep = ({ onVerified }) => {
           margin: 8px 0 24px;
         }
 
-        .verification-instructions {
-          background: #f9f9f9;
-          border-radius: 12px;
-          padding: 20px;
+        .otp-container {
           margin-bottom: 24px;
         }
 
-        .instruction {
-          display: flex;
-          align-items: center;
-          gap: 12px;
+        .otp-label {
+          font-size: 0.9375rem;
+          color: #666;
           margin-bottom: 12px;
-          text-align: left;
         }
 
-        .instruction:last-child {
-          margin-bottom: 0;
-        }
-
-        .instruction-icon {
-          width: 28px;
-          height: 28px;
-          background: #ffc107;
-          border-radius: 50%;
+        .otp-inputs {
           display: flex;
-          align-items: center;
           justify-content: center;
+          gap: 8px;
+        }
+
+        .otp-input {
+          width: 48px;
+          height: 56px;
+          text-align: center;
+          font-size: 1.5rem;
           font-weight: 600;
-          font-size: 0.875rem;
-          color: white;
-          flex-shrink: 0;
+          border: 2px solid #e0e0e0;
+          border-radius: 12px;
+          outline: none;
+          transition: border-color 0.2s, box-shadow 0.2s;
+        }
+
+        .otp-input:focus {
+          border-color: #2196f3;
+          box-shadow: 0 0 0 3px rgba(33, 150, 243, 0.1);
+        }
+
+        .otp-input-error {
+          border-color: #f44336;
+        }
+
+        .otp-input:disabled {
+          background: #f5f5f5;
+          color: #999;
+        }
+
+        .verify-btn {
+          width: 100%;
+          padding: 14px 24px;
+          font-size: 1rem;
+          margin-bottom: 24px;
         }
 
         .verification-actions {
@@ -213,6 +326,36 @@ const EmailVerificationStep = ({ onVerified }) => {
           font-size: 0.9375rem;
           color: #666;
           margin-bottom: 20px;
+        }
+
+        .link-btn {
+          background: none;
+          border: none;
+          color: #2196f3;
+          font-weight: 600;
+          cursor: pointer;
+          padding: 0;
+        }
+
+        .link-btn:hover:not(:disabled) {
+          text-decoration: underline;
+        }
+
+        .link-btn:disabled {
+          color: #999;
+          cursor: not-allowed;
+        }
+
+        .error-message {
+          color: #f44336;
+          font-size: 0.875rem;
+          margin-top: 12px;
+        }
+
+        .success-message {
+          color: #4caf50;
+          font-size: 0.875rem;
+          margin-top: 12px;
         }
 
         .email-tips {
@@ -242,6 +385,14 @@ const EmailVerificationStep = ({ onVerified }) => {
 
         .email-tips li:last-child {
           margin-bottom: 0;
+        }
+
+        @media (max-width: 480px) {
+          .otp-input {
+            width: 42px;
+            height: 50px;
+            font-size: 1.25rem;
+          }
         }
       `}</style>
     </div>
