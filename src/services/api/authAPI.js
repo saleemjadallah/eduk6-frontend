@@ -60,7 +60,7 @@ export const authAPI = {
    * @returns {Promise<Object>} Response with token and user data
    */
   signIn: async ({ email, password }) => {
-    return makeRequest('/auth/signin', {
+    return makeRequest('/auth/login', {
       method: 'POST',
       body: JSON.stringify({ email, password }),
     });
@@ -70,22 +70,24 @@ export const authAPI = {
    * Sign out the current user
    * @returns {Promise<Object>} Response with success status
    */
-  signOut: async () => {
+  logout: async () => {
     const refreshToken = localStorage.getItem('refresh_token');
-    return makeRequest('/auth/signout', {
+    return makeRequest('/auth/logout', {
       method: 'POST',
       body: JSON.stringify({ refreshToken }),
     });
   },
 
   /**
-   * Verify email with token
-   * @param {string} token - Email verification token
+   * Verify email with OTP code
+   * @param {string} email - User email
+   * @param {string} code - OTP verification code
    * @returns {Promise<Object>} Response with success status
    */
-  verifyEmail: async (token) => {
-    return makeRequest(`/auth/verify-email?token=${encodeURIComponent(token)}`, {
-      method: 'GET',
+  verifyEmail: async (email, code) => {
+    return makeRequest('/auth/verify-email', {
+      method: 'POST',
+      body: JSON.stringify({ email, code }),
     });
   },
 
@@ -114,15 +116,28 @@ export const authAPI = {
   },
 
   /**
-   * Reset password with token
-   * @param {string} token - Password reset token
+   * Verify password reset code
+   * @param {string} email - User email
+   * @param {string} code - OTP code
+   * @returns {Promise<Object>} Response with success status
+   */
+  verifyResetCode: async (email, code) => {
+    return makeRequest('/auth/verify-reset-code', {
+      method: 'POST',
+      body: JSON.stringify({ email, code }),
+    });
+  },
+
+  /**
+   * Reset password after OTP verification
+   * @param {string} email - User email
    * @param {string} newPassword - New password
    * @returns {Promise<Object>} Response with success status
    */
-  resetPassword: async (token, newPassword) => {
+  resetPassword: async (email, newPassword) => {
     return makeRequest('/auth/reset-password', {
       method: 'POST',
-      body: JSON.stringify({ token, newPassword }),
+      body: JSON.stringify({ email, newPassword }),
     });
   },
 
