@@ -4,10 +4,12 @@ import { useNavigate } from 'react-router-dom';
 import { Upload, BookOpen, Trophy, Sparkles } from 'lucide-react';
 import { useLessonContext } from '../context/LessonContext';
 import { useAuth } from '../context/AuthContext';
+import { useChildStats } from '../hooks/useChildStats';
 
 const ChildDashboard = () => {
     const navigate = useNavigate();
     const { clearCurrentLesson, recentLessons, completedLessonsCount } = useLessonContext();
+    const { stats, loading: statsLoading } = useChildStats();
 
     // Get current child profile
     let currentProfile = null;
@@ -90,19 +92,27 @@ const ChildDashboard = () => {
             {/* Stats Row */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
                 <div className="bg-white p-4 rounded-xl border-2 border-gray-200 text-center">
-                    <div className="text-3xl font-black text-nanobanana-blue">{completedLessonsCount}</div>
+                    <div className="text-3xl font-black text-nanobanana-blue">
+                        {statsLoading ? '-' : (stats.lessonsCompleted || completedLessonsCount)}
+                    </div>
                     <div className="text-sm text-gray-600 font-medium">Lessons Done</div>
                 </div>
                 <div className="bg-white p-4 rounded-xl border-2 border-gray-200 text-center">
-                    <div className="text-3xl font-black text-nanobanana-green">5</div>
+                    <div className="text-3xl font-black text-nanobanana-green">
+                        {statsLoading ? '-' : (stats.streak?.current || 0)}
+                    </div>
                     <div className="text-sm text-gray-600 font-medium">Day Streak 🔥</div>
                 </div>
                 <div className="bg-white p-4 rounded-xl border-2 border-gray-200 text-center">
-                    <div className="text-3xl font-black text-nanobanana-yellow">12</div>
+                    <div className="text-3xl font-black text-nanobanana-yellow">
+                        {statsLoading ? '-' : (stats.badgesEarned || 0)}
+                    </div>
                     <div className="text-sm text-gray-600 font-medium">Badges Earned</div>
                 </div>
                 <div className="bg-white p-4 rounded-xl border-2 border-gray-200 text-center">
-                    <div className="text-3xl font-black text-pink-500">350</div>
+                    <div className="text-3xl font-black text-pink-500">
+                        {statsLoading ? '-' : (stats.xp || 0)}
+                    </div>
                     <div className="text-sm text-gray-600 font-medium">XP Points</div>
                 </div>
             </div>
