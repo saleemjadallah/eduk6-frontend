@@ -83,9 +83,9 @@ const OnboardingFlow = ({ initialStep = STEPS.SIGNUP }) => {
         setCurrentStep(STEPS.WELCOME);
       } else if (currentStep === STEPS.WELCOME) {
         // Stay on welcome
-      } else if (currentStep !== STEPS.CONSENT_METHOD && currentStep !== STEPS.KBQ && currentStep !== STEPS.CREDIT_CARD) {
-        // User is fully set up, redirect to home
-        navigate('/');
+      } else if (currentStep !== STEPS.CONSENT_METHOD && currentStep !== STEPS.KBQ && currentStep !== STEPS.CREDIT_CARD && currentStep !== STEPS.CREATE_PROFILE) {
+        // User is fully set up, redirect to learning dashboard
+        navigate('/learn');
       }
     }
   }, [
@@ -151,7 +151,8 @@ const OnboardingFlow = ({ initialStep = STEPS.SIGNUP }) => {
   };
 
   const handleWelcomeComplete = () => {
-    navigate('/');
+    // Navigate to child learning dashboard after onboarding
+    navigate('/learn');
   };
 
   const getCurrentStepNumber = () => {
