@@ -17,9 +17,9 @@ const HomePage = () => {
         <div className="min-h-screen bg-white font-sans text-gray-900">
             {/* Navbar */}
             <nav className="p-6 flex justify-between items-center max-w-7xl mx-auto">
-                <div className="text-2xl font-black font-comic text-nanobanana-blue flex items-center gap-2">
-                    <div className="w-8 h-8 bg-nanobanana-yellow rounded-full border-2 border-black"></div>
-                    K-6 AI Tutor
+                <div className="flex items-center gap-3">
+                    <img src="/assets/orbit-learn-logo.png" alt="Orbit Learn" className="h-12 w-auto" />
+                    <span className="text-2xl font-black font-comic text-nanobanana-blue">Orbit Learn</span>
                 </div>
                 <div className="hidden md:flex gap-6 font-bold">
                     <a href="#features" className="hover:text-nanobanana-blue transition-colors">Features</a>
@@ -228,7 +228,7 @@ const HomePage = () => {
                     <button onClick={handleStartStudy} className="inline-block bg-white text-black font-bold px-8 py-3 rounded-full hover:bg-gray-200 transition-colors">
                         Get Started Now
                     </button>
-                    <p className="mt-8 text-gray-500 text-sm">© 2024 K-6 AI Tutor. Made with ❤️ and 🍌</p>
+                    <p className="mt-8 text-gray-500 text-sm">© 2024 Orbit Learn. Made with ❤️ for young learners.</p>
                 </div>
             </footer>
         </div>
