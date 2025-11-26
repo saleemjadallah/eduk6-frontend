@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
+import { profileAPI } from '../../services/api/profileAPI';
 
 const AVATARS = [
   { id: 'avatar_1', name: 'Cool Cat', emoji: '🐱' },
@@ -122,10 +123,16 @@ const CreateProfileStep = ({ onComplete }) => {
         learningStyle: profileData.learningStyle,
         curriculumType: profileData.curriculumType,
         language: 'en',
-        interests: profileData.interests,
       };
 
-      addChildProfile(newProfile);
+      // Call API to create the profile in the database
+      const response = await profileAPI.createProfile(newProfile);
+
+      if (response.success && response.data) {
+        // Update local state with the created profile
+        addChildProfile(response.data);
+      }
+
       onComplete?.();
     } catch (err) {
       setErrors({ submit: err.message || 'Failed to create profile' });
