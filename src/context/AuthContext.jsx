@@ -90,14 +90,15 @@ export function AuthProvider({ children }) {
         localStorage.setItem('refresh_token', response.refreshToken);
       }
 
-      // Set user data
-      setUser(response.parent);
-      setChildProfiles(response.children || []);
+      // Set user data - response.data contains the actual data
+      const userData = response.data || response;
+      setUser(userData.parent);
+      setChildProfiles(userData.children || []);
 
       // Set first child as current profile
-      if (response.children?.length > 0) {
-        setCurrentProfile(response.children[0]);
-        localStorage.setItem('current_profile_id', response.children[0].id);
+      if (userData.children?.length > 0) {
+        setCurrentProfile(userData.children[0]);
+        localStorage.setItem('current_profile_id', userData.children[0].id);
       }
 
       return { success: true };
@@ -235,7 +236,7 @@ export function AuthProvider({ children }) {
   const hasConsent = user?.consentStatus === 'verified';
   const needsEmailVerification = user && !user.emailVerified;
   const needsConsent = user && user.emailVerified && user.consentStatus !== 'verified';
-  const needsChildProfile = user && user.emailVerified && user.consentStatus === 'verified' && childProfiles.length === 0;
+  const needsChildProfile = user && user.emailVerified && hasConsent && childProfiles.length === 0;
   const isReady = !isLoading && isInitialized;
 
   // Get max children allowed based on subscription tier

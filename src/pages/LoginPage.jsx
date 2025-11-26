@@ -6,7 +6,17 @@ import ForgotPasswordModal from '../components/Onboarding/ForgotPasswordModal';
 
 const LoginPage = () => {
   const navigate = useNavigate();
-  const { signIn, isLoading, isAuthenticated, hasConsent, children } = useAuth();
+  const {
+    signIn,
+    isLoading,
+    isAuthenticated,
+    hasConsent,
+    children,
+    needsEmailVerification,
+    needsConsent,
+    needsChildProfile,
+    isReady,
+  } = useAuth();
 
   const [formData, setFormData] = useState({
     email: '',
@@ -16,12 +26,24 @@ const LoginPage = () => {
   const [apiError, setApiError] = useState('');
   const [showForgotPassword, setShowForgotPassword] = useState(false);
 
-  // Redirect if already authenticated and fully set up
+  // Redirect based on authentication state
   useEffect(() => {
-    if (isAuthenticated && hasConsent && children.length > 0) {
-      navigate('/learn');
+    if (!isReady) return;
+
+    if (isAuthenticated) {
+      // Check what the user needs to complete
+      if (needsEmailVerification) {
+        navigate('/onboarding', { state: { step: 'email_verification' } });
+      } else if (needsConsent) {
+        navigate('/onboarding', { state: { step: 'consent_method' } });
+      } else if (needsChildProfile) {
+        navigate('/onboarding', { state: { step: 'create_profile' } });
+      } else if (hasConsent && children.length > 0) {
+        // Fully set up - go to dashboard
+        navigate('/learn');
+      }
     }
-  }, [isAuthenticated, hasConsent, children, navigate]);
+  }, [isAuthenticated, hasConsent, children, needsEmailVerification, needsConsent, needsChildProfile, isReady, navigate]);
 
   const validateForm = () => {
     const newErrors = {};
@@ -63,8 +85,7 @@ const LoginPage = () => {
 
     try {
       await signIn(formData.email, formData.password);
-      // After successful login, navigate to dashboard
-      navigate('/learn');
+      // Navigation will be handled by useEffect based on updated auth state
     } catch (err) {
       setApiError(err.message || 'Failed to sign in. Please check your credentials.');
     }
