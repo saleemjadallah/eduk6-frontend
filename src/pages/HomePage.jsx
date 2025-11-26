@@ -17,9 +17,8 @@ const HomePage = () => {
         <div className="min-h-screen bg-white font-sans text-gray-900">
             {/* Navbar */}
             <nav className="p-6 flex justify-between items-center max-w-7xl mx-auto">
-                <div className="flex items-center gap-2">
-                    <img src="/assets/orbit-learn-logo-icon2.png" alt="Orbit Learn" className="h-20 w-auto" />
-                    <span className="text-2xl font-black font-comic bg-gradient-to-r from-nanobanana-blue to-nanobanana-green bg-clip-text text-transparent">Orbit Learn</span>
+                <div className="flex items-center">
+                    <img src="/assets/orbit-learn-logo-icon3.png" alt="Orbit Learn" className="h-20 w-auto" />
                 </div>
                 <div className="hidden md:flex gap-6 font-bold">
                     <a href="#features" className="hover:text-nanobanana-blue transition-colors">Features</a>
