@@ -102,52 +102,84 @@ export function parseYouTubeUrl(url) {
   };
 }
 
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+
 /**
- * Get video metadata (mock - replace with YouTube Data API)
+ * Get video metadata from backend API
  * @param {string} videoId - YouTube video ID
  * @returns {Promise<Object>} Video metadata
  */
 export async function getVideoMetadata(videoId) {
-  // Mock implementation - in production, use YouTube Data API
-  return {
-    id: videoId,
-    title: `Educational Video`,
-    thumbnail: getYouTubeThumbnail(videoId, 'high'),
-    duration: '5:00',
-    channel: 'Learning Channel',
-  };
+  const token = localStorage.getItem('auth_token');
+
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/youtube/metadata/${videoId}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token && { Authorization: `Bearer ${token}` }),
+      },
+    });
+
+    if (!response.ok) {
+      // If backend doesn't have YouTube API, fallback to basic info
+      return {
+        id: videoId,
+        title: 'YouTube Video',
+        thumbnail: getYouTubeThumbnail(videoId, 'high'),
+        duration: null,
+        channel: null,
+      };
+    }
+
+    const data = await response.json();
+    return {
+      id: videoId,
+      title: data.data?.title || 'YouTube Video',
+      thumbnail: data.data?.thumbnail || getYouTubeThumbnail(videoId, 'high'),
+      duration: data.data?.duration || null,
+      channel: data.data?.channel || null,
+    };
+  } catch (error) {
+    console.error('Failed to fetch video metadata:', error);
+    // Fallback to basic info from thumbnail
+    return {
+      id: videoId,
+      title: 'YouTube Video',
+      thumbnail: getYouTubeThumbnail(videoId, 'high'),
+      duration: null,
+      channel: null,
+    };
+  }
 }
 
 /**
- * Get video transcript (mock - replace with YouTube Transcript API or your backend)
+ * Get video transcript from backend API
  * @param {string} videoId - YouTube video ID
  * @returns {Promise<string>} Video transcript
  */
 export async function getYouTubeTranscript(videoId) {
-  // Mock implementation
-  // In production, use:
-  // - youtube-transcript npm package
-  // - Your backend with yt-dlp
-  // - Third-party API like youtubetranscript.com
+  const token = localStorage.getItem('auth_token');
 
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      resolve(`[Transcript for video: ${videoId}]
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/youtube/transcript/${videoId}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token && { Authorization: `Bearer ${token}` }),
+      },
+    });
 
-Welcome to today's lesson! We're going to learn about something really exciting.
+    if (!response.ok) {
+      throw new Error('Failed to fetch transcript');
+    }
 
-First, let's start with the basics. This topic is important because it helps us understand the world around us.
-
-Here are some key points to remember:
-1. The first important concept is foundational to everything else.
-2. Building on that, we can explore more complex ideas.
-3. Finally, we'll see how this applies to real life.
-
-Let's dive deeper into each of these points...
-
-[This is mock transcript content. In production, this would be the actual video transcript extracted via API.]`);
-    }, 1500);
-  });
+    const data = await response.json();
+    return data.data?.transcript || '';
+  } catch (error) {
+    console.error('Failed to fetch video transcript:', error);
+    throw new Error('Could not load video transcript. The video may not have captions available.');
+  }
 }
 
 /**
