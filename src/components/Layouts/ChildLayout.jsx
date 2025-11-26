@@ -1,9 +1,70 @@
 import React from 'react';
 import { Outlet } from 'react-router-dom';
+import { motion } from 'framer-motion';
 import { useAuth } from '../../context/AuthContext';
 import { ChildNavigation, ModeSwitcher } from '../Navigation';
 import { ProfileSwitcher } from '../Profile';
 import './ChildLayout.css';
+
+// Cloud background using AI-generated images from Gemini
+const CloudBackground = () => {
+  return (
+    <div className="cloud-background">
+      {/* Top cloud backdrop - fades down */}
+      <motion.div
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 1.5, ease: "easeOut" }}
+        className="cloud-top"
+      >
+        <img
+          src="/assets/images/clouds/cloud_backdrop_top.png"
+          alt=""
+          className="cloud-image cloud-fade-down"
+        />
+      </motion.div>
+
+      {/* Bottom cloud backdrop - fades up */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 1.5, ease: "easeOut", delay: 0.3 }}
+        className="cloud-bottom"
+      >
+        <img
+          src="/assets/images/clouds/cloud_backdrop_bottom.png"
+          alt=""
+          className="cloud-image cloud-fade-up"
+        />
+      </motion.div>
+
+      {/* Floating individual clouds with gentle animation */}
+      <motion.img
+        src="/assets/images/clouds/cloud_single_1.png"
+        alt=""
+        className="cloud-float cloud-float-1"
+        animate={{ x: [0, 15, 0], y: [0, 5, 0] }}
+        transition={{ duration: 20, repeat: Infinity, ease: "easeInOut" }}
+      />
+
+      <motion.img
+        src="/assets/images/clouds/cloud_single_2.png"
+        alt=""
+        className="cloud-float cloud-float-2"
+        animate={{ x: [0, -20, 0], y: [0, 8, 0] }}
+        transition={{ duration: 25, repeat: Infinity, ease: "easeInOut" }}
+      />
+
+      <motion.img
+        src="/assets/images/clouds/cloud_single_1.png"
+        alt=""
+        className="cloud-float cloud-float-3"
+        animate={{ x: [0, -10, 0] }}
+        transition={{ duration: 18, repeat: Infinity, ease: "easeInOut" }}
+      />
+    </div>
+  );
+};
 
 const ChildLayout = () => {
   // Try to get auth context
@@ -31,6 +92,9 @@ const ChildLayout = () => {
 
   return (
     <div className={getLayoutClass()}>
+      {/* Cloud Background */}
+      <CloudBackground />
+
       {/* Header */}
       <header className="child-header">
         <div className="child-header-left">
