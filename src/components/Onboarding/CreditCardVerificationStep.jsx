@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
-import { mockConsentAPI } from '../../services/api/consentAPI';
+import { consentAPI } from '../../services/api/consentAPI';
 
-// Note: In production, this would use Stripe Elements
+// TODO: In production, integrate with Stripe Elements
 // import { loadStripe } from '@stripe/stripe-js';
 // import { Elements, CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
 
@@ -12,7 +12,7 @@ const CreditCardVerificationStep = ({ consentId, onVerified, onBack }) => {
   const [error, setError] = useState('');
   const [step, setStep] = useState('form'); // 'form', 'processing', 'success'
 
-  // Mock card form state (in production, use Stripe Elements)
+  // Card form state (TODO: Replace with Stripe Elements in production)
   const [cardData, setCardData] = useState({
     number: '',
     expiry: '',
@@ -68,18 +68,15 @@ const CreditCardVerificationStep = ({ consentId, onVerified, onBack }) => {
     setStep('processing');
 
     try {
-      // Simulate payment processing
-      await new Promise(resolve => setTimeout(resolve, 2000));
-
-      // In production:
+      // TODO: In production, use Stripe to process the payment
       // const { paymentIntent, error } = await stripe.confirmCardPayment(clientSecret, {
       //   payment_method: { card: elements.getElement(CardElement) }
       // });
 
-      // Verify with backend
-      const result = await mockConsentAPI.verifyCreditCard({
-        consentId,
-        paymentIntentId: 'mock_payment_intent',
+      // Verify with backend using the payment intent ID
+      // For now, we'll use a placeholder - in production this would come from Stripe
+      const result = await consentAPI.verifyCreditCard({
+        paymentIntentId: consentId, // consentId is actually the clientSecret from initiation
       });
 
       if (result.success) {

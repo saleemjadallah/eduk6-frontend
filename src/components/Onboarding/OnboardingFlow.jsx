@@ -38,6 +38,7 @@ const OnboardingFlow = ({ initialStep = STEPS.SIGNUP }) => {
   const [consentMethod, setConsentMethod] = useState(null);
   const [consentId, setConsentId] = useState(null);
   const [direction, setDirection] = useState(1); // 1 = forward, -1 = backward
+  const [pendingVerificationEmail, setPendingVerificationEmail] = useState(null);
 
   // Determine initial step based on user state
   useEffect(() => {
@@ -93,7 +94,11 @@ const OnboardingFlow = ({ initialStep = STEPS.SIGNUP }) => {
     setCurrentStep(step);
   };
 
-  const handleSignUpComplete = () => {
+  const handleSignUpComplete = (email) => {
+    // Store the email for the verification step
+    if (email) {
+      setPendingVerificationEmail(email);
+    }
     goToStep(STEPS.EMAIL_VERIFICATION);
   };
 
@@ -237,7 +242,10 @@ const OnboardingFlow = ({ initialStep = STEPS.SIGNUP }) => {
               )}
 
               {currentStep === STEPS.EMAIL_VERIFICATION && (
-                <EmailVerificationStep onVerified={handleEmailVerified} />
+                <EmailVerificationStep
+                  email={pendingVerificationEmail || user?.email}
+                  onVerified={handleEmailVerified}
+                />
               )}
 
               {currentStep === STEPS.CONSENT_METHOD && (

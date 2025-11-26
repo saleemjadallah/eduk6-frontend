@@ -81,7 +81,8 @@ const SignUpStep = ({ isSignIn = false, onComplete, onSwitchToSignIn, onSwitchTo
           formData.firstName,
           formData.lastName
         );
-        onComplete?.();
+        // Pass email to the next step for verification
+        onComplete?.(formData.email);
       }
     } catch (err) {
       setApiError(err.message || `Failed to ${isSignIn ? 'sign in' : 'sign up'}`);
