@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Youtube, Link, X, CheckCircle, AlertCircle } from 'lucide-react';
+import { getVideoMetadata } from '../../utils/youtubeUtils';
 
 const YouTubeInput = ({ onVideoSelect, selectedVideo, onClear, disabled }) => {
     const [url, setUrl] = useState('');
@@ -13,7 +14,7 @@ const YouTubeInput = ({ onVideoSelect, selectedVideo, onClear, disabled }) => {
             /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([^&\n?#]+)/,
             /youtube\.com\/shorts\/([^&\n?#]+)/,
         ];
-        
+
         for (const pattern of patterns) {
             const match = url.match(pattern);
             if (match) return match[1];
@@ -21,25 +22,19 @@ const YouTubeInput = ({ onVideoSelect, selectedVideo, onClear, disabled }) => {
         return null;
     };
 
-    // Validate and fetch video info (mock for now)
+    // Validate and fetch video info from backend
     const validateVideo = async (videoId) => {
         setIsValidating(true);
         setError('');
-        
-        // Simulate API call - in production, call YouTube Data API or your backend
-        await new Promise(resolve => setTimeout(resolve, 800));
-        
-        // Mock video data - replace with actual API call
-        const mockVideoData = {
-            id: videoId,
-            title: 'Educational Video: ' + videoId.substring(0, 8),
-            thumbnail: `https://img.youtube.com/vi/${videoId}/mqdefault.jpg`,
-            duration: '5:32',
-            channel: 'Learning Channel',
-        };
-        
-        setIsValidating(false);
-        return mockVideoData;
+
+        try {
+            const videoData = await getVideoMetadata(videoId);
+            setIsValidating(false);
+            return videoData;
+        } catch (err) {
+            setIsValidating(false);
+            throw new Error('Could not fetch video information');
+        }
     };
 
     const handleUrlChange = (e) => {

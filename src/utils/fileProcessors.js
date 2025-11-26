@@ -108,49 +108,74 @@ export async function extractTextFromTextFile(file, onProgress = () => {}) {
   });
 }
 
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+
 /**
- * Extract text from an image using browser OCR or API
- * For MVP, we'll use a mock - in production, use Google Vision API or Tesseract.js
+ * Extract text from an image using backend OCR service (Gemini Vision)
  * @param {File} file - Image file object
  * @param {Function} onProgress - Progress callback
  * @returns {Promise<{ text: string, metadata: Object }>}
  */
 export async function extractTextFromImage(file, onProgress = () => {}) {
-  // Mock implementation - replace with actual OCR
-  // Options: Google Vision API, Tesseract.js, or Gemini Vision
+  const token = localStorage.getItem('auth_token');
 
-  return new Promise((resolve) => {
-    // Simulate OCR processing time
-    let progress = 0;
-    const interval = setInterval(() => {
-      progress += 20;
-      onProgress(Math.min(progress, 100));
-      if (progress >= 100) {
-        clearInterval(interval);
-      }
-    }, 200);
+  onProgress(10);
 
-    setTimeout(() => {
-      clearInterval(interval);
-      onProgress(100);
-      resolve({
-        text: `[Extracted text from image: ${file.name}]
+  try {
+    // Convert file to base64
+    const base64 = await fileToBase64(file);
+    onProgress(30);
 
-This is placeholder text that would be extracted from the uploaded image using OCR technology.
+    // Send to backend for OCR processing
+    const response = await fetch(`${API_BASE_URL}/api/ocr/extract`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token && { Authorization: `Bearer ${token}` }),
+      },
+      body: JSON.stringify({
+        image: base64,
+        filename: file.name,
+        mimeType: file.type,
+      }),
+    });
 
-In production, this would use:
-- Google Cloud Vision API for accurate OCR
-- Or Tesseract.js for client-side processing
-- Or Gemini Pro Vision for AI-powered extraction
+    onProgress(80);
 
-The extracted text would include all readable content from worksheets, textbook pages, or handwritten notes.`,
-        metadata: {
-          sourceType: 'image',
-          requiresOCR: true,
-          originalName: file.name,
-        },
-      });
-    }, 1000);
+    if (!response.ok) {
+      throw new Error('OCR extraction failed');
+    }
+
+    const data = await response.json();
+    onProgress(100);
+
+    return {
+      text: data.data?.text || '',
+      metadata: {
+        sourceType: 'image',
+        requiresOCR: true,
+        originalName: file.name,
+        confidence: data.data?.confidence,
+      },
+    };
+  } catch (error) {
+    console.error('OCR extraction error:', error);
+    onProgress(100);
+    throw new Error('Failed to extract text from image. Please try again.');
+  }
+}
+
+/**
+ * Convert file to base64 string
+ * @param {File} file - File to convert
+ * @returns {Promise<string>} Base64 string
+ */
+function fileToBase64(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = error => reject(error);
   });
 }
 
