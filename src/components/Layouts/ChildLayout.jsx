@@ -35,8 +35,8 @@ const ChildLayout = () => {
       <header className="child-header">
         <div className="child-header-left">
           <div className="app-logo">
-            <span className="logo-icon">🍌</span>
-            <span className="logo-text">NanoBanana</span>
+            <img src="/assets/orbit-learn-logo.png" alt="Orbit Learn" className="logo-image" />
+            <span className="logo-text">Orbit Learn</span>
           </div>
         </div>
 

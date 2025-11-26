@@ -28,10 +28,15 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
+  gap: 12px;
   font-size: 1.5rem;
   font-weight: 700;
-  color: #ffc107;
+}
+
+.onboarding-logo .logo-image {
+  height: 56px;
+  width: auto;
+  object-fit: contain;
 }
 
 .logo-icon {
@@ -39,10 +44,11 @@
 }
 
 .logo-text {
-  background: linear-gradient(135deg, #ffc107, #ff9800);
+  background: linear-gradient(135deg, #4169E1, #32CD32);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
+  font-size: 1.75rem;
 }
 
 /* Progress indicator */

@@ -36,6 +36,12 @@
   padding: 0;
 }
 
+.sidebar-logo .logo-image {
+  height: 36px;
+  width: auto;
+  object-fit: contain;
+}
+
 .sidebar-logo .logo-icon {
   font-size: 1.75rem;
 }
@@ -43,7 +49,10 @@
 .sidebar-logo .logo-text {
   font-size: 1.125rem;
   font-weight: 700;
-  color: #333;
+  background: linear-gradient(135deg, #4169E1, #32CD32);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 }
 
 .parent-badge {

@@ -89,8 +89,8 @@ export const SUPPORTED_FILE_TYPES = {
 
 // Local storage keys
 export const STORAGE_KEYS = {
-  LESSONS: 'nanobanana_lessons',
-  CURRENT_LESSON_ID: 'nanobanana_current_lesson_id',
+  LESSONS: 'orbitlearn_lessons',
+  CURRENT_LESSON_ID: 'orbitlearn_current_lesson_id',
 };
 
 // Default suggested questions when no lesson is loaded
