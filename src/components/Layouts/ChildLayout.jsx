@@ -37,6 +37,7 @@ const ChildLayout = () => {
           <div className="app-logo">
             <img src="/assets/orbit-learn-logo-icon3.png" alt="Orbit Learn" className="logo-image" />
           </div>
+          <div className="logo-spacer"></div> {/* Spacer for absolute positioned logo */}
         </div>
 
         <div className="child-header-center">

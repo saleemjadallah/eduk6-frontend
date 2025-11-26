@@ -16,14 +16,15 @@ const HomePage = () => {
     return (
         <div className="min-h-screen bg-white font-sans text-gray-900">
             {/* Navbar */}
-            <nav className="h-24 px-6 flex justify-between items-center max-w-7xl mx-auto">
-                <div className="flex items-center h-full">
+            <nav className="h-16 px-6 flex justify-between items-center max-w-7xl mx-auto relative">
+                <div className="absolute left-6 top-1/2 -translate-y-1/2 z-10">
                     <img
                         src="/assets/orbit-learn-logo-icon3.png"
                         alt="Orbit Learn"
-                        className="h-20 w-auto drop-shadow-md mr-4"
+                        className="h-32 w-auto drop-shadow-lg"
                     />
                 </div>
+                <div className="w-32"></div> {/* Spacer for logo */}
                 <div className="hidden md:flex gap-6 font-bold">
                     <a href="#features" className="hover:text-nanobanana-blue transition-colors">Features</a>
                     <a href="#about" className="hover:text-nanobanana-blue transition-colors">About</a>
