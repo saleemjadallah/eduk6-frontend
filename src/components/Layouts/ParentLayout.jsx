@@ -13,17 +13,17 @@ const ParentLayout = () => {
   let children = [];
   try {
     const authContext = useAuth();
-    currentUser = authContext?.currentUser;
+    currentUser = authContext?.user;
     children = authContext?.children || [];
   } catch (e) {
     // AuthProvider not available
   }
 
   // Try to get mode context
-  let switchToChildMode = () => {};
+  let switchToChildMode = null;
   try {
     const modeContext = useMode();
-    switchToChildMode = modeContext?.switchToChildMode || (() => {});
+    switchToChildMode = modeContext?.switchToChildMode;
   } catch (e) {
     // ModeProvider not available
   }
@@ -33,8 +33,12 @@ const ParentLayout = () => {
   };
 
   const handleSwitchToChild = () => {
-    switchToChildMode();
-    navigate('/learn');
+    if (switchToChildMode) {
+      switchToChildMode();
+    } else {
+      // Fallback if mode context not available
+      navigate('/learn');
+    }
   };
 
   return (
