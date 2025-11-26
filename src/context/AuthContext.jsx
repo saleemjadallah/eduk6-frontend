@@ -14,29 +14,69 @@ export function AuthProvider({ children }) {
   const [isInitialized, setIsInitialized] = useState(false);
   const [error, setError] = useState(null);
 
+  // Helper to set user data and profile from API response
+  const setUserDataFromResponse = (userData) => {
+    setUser(userData.user);
+    setChildProfiles(userData.children || []);
+
+    // Load last active profile
+    const lastProfileId = localStorage.getItem('current_profile_id');
+    if (lastProfileId && userData.children?.length > 0) {
+      const profile = userData.children.find(c => c.id === lastProfileId);
+      setCurrentProfile(profile || userData.children[0]);
+    } else if (userData.children?.length > 0) {
+      setCurrentProfile(userData.children[0]);
+    }
+  };
+
   // Load auth state from localStorage on mount
   useEffect(() => {
     const loadAuth = async () => {
       try {
         const token = localStorage.getItem('auth_token');
+        const refreshToken = localStorage.getItem('refresh_token');
+
+        if (!token && !refreshToken) {
+          // No tokens at all - user needs to log in
+          return;
+        }
+
+        // Try to get current user with existing token
         if (token) {
           try {
             const userData = await authAPI.getCurrentUser();
-            setUser(userData.user);
-            setChildProfiles(userData.children || []);
-
-            // Load last active profile
-            const lastProfileId = localStorage.getItem('current_profile_id');
-            if (lastProfileId && userData.children?.length > 0) {
-              const profile = userData.children.find(c => c.id === lastProfileId);
-              setCurrentProfile(profile || userData.children[0]);
-            } else if (userData.children?.length > 0) {
-              setCurrentProfile(userData.children[0]);
-            }
+            setUserDataFromResponse(userData);
+            return; // Success - we're done
           } catch (err) {
-            console.error('Auth verification failed:', err);
+            console.log('Access token invalid, attempting refresh...');
+            // Token might be expired, try to refresh below
+          }
+        }
+
+        // Try to refresh the token
+        if (refreshToken) {
+          try {
+            const refreshResponse = await authAPI.refreshToken();
+
+            // Store new tokens
+            if (refreshResponse.token) {
+              localStorage.setItem('auth_token', refreshResponse.token);
+            }
+            if (refreshResponse.refreshToken) {
+              localStorage.setItem('refresh_token', refreshResponse.refreshToken);
+            }
+
+            // Now try to get user data with new token
+            const userData = await authAPI.getCurrentUser();
+            setUserDataFromResponse(userData);
+            console.log('Token refreshed successfully');
+            return; // Success
+          } catch (refreshErr) {
+            console.error('Token refresh failed:', refreshErr);
+            // Refresh failed - clear everything
             localStorage.removeItem('auth_token');
             localStorage.removeItem('refresh_token');
+            localStorage.removeItem('current_profile_id');
           }
         }
       } catch (err) {
