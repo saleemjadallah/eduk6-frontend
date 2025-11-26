@@ -205,9 +205,29 @@ export function AuthProvider({ children }) {
     }
   }, []);
 
-  // Verify email
+  // Verify email - also logs user in after successful verification
   const verifyEmail = useCallback(async (email, code) => {
-    return await authAPI.verifyEmail(email, code);
+    const response = await authAPI.verifyEmail(email, code);
+
+    if (response.success && response.token) {
+      // Store tokens
+      localStorage.setItem('auth_token', response.token);
+      if (response.refreshToken) {
+        localStorage.setItem('refresh_token', response.refreshToken);
+      }
+
+      // Set user data
+      setUser(response.parent);
+      setChildProfiles(response.children || []);
+
+      // Set first child as current profile if any
+      if (response.children?.length > 0) {
+        setCurrentProfile(response.children[0]);
+        localStorage.setItem('current_profile_id', response.children[0].id);
+      }
+    }
+
+    return response;
   }, []);
 
   // Derived state
