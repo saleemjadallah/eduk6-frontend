@@ -54,7 +54,7 @@ function App() {
                                             }
                                         >
                                             <Route index element={<ChildDashboard />} />
-                                            <Route path="study" element={<StudyPage />} />
+                                            <Route path="study" element={<Navigate to="/learn" replace />} />
                                             <Route path="study/:lessonId" element={<StudyPage />} />
                                             <Route path="achievements" element={<AchievementsPage />} />
                                             <Route path="flashcards" element={<FlashcardsPage />} />
@@ -62,7 +62,7 @@ function App() {
                                         </Route>
 
                                         {/* Legacy routes - redirect to new structure */}
-                                        <Route path="/study" element={<Navigate to="/learn/study" replace />} />
+                                        <Route path="/study" element={<Navigate to="/learn" replace />} />
                                         <Route path="/achievements" element={<Navigate to="/learn/achievements" replace />} />
                                         <Route path="/flashcards" element={<Navigate to="/learn/flashcards" replace />} />
 

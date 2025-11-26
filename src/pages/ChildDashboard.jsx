@@ -1,13 +1,86 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { Upload, BookOpen, Trophy, Sparkles } from 'lucide-react';
 import { useLessonContext } from '../context/LessonContext';
 import { useAuth } from '../context/AuthContext';
 import { useChildStats } from '../hooks/useChildStats';
+import UploadModal from '../components/Upload/UploadModal';
+
+// Cloud background using AI-generated images from Gemini
+const CloudBackground = () => {
+    return (
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+            {/* Gradient sky background */}
+            <div className="absolute inset-0 bg-gradient-to-b from-sky-50/80 via-blue-50/30 to-transparent" />
+
+            {/* Top cloud backdrop - fades down */}
+            <motion.div
+                initial={{ opacity: 0, y: -20 }}
+                animate={{ opacity: 0.6, y: 0 }}
+                transition={{ duration: 1.5, ease: "easeOut" }}
+                className="absolute top-0 left-0 right-0"
+            >
+                <img
+                    src="/assets/images/clouds/cloud_backdrop_top.png"
+                    alt=""
+                    className="w-full object-cover opacity-50"
+                    style={{
+                        maskImage: 'linear-gradient(to bottom, black 0%, transparent 100%)',
+                        WebkitMaskImage: 'linear-gradient(to bottom, black 0%, transparent 100%)'
+                    }}
+                />
+            </motion.div>
+
+            {/* Bottom cloud backdrop - fades up */}
+            <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 0.5, y: 0 }}
+                transition={{ duration: 1.5, ease: "easeOut", delay: 0.3 }}
+                className="absolute bottom-0 left-0 right-0"
+            >
+                <img
+                    src="/assets/images/clouds/cloud_backdrop_bottom.png"
+                    alt=""
+                    className="w-full object-cover opacity-40"
+                    style={{
+                        maskImage: 'linear-gradient(to top, black 0%, transparent 100%)',
+                        WebkitMaskImage: 'linear-gradient(to top, black 0%, transparent 100%)'
+                    }}
+                />
+            </motion.div>
+
+            {/* Floating individual clouds with gentle animation */}
+            <motion.img
+                src="/assets/images/clouds/cloud_single_1.png"
+                alt=""
+                className="absolute top-16 -left-8 w-48 opacity-30"
+                animate={{ x: [0, 15, 0], y: [0, 5, 0] }}
+                transition={{ duration: 20, repeat: Infinity, ease: "easeInOut" }}
+            />
+
+            <motion.img
+                src="/assets/images/clouds/cloud_single_2.png"
+                alt=""
+                className="absolute top-24 -right-12 w-56 opacity-25"
+                animate={{ x: [0, -20, 0], y: [0, 8, 0] }}
+                transition={{ duration: 25, repeat: Infinity, ease: "easeInOut" }}
+            />
+
+            <motion.img
+                src="/assets/images/clouds/cloud_single_1.png"
+                alt=""
+                className="absolute bottom-1/3 right-8 w-32 opacity-20"
+                animate={{ x: [0, -10, 0] }}
+                transition={{ duration: 18, repeat: Infinity, ease: "easeInOut" }}
+            />
+        </div>
+    );
+};
 
 const ChildDashboard = () => {
     const navigate = useNavigate();
+    const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
     const { clearCurrentLesson, recentLessons, completedLessonsCount } = useLessonContext();
     const { stats, loading: statsLoading } = useChildStats();
 
@@ -22,7 +95,7 @@ const ChildDashboard = () => {
 
     const handleStartNewLesson = () => {
         clearCurrentLesson();
-        navigate('/learn/study');
+        setIsUploadModalOpen(true);
     };
 
     const handleContinueLesson = (lessonId) => {
@@ -32,7 +105,10 @@ const ChildDashboard = () => {
     const childName = currentProfile?.name || 'Learner';
 
     return (
-        <div className="min-h-full p-6">
+        <div className="min-h-full p-6 relative">
+            {/* Cloud Background */}
+            <CloudBackground />
+
             {/* Welcome Section */}
             <motion.div
                 initial={{ opacity: 0, y: 20 }}
@@ -172,6 +248,12 @@ const ChildDashboard = () => {
                     </button>
                 </motion.div>
             )}
+
+            {/* Upload Modal */}
+            <UploadModal
+                isOpen={isUploadModalOpen}
+                onClose={() => setIsUploadModalOpen(false)}
+            />
         </div>
     );
 };
