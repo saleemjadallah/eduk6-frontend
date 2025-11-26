@@ -41,11 +41,17 @@ const OnboardingFlow = ({ initialStep = STEPS.SIGNUP }) => {
   const [pendingVerificationEmail, setPendingVerificationEmail] = useState(null);
 
   // Determine initial step based on user state
+  // This only sets the step on initial load or when auth state changes significantly
   useEffect(() => {
     // Allow email verification step even when not authenticated
     // (user just signed up but hasn't verified email yet)
     if (currentStep === STEPS.EMAIL_VERIFICATION && pendingVerificationEmail) {
       return; // Stay on email verification
+    }
+
+    // Allow consent verification sub-steps (KBQ or Credit Card)
+    if (currentStep === STEPS.KBQ || currentStep === STEPS.CREDIT_CARD) {
+      return; // Stay on consent verification sub-step
     }
 
     if (!isAuthenticated) {
@@ -60,12 +66,13 @@ const OnboardingFlow = ({ initialStep = STEPS.SIGNUP }) => {
       return;
     }
 
-    if (needsConsent) {
+    // Only redirect to consent method if we're not already in consent flow
+    if (needsConsent && currentStep !== STEPS.CONSENT_METHOD && currentStep !== STEPS.KBQ && currentStep !== STEPS.CREDIT_CARD) {
       setCurrentStep(STEPS.CONSENT_METHOD);
       return;
     }
 
-    if (needsChildProfile) {
+    if (needsChildProfile && currentStep !== STEPS.CREATE_PROFILE) {
       setCurrentStep(STEPS.CREATE_PROFILE);
       return;
     }
@@ -76,7 +83,7 @@ const OnboardingFlow = ({ initialStep = STEPS.SIGNUP }) => {
         setCurrentStep(STEPS.WELCOME);
       } else if (currentStep === STEPS.WELCOME) {
         // Stay on welcome
-      } else {
+      } else if (currentStep !== STEPS.CONSENT_METHOD && currentStep !== STEPS.KBQ && currentStep !== STEPS.CREDIT_CARD) {
         // User is fully set up, redirect to home
         navigate('/');
       }
