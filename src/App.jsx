@@ -15,6 +15,8 @@ import AchievementsPage from './pages/AchievementsPage';
 import FlashcardsPage from './pages/FlashcardsPage';
 import OnboardingPage from './pages/OnboardingPage';
 import ParentDashboard from './pages/ParentDashboard';
+import MyChildrenPage from './pages/MyChildrenPage';
+import ChildDetailsPage from './pages/ChildDetailsPage';
 import LoginPage from './pages/LoginPage';
 
 // Components
@@ -87,8 +89,8 @@ function App() {
                                         >
                                             <Route index element={<Navigate to="/parent/dashboard" replace />} />
                                             <Route path="dashboard" element={<ParentDashboard />} />
-                                            <Route path="children" element={<PlaceholderPage title="My Children" />} />
-                                            <Route path="children/:childId" element={<PlaceholderPage title="Child Details" />} />
+                                            <Route path="children" element={<MyChildrenPage />} />
+                                            <Route path="children/:childId" element={<ChildDetailsPage />} />
                                             <Route path="reports" element={<PlaceholderPage title="Progress Reports" />} />
                                             <Route path="safety" element={<PlaceholderPage title="Safety Logs" />} />
                                             <Route path="settings" element={<PlaceholderPage title="Settings" />} />
