@@ -1,57 +1,97 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { parentDashboardAPI } from '../services/api/parentDashboardAPI';
 import './ParentDashboard.css';
 
 const ParentDashboard = () => {
   const navigate = useNavigate();
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [dashboardData, setDashboardData] = useState(null);
 
   // Try to get auth context
   let currentUser = null;
-  let children = [];
   try {
     const authContext = useAuth();
-    currentUser = authContext?.currentUser;
-    children = authContext?.children || [];
+    currentUser = authContext?.user;
   } catch (e) {
     // AuthProvider not available
   }
 
-  // Mock data for demonstration
-  const stats = {
-    totalLessons: 24,
-    completedToday: 3,
-    streakDays: 7,
-    weeklyProgress: 85
+  // Fetch dashboard data
+  useEffect(() => {
+    const fetchDashboardData = async () => {
+      try {
+        setIsLoading(true);
+        setError(null);
+        const response = await parentDashboardAPI.getDashboard();
+        if (response.success) {
+          setDashboardData(response.data);
+        } else {
+          setError('Failed to load dashboard data');
+        }
+      } catch (err) {
+        console.error('Dashboard fetch error:', err);
+        setError(err.message || 'Failed to load dashboard data');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchDashboardData();
+  }, []);
+
+  // Loading state
+  if (isLoading) {
+    return (
+      <div className="parent-dashboard">
+        <div className="dashboard-loading">
+          <div className="loading-spinner"></div>
+          <p>Loading dashboard...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Error state
+  if (error) {
+    return (
+      <div className="parent-dashboard">
+        <div className="dashboard-error">
+          <p>Unable to load dashboard data</p>
+          <p className="error-message">{error}</p>
+          <button onClick={() => window.location.reload()}>Try Again</button>
+        </div>
+      </div>
+    );
+  }
+
+  // Extract data from API response
+  const stats = dashboardData?.stats || {
+    totalLessons: 0,
+    completedToday: 0,
+    streakDays: 0,
+    weeklyProgress: 0,
   };
 
-  const recentActivity = [
-    { id: 1, child: 'Emma', action: 'Completed Math lesson', time: '2 hours ago', icon: '📐' },
-    { id: 2, child: 'Emma', action: 'Earned "Quick Learner" badge', time: '3 hours ago', icon: '🏆' },
-    { id: 3, child: 'Liam', action: 'Started Science exploration', time: '5 hours ago', icon: '🔬' },
-    { id: 4, child: 'Emma', action: 'Asked Jeffrey about planets', time: '1 day ago', icon: '🪐' }
-  ];
+  const childrenData = dashboardData?.children || [];
+  const recentActivity = dashboardData?.recentActivity || [];
 
-  const childSummaries = children.length > 0 ? children.map(child => ({
-    id: child.id,
-    name: child.name,
-    avatar: child.avatar || '👧',
-    age: child.age,
-    lessonsCompleted: Math.floor(Math.random() * 20) + 5,
-    currentStreak: Math.floor(Math.random() * 10) + 1,
-    lastActive: 'Today',
-    progress: Math.floor(Math.random() * 30) + 70
-  })) : [
-    { id: 1, name: 'Demo Child', avatar: '👧', age: 8, lessonsCompleted: 12, currentStreak: 5, lastActive: 'Today', progress: 78 }
-  ];
+  // Check if there are no children yet
+  const hasChildren = childrenData.length > 0;
 
   return (
     <div className="parent-dashboard">
       {/* Welcome section */}
       <section className="dashboard-welcome">
         <div className="welcome-content">
-          <h1>Welcome back{currentUser?.displayName ? `, ${currentUser.displayName.split(' ')[0]}` : ''}!</h1>
-          <p>Here's how your children are doing this week.</p>
+          <h1>Welcome back{currentUser?.firstName ? `, ${currentUser.firstName}` : ''}!</h1>
+          <p>
+            {hasChildren
+              ? "Here's how your children are doing this week."
+              : 'Get started by adding your first child profile.'}
+          </p>
         </div>
         <button className="add-child-btn" onClick={() => navigate('/parent/children')}>
           <span>+</span> Add Child
@@ -98,44 +138,64 @@ const ParentDashboard = () => {
             View All
           </button>
         </div>
-        <div className="children-grid">
-          {childSummaries.map(child => (
-            <div key={child.id} className="child-card">
-              <div className="child-header">
-                <div className="child-avatar">{child.avatar}</div>
-                <div className="child-info">
-                  <h3>{child.name}</h3>
-                  <span className="child-age">{child.age} years old</span>
-                </div>
-                <span className={`status-badge ${child.lastActive === 'Today' ? 'active' : ''}`}>
-                  {child.lastActive}
-                </span>
-              </div>
-              <div className="child-stats">
-                <div className="mini-stat">
-                  <span className="mini-stat-value">{child.lessonsCompleted}</span>
-                  <span className="mini-stat-label">Lessons</span>
-                </div>
-                <div className="mini-stat">
-                  <span className="mini-stat-value">{child.currentStreak}</span>
-                  <span className="mini-stat-label">Streak</span>
-                </div>
-                <div className="mini-stat progress-stat">
-                  <div className="progress-bar">
-                    <div className="progress-fill" style={{ width: `${child.progress}%` }}></div>
+        {hasChildren ? (
+          <div className="children-grid">
+            {childrenData.map((child) => (
+              <div key={child.id} className="child-card">
+                <div className="child-header">
+                  <div className="child-avatar">
+                    {child.avatarUrl ? (
+                      <img src={child.avatarUrl} alt={child.displayName} />
+                    ) : (
+                      getAvatarEmoji(child.ageGroup)
+                    )}
                   </div>
-                  <span className="mini-stat-label">{child.progress}% complete</span>
+                  <div className="child-info">
+                    <h3>{child.displayName}</h3>
+                    <span className="child-age">{child.age} years old</span>
+                  </div>
+                  <span className={`status-badge ${child.wasActiveToday ? 'active' : ''}`}>
+                    {child.lastActive}
+                  </span>
                 </div>
+                <div className="child-stats">
+                  <div className="mini-stat">
+                    <span className="mini-stat-value">{child.lessonsCompleted}</span>
+                    <span className="mini-stat-label">Lessons</span>
+                  </div>
+                  <div className="mini-stat">
+                    <span className="mini-stat-value">{child.currentStreak}</span>
+                    <span className="mini-stat-label">Streak</span>
+                  </div>
+                  <div className="mini-stat progress-stat">
+                    <div className="progress-bar">
+                      <div
+                        className="progress-fill"
+                        style={{
+                          width: `${Math.min(100, (child.lessonsCompleted / Math.max(1, child.lessonsCompleted + 5)) * 100)}%`,
+                        }}
+                      ></div>
+                    </div>
+                    <span className="mini-stat-label">Level {child.level}</span>
+                  </div>
+                </div>
+                <button
+                  className="view-details-btn"
+                  onClick={() => navigate(`/parent/children/${child.id}`)}
+                >
+                  View Details
+                </button>
               </div>
-              <button
-                className="view-details-btn"
-                onClick={() => navigate(`/parent/children/${child.id}`)}
-              >
-                View Details
-              </button>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        ) : (
+          <div className="empty-state">
+            <p>No children added yet.</p>
+            <button className="add-child-btn-inline" onClick={() => navigate('/parent/children')}>
+              Add Your First Child
+            </button>
+          </div>
+        )}
       </section>
 
       {/* Recent activity */}
@@ -146,18 +206,24 @@ const ParentDashboard = () => {
             View Reports
           </button>
         </div>
-        <div className="activity-list">
-          {recentActivity.map(activity => (
-            <div key={activity.id} className="activity-item">
-              <div className="activity-icon">{activity.icon}</div>
-              <div className="activity-content">
-                <span className="activity-child">{activity.child}</span>
-                <span className="activity-action">{activity.action}</span>
+        {recentActivity.length > 0 ? (
+          <div className="activity-list">
+            {recentActivity.map((activity) => (
+              <div key={activity.id} className="activity-item">
+                <div className="activity-icon">{activity.icon}</div>
+                <div className="activity-content">
+                  <span className="activity-child">{activity.child}</span>
+                  <span className="activity-action">{activity.action}</span>
+                </div>
+                <span className="activity-time">{activity.time}</span>
               </div>
-              <span className="activity-time">{activity.time}</span>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        ) : (
+          <div className="empty-state">
+            <p>No recent activity yet. Start learning to see activity here!</p>
+          </div>
+        )}
       </section>
 
       {/* Quick actions */}
@@ -185,5 +251,10 @@ const ParentDashboard = () => {
     </div>
   );
 };
+
+// Helper function to get avatar emoji based on age group
+function getAvatarEmoji(ageGroup) {
+  return ageGroup === 'YOUNG' ? '🧒' : '👧';
+}
 
 export default ParentDashboard;
