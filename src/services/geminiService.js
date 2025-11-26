@@ -84,16 +84,19 @@ export async function analyzeContent(text, options = {}) {
 
     if (onProgress) onProgress(100);
 
+    // Backend returns { data: { lesson, analysis } }
+    const analysis = response.data.analysis || response.data;
+
     return {
-      title: response.data.title,
-      summary: response.data.summary,
-      gradeLevel: response.data.gradeLevel || gradeLevel || 'Grade 3-4',
-      subject: response.data.subject || subject || 'General',
-      chapters: response.data.chapters || [],
-      keyConceptsForChat: response.data.keyConcepts || [],
-      vocabulary: response.data.vocabulary || [],
-      suggestedQuestions: response.data.suggestedQuestions || [],
-      relatedTopics: response.data.relatedTopics || [],
+      title: analysis.title,
+      summary: analysis.summary,
+      gradeLevel: analysis.gradeLevel || gradeLevel || 'Grade 3-4',
+      subject: analysis.subject || subject || 'General',
+      chapters: analysis.chapters || [],
+      keyConceptsForChat: analysis.keyConcepts || [],
+      vocabulary: analysis.vocabulary || [],
+      suggestedQuestions: analysis.suggestedQuestions || [],
+      relatedTopics: analysis.relatedTopics || [],
       estimatedReadTime: Math.ceil(text.split(/\s+/).length / 200),
     };
   } catch (error) {
