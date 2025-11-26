@@ -256,44 +256,80 @@ const CreateProfileStep = ({ onComplete }) => {
               </div>
             </div>
 
-            <div className="form-row">
-              <div className="form-group">
+            <div className="pin-entry-row">
+              <div className="pin-entry-group">
                 <label className="form-label-small">Create PIN</label>
-                <input
-                  type="password"
-                  name="pin"
-                  inputMode="numeric"
-                  pattern="[0-9]*"
-                  maxLength={4}
-                  className={`form-input pin-input ${errors.pin ? 'error' : ''}`}
-                  placeholder="****"
-                  value={profileData.pin}
-                  onChange={(e) => {
-                    const value = e.target.value.replace(/\D/g, '').slice(0, 4);
-                    setProfileData(prev => ({ ...prev, pin: value }));
-                    if (errors.pin) setErrors(prev => ({ ...prev, pin: '' }));
-                  }}
-                />
+                <div className={`pin-boxes ${errors.pin ? 'error' : ''}`}>
+                  {[0, 1, 2, 3].map((index) => (
+                    <input
+                      key={`pin-${index}`}
+                      type="password"
+                      inputMode="numeric"
+                      maxLength={1}
+                      className="pin-box"
+                      value={profileData.pin[index] || ''}
+                      onChange={(e) => {
+                        const value = e.target.value.replace(/\D/g, '');
+                        if (value.length <= 1) {
+                          const newPin = profileData.pin.split('');
+                          newPin[index] = value;
+                          setProfileData(prev => ({ ...prev, pin: newPin.join('') }));
+                          if (errors.pin) setErrors(prev => ({ ...prev, pin: '' }));
+                          // Auto-focus next input
+                          if (value && index < 3) {
+                            const nextInput = e.target.parentElement.children[index + 1];
+                            if (nextInput) nextInput.focus();
+                          }
+                        }
+                      }}
+                      onKeyDown={(e) => {
+                        // Handle backspace to go to previous input
+                        if (e.key === 'Backspace' && !profileData.pin[index] && index > 0) {
+                          const prevInput = e.target.parentElement.children[index - 1];
+                          if (prevInput) prevInput.focus();
+                        }
+                      }}
+                    />
+                  ))}
+                </div>
                 {errors.pin && <div className="form-error">{errors.pin}</div>}
               </div>
 
-              <div className="form-group">
+              <div className="pin-entry-group">
                 <label className="form-label-small">Confirm PIN</label>
-                <input
-                  type="password"
-                  name="confirmPin"
-                  inputMode="numeric"
-                  pattern="[0-9]*"
-                  maxLength={4}
-                  className={`form-input pin-input ${errors.confirmPin ? 'error' : ''}`}
-                  placeholder="****"
-                  value={profileData.confirmPin}
-                  onChange={(e) => {
-                    const value = e.target.value.replace(/\D/g, '').slice(0, 4);
-                    setProfileData(prev => ({ ...prev, confirmPin: value }));
-                    if (errors.confirmPin) setErrors(prev => ({ ...prev, confirmPin: '' }));
-                  }}
-                />
+                <div className={`pin-boxes ${errors.confirmPin ? 'error' : ''}`}>
+                  {[0, 1, 2, 3].map((index) => (
+                    <input
+                      key={`confirmPin-${index}`}
+                      type="password"
+                      inputMode="numeric"
+                      maxLength={1}
+                      className="pin-box"
+                      value={profileData.confirmPin[index] || ''}
+                      onChange={(e) => {
+                        const value = e.target.value.replace(/\D/g, '');
+                        if (value.length <= 1) {
+                          const newPin = profileData.confirmPin.split('');
+                          newPin[index] = value;
+                          setProfileData(prev => ({ ...prev, confirmPin: newPin.join('') }));
+                          if (errors.confirmPin) setErrors(prev => ({ ...prev, confirmPin: '' }));
+                          // Auto-focus next input
+                          if (value && index < 3) {
+                            const nextInput = e.target.parentElement.children[index + 1];
+                            if (nextInput) nextInput.focus();
+                          }
+                        }
+                      }}
+                      onKeyDown={(e) => {
+                        // Handle backspace to go to previous input
+                        if (e.key === 'Backspace' && !profileData.confirmPin[index] && index > 0) {
+                          const prevInput = e.target.parentElement.children[index - 1];
+                          if (prevInput) prevInput.focus();
+                        }
+                      }}
+                    />
+                  ))}
+                </div>
                 {errors.confirmPin && <div className="form-error">{errors.confirmPin}</div>}
               </div>
             </div>
@@ -472,18 +508,68 @@ const CreateProfileStep = ({ onComplete }) => {
           font-size: 0.8125rem;
           font-weight: 500;
           color: #666;
-          margin-bottom: 6px;
+          margin-bottom: 8px;
         }
 
-        .pin-input {
+        .pin-entry-row {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 24px;
+        }
+
+        .pin-entry-group {
+          display: flex;
+          flex-direction: column;
+        }
+
+        .pin-boxes {
+          display: flex;
+          gap: 8px;
+          justify-content: flex-start;
+        }
+
+        .pin-boxes.error .pin-box {
+          border-color: #ef4444;
+        }
+
+        .pin-box {
+          width: 48px;
+          height: 56px;
+          border: 2px solid #e0e0e0;
+          border-radius: 12px;
+          font-size: 1.5rem;
+          font-weight: 600;
           text-align: center;
-          font-size: 1.25rem;
-          letter-spacing: 8px;
-          font-family: monospace;
+          background: #fff;
+          transition: all 0.2s ease;
         }
 
-        .pin-input::placeholder {
-          letter-spacing: 4px;
+        .pin-box:focus {
+          outline: none;
+          border-color: #ffc107;
+          box-shadow: 0 0 0 3px rgba(255, 193, 7, 0.2);
+        }
+
+        .pin-box::-webkit-inner-spin-button,
+        .pin-box::-webkit-outer-spin-button {
+          -webkit-appearance: none;
+          margin: 0;
+        }
+
+        @media (max-width: 480px) {
+          .pin-entry-row {
+            grid-template-columns: 1fr;
+            gap: 16px;
+          }
+
+          .pin-boxes {
+            justify-content: center;
+          }
+
+          .pin-box {
+            width: 52px;
+            height: 60px;
+          }
         }
 
         /* Avatar selection */
