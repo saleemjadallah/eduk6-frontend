@@ -16,12 +16,12 @@ const HomePage = () => {
     return (
         <div className="min-h-screen bg-white font-sans text-gray-900">
             {/* Navbar */}
-            <nav className="h-20 px-6 flex justify-between items-center max-w-7xl mx-auto">
-                <div className="flex items-center h-full py-2">
+            <nav className="h-24 px-6 flex justify-between items-center max-w-7xl mx-auto">
+                <div className="flex items-center h-full">
                     <img
                         src="/assets/orbit-learn-logo-icon3.png"
                         alt="Orbit Learn"
-                        className="max-h-full w-auto drop-shadow-md mr-4"
+                        className="h-20 w-auto drop-shadow-md mr-4"
                     />
                 </div>
                 <div className="hidden md:flex gap-6 font-bold">
