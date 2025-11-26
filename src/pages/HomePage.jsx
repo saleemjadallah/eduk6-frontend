@@ -17,7 +17,7 @@ const HomePage = () => {
         <div className="min-h-screen bg-white font-sans text-gray-900">
             {/* Navbar */}
             <nav className="h-16 px-6 flex justify-between items-center max-w-7xl mx-auto relative">
-                <div className="absolute left-6 top-1/2 -translate-y-1/2 z-10">
+                <div className="absolute left-6 top-1/2 -translate-y-1/3 z-10">
                     <img
                         src="/assets/orbit-learn-logo-icon3.png"
                         alt="Orbit Learn"
