@@ -28,15 +28,14 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 12px;
-  font-size: 1.5rem;
-  font-weight: 700;
+  min-height: 120px;
 }
 
 .onboarding-logo .logo-image {
-  height: 100px;
+  max-height: 110px;
   width: auto;
   object-fit: contain;
+  filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.15));
 }
 
 .logo-icon {
