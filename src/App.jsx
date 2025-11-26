@@ -15,6 +15,7 @@ import AchievementsPage from './pages/AchievementsPage';
 import FlashcardsPage from './pages/FlashcardsPage';
 import OnboardingPage from './pages/OnboardingPage';
 import ParentDashboard from './pages/ParentDashboard';
+import LoginPage from './pages/LoginPage';
 
 // Components
 import { RewardPopup } from './components/Gamification';
@@ -36,6 +37,7 @@ function App() {
                                     <Routes>
                                         {/* Public routes */}
                                         <Route path="/" element={<HomePage />} />
+                                        <Route path="/login" element={<LoginPage />} />
                                         <Route path="/onboarding" element={<OnboardingPage />} />
 
                                         {/* Child routes - wrapped in ChildLayout */}

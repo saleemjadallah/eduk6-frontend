@@ -29,7 +29,7 @@ const HomePage = () => {
                     <Link to="/onboarding" className="bg-nanobanana-blue text-white px-6 py-2 rounded-full font-bold hover:bg-blue-600 transition-colors">
                         Sign Up
                     </Link>
-                    <Link to="/onboarding" className="bg-black text-white px-6 py-2 rounded-full font-bold hover:bg-gray-800 transition-colors">
+                    <Link to="/login" className="bg-black text-white px-6 py-2 rounded-full font-bold hover:bg-gray-800 transition-colors">
                         Login
                     </Link>
                 </div>
