@@ -84,21 +84,23 @@ export function AuthProvider({ children }) {
         throw new Error(response.error || 'Sign in failed');
       }
 
+      // Response structure: { success: true, data: { token, refreshToken, parent, children } }
+      const data = response.data;
+
       // Store tokens
-      localStorage.setItem('auth_token', response.token);
-      if (response.refreshToken) {
-        localStorage.setItem('refresh_token', response.refreshToken);
+      localStorage.setItem('auth_token', data.token);
+      if (data.refreshToken) {
+        localStorage.setItem('refresh_token', data.refreshToken);
       }
 
-      // Set user data - response.data contains the actual data
-      const userData = response.data || response;
-      setUser(userData.parent);
-      setChildProfiles(userData.children || []);
+      // Set user data
+      setUser(data.parent);
+      setChildProfiles(data.children || []);
 
       // Set first child as current profile
-      if (userData.children?.length > 0) {
-        setCurrentProfile(userData.children[0]);
-        localStorage.setItem('current_profile_id', userData.children[0].id);
+      if (data.children?.length > 0) {
+        setCurrentProfile(data.children[0]);
+        localStorage.setItem('current_profile_id', data.children[0].id);
       }
 
       return { success: true };
