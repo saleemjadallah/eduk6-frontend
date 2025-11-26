@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
-import { mockConsentAPI } from '../../services/api/consentAPI';
+import { consentAPI } from '../../services/api/consentAPI';
 
 const KBQVerificationStep = ({ consentId, onVerified, onBack }) => {
   const { updateConsentStatus } = useAuth();
@@ -12,18 +12,20 @@ const KBQVerificationStep = ({ consentId, onVerified, onBack }) => {
   const [error, setError] = useState('');
   const [attemptsRemaining, setAttemptsRemaining] = useState(3);
   const [step, setStep] = useState('questions'); // 'questions', 'success', 'failed'
+  const [isSetupMode, setIsSetupMode] = useState(false);
 
   // Load questions on mount
   useEffect(() => {
     loadQuestions();
-  }, [consentId]);
+  }, []);
 
   const loadQuestions = async () => {
     setIsLoading(true);
     try {
-      const response = await mockConsentAPI.getKBQQuestions(consentId);
-      if (response.success && response.questions) {
-        setQuestions(response.questions);
+      const response = await consentAPI.getKBQQuestions();
+      if (response.success && response.data?.questions) {
+        setQuestions(response.data.questions);
+        setIsSetupMode(response.data.isSetup || false);
       } else {
         setError('Failed to load questions');
       }
@@ -78,12 +80,11 @@ const KBQVerificationStep = ({ consentId, onVerified, onBack }) => {
         answer,
       }));
 
-      const result = await mockConsentAPI.verifyKBQ({
-        consentId,
-        answers: formattedAnswers,
-      });
+      // Use setup or verify based on mode
+      const apiCall = isSetupMode ? consentAPI.setupKBQ : consentAPI.verifyKBQ;
+      const result = await apiCall({ answers: formattedAnswers });
 
-      if (result.success) {
+      if (result.success && result.data?.passed) {
         setStep('success');
         updateConsentStatus('verified');
 
@@ -92,16 +93,21 @@ const KBQVerificationStep = ({ consentId, onVerified, onBack }) => {
           onVerified?.();
         }, 2000);
       } else {
-        setAttemptsRemaining(result.attemptsRemaining || attemptsRemaining - 1);
+        setAttemptsRemaining(prev => prev - 1);
 
-        if (result.attemptsRemaining === 0) {
+        if (attemptsRemaining <= 1) {
           setStep('failed');
         } else {
           setError(result.error || 'Verification failed. Please try again.');
         }
       }
     } catch (err) {
-      setError(err.message || 'Verification failed');
+      setAttemptsRemaining(prev => prev - 1);
+      if (attemptsRemaining <= 1) {
+        setStep('failed');
+      } else {
+        setError(err.message || 'Verification failed. Please check your answers.');
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -186,8 +192,12 @@ const KBQVerificationStep = ({ consentId, onVerified, onBack }) => {
   return (
     <div className="kbq-step kbq-questions">
       <div className="step-header">
-        <h2>Knowledge-Based Verification</h2>
-        <p className="subtitle">Answer these questions to verify you're an adult.</p>
+        <h2>{isSetupMode ? 'Set Up Security Questions' : 'Knowledge-Based Verification'}</h2>
+        <p className="subtitle">
+          {isSetupMode
+            ? 'Answer these security questions. You\'ll need to remember these answers for future verification.'
+            : 'Answer your security questions to verify your identity.'}
+        </p>
       </div>
 
       <div className="question-progress">

@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
+import ForgotPasswordModal from './ForgotPasswordModal';
 
 const SignUpStep = ({ isSignIn = false, onComplete, onSwitchToSignIn, onSwitchToSignUp }) => {
   const { signUp, signIn, isLoading } = useAuth();
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
 
   const [formData, setFormData] = useState({
     email: '',
@@ -214,11 +216,20 @@ const SignUpStep = ({ isSignIn = false, onComplete, onSwitchToSignIn, onSwitchTo
 
       {isSignIn && (
         <div className="forgot-password">
-          <button type="button" className="link-btn">
+          <button
+            type="button"
+            className="link-btn"
+            onClick={() => setShowForgotPassword(true)}
+          >
             Forgot your password?
           </button>
         </div>
       )}
+
+      <ForgotPasswordModal
+        isOpen={showForgotPassword}
+        onClose={() => setShowForgotPassword(false)}
+      />
 
       <style>{`
         .form-row {
