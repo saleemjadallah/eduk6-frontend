@@ -33,7 +33,9 @@ const ParentLayout = () => {
   };
 
   const handleSwitchToChild = () => {
+    // Reset mode state and navigate to child learning page
     if (switchToChildMode) {
+      // switchToChildMode will set mode to 'child' and navigate to /learn
       switchToChildMode();
     } else {
       // Fallback if mode context not available

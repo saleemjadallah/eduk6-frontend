@@ -193,11 +193,15 @@ export function ModeProvider({ children }) {
   }, [user, hasParentPin, setParentPin, verifyParentPin, navigate, lockedUntil]);
 
   const switchToChildMode = useCallback(() => {
+    // Set mode to child and clear parent verification
     setCurrentMode('child');
     setParentPinVerified(false);
 
     // Navigate to child learning dashboard
-    navigate('/learn');
+    // Using setTimeout to ensure state updates are processed first
+    setTimeout(() => {
+      navigate('/learn');
+    }, 0);
   }, [navigate]);
 
   const updateAutoSwitch = useCallback((enabled, minutes) => {
