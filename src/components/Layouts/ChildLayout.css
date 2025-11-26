@@ -3,6 +3,8 @@
   display: flex;
   flex-direction: column;
   background: linear-gradient(180deg, #fff8e1 0%, #ffffff 50%);
+  position: relative;
+  overflow-x: hidden;
 
   /* CSS Variables for age-based customization */
   --button-min-size: 48px;
@@ -13,6 +15,69 @@
   --accent-color: #ff9800;
   --spacing-unit: 16px;
   --border-radius: 16px;
+}
+
+/* Cloud Background Styles */
+.cloud-background {
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.cloud-top {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+}
+
+.cloud-bottom {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+}
+
+.cloud-image {
+  width: 100%;
+  object-fit: cover;
+  opacity: 0.4;
+}
+
+.cloud-fade-down {
+  mask-image: linear-gradient(to bottom, black 0%, transparent 100%);
+  -webkit-mask-image: linear-gradient(to bottom, black 0%, transparent 100%);
+}
+
+.cloud-fade-up {
+  mask-image: linear-gradient(to top, black 0%, transparent 100%);
+  -webkit-mask-image: linear-gradient(to top, black 0%, transparent 100%);
+}
+
+.cloud-float {
+  position: absolute;
+  opacity: 0.25;
+}
+
+.cloud-float-1 {
+  top: 80px;
+  left: -32px;
+  width: 180px;
+}
+
+.cloud-float-2 {
+  top: 120px;
+  right: -48px;
+  width: 220px;
+}
+
+.cloud-float-3 {
+  bottom: 33%;
+  right: 32px;
+  width: 140px;
+  opacity: 0.18;
 }
 
 /* Young Learner (4-6) - Larger, more playful */
@@ -57,7 +122,8 @@
   align-items: center;
   justify-content: space-between;
   padding: 0 24px;
-  background: white;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(8px);
   border-bottom: 2px solid #f5f5f5;
   position: sticky;
   top: 0;
@@ -127,6 +193,8 @@
   margin: 0 auto;
   width: 100%;
   box-sizing: border-box;
+  position: relative;
+  z-index: 1;
 }
 
 /* Jeffrey helper */
