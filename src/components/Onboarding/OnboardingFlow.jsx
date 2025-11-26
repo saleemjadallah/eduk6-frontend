@@ -42,8 +42,14 @@ const OnboardingFlow = ({ initialStep = STEPS.SIGNUP }) => {
 
   // Determine initial step based on user state
   useEffect(() => {
+    // Allow email verification step even when not authenticated
+    // (user just signed up but hasn't verified email yet)
+    if (currentStep === STEPS.EMAIL_VERIFICATION && pendingVerificationEmail) {
+      return; // Stay on email verification
+    }
+
     if (!isAuthenticated) {
-      if (currentStep !== STEPS.SIGNUP && currentStep !== STEPS.SIGNIN) {
+      if (currentStep !== STEPS.SIGNUP && currentStep !== STEPS.SIGNIN && currentStep !== STEPS.EMAIL_VERIFICATION) {
         setCurrentStep(STEPS.SIGNUP);
       }
       return;
@@ -84,6 +90,7 @@ const OnboardingFlow = ({ initialStep = STEPS.SIGNUP }) => {
     children.length,
     navigate,
     currentStep,
+    pendingVerificationEmail,
   ]);
 
   const goToStep = (step) => {
