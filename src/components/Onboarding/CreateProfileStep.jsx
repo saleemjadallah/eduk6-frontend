@@ -46,7 +46,8 @@ const CreateProfileStep = ({ onComplete }) => {
     avatarId: 'avatar_1',
     learningStyle: 'visual',
     curriculumType: 'american',
-    interests: [],
+    pin: '',
+    confirmPin: '',
   });
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -72,6 +73,19 @@ const CreateProfileStep = ({ onComplete }) => {
 
     if (profileData.grade === '') {
       newErrors.grade = "Please select your child's grade";
+    }
+
+    // PIN validation
+    if (!profileData.pin) {
+      newErrors.pin = 'Please create a 4-digit PIN';
+    } else if (!/^\d{4}$/.test(profileData.pin)) {
+      newErrors.pin = 'PIN must be exactly 4 digits';
+    }
+
+    if (!profileData.confirmPin) {
+      newErrors.confirmPin = 'Please confirm your PIN';
+    } else if (profileData.pin !== profileData.confirmPin) {
+      newErrors.confirmPin = 'PINs do not match';
     }
 
     setErrors(newErrors);
@@ -123,6 +137,7 @@ const CreateProfileStep = ({ onComplete }) => {
         learningStyle: profileData.learningStyle,
         curriculumType: profileData.curriculumType,
         language: 'en',
+        pin: profileData.pin,
       };
 
       // Call API to create the profile in the database
@@ -230,6 +245,58 @@ const CreateProfileStep = ({ onComplete }) => {
                 <option key={c.value} value={c.value}>{c.label}</option>
               ))}
             </select>
+          </div>
+
+          {/* Parent PIN Section */}
+          <div className="pin-section">
+            <div className="pin-section-header">
+              <label className="form-label">Parent PIN</label>
+              <div className="form-hint pin-hint">
+                This 4-digit PIN protects parent settings from your child. You'll need it to access the parent dashboard.
+              </div>
+            </div>
+
+            <div className="form-row">
+              <div className="form-group">
+                <label className="form-label-small">Create PIN</label>
+                <input
+                  type="password"
+                  name="pin"
+                  inputMode="numeric"
+                  pattern="[0-9]*"
+                  maxLength={4}
+                  className={`form-input pin-input ${errors.pin ? 'error' : ''}`}
+                  placeholder="****"
+                  value={profileData.pin}
+                  onChange={(e) => {
+                    const value = e.target.value.replace(/\D/g, '').slice(0, 4);
+                    setProfileData(prev => ({ ...prev, pin: value }));
+                    if (errors.pin) setErrors(prev => ({ ...prev, pin: '' }));
+                  }}
+                />
+                {errors.pin && <div className="form-error">{errors.pin}</div>}
+              </div>
+
+              <div className="form-group">
+                <label className="form-label-small">Confirm PIN</label>
+                <input
+                  type="password"
+                  name="confirmPin"
+                  inputMode="numeric"
+                  pattern="[0-9]*"
+                  maxLength={4}
+                  className={`form-input pin-input ${errors.confirmPin ? 'error' : ''}`}
+                  placeholder="****"
+                  value={profileData.confirmPin}
+                  onChange={(e) => {
+                    const value = e.target.value.replace(/\D/g, '').slice(0, 4);
+                    setProfileData(prev => ({ ...prev, confirmPin: value }));
+                    if (errors.confirmPin) setErrors(prev => ({ ...prev, confirmPin: '' }));
+                  }}
+                />
+                {errors.confirmPin && <div className="form-error">{errors.confirmPin}</div>}
+              </div>
+            </div>
           </div>
         </div>
       )}
@@ -380,6 +447,43 @@ const CreateProfileStep = ({ onComplete }) => {
           background-repeat: no-repeat;
           background-size: 16px;
           padding-right: 40px;
+        }
+
+        /* PIN section */
+        .pin-section {
+          margin-top: 24px;
+          padding-top: 24px;
+          border-top: 1px solid #e0e0e0;
+        }
+
+        .pin-section-header {
+          margin-bottom: 16px;
+        }
+
+        .pin-hint {
+          margin-top: 4px;
+          color: #666;
+          font-size: 0.8125rem;
+          line-height: 1.4;
+        }
+
+        .form-label-small {
+          display: block;
+          font-size: 0.8125rem;
+          font-weight: 500;
+          color: #666;
+          margin-bottom: 6px;
+        }
+
+        .pin-input {
+          text-align: center;
+          font-size: 1.25rem;
+          letter-spacing: 8px;
+          font-family: monospace;
+        }
+
+        .pin-input::placeholder {
+          letter-spacing: 4px;
         }
 
         /* Avatar selection */
