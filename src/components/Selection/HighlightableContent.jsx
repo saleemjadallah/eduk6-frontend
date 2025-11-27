@@ -78,19 +78,19 @@ const HighlightableContent = ({
             timestamp: new Date(),
         });
 
-        // Calculate menu position (above the selection)
+        // Calculate menu position (below the selection)
         if (selectionData.rects && selectionData.rects.length > 0) {
             const firstRect = selectionData.rects[0];
             const lastRect = selectionData.rects[selectionData.rects.length - 1];
 
             // Center horizontally between first and last rect
             const centerX = (firstRect.left + lastRect.right) / 2;
-            // Position above the first rect
-            const topY = firstRect.top;
+            // Position below the last rect (with some padding)
+            const bottomY = lastRect.bottom + 10;
 
             setMenuPosition({
                 x: Math.min(Math.max(centerX, 150), window.innerWidth - 150),
-                y: topY - 10,
+                y: bottomY,
             });
         }
 

@@ -141,94 +141,79 @@ const ContextMenu = ({
     return (
         <motion.div
             ref={menuRef}
-            className="context-menu"
-            initial={{ opacity: 0, scale: 0.8, y: 20 }}
+            className="context-menu context-menu-compact"
+            initial={{ opacity: 0, scale: 0.9, y: -10 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.8 }}
-            transition={{ type: 'spring', damping: 20, stiffness: 300 }}
+            exit={{ opacity: 0, scale: 0.9 }}
+            transition={{ type: 'spring', damping: 25, stiffness: 400 }}
             style={{
                 position: 'fixed',
                 left: position.x,
-                top: position.y - 140,
+                top: position.y,
                 transform: 'translateX(-50%)',
                 zIndex: 1000,
             }}
         >
-            {/* Jeffrey Avatar and Speech Bubble */}
-            <div className="jeffrey-avatar">
-                <div className="jeffrey-image">
-                    <motion.div
-                        className="w-12 h-12 bg-gradient-to-br from-blue-400 to-purple-500 rounded-full border-3 border-[#4ECDC4] flex items-center justify-center text-2xl"
-                        animate={{ rotate: isProcessing ? 360 : 0 }}
-                        transition={{ duration: 2, repeat: isProcessing ? Infinity : 0, ease: 'linear' }}
-                    >
-                        {isProcessing ? '\ud83e\udde0' : '\ud83e\udd13'}
-                    </motion.div>
-                </div>
+            {/* Compact header with Jeffrey and selected text */}
+            <div className="compact-header">
                 <motion.div
-                    className="speech-bubble"
-                    animate={{ scale: [1, 1.02, 1] }}
-                    transition={{ repeat: Infinity, duration: 2 }}
+                    className="jeffrey-mini"
+                    animate={{ rotate: isProcessing ? 360 : 0 }}
+                    transition={{ duration: 2, repeat: isProcessing ? Infinity : 0, ease: 'linear' }}
                 >
-                    {isProcessing
-                        ? 'Jeffrey is thinking...'
-                        : showDismissPrompt
-                            ? 'Still there?'
-                            : 'What do you want to do?'}
+                    {isProcessing ? '🧠' : '🤓'}
                 </motion.div>
+                <span className="selected-text-mini" title={selectedText}>
+                    "{displayText}"
+                </span>
+                <button
+                    className="dismiss-button-mini"
+                    onClick={onDismiss}
+                    aria-label="Close menu"
+                >
+                    ✕
+                </button>
             </div>
 
-            {/* Selected Text Preview */}
-            <div className="selected-text-preview">
-                <span className="text-xs font-semibold text-gray-500">Selected:</span>
-                <span className="text-sm font-medium text-gray-700 ml-1">"{displayText}"</span>
-            </div>
-
-            {/* Menu Actions */}
-            <div className="menu-actions">
+            {/* Horizontal Menu Actions */}
+            <div className="menu-actions-horizontal">
                 {actions.map((action) => (
-                    <MenuButton
+                    <button
                         key={action.type}
-                        icon={action.icon}
-                        label={action.label}
-                        color={action.color}
+                        className="menu-button-compact"
+                        style={{ backgroundColor: action.color }}
                         onClick={() => handleActionClick(action)}
                         disabled={isProcessing}
-                        loading={isProcessing}
-                    />
+                        title={action.label}
+                    >
+                        <span className="menu-icon-compact">{action.icon}</span>
+                        <span className="menu-label-compact">{action.label}</span>
+                    </button>
                 ))}
             </div>
 
             {/* Question Input (Ages 8-12 only) */}
             {showQuestionInput && ageGroup === '8-12' && (
                 <motion.div
-                    className="question-input"
+                    className="question-input-compact"
                     initial={{ height: 0, opacity: 0 }}
                     animate={{ height: 'auto', opacity: 1 }}
                     exit={{ height: 0, opacity: 0 }}
                 >
-                    <input
-                        ref={inputRef}
-                        type="text"
-                        placeholder="Ask Jeffrey anything..."
-                        value={customQuestion}
-                        onChange={(e) => setCustomQuestion(e.target.value)}
-                        onKeyDown={handleKeyDown}
-                        maxLength={200}
-                        disabled={isProcessing}
-                    />
-                    <div className="flex gap-2 mt-2">
+                    <div className="flex gap-2">
+                        <input
+                            ref={inputRef}
+                            type="text"
+                            placeholder="Ask Jeffrey..."
+                            value={customQuestion}
+                            onChange={(e) => setCustomQuestion(e.target.value)}
+                            onKeyDown={handleKeyDown}
+                            maxLength={200}
+                            disabled={isProcessing}
+                            className="flex-1"
+                        />
                         <button
-                            className="flex-1 py-2 bg-gray-200 rounded-lg font-bold text-sm"
-                            onClick={() => {
-                                setShowQuestionInput(false);
-                                setCustomQuestion('');
-                            }}
-                        >
-                            Cancel
-                        </button>
-                        <button
-                            className="flex-1 py-2 bg-[#4ECDC4] text-white rounded-lg font-bold text-sm"
+                            className="ask-button-compact"
                             onClick={handleSubmitQuestion}
                             disabled={!customQuestion.trim() || isProcessing}
                         >
@@ -237,15 +222,6 @@ const ContextMenu = ({
                     </div>
                 </motion.div>
             )}
-
-            {/* Dismiss button */}
-            <button
-                className="dismiss-button"
-                onClick={onDismiss}
-                aria-label="Close menu"
-            >
-                ✕
-            </button>
         </motion.div>
     );
 };
