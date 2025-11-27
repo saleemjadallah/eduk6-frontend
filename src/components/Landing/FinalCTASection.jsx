@@ -2,7 +2,6 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { ArrowRight, Sparkles, Rocket } from 'lucide-react';
-import AIGeneratedImage from './AIGeneratedImage';
 
 const FinalCTASection = () => {
   const navigate = useNavigate();
@@ -119,12 +118,10 @@ const FinalCTASection = () => {
               transition={{ duration: 5, repeat: Infinity, ease: 'easeInOut' }}
             >
               <div className="bg-white/10 backdrop-blur-sm p-4 rounded-[2rem] border-4 border-white/20">
-                <AIGeneratedImage
-                  prompt="Happy diverse group of children celebrating with books, stars, confetti, and trophies, achievement celebration scene, bright joyful cartoon style, educational success theme, warm cheerful colors"
-                  style="cartoon"
+                <img
+                  src="/assets/images/landing/celebration.png"
                   alt="Children Celebrating Learning Success"
-                  aspectRatio="square"
-                  className="w-full max-w-md mx-auto"
+                  className="w-full max-w-md mx-auto rounded-xl"
                 />
               </div>
             </motion.div>

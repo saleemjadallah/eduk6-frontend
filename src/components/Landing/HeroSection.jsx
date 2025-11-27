@@ -2,7 +2,6 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { ArrowRight, Shield, Star, Sparkles } from 'lucide-react';
-import AIGeneratedImage from './AIGeneratedImage';
 
 const HeroSection = () => {
   const navigate = useNavigate();
@@ -99,7 +98,7 @@ const HeroSection = () => {
             </motion.div>
           </div>
 
-          {/* Right - AI Generated Hero Image */}
+          {/* Right - Hero Image */}
           <motion.div
             initial={{ opacity: 0, x: 50 }}
             animate={{ opacity: 1, x: 0 }}
@@ -112,12 +111,10 @@ const HeroSection = () => {
               className="relative z-10"
             >
               <div className="bg-nanobanana-blue p-3 rounded-[2rem] border-4 border-black shadow-[12px_12px_0px_0px_rgba(0,0,0,1)] transform rotate-2 hover:rotate-0 transition-transform duration-500">
-                <AIGeneratedImage
-                  prompt="Friendly cartoon banana character with glasses teaching diverse happy children of different ethnicities, colorful classroom setting with books and educational posters, warm lighting, everyone smiling and engaged in learning"
-                  style="cartoon"
+                <img
+                  src="/assets/images/landing/hero-jeffrey-teaching.png"
                   alt="Jeffrey teaching kids"
-                  aspectRatio="landscape"
-                  className="w-full max-w-lg"
+                  className="w-full max-w-lg rounded-xl border-4 border-black"
                 />
               </div>
             </motion.div>

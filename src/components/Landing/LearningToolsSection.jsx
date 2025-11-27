@@ -1,7 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { Layers, ClipboardCheck, BookOpen, Image, Sparkles } from 'lucide-react';
-import AIGeneratedImage from './AIGeneratedImage';
 
 const LearningToolsSection = () => {
   const tools = [
@@ -11,7 +10,7 @@ const LearningToolsSection = () => {
       description: 'AI automatically creates flashcards from any lesson. Study smarter, not harder!',
       color: '#4169E1',
       shadowColor: 'rgba(65,105,225,1)',
-      imagePrompt: 'Colorful stack of digital flashcards floating in space with sparkles, educational icons, bright cheerful cartoon style, kid-friendly design',
+      image: '/assets/images/landing/tool-flashcards.png',
     },
     {
       icon: ClipboardCheck,
@@ -19,7 +18,7 @@ const LearningToolsSection = () => {
       description: 'Test knowledge with adaptive quizzes that adjust to your child\'s level.',
       color: '#32CD32',
       shadowColor: 'rgba(50,205,50,1)',
-      imagePrompt: 'Fun quiz game interface with checkmarks and stars, happy cartoon characters celebrating correct answers, bright educational game style',
+      image: '/assets/images/landing/tool-quizzes.png',
     },
     {
       icon: BookOpen,
@@ -27,7 +26,7 @@ const LearningToolsSection = () => {
       description: 'Get organized summaries with key points highlighted for easy review.',
       color: '#FFD700',
       shadowColor: 'rgba(255,215,0,1)',
-      imagePrompt: 'Open colorful study guide book with highlighted text and sticky notes, magical glowing pages, cartoon educational style',
+      image: '/assets/images/landing/tool-study-guides.png',
     },
     {
       icon: Image,
@@ -35,7 +34,7 @@ const LearningToolsSection = () => {
       description: 'Complex topics become clear with AI-generated visual explanations.',
       color: '#FF69B4',
       shadowColor: 'rgba(255,105,180,1)',
-      imagePrompt: 'Beautiful colorful infographic poster with icons and diagrams explaining science concepts, kid-friendly educational design, bright colors',
+      image: '/assets/images/landing/tool-infographics.png',
     },
   ];
 
@@ -90,12 +89,10 @@ const LearningToolsSection = () => {
                       className="rounded-2xl border-4 border-black overflow-hidden"
                       style={{ backgroundColor: `${tool.color}10` }}
                     >
-                      <AIGeneratedImage
-                        prompt={tool.imagePrompt}
-                        style="cartoon"
+                      <img
+                        src={tool.image}
                         alt={tool.title}
-                        aspectRatio="square"
-                        className="w-full"
+                        className="w-full aspect-square object-cover"
                       />
                     </div>
                   </div>

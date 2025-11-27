@@ -1,7 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { Shield, Lock, Eye, Ban, Heart, CheckCircle } from 'lucide-react';
-import AIGeneratedImage from './AIGeneratedImage';
 
 const SafetyTrustSection = () => {
   const safetyFeatures = [
@@ -72,7 +71,7 @@ const SafetyTrustSection = () => {
         </motion.div>
 
         <div className="grid lg:grid-cols-2 gap-12 items-center">
-          {/* Left - AI Generated Safety Image */}
+          {/* Left - Safety Image */}
           <motion.div
             initial={{ opacity: 0, x: -50 }}
             whileInView={{ opacity: 1, x: 0 }}
@@ -84,12 +83,10 @@ const SafetyTrustSection = () => {
               transition={{ duration: 5, repeat: Infinity, ease: 'easeInOut' }}
             >
               <div className="bg-nanobanana-green p-4 rounded-[2rem] border-4 border-black shadow-[12px_12px_0px_0px_rgba(0,0,0,1)]">
-                <AIGeneratedImage
-                  prompt="Protective glowing shield around a happy diverse family using tablets and laptops together, safe digital learning environment, warm cozy home setting, bright cheerful cartoon style, feeling of security and trust"
-                  style="cartoon"
+                <img
+                  src="/assets/images/landing/safety-family.png"
                   alt="Safe Family Learning"
-                  aspectRatio="landscape"
-                  className="w-full rounded-xl"
+                  className="w-full rounded-xl border-4 border-black"
                 />
               </div>
             </motion.div>

@@ -1,7 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { BarChart3, Shield, Users, Bell, TrendingUp, Eye } from 'lucide-react';
-import AIGeneratedImage from './AIGeneratedImage';
 
 const ParentDashboardSection = () => {
   const features = [
@@ -103,12 +102,10 @@ const ParentDashboardSection = () => {
               transition={{ duration: 5, repeat: Infinity, ease: 'easeInOut' }}
             >
               <div className="bg-purple-600 p-4 rounded-[2rem] border-4 border-black shadow-[12px_12px_0px_0px_rgba(0,0,0,1)]">
-                <AIGeneratedImage
-                  prompt="Parent and child sitting together looking at a colorful progress dashboard on a laptop screen, charts and graphs showing learning progress, warm family moment, bright cheerful cartoon style, educational technology"
-                  style="cartoon"
+                <img
+                  src="/assets/images/landing/parent-dashboard.png"
                   alt="Parent Dashboard Preview"
-                  aspectRatio="landscape"
-                  className="w-full rounded-xl"
+                  className="w-full rounded-xl border-4 border-black"
                 />
               </div>
             </motion.div>
