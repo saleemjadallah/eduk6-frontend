@@ -44,7 +44,9 @@ export function AuthProvider({ children }) {
         // Try to get current user with existing token
         if (token) {
           try {
-            const userData = await authAPI.getCurrentUser();
+            const response = await authAPI.getCurrentUser();
+            // Backend wraps response in { success, data }, unwrap it
+            const userData = response.data || response;
             setUserDataFromResponse(userData);
             return; // Success - we're done
           } catch (err) {
@@ -57,17 +59,21 @@ export function AuthProvider({ children }) {
         if (refreshToken) {
           try {
             const refreshResponse = await authAPI.refreshToken();
+            // Backend wraps response in { success, data }, unwrap it
+            const tokens = refreshResponse.data || refreshResponse;
 
             // Store new tokens
-            if (refreshResponse.token) {
-              localStorage.setItem('auth_token', refreshResponse.token);
+            if (tokens.token) {
+              localStorage.setItem('auth_token', tokens.token);
             }
-            if (refreshResponse.refreshToken) {
-              localStorage.setItem('refresh_token', refreshResponse.refreshToken);
+            if (tokens.refreshToken) {
+              localStorage.setItem('refresh_token', tokens.refreshToken);
             }
 
             // Now try to get user data with new token
-            const userData = await authAPI.getCurrentUser();
+            const userResponse = await authAPI.getCurrentUser();
+            // Backend wraps response in { success, data }, unwrap it
+            const userData = userResponse.data || userResponse;
             setUserDataFromResponse(userData);
             console.log('Token refreshed successfully');
             return; // Success
@@ -239,7 +245,9 @@ export function AuthProvider({ children }) {
   // Refresh auth (re-fetch user data)
   const refreshAuth = useCallback(async () => {
     try {
-      const userData = await authAPI.getCurrentUser();
+      const response = await authAPI.getCurrentUser();
+      // Backend wraps response in { success, data }, unwrap it
+      const userData = response.data || response;
       setUser(userData.user);
       setChildProfiles(userData.children || []);
     } catch (err) {
