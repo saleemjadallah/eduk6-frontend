@@ -289,6 +289,45 @@ export function ChatProvider({ children, userProfile: propUserProfile }) {
     setMessages(prev => [...prev, systemMessage]);
   }, []);
 
+  // Add a custom message (supports special types like flashcards, summary, infographic)
+  const addMessage = useCallback((message) => {
+    const newMessage = {
+      id: message.id || Date.now(),
+      role: message.role || 'assistant',
+      content: message.content || '',
+      timestamp: message.timestamp || new Date(),
+      type: message.type || 'text',
+      // Special content
+      flashcards: message.flashcards,
+      summary: message.summary,
+      imageData: message.imageData,
+      mimeType: message.mimeType,
+      // Metadata
+      isError: message.isError,
+      isSystem: message.isSystem,
+    };
+    setMessages(prev => [...prev, newMessage]);
+    return newMessage;
+  }, []);
+
+  // Add multiple messages at once
+  const addMessages = useCallback((newMessages) => {
+    const formattedMessages = newMessages.map(msg => ({
+      id: msg.id || Date.now() + Math.random(),
+      role: msg.role || 'assistant',
+      content: msg.content || '',
+      timestamp: msg.timestamp || new Date(),
+      type: msg.type || 'text',
+      flashcards: msg.flashcards,
+      summary: msg.summary,
+      imageData: msg.imageData,
+      mimeType: msg.mimeType,
+      isError: msg.isError,
+      isSystem: msg.isSystem,
+    }));
+    setMessages(prev => [...prev, ...formattedMessages]);
+  }, []);
+
   // Get welcome message based on context
   const getWelcomeMessage = useCallback(() => {
     if (currentLesson) {
@@ -322,6 +361,8 @@ export function ChatProvider({ children, userProfile: propUserProfile }) {
     retryLastMessage,
     clearChat,
     addSystemMessage,
+    addMessage,
+    addMessages,
 
     // Utility
     getWelcomeMessage,
@@ -337,6 +378,8 @@ export function ChatProvider({ children, userProfile: propUserProfile }) {
     retryLastMessage,
     clearChat,
     addSystemMessage,
+    addMessage,
+    addMessages,
     getWelcomeMessage,
   ]);
 

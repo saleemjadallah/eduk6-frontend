@@ -1,7 +1,16 @@
-import { createGeminiService, GeminiService, ChatMessage, GeminiResponse } from '../ai/geminiService';
-import safetyFilters from '../ai/safetyFilters';
+import { chatAPI } from '../api/chatAPI';
 import promptBuilder, { UserProfile, LessonContext, ConversationContext } from '../ai/promptBuilder';
-import { ParentMonitoringService } from '../monitoring/parentMonitoring';
+
+export interface ChatMessage {
+  role: 'user' | 'assistant' | 'system';
+  content: string;
+  timestamp: Date;
+  metadata?: {
+    lessonId?: string;
+    contentType?: string;
+    safetyFlags?: string[];
+  };
+}
 
 export interface ChatServiceConfig {
   userProfile: UserProfile;
@@ -25,17 +34,12 @@ export interface SendMessageResult {
 }
 
 class ChatService {
-  private geminiService: GeminiService;
   private config: ChatServiceConfig;
   private conversationHistory: ChatMessage[] = [];
-  private parentMonitoring: ParentMonitoringService;
   private storageKey: string;
 
   constructor(config: ChatServiceConfig) {
     this.config = config;
-    // Use 'flash' for faster responses
-    this.geminiService = createGeminiService('flash');
-    this.parentMonitoring = new ParentMonitoringService();
     this.storageKey = `chat_history_${config.userProfile.id}`;
     this.loadConversationHistory();
   }
@@ -45,50 +49,7 @@ class ChatService {
     options: SendMessageOptions = {}
   ): Promise<SendMessageResult> {
     try {
-      // Step 1: Input validation and safety check
-      const inputCheck = await safetyFilters.validateInput(
-        message,
-        this.config.userProfile.age
-      );
-
-      if (!inputCheck.passed && inputCheck.severity !== 'low') {
-        // Log the blocked attempt
-        await this.logSafetyIncident('input_blocked', message, inputCheck.flags);
-
-        // Notify parent if severity is high
-        if (inputCheck.severity === 'high') {
-          await this.parentMonitoring.notifyParent({
-            type: 'content_blocked',
-            severity: inputCheck.severity,
-            flags: inputCheck.flags,
-            childId: this.config.userProfile.id,
-          });
-        }
-
-        if (options.onSafetyFlag) {
-          options.onSafetyFlag(inputCheck.flags);
-        }
-
-        return {
-          message: {
-            role: 'assistant',
-            content: inputCheck.blockedReason || "Let's try a different question!",
-            timestamp: new Date(),
-          },
-          blocked: true,
-          blockReason: inputCheck.blockedReason,
-          safetyFlags: inputCheck.flags,
-        };
-      }
-
-      // Step 2: Build system instructions
-      const systemInstructions = promptBuilder.buildSystemInstructions(
-        this.config.userProfile,
-        this.config.lessonContext,
-        this.config.conversationContext
-      );
-
-      // Step 3: Add user message to history
+      // Add user message to history
       const userMessage: ChatMessage = {
         role: 'user',
         content: message,
@@ -100,104 +61,68 @@ class ChatService {
 
       this.conversationHistory.push(userMessage);
 
-      // Step 4: Call Gemini API
-      let geminiResponse: GeminiResponse;
+      // Build conversation history for API (convert to backend format)
+      const conversationHistoryForAPI = this.conversationHistory.slice(-10).map(msg => ({
+        role: msg.role === 'user' ? 'USER' : 'MODEL',
+        content: msg.content,
+      }));
 
-      if (this.config.enableStreaming && options.onChunk) {
-        geminiResponse = await this.geminiService.generateStreamingResponse(
-          this.conversationHistory,
-          systemInstructions,
-          options.onChunk
-        );
-      } else {
-        geminiResponse = await this.geminiService.generateResponse(
-          this.conversationHistory,
-          systemInstructions
-        );
-      }
+      // Build lesson context for API - include full content for accurate responses
+      const lessonContext = this.config.lessonContext ? {
+        lessonId: this.config.lessonContext.lessonId,
+        title: this.config.lessonContext.topic,
+        subject: this.config.lessonContext.subject,
+        keyConcepts: this.config.lessonContext.keyPoints,
+        content: this.config.lessonContext.uploadedContent, // Full lesson content
+        summary: this.config.lessonContext.summary,
+      } : undefined;
 
-      // Step 5: Handle blocked response from Gemini
-      if (geminiResponse.blocked) {
-        await this.logSafetyIncident(
-          'gemini_blocked',
-          message,
-          [geminiResponse.blockReason || 'unknown']
-        );
+      // Determine age group from user profile
+      const ageGroup = this.config.userProfile.age <= 7 ? 'YOUNG' : 'OLDER';
 
-        const fallbackResponse: ChatMessage = {
-          role: 'assistant',
-          content: "I want to help, but let me think of a better way to answer that. Can you ask in a different way?",
-          timestamp: new Date(),
-        };
+      // Call backend API
+      const response = await chatAPI.sendMessage({
+        message,
+        childId: this.config.userProfile.id,
+        ageGroup,
+        lessonContext,
+        conversationHistory: conversationHistoryForAPI.slice(0, -1), // Exclude current message
+      });
 
-        this.conversationHistory.push(fallbackResponse);
-        this.saveConversationHistory();
+      // Extract response content
+      const responseContent = response.data?.content || response.content || "I'm having trouble responding. Let's try again!";
 
-        return {
-          message: fallbackResponse,
-          blocked: true,
-          blockReason: geminiResponse.blockReason,
-        };
-      }
-
-      // Step 6: Output validation and safety check
-      const outputCheck = await safetyFilters.validateOutput(
-        geminiResponse.content,
-        this.config.userProfile.age
-      );
-
-      let finalContent = geminiResponse.content;
-
-      if (!outputCheck.passed && outputCheck.severity !== 'low') {
-        // Sanitize the output if possible
-        finalContent = safetyFilters.sanitizeOutput(
-          geminiResponse.content,
-          this.config.userProfile.age
-        );
-
-        // Log the sanitization
-        await this.logSafetyIncident('output_sanitized', finalContent, outputCheck.flags);
-
-        // If still not safe, use fallback
-        if (outputCheck.severity === 'high') {
-          finalContent = "Let me try explaining that differently... What part would you like me to focus on?";
-
-          await this.parentMonitoring.notifyParent({
-            type: 'response_sanitized',
-            severity: outputCheck.severity,
-            flags: outputCheck.flags,
-            childId: this.config.userProfile.id,
-          });
-        }
-
-        if (options.onSafetyFlag) {
-          options.onSafetyFlag(outputCheck.flags);
-        }
-      }
-
-      // Step 7: Add assistant response to history
+      // Create assistant message
       const assistantMessage: ChatMessage = {
         role: 'assistant',
-        content: finalContent,
+        content: responseContent,
         timestamp: new Date(),
         metadata: {
           lessonId: this.config.lessonContext?.lessonId,
-          safetyFlags: outputCheck.flags.length > 0 ? outputCheck.flags : undefined,
         },
       };
 
       this.conversationHistory.push(assistantMessage);
 
-      // Step 8: Trim history if needed
+      // Trim history if needed
       this.trimHistory();
 
-      // Step 9: Save to persistence
+      // Save to persistence
       this.saveConversationHistory();
+
+      // Simulate streaming for smooth UX if onChunk is provided
+      if (options.onChunk) {
+        const words = responseContent.split(' ');
+        for (let i = 0; i < words.length; i++) {
+          const chunk = (i === 0 ? '' : ' ') + words[i];
+          options.onChunk(chunk);
+          await new Promise(resolve => setTimeout(resolve, 20 + Math.random() * 30));
+        }
+      }
 
       return {
         message: assistantMessage,
         blocked: false,
-        safetyFlags: outputCheck.flags.length > 0 ? outputCheck.flags : undefined,
       };
 
     } catch (error: any) {
