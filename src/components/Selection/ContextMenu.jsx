@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import MenuButton from './MenuButton';
+import LanguageSelector from './LanguageSelector';
 import './selection-styles.css';
 
 // Jeffrey avatar images (placeholders - replace with actual paths)
@@ -62,6 +63,7 @@ const ContextMenu = ({
     showDismissPrompt,
 }) => {
     const [showQuestionInput, setShowQuestionInput] = useState(false);
+    const [showLanguageSelector, setShowLanguageSelector] = useState(false);
     const [customQuestion, setCustomQuestion] = useState('');
     const inputRef = useRef(null);
     const menuRef = useRef(null);
@@ -106,11 +108,25 @@ const ContextMenu = ({
             return;
         }
 
+        // For translate, show language selector first
+        if (action.type === 'translate') {
+            setShowLanguageSelector(true);
+            return;
+        }
+
         // For preset questions or other actions
         onAction({
             type: action.type,
             userQuestion: action.presetQuestion || null,
         });
+    };
+
+    const handleLanguageSelect = (language) => {
+        onAction({
+            type: 'translate',
+            targetLanguage: language,
+        });
+        setShowLanguageSelector(false);
     };
 
     const handleSubmitQuestion = () => {
@@ -222,6 +238,15 @@ const ContextMenu = ({
                     </div>
                 </motion.div>
             )}
+
+            {/* Language Selector Modal */}
+            <LanguageSelector
+                isOpen={showLanguageSelector}
+                onClose={() => setShowLanguageSelector(false)}
+                onSelectLanguage={handleLanguageSelect}
+                selectedText={selectedText}
+                isProcessing={isProcessing}
+            />
         </motion.div>
     );
 };
