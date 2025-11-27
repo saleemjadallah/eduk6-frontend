@@ -112,17 +112,15 @@ export const GRADE_LEVELS = [
   'Grade 6',
 ];
 
-// Common subjects
+// Common subjects (must match backend Prisma Subject enum)
 export const SUBJECTS = [
-  'Mathematics',
-  'Science',
-  'English',
-  'Reading',
-  'Social Studies',
-  'History',
-  'Geography',
-  'Art',
-  'Music',
-  'Health',
-  'Other',
+  'MATH',
+  'SCIENCE',
+  'ENGLISH',
+  'ARABIC',
+  'ISLAMIC_STUDIES',
+  'SOCIAL_STUDIES',
+  'ART',
+  'MUSIC',
+  'OTHER',
 ];
