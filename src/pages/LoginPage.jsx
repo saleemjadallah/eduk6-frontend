@@ -95,11 +95,8 @@ const LoginPage = () => {
     <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white flex flex-col">
       {/* Header */}
       <header className="p-6">
-        <Link to="/" className="flex items-center gap-2 w-fit">
-          <img src="/assets/orbit-learn-logo-icon2.png" alt="Orbit Learn" className="h-12 w-auto" />
-          <span className="text-xl font-black font-comic bg-gradient-to-r from-nanobanana-blue to-nanobanana-green bg-clip-text text-transparent">
-            Orbit Learn
-          </span>
+        <Link to="/" className="flex items-center w-fit">
+          <img src="/assets/orbit-learn-logo-full.png" alt="OrbitLearn" className="h-14 w-auto" />
         </Link>
       </header>
 

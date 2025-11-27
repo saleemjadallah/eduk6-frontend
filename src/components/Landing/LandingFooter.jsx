@@ -45,11 +45,11 @@ const LandingFooter = () => {
         <div className="grid grid-cols-2 md:grid-cols-6 gap-8 mb-12">
           {/* Brand column */}
           <div className="col-span-2">
-            <Link to="/" className="flex items-center gap-3 mb-4">
+            <Link to="/" className="flex items-center mb-4">
               <img
-                src="/assets/orbit-learn-logo-icon3.png"
-                alt="Orbit Learn"
-                className="h-16 w-auto"
+                src="/assets/orbit-learn-logo-full.png"
+                alt="OrbitLearn"
+                className="h-12 w-auto"
               />
             </Link>
             <p className="text-gray-400 mb-6 max-w-xs">

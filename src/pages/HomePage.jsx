@@ -22,13 +22,13 @@ const HomePage = () => {
     <div className="min-h-screen bg-white font-sans text-gray-900">
       {/* Navigation */}
       <nav className="sticky top-0 z-50 bg-white/95 backdrop-blur-sm border-b-4 border-black">
-        <div className="h-16 px-6 flex justify-between items-center max-w-7xl mx-auto">
+        <div className="h-20 px-6 flex justify-between items-center max-w-7xl mx-auto">
           {/* Logo */}
           <Link to="/" className="flex items-center">
             <img
-              src="/assets/orbit-learn-logo-icon3.png"
-              alt="Orbit Learn"
-              className="h-12 w-auto"
+              src="/assets/orbit-learn-logo-full.png"
+              alt="OrbitLearn"
+              className="h-14 md:h-16 w-auto"
             />
           </Link>
 
