@@ -55,12 +55,16 @@ export function useChildStats() {
         }
     }, []);
 
-    const fetchStats = useCallback(async () => {
+    const fetchStats = useCallback(async (childId = null) => {
         setLoading(true);
         setError(null);
 
         try {
-            const response = await childStatsAPI.getMyStats();
+            // If we have a childId, use parent endpoint; otherwise try child endpoint
+            const response = childId
+                ? await childStatsAPI.getChildStats(childId)
+                : await childStatsAPI.getMyStats();
+
             if (response.success && response.data) {
                 setStats(response.data);
             } else {
@@ -78,16 +82,21 @@ export function useChildStats() {
     }, [loadLocalStats]);
 
     useEffect(() => {
-        // Check for auth token (parent or child session)
+        // Check for auth token and child profile
         const authToken = localStorage.getItem('auth_token');
+        const childToken = localStorage.getItem('child_token');
         const currentProfileId = localStorage.getItem('current_profile_id');
 
-        if (authToken && currentProfileId) {
-            // We have auth and a child profile is selected - try to fetch from API
+        if (childToken) {
+            // Child session - use /children/me/stats
             fetchStats();
+        } else if (authToken && currentProfileId) {
+            // Parent session with selected child profile - use /children/:childId/stats
+            fetchStats(currentProfileId);
         } else if (authToken) {
-            // We have auth but no specific profile - try fetching anyway (might be child token)
-            fetchStats();
+            // Parent session but no child selected - fallback to local
+            loadLocalStats();
+            setLoading(false);
         } else {
             // No auth - use local gamification stats
             loadLocalStats();
