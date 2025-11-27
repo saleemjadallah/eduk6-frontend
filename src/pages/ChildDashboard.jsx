@@ -12,7 +12,7 @@ const ChildDashboard = () => {
     const navigate = useNavigate();
     const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
     const [deletingLessonId, setDeletingLessonId] = useState(null);
-    const { clearCurrentLesson, recentLessons, completedLessonsCount, deleteLesson } = useLessonContext();
+    const { clearCurrentLesson, recentLessons, deleteLesson } = useLessonContext();
     const { stats, loading: statsLoading, refetch: refreshStats } = useChildStats();
 
     // Get gamification context as additional source for local stats
@@ -144,7 +144,7 @@ const ChildDashboard = () => {
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
                 <div className="bg-white p-4 rounded-xl border-2 border-gray-200 text-center">
                     <div className="text-3xl font-black text-nanobanana-blue">
-                        {statsLoading ? '-' : (stats.lessonsCompleted || gamificationStats?.statistics?.lessonsCompleted || completedLessonsCount || 0)}
+                        {statsLoading ? '-' : (stats.lessonsCompleted || gamificationStats?.statistics?.lessonsCompleted || 0)}
                     </div>
                     <div className="text-sm text-gray-600 font-medium">Lessons Done</div>
                 </div>
