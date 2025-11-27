@@ -121,42 +121,39 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 24px;
-  background: rgba(255, 255, 255, 0.95);
+  padding: 0 32px;
+  background: rgba(255, 255, 255, 0.98);
   backdrop-filter: blur(8px);
-  border-bottom: 2px solid #f5f5f5;
+  border-bottom: 4px solid #000;
   position: sticky;
   top: 0;
   z-index: 100;
-  height: 64px; /* Fixed header height */
+  height: 88px; /* Increased header height */
 }
 
 .child-header-left {
   flex-shrink: 0;
-  position: relative;
   display: flex;
   align-items: center;
   height: 100%;
 }
 
 .app-logo {
-  position: absolute;
-  left: 0;
-  top: 50%;
-  transform: translateY(-35%);
-  z-index: 10;
-  margin-right: 20px;
+  display: flex;
+  align-items: center;
+  height: 100%;
+  padding: 8px 0;
 }
 
 .logo-image {
-  height: 112px; /* h-28 equivalent - overflows header */
+  height: 72px; /* Fits inside header with padding */
   width: auto;
   object-fit: contain;
-  filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.15));
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
 }
 
 .logo-spacer {
-  width: 100px; /* Reserve space for the overlapping logo */
+  display: none; /* No longer needed */
 }
 
 .logo-icon {
@@ -252,16 +249,12 @@
 
 /* Age-specific adjustments */
 .young-learner .child-header {
-  height: 70px;
-  padding: 0 28px;
+  height: 96px;
+  padding: 0 32px;
 }
 
 .young-learner .logo-image {
-  height: 128px; /* h-32 equivalent */
-}
-
-.young-learner .logo-spacer {
-  width: 110px;
+  height: 80px;
 }
 
 .young-learner .logo-text {
