@@ -211,6 +211,10 @@ export function ChatProvider({ children, userProfile: propUserProfile }) {
         updated[updated.length - 1] = {
           ...result.message,
           isStreaming: false,
+          // Preserve image data if it's an image response
+          type: result.message.type || 'text',
+          imageData: result.message.imageData,
+          mimeType: result.message.mimeType,
         };
         return updated;
       });
