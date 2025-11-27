@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import { Upload, BookOpen, Trophy, Sparkles } from 'lucide-react';
+import { Upload, BookOpen, Trophy, Sparkles, X } from 'lucide-react';
 import { useLessonContext } from '../context/LessonContext';
 import { useAuth } from '../context/AuthContext';
 import { useChildStats } from '../hooks/useChildStats';
@@ -10,8 +10,9 @@ import UploadModal from '../components/Upload/UploadModal';
 const ChildDashboard = () => {
     const navigate = useNavigate();
     const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
-    const { clearCurrentLesson, recentLessons, completedLessonsCount } = useLessonContext();
-    const { stats, loading: statsLoading } = useChildStats();
+    const [deletingLessonId, setDeletingLessonId] = useState(null);
+    const { clearCurrentLesson, recentLessons, completedLessonsCount, deleteLesson } = useLessonContext();
+    const { stats, loading: statsLoading, refetch: refreshStats } = useChildStats();
 
     // Get current child profile
     let currentProfile = null;
@@ -29,6 +30,40 @@ const ChildDashboard = () => {
 
     const handleContinueLesson = (lessonId) => {
         navigate(`/learn/study/${lessonId}`);
+    };
+
+    const handleDeleteLesson = async (e, lessonId) => {
+        e.stopPropagation(); // Prevent navigating to the lesson
+
+        if (deletingLessonId) return; // Already deleting
+
+        setDeletingLessonId(lessonId);
+
+        try {
+            // Delete from backend
+            const token = localStorage.getItem('auth_token');
+            if (token) {
+                const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+                await fetch(`${API_BASE_URL}/api/lessons/${lessonId}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                    },
+                });
+            }
+
+            // Delete from local context
+            deleteLesson(lessonId);
+
+            // Refresh stats since lesson count changed
+            if (refreshStats) {
+                refreshStats();
+            }
+        } catch (error) {
+            console.error('Error deleting lesson:', error);
+        } finally {
+            setDeletingLessonId(null);
+        }
     };
 
     const childName = currentProfile?.name || 'Learner';
@@ -124,31 +159,58 @@ const ChildDashboard = () => {
                 <div className="mb-8">
                     <h2 className="text-xl font-bold mb-4">Continue Learning</h2>
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                        {recentLessons.slice(0, 3).map((lesson) => (
-                            <motion.button
-                                key={lesson.id}
-                                whileHover={{ scale: 1.02 }}
-                                whileTap={{ scale: 0.98 }}
-                                onClick={() => handleContinueLesson(lesson.id)}
-                                className="bg-white p-4 rounded-xl border-2 border-gray-200 text-left hover:border-nanobanana-blue transition-colors"
-                            >
-                                <div className="flex items-start gap-3">
-                                    <div className="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center text-2xl">
-                                        📚
-                                    </div>
-                                    <div className="flex-1 min-w-0">
-                                        <h3 className="font-bold text-sm truncate">{lesson.title}</h3>
-                                        <p className="text-xs text-gray-500">{lesson.subject || 'General'}</p>
-                                        <div className="mt-2 h-2 bg-gray-200 rounded-full overflow-hidden">
-                                            <div
-                                                className="h-full bg-nanobanana-green rounded-full"
-                                                style={{ width: `${lesson.progress?.percentComplete || 0}%` }}
-                                            />
+                        <AnimatePresence>
+                            {recentLessons.slice(0, 3).map((lesson) => (
+                                <motion.div
+                                    key={lesson.id}
+                                    layout
+                                    initial={{ opacity: 1, scale: 1 }}
+                                    exit={{ opacity: 0, scale: 0.8, transition: { duration: 0.2 } }}
+                                    className="relative group"
+                                >
+                                    <motion.button
+                                        whileHover={{ scale: 1.02 }}
+                                        whileTap={{ scale: 0.98 }}
+                                        onClick={() => handleContinueLesson(lesson.id)}
+                                        className="w-full bg-white p-4 rounded-xl border-2 border-gray-200 text-left hover:border-nanobanana-blue transition-colors"
+                                    >
+                                        <div className="flex items-start gap-3">
+                                            <div className="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center text-2xl">
+                                                📚
+                                            </div>
+                                            <div className="flex-1 min-w-0 pr-6">
+                                                <h3 className="font-bold text-sm truncate">{lesson.title}</h3>
+                                                <p className="text-xs text-gray-500">{lesson.subject || 'General'}</p>
+                                                <div className="mt-2 h-2 bg-gray-200 rounded-full overflow-hidden">
+                                                    <div
+                                                        className="h-full bg-nanobanana-green rounded-full"
+                                                        style={{ width: `${lesson.progress?.percentComplete || 0}%` }}
+                                                    />
+                                                </div>
+                                            </div>
                                         </div>
-                                    </div>
-                                </div>
-                            </motion.button>
-                        ))}
+                                    </motion.button>
+
+                                    {/* Delete Button */}
+                                    <button
+                                        onClick={(e) => handleDeleteLesson(e, lesson.id)}
+                                        disabled={deletingLessonId === lesson.id}
+                                        className="absolute top-2 right-2 w-7 h-7 bg-gray-100 hover:bg-red-100 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-200 hover:text-red-500 border border-gray-200 hover:border-red-300"
+                                        title="Delete lesson"
+                                    >
+                                        {deletingLessonId === lesson.id ? (
+                                            <motion.div
+                                                animate={{ rotate: 360 }}
+                                                transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
+                                                className="w-4 h-4 border-2 border-gray-300 border-t-gray-600 rounded-full"
+                                            />
+                                        ) : (
+                                            <X className="w-4 h-4" />
+                                        )}
+                                    </button>
+                                </motion.div>
+                            ))}
+                        </AnimatePresence>
                     </div>
                 </div>
             )}
