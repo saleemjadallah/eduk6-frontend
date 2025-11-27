@@ -22,7 +22,7 @@ const XPGainAnimation = ({ xp }) => {
                 animate={{ rotate: [0, 10, -10, 0] }}
                 transition={{ duration: 0.5, repeat: 2 }}
             >
-                \u2728
+                ✨
             </motion.span>
             <span className="xp-text">+{xp} XP!</span>
         </motion.div>
@@ -38,7 +38,7 @@ const JeffreyResponseView = ({ question, answer, selectedText }) => {
             {/* Jeffrey Avatar */}
             <div className="flex items-center gap-3 mb-4">
                 <div className="w-14 h-14 bg-gradient-to-br from-blue-400 to-purple-500 rounded-full border-3 border-black flex items-center justify-center text-3xl shadow-lg">
-                    \ud83e\udd13
+                    🤓
                 </div>
                 <div>
                     <h3 className="font-bold text-lg">Jeffrey says:</h3>
@@ -88,7 +88,7 @@ const FlashcardPreview = ({ flashcard, onAddToDeck }) => {
     return (
         <div className="flashcard-preview">
             <h3 className="font-bold text-lg mb-3 flex items-center gap-2">
-                <span className="text-2xl">\ud83c\udff4</span>
+                <span className="text-2xl">🏴</span>
                 New Flashcard Created!
             </h3>
 
@@ -150,7 +150,7 @@ const QuizPreview = ({ quiz, onStartQuiz }) => {
     return (
         <div className="quiz-preview">
             <h3 className="font-bold text-lg mb-3 flex items-center gap-2">
-                <span className="text-2xl">\ud83c\udfae</span>
+                <span className="text-2xl">🎮</span>
                 Quick Quiz!
             </h3>
 
@@ -196,7 +196,7 @@ const QuizPreview = ({ quiz, onStartQuiz }) => {
                     className={`mt-4 p-4 rounded-xl ${isCorrect ? 'bg-green-100' : 'bg-orange-100'}`}
                 >
                     <p className={`font-bold ${isCorrect ? 'text-green-700' : 'text-orange-700'}`}>
-                        {isCorrect ? '\ud83c\udf89 Correct! Great job!' : '\ud83e\udd14 Not quite!'}
+                        {isCorrect ? '🎉 Correct! Great job!' : '🤔 Not quite!'}
                     </p>
                     <p className="text-sm mt-1 text-gray-600">{quiz.explanation}</p>
                 </motion.div>
