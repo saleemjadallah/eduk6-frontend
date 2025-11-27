@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import MenuButton from './MenuButton';
+import './selection-styles.css';
 
 // Jeffrey avatar images (placeholders - replace with actual paths)
 const JEFFREY_AVATARS = {
@@ -243,7 +244,7 @@ const ContextMenu = ({
                 onClick={onDismiss}
                 aria-label="Close menu"
             >
-                \u2715
+                ✕
             </button>
         </motion.div>
     );
