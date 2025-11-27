@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useParams, useNavigate } from 'react-router-dom';
 import { Trophy, Layers } from 'lucide-react';
-import { motion } from 'framer-motion';
 import MainLayout from '../components/Layout/MainLayout';
 import LessonView from '../components/Lesson/LessonView';
 import ChatInterface from '../components/Chat/ChatInterface';
@@ -16,10 +15,26 @@ import { useGameProgress } from '../hooks/useGameProgress';
 import { useFlashcardContext } from '../context/FlashcardContext';
 
 const StudyPage = () => {
+    const { lessonId } = useParams();
+    const navigate = useNavigate();
     const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
     const [studyStartTime, setStudyStartTime] = useState(null);
     const [chatInput, setChatInput] = useState('');
-    const { currentLesson, markLessonComplete, updateLessonProgress } = useLessonContext();
+    const { currentLesson, markLessonComplete, setCurrentLesson } = useLessonContext();
+
+    // Set current lesson from URL param when page loads
+    useEffect(() => {
+        if (lessonId && (!currentLesson || currentLesson.id !== lessonId)) {
+            setCurrentLesson(lessonId);
+        }
+    }, [lessonId, currentLesson?.id, setCurrentLesson]);
+
+    // Redirect to dashboard if no lesson
+    useEffect(() => {
+        if (!lessonId && !currentLesson) {
+            navigate('/learn');
+        }
+    }, [lessonId, currentLesson, navigate]);
     const { formatTimeSpent } = useLessonActions();
     const { recordLessonComplete, recordStudyTime, recordChatInteraction } = useGameProgress();
     const { createDeck, addCards } = useFlashcardContext();
@@ -169,29 +184,7 @@ const StudyPage = () => {
                             </>
                         )}
                     </HighlightProvider>
-                ) : (
-                    <div className="flex-1 flex items-center justify-center">
-                        <motion.div
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            className="text-center"
-                        >
-                            <div className="w-32 h-32 mx-auto mb-6 bg-nanobanana-yellow rounded-full border-4 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] flex items-center justify-center">
-                                <span className="text-5xl">📚</span>
-                            </div>
-                            <h2 className="text-3xl font-black font-comic mb-4">
-                                Ready to Learn?
-                            </h2>
-                            <p className="text-gray-600 mb-6 max-w-md">
-                                Upload a lesson to get started! Jeffrey is excited to help you learn.
-                            </p>
-                            <UploadButton
-                                onClick={() => setIsUploadModalOpen(true)}
-                                size="large"
-                            />
-                        </motion.div>
-                    </div>
-                )}
+                ) : null}
             </div>
 
             {/* Floating upload button when lesson is active */}
