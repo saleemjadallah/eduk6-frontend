@@ -96,7 +96,7 @@ const LoginPage = () => {
       {/* Header */}
       <header className="p-6">
         <Link to="/" className="flex items-center w-fit">
-          <img src="/assets/orbit-learn-logo-full.png" alt="OrbitLearn" className="h-14 w-auto" />
+          <img src="/assets/orbit-learn-logo-hires.png" alt="OrbitLearn" className="h-16 md:h-20 w-auto" />
         </Link>
       </header>
 
