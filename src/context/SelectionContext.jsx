@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useCallback } from 'react';
 import { useGamificationContext } from './GamificationContext';
 import { useLessonContext } from './LessonContext';
-import { generateChatResponse, generateFlashcards, generateQuiz } from '../services/geminiService';
+import { generateChatResponse, generateFlashcards, generateQuiz, translateText } from '../services/geminiService';
 
 // XP rewards for different actions
 const XP_REWARDS = {
@@ -213,26 +213,23 @@ export function SelectionProvider({ children }) {
 
     /**
      * Handle "Translate" action
+     * @param {string} targetLanguage - Target language to translate to
      */
-    const handleTranslate = useCallback(async () => {
+    const handleTranslate = useCallback(async (targetLanguage = 'Spanish') => {
         if (!currentSelection) return null;
 
         setIsProcessing(true);
         try {
-            const context = {
-                selectedText: currentSelection.text,
-                lessonTitle: currentLesson?.title,
-            };
-
-            const prompt = `Please translate this text into Spanish, French, and Arabic. Show each translation with the language name:\n\n"${currentSelection.text}"`;
-
-            const response = await generateChatResponse(prompt, context);
+            const response = await translateText(currentSelection.text, targetLanguage);
 
             const resultData = {
                 type: 'translation',
                 content: {
-                    translations: response,
-                    originalText: currentSelection.text,
+                    originalText: response.originalText,
+                    translatedText: response.translatedText,
+                    targetLanguage: response.targetLanguage,
+                    pronunciation: response.pronunciation,
+                    simpleExplanation: response.simpleExplanation,
                 },
                 xpEarned: XP_REWARDS['translate'],
             };
@@ -249,7 +246,7 @@ export function SelectionProvider({ children }) {
         } finally {
             setIsProcessing(false);
         }
-    }, [currentSelection, currentLesson, earnXP]);
+    }, [currentSelection, earnXP]);
 
     /**
      * Handle "Read Aloud" action using Speech Synthesis
@@ -300,7 +297,7 @@ export function SelectionProvider({ children }) {
             case 'quiz':
                 return handleGenerateQuiz();
             case 'translate':
-                return handleTranslate();
+                return handleTranslate(action.targetLanguage);
             case 'save':
                 return handleSaveSelection();
             case 'read':

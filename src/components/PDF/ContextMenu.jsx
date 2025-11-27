@@ -1,4 +1,4 @@
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import {
     MessageCircle,
@@ -11,11 +11,15 @@ import {
 } from 'lucide-react';
 import ContextMenuItem from './ContextMenuItem';
 import { useHighlightContext } from '../../context/HighlightContext';
+import { useSelectionContext } from '../../context/SelectionContext';
 import { canPerformAction, getActionUnavailableReason, createChatPrompt } from '../../utils/contextMenuHandlers';
+import LanguageSelector from '../Selection/LanguageSelector';
 
 const ContextMenu = ({ position, selection, onClose, onSendToChat, onCreateFlashcards }) => {
     const menuRef = useRef(null);
     const { addHighlight, recordAction } = useHighlightContext();
+    const { setSelection, handleTranslate, isProcessing } = useSelectionContext();
+    const [showLanguageSelector, setShowLanguageSelector] = useState(false);
 
     // Adjust position to stay within viewport
     useEffect(() => {
@@ -93,11 +97,12 @@ const ContextMenu = ({ position, selection, onClose, onSendToChat, onCreateFlash
             description: 'Translate to another language',
             color: 'bg-emerald-500',
             handler: async () => {
-                const highlight = addHighlight(selection, 'green');
-                const prompt = createChatPrompt(selection, 'translate');
-                onSendToChat?.(prompt);
-                recordAction(highlight.id, 'translate');
-                onClose();
+                // Set the selection in context and show language selector
+                setSelection({
+                    text: selection.text,
+                    context: selection,
+                });
+                setShowLanguageSelector(true);
             },
         },
         {
@@ -126,7 +131,16 @@ const ContextMenu = ({ position, selection, onClose, onSendToChat, onCreateFlash
         },
     ];
 
+    const handleLanguageSelect = async (language) => {
+        const highlight = addHighlight(selection, 'green');
+        await handleTranslate(language);
+        recordAction(highlight.id, 'translate');
+        setShowLanguageSelector(false);
+        onClose();
+    };
+
     return (
+        <>
         <motion.div
             ref={menuRef}
             initial={{ opacity: 0, scale: 0.9, y: -10 }}
@@ -178,6 +192,19 @@ const ContextMenu = ({ position, selection, onClose, onSendToChat, onCreateFlash
                 </p>
             </div>
         </motion.div>
+
+        {/* Language Selector Modal */}
+        <LanguageSelector
+            isOpen={showLanguageSelector}
+            onClose={() => {
+                setShowLanguageSelector(false);
+                onClose();
+            }}
+            onSelectLanguage={handleLanguageSelect}
+            selectedText={selection?.text}
+            isProcessing={isProcessing}
+        />
+        </>
     );
 };
 

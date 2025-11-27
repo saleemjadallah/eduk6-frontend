@@ -23,6 +23,7 @@ import LoginPage from './pages/LoginPage';
 import { RewardPopup } from './components/Gamification';
 import ProtectedRoute from './components/Routing/ProtectedRoute';
 import ModeRoute from './components/Routing/ModeRoute';
+import ScrollToTop from './components/Routing/ScrollToTop';
 import { ChildLayout, ParentLayout } from './components/Layouts';
 import ParentPinVerification from './components/Parent/ParentPinVerification';
 
@@ -35,6 +36,7 @@ function App() {
                         <FlashcardProvider>
                             <ChatProvider>
                                 <Router>
+                                <ScrollToTop />
                                 <ModeProvider>
                                     <Routes>
                                         {/* Public routes */}
