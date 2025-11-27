@@ -92,6 +92,7 @@ export async function analyzeContent(text, options = {}) {
       summary: analysis.summary,
       gradeLevel: analysis.gradeLevel || gradeLevel || 'Grade 3-4',
       subject: analysis.subject || subject || 'General',
+      formattedContent: analysis.formattedContent || null, // HTML-formatted lesson content
       chapters: analysis.chapters || [],
       keyConceptsForChat: analysis.keyConcepts || [],
       vocabulary: analysis.vocabulary || [],

@@ -314,13 +314,18 @@ const LessonView = ({ lesson, onComplete, showContentViewer = false }) => {
                     )}
 
                     {/* FULL LESSON CONTENT - Primary display */}
-                    {(displayLesson.rawText || displayLesson.content?.rawText) && (
+                    {(displayLesson.formattedContent || displayLesson.content?.formattedContent || displayLesson.rawText || displayLesson.content?.rawText) && (
                         <div className="prose prose-lg max-w-none">
                             <div className="bg-white rounded-2xl border-2 border-gray-200 p-6 shadow-sm">
                                 <div
                                     className="text-gray-800 leading-relaxed lesson-content"
                                     dangerouslySetInnerHTML={{
-                                        __html: formatContent(displayLesson.rawText || displayLesson.content?.rawText)
+                                        __html: formatContent(
+                                            displayLesson.formattedContent ||
+                                            displayLesson.content?.formattedContent ||
+                                            displayLesson.rawText ||
+                                            displayLesson.content?.rawText
+                                        )
                                     }}
                                 />
                             </div>

@@ -96,12 +96,14 @@ export function useLessonProcessor() {
                     mimeType: file.type,
                 },
 
-                // Raw text
+                // Raw text (original) and formatted content (HTML)
                 rawText: extractedText,
+                formattedContent: analysis.formattedContent || null,
 
                 // AI-analyzed content
                 content: {
                     rawText: extractedText,
+                    formattedContent: analysis.formattedContent || null,
                     summary: analysis.summary,
                     keyPoints: analysis.keyConceptsForChat || [],
                     chapters: analysis.chapters || [],
@@ -214,12 +216,14 @@ export function useLessonProcessor() {
                     channel: videoMetadata.channel,
                 },
 
-                // Raw text
+                // Raw text (original) and formatted content (HTML)
                 rawText: transcript,
+                formattedContent: analysis.formattedContent || null,
 
                 // AI-analyzed content
                 content: {
                     rawText: transcript,
+                    formattedContent: analysis.formattedContent || null,
                     summary: analysis.summary,
                     keyPoints: analysis.keyConceptsForChat || [],
                     chapters: analysis.chapters || [],
@@ -313,10 +317,13 @@ export function useLessonProcessor() {
                     originalName: title || 'Pasted Text',
                 },
 
+                // Raw text (original) and formatted content (HTML)
                 rawText: text,
+                formattedContent: analysis.formattedContent || null,
 
                 content: {
                     rawText: text,
+                    formattedContent: analysis.formattedContent || null,
                     summary: analysis.summary,
                     keyPoints: analysis.keyConceptsForChat || [],
                     chapters: analysis.chapters || [],
