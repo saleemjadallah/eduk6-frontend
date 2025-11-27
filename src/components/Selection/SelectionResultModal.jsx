@@ -32,7 +32,7 @@ const XPGainAnimation = ({ xp }) => {
 /**
  * Jeffrey's Response View
  */
-const JeffreyResponseView = ({ question, answer, selectedText }) => {
+const JeffreyResponseView = ({ question, answer, selectedText, imageData, mimeType }) => {
     return (
         <div className="jeffrey-response-view">
             {/* Jeffrey Avatar */}
@@ -55,6 +55,26 @@ const JeffreyResponseView = ({ question, answer, selectedText }) => {
                     About: "{selectedText.substring(0, 100)}{selectedText.length > 100 ? '...' : ''}"
                 </p>
             </div>
+
+            {/* Generated Image (if present) */}
+            {imageData && (
+                <motion.div
+                    className="mb-4 rounded-xl overflow-hidden border-2 border-purple-300 shadow-lg"
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ delay: 0.2 }}
+                >
+                    <div className="bg-gradient-to-r from-purple-100 to-pink-100 px-3 py-2 flex items-center gap-2">
+                        <Sparkles className="w-4 h-4 text-purple-500" />
+                        <span className="text-sm font-bold text-purple-700">Jeffrey drew this for you!</span>
+                    </div>
+                    <img
+                        src={`data:${mimeType || 'image/png'};base64,${imageData}`}
+                        alt="Jeffrey's drawing"
+                        className="w-full"
+                    />
+                </motion.div>
+            )}
 
             {/* Answer */}
             <div className="bg-white rounded-xl border-2 border-gray-200 p-4">
@@ -368,6 +388,8 @@ const SelectionResultModal = ({ result, onClose }) => {
                             question={result.content.question}
                             answer={result.content.answer}
                             selectedText={result.content.selectedText}
+                            imageData={result.content.imageData}
+                            mimeType={result.content.mimeType}
                         />
                     )}
 

@@ -115,7 +115,7 @@ export async function processWithGemini(text, task) {
  * @param {string} message - User message
  * @param {Object} context - Lesson context
  * @param {Array} history - Chat history
- * @returns {Promise<string>} AI response
+ * @returns {Promise<Object|string>} AI response (string for text, object with imageData for images)
  */
 export async function generateChatResponse(message, context, history = []) {
   const { childId, ageGroup } = getChildContext();
@@ -140,6 +140,17 @@ export async function generateChatResponse(message, context, history = []) {
       }),
     });
 
+    // Check if this is an image response
+    if (response.data.type === 'image' && response.data.imageData) {
+      return {
+        content: response.data.content,
+        type: 'image',
+        imageData: response.data.imageData,
+        mimeType: response.data.mimeType,
+      };
+    }
+
+    // Regular text response - return just the content string for backward compatibility
     return response.data.content;
   } catch (error) {
     console.error('Chat response error:', error);
