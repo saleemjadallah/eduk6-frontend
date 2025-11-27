@@ -15,7 +15,7 @@ const tabs = [
     { id: 'camera', label: 'Camera', icon: Camera },
 ];
 
-const UploadModal = ({ isOpen, onClose }) => {
+const UploadModal = ({ isOpen, onClose, onSuccess }) => {
     const [activeTab, setActiveTab] = useState('file');
     const [selectedFile, setSelectedFile] = useState(null);
     const [selectedVideo, setSelectedVideo] = useState(null);
@@ -23,6 +23,7 @@ const UploadModal = ({ isOpen, onClose }) => {
     const [subject, setSubject] = useState('');
     const [gradeLevel, setGradeLevel] = useState('');
     const [localError, setLocalError] = useState(null);
+    const [completedLesson, setCompletedLesson] = useState(null);
 
     const { isProcessing, processingStage, processingProgress, error: contextError } = useLessonContext();
     const { processFile, processYouTube } = useLessonProcessor();
@@ -70,33 +71,42 @@ const UploadModal = ({ isOpen, onClose }) => {
         }
 
         setLocalError(null);
+        setCompletedLesson(null);
 
         try {
+            let lesson;
             if (selectedFile) {
-                await processFile(selectedFile, lessonTitle, subject, gradeLevel);
+                lesson = await processFile(selectedFile, lessonTitle, subject, gradeLevel);
             } else if (selectedVideo) {
-                await processYouTube(selectedVideo, lessonTitle, subject, gradeLevel);
+                lesson = await processYouTube(selectedVideo, lessonTitle, subject, gradeLevel);
             }
 
-            // Reset and close on success (after processing completes)
-            // Note: The modal will close automatically when processingStage becomes 'complete'
+            // Store the completed lesson to use when navigating
+            if (lesson) {
+                setCompletedLesson(lesson);
+            }
         } catch (error) {
             // Error is already handled in the processor and set in context
             console.error('Upload failed:', error);
         }
     };
 
-    // Auto-close modal when processing completes successfully
+    // Auto-close modal and navigate when processing completes successfully
     useEffect(() => {
-        if (processingStage === 'complete' && !contextError) {
+        if (processingStage === 'complete' && !contextError && completedLesson) {
             // Delay slightly to let user see completion
             const timer = setTimeout(() => {
+                const lessonId = completedLesson.id;
                 handleReset();
                 onClose();
+                // Call onSuccess callback with the lesson ID to trigger navigation
+                if (onSuccess) {
+                    onSuccess(lessonId);
+                }
             }, 800);
             return () => clearTimeout(timer);
         }
-    }, [processingStage, contextError, onClose]);
+    }, [processingStage, contextError, completedLesson, onClose, onSuccess]);
 
     const handleReset = () => {
         setSelectedFile(null);
@@ -106,6 +116,7 @@ const UploadModal = ({ isOpen, onClose }) => {
         setGradeLevel('');
         setActiveTab('file');
         setLocalError(null);
+        setCompletedLesson(null);
     };
 
     const canSubmit = (selectedFile || selectedVideo) && lessonTitle.trim() && !isProcessing;

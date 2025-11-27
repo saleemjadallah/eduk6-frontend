@@ -32,6 +32,11 @@ const ChildDashboard = () => {
         navigate(`/learn/study/${lessonId}`);
     };
 
+    const handleUploadSuccess = (lessonId) => {
+        // Navigate directly to the lesson
+        navigate(`/learn/study/${lessonId}`);
+    };
+
     const handleDeleteLesson = async (e, lessonId) => {
         e.stopPropagation(); // Prevent navigating to the lesson
 
@@ -241,6 +246,7 @@ const ChildDashboard = () => {
             <UploadModal
                 isOpen={isUploadModalOpen}
                 onClose={() => setIsUploadModalOpen(false)}
+                onSuccess={handleUploadSuccess}
             />
         </div>
     );
