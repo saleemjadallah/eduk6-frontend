@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { X, Sparkles, ArrowRight, BookOpen, HelpCircle, Star, Volume2 } from 'lucide-react';
+import { X, Sparkles, ArrowRight, BookOpen, HelpCircle, Star, Volume2, Languages, MessageCircle } from 'lucide-react';
 
 /**
  * XP Gain Animation Component
@@ -206,12 +206,126 @@ const QuizPreview = ({ quiz, onStartQuiz }) => {
 };
 
 /**
+ * Translation View
+ */
+const TranslationView = ({ originalText, translatedText, targetLanguage, pronunciation, simpleExplanation }) => {
+    const handleReadAloud = (text, lang) => {
+        window.speechSynthesis.cancel();
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.rate = 0.85;
+
+        // Try to set appropriate language voice
+        const voices = window.speechSynthesis.getVoices();
+        const langCode = {
+            'Spanish': 'es',
+            'French': 'fr',
+            'Arabic': 'ar',
+            'Chinese': 'zh',
+            'Japanese': 'ja',
+            'Korean': 'ko',
+            'German': 'de',
+            'Italian': 'it',
+            'Portuguese': 'pt',
+            'Russian': 'ru',
+            'Hindi': 'hi',
+        }[lang] || 'en';
+
+        const voice = voices.find(v => v.lang.startsWith(langCode));
+        if (voice) utterance.voice = voice;
+
+        window.speechSynthesis.speak(utterance);
+    };
+
+    return (
+        <div className="translation-view">
+            {/* Header */}
+            <div className="flex items-center gap-3 mb-4">
+                <div className="w-14 h-14 bg-gradient-to-br from-emerald-400 to-teal-500 rounded-full border-3 border-black flex items-center justify-center text-3xl shadow-lg">
+                    🌍
+                </div>
+                <div>
+                    <h3 className="font-bold text-lg">Translation</h3>
+                    <p className="text-sm text-gray-500">Translated to {targetLanguage}</p>
+                </div>
+            </div>
+
+            {/* Original Text */}
+            <div className="bg-gray-100 border-2 border-gray-300 rounded-xl p-3 mb-3">
+                <div className="flex items-center justify-between mb-1">
+                    <p className="text-xs font-bold text-gray-500 uppercase tracking-wide">Original</p>
+                    <button
+                        onClick={() => handleReadAloud(originalText, 'English')}
+                        className="p-1.5 hover:bg-gray-200 rounded-lg transition-colors"
+                        title="Read aloud"
+                    >
+                        <Volume2 className="w-4 h-4 text-gray-500" />
+                    </button>
+                </div>
+                <p className="text-gray-700 font-medium">"{originalText}"</p>
+            </div>
+
+            {/* Translated Text */}
+            <motion.div
+                className="bg-emerald-50 border-2 border-emerald-300 rounded-xl p-4 mb-3"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.2 }}
+            >
+                <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-2">
+                        <Languages className="w-4 h-4 text-emerald-600" />
+                        <p className="text-xs font-bold text-emerald-600 uppercase tracking-wide">{targetLanguage}</p>
+                    </div>
+                    <button
+                        onClick={() => handleReadAloud(translatedText, targetLanguage)}
+                        className="p-1.5 hover:bg-emerald-100 rounded-lg transition-colors"
+                        title="Read aloud"
+                    >
+                        <Volume2 className="w-4 h-4 text-emerald-600" />
+                    </button>
+                </div>
+                <p className="text-emerald-800 font-bold text-lg">{translatedText}</p>
+
+                {/* Pronunciation Guide */}
+                {pronunciation && (
+                    <motion.div
+                        className="mt-2 pt-2 border-t border-emerald-200"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        transition={{ delay: 0.4 }}
+                    >
+                        <p className="text-xs text-emerald-600 font-medium">
+                            🗣️ Say it: <span className="italic">{pronunciation}</span>
+                        </p>
+                    </motion.div>
+                )}
+            </motion.div>
+
+            {/* Simple Explanation */}
+            {simpleExplanation && (
+                <motion.div
+                    className="bg-blue-50 border-2 border-blue-200 rounded-xl p-3"
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.3 }}
+                >
+                    <div className="flex items-start gap-2">
+                        <MessageCircle className="w-4 h-4 text-blue-500 mt-0.5 flex-shrink-0" />
+                        <p className="text-sm text-blue-700">{simpleExplanation}</p>
+                    </div>
+                </motion.div>
+            )}
+        </div>
+    );
+};
+
+/**
  * SelectionResultModal - Modal displaying the result of a selection action
  */
 const SelectionResultModal = ({ result, onClose }) => {
     // Track analytics
     useEffect(() => {
-        console.log('Selection result shown:', result.type);
+        console.log('Selection result shown:', result.type, result.content);
     }, [result]);
 
     return (
@@ -274,6 +388,16 @@ const SelectionResultModal = ({ result, onClose }) => {
                             onStartQuiz={() => {
                                 console.log('Starting quiz with:', result.content);
                             }}
+                        />
+                    )}
+
+                    {result.type === 'translation' && result.content && (
+                        <TranslationView
+                            originalText={result.content.originalText || ''}
+                            translatedText={result.content.translatedText || 'Translation not available'}
+                            targetLanguage={result.content.targetLanguage || 'Unknown'}
+                            pronunciation={result.content.pronunciation}
+                            simpleExplanation={result.content.simpleExplanation}
                         />
                     )}
                 </div>

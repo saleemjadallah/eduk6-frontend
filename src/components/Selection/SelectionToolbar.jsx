@@ -1,8 +1,9 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { MessageCircle, Languages, HelpCircle, Layers, StickyNote, Volume2 } from 'lucide-react';
 import { useSelectionContext } from '../../context/SelectionContext';
 import { useAgeAppropriate } from '../../hooks/useAgeAppropriate';
+import LanguageSelector from './LanguageSelector';
 
 /**
  * SelectionToolbar - Bottom toolbar for quick actions on selected text
@@ -13,6 +14,7 @@ import { useAgeAppropriate } from '../../hooks/useAgeAppropriate';
 const SelectionToolbar = ({ onChatOpen }) => {
     const { currentSelection, handleAction, isProcessing } = useSelectionContext();
     const { age } = useAgeAppropriate();
+    const [showLanguageSelector, setShowLanguageSelector] = useState(false);
 
     const ageTier = age <= 7 ? '4-7' : '8-12';
 
@@ -45,15 +47,30 @@ const SelectionToolbar = ({ onChatOpen }) => {
             return;
         }
 
+        // For translate action, show language selector first
+        if (action.type === 'translate') {
+            setShowLanguageSelector(true);
+            return;
+        }
+
         handleAction({
             type: action.type,
             userQuestion: action.presetQuestion,
         });
     };
 
+    const handleLanguageSelect = (language) => {
+        handleAction({
+            type: 'translate',
+            targetLanguage: language,
+        });
+        setShowLanguageSelector(false);
+    };
+
     const hasSelection = !!currentSelection;
 
     return (
+        <>
         <motion.div
             className="selection-toolbar"
             initial={{ y: 100, opacity: 0 }}
@@ -207,6 +224,16 @@ const SelectionToolbar = ({ onChatOpen }) => {
                 }
             `}</style>
         </motion.div>
+
+        {/* Language Selector Modal */}
+        <LanguageSelector
+            isOpen={showLanguageSelector}
+            onClose={() => setShowLanguageSelector(false)}
+            onSelectLanguage={handleLanguageSelect}
+            selectedText={currentSelection?.text}
+            isProcessing={isProcessing}
+        />
+        </>
     );
 };
 
