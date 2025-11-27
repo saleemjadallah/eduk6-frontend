@@ -1,0 +1,13 @@
+export { default as HeroSection } from './HeroSection';
+export { default as SocialProofBar } from './SocialProofBar';
+export { default as MeetJeffreySection } from './MeetJeffreySection';
+export { default as HowItWorksSection } from './HowItWorksSection';
+export { default as LearningToolsSection } from './LearningToolsSection';
+export { default as ParentDashboardSection } from './ParentDashboardSection';
+export { default as SafetyTrustSection } from './SafetyTrustSection';
+export { default as SubjectCoverageSection } from './SubjectCoverageSection';
+export { default as TestimonialsSection } from './TestimonialsSection';
+export { default as PricingSection } from './PricingSection';
+export { default as FinalCTASection } from './FinalCTASection';
+export { default as LandingFooter } from './LandingFooter';
+export { default as AIGeneratedImage } from './AIGeneratedImage';
