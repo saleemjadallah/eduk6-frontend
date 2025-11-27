@@ -1,7 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { MessageCircle, Brain, Shield, Clock, Heart, Sparkles } from 'lucide-react';
-import AIGeneratedImage from './AIGeneratedImage';
 import ChatInterface from '../Chat/ChatInterface';
 
 const MeetJeffreySection = () => {
@@ -72,12 +71,10 @@ const MeetJeffreySection = () => {
                 transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
               >
                 <div className="bg-nanobanana-yellow p-4 rounded-[2rem] border-4 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] max-w-md mx-auto">
-                  <AIGeneratedImage
-                    prompt="Cute friendly cartoon banana mascot character with big round glasses and a warm smile, waving hello, standing next to a chalkboard with simple math equations, warm welcoming pose, educational setting, bright cheerful colors"
-                    style="cartoon"
+                  <img
+                    src="/assets/images/landing/meet-jeffrey.png"
                     alt="Jeffrey the AI Tutor"
-                    aspectRatio="square"
-                    className="w-full"
+                    className="w-full rounded-xl border-4 border-black"
                   />
                 </div>
               </motion.div>

@@ -1,7 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { Upload, Wand2, MessageCircle } from 'lucide-react';
-import AIGeneratedImage from './AIGeneratedImage';
 
 const HowItWorksSection = () => {
   const steps = [
@@ -11,7 +10,7 @@ const HowItWorksSection = () => {
       title: 'Upload Any Lesson',
       description: 'Snap a photo, upload a PDF, or paste a YouTube link. We handle it all!',
       color: '#FF69B4',
-      imagePrompt: 'Child happily taking a photo of homework with a tablet, magical sparkles around the device, colorful and playful cartoon style, educational setting',
+      image: '/assets/images/landing/how-it-works-upload.png',
     },
     {
       number: 2,
@@ -19,7 +18,7 @@ const HowItWorksSection = () => {
       title: 'AI Magic Happens',
       description: 'Our AI instantly analyzes and structures the content for optimal learning.',
       color: '#4169E1',
-      imagePrompt: 'Friendly AI robot brain with colorful gears and sparkles processing documents and books, transforming them into organized colorful notes, magical educational cartoon style',
+      image: '/assets/images/landing/how-it-works-ai-magic.png',
     },
     {
       number: 3,
@@ -27,7 +26,7 @@ const HowItWorksSection = () => {
       title: 'Learn with Jeffrey',
       description: 'Chat, ask questions, create flashcards, and master the material!',
       color: '#32CD32',
-      imagePrompt: 'Happy child chatting with a friendly banana mascot tutor on a tablet screen, both smiling and engaged, colorful educational environment, warm cheerful cartoon style',
+      image: '/assets/images/landing/how-it-works-learn.png',
     },
   ];
 
@@ -91,14 +90,12 @@ const HowItWorksSection = () => {
                     {step.number}
                   </div>
 
-                  {/* AI Generated illustration */}
+                  {/* Static illustration */}
                   <div className="mt-6 mb-4">
-                    <AIGeneratedImage
-                      prompt={step.imagePrompt}
-                      style="cartoon"
+                    <img
+                      src={step.image}
                       alt={step.title}
-                      aspectRatio="landscape"
-                      className="w-full"
+                      className="w-full rounded-xl border-4 border-black aspect-video object-cover"
                     />
                   </div>
 
