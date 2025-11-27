@@ -609,31 +609,23 @@ const ChatInterface = ({
                     </motion.div>
                 ))}
 
-                {/* Typing indicator */}
-                {(isTyping || demoTyping) && !isStreaming && (
+                {/* Typing indicator with Jeffrey */}
+                {(isTyping || demoTyping || isToolLoading) && !isStreaming && (
                     <motion.div
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        className="flex justify-start"
+                        initial={{ opacity: 0, scale: 0.8 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        className="flex justify-start items-end gap-2"
                     >
-                        <div className="bg-gray-100 p-3 rounded-2xl border-2 border-black rounded-bl-none">
-                            <div className="flex gap-1">
-                                <motion.span
-                                    animate={{ y: [0, -5, 0] }}
-                                    transition={{ repeat: Infinity, duration: 0.6, delay: 0 }}
-                                    className="w-2 h-2 bg-gray-400 rounded-full"
-                                />
-                                <motion.span
-                                    animate={{ y: [0, -5, 0] }}
-                                    transition={{ repeat: Infinity, duration: 0.6, delay: 0.2 }}
-                                    className="w-2 h-2 bg-gray-400 rounded-full"
-                                />
-                                <motion.span
-                                    animate={{ y: [0, -5, 0] }}
-                                    transition={{ repeat: Infinity, duration: 0.6, delay: 0.4 }}
-                                    className="w-2 h-2 bg-gray-400 rounded-full"
-                                />
-                            </div>
+                        <div className="scale-50 origin-bottom-left -ml-4 -mb-4">
+                            <Jeffrey isTyping={true} />
+                        </div>
+                        <div className="bg-gray-100 px-4 py-2 rounded-2xl border-2 border-black rounded-bl-none mb-2">
+                            <p className="text-sm text-gray-600 font-medium">
+                                {isGeneratingFlashcards && "Creating flashcards..."}
+                                {isGeneratingInfographic && "Drawing infographic..."}
+                                {isGeneratingSummary && "Writing summary..."}
+                                {!isToolLoading && "Thinking..."}
+                            </p>
                         </div>
                     </motion.div>
                 )}
