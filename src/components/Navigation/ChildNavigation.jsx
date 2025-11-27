@@ -13,25 +13,12 @@ const ChildNavigation = () => {
     // AuthProvider not available
   }
 
-  // Age-appropriate navigation items
+  // Navigation items - Dashboard and Progress only
   const getNavItems = () => {
-    const baseItems = [
-      { to: '/learn', label: 'Home', icon: '🏠', end: true },
-      { to: '/learn/chat', label: 'Chat', icon: '💬' },
-      { to: '/learn/flashcards', label: 'Practice', icon: '🎴' },
-      { to: '/learn/badges', label: 'Badges', icon: '🏆' },
+    return [
+      { to: '/learn', label: 'Dashboard', icon: '🏠', end: true },
+      { to: '/learn/achievements', label: 'Progress', icon: '📈' },
     ];
-
-    // Only show upload for older kids who can read
-    if (currentProfile && currentProfile.age >= 7) {
-      baseItems.splice(2, 0, {
-        to: '/learn/upload',
-        label: 'Upload',
-        icon: '📤'
-      });
-    }
-
-    return baseItems;
   };
 
   return (
