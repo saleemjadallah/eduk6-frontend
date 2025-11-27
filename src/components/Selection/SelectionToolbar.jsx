@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { MessageCircle, BookOpen, HelpCircle, Layers, StickyNote, Volume2 } from 'lucide-react';
+import { MessageCircle, Languages, HelpCircle, Layers, StickyNote, Volume2 } from 'lucide-react';
 import { useSelectionContext } from '../../context/SelectionContext';
 import { useAgeAppropriate } from '../../hooks/useAgeAppropriate';
 
@@ -26,7 +26,7 @@ const SelectionToolbar = ({ onChatOpen }) => {
         : [
             { type: 'ask', icon: HelpCircle, label: 'Explain', color: '#4ECDC4', presetQuestion: 'Can you explain this?' },
             { type: 'chat', icon: MessageCircle, label: 'Chat', color: '#5C7CFA', isExternal: true },
-            { type: 'quiz', icon: BookOpen, label: 'Quiz', color: '#FF6B6B' },
+            { type: 'translate', icon: Languages, label: 'Translate', color: '#10B981' },
             { type: 'flashcard', icon: Layers, label: 'Flashcards', color: '#A259FF' },
             { type: 'save', icon: StickyNote, label: 'Add to notes', color: '#FFD93D' },
             { type: 'read', icon: Volume2, label: 'Read aloud', color: '#95E1D3' },

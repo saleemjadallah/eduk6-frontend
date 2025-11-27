@@ -4,7 +4,7 @@ import {
     MessageCircle,
     CreditCard,
     Video,
-    FileQuestion,
+    Languages,
     Copy,
     Highlighter,
     X
@@ -86,16 +86,17 @@ const ContextMenu = ({ position, selection, onClose, onSendToChat, onCreateFlash
             },
         },
         {
-            id: 'quiz',
-            icon: <FileQuestion className="w-5 h-5" />,
-            emoji: '📝',
-            label: 'Create Quiz',
-            description: 'Test your knowledge!',
-            color: 'bg-nanobanana-green',
+            id: 'translate',
+            icon: <Languages className="w-5 h-5" />,
+            emoji: '🌍',
+            label: 'Translate',
+            description: 'Translate to another language',
+            color: 'bg-emerald-500',
             handler: async () => {
                 const highlight = addHighlight(selection, 'green');
-                // Quiz generation would be triggered here
-                recordAction(highlight.id, 'quiz');
+                const prompt = createChatPrompt(selection, 'translate');
+                onSendToChat?.(prompt);
+                recordAction(highlight.id, 'translate');
                 onClose();
             },
         },

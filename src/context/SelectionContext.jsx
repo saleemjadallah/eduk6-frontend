@@ -8,6 +8,7 @@ const XP_REWARDS = {
     'ask-jeffrey': 5,
     'create-flashcard': 10,
     'generate-quiz': 8,
+    'translate': 5,
     'save-selection': 3,
     'read-aloud': 2,
 };
@@ -211,6 +212,46 @@ export function SelectionProvider({ children }) {
     }, [currentSelection, currentLesson, earnXP]);
 
     /**
+     * Handle "Translate" action
+     */
+    const handleTranslate = useCallback(async () => {
+        if (!currentSelection) return null;
+
+        setIsProcessing(true);
+        try {
+            const context = {
+                selectedText: currentSelection.text,
+                lessonTitle: currentLesson?.title,
+            };
+
+            const prompt = `Please translate this text into Spanish, French, and Arabic. Show each translation with the language name:\n\n"${currentSelection.text}"`;
+
+            const response = await generateChatResponse(prompt, context);
+
+            const resultData = {
+                type: 'translation',
+                content: {
+                    translations: response,
+                    originalText: currentSelection.text,
+                },
+                xpEarned: XP_REWARDS['translate'],
+            };
+
+            setResult(resultData);
+
+            // Award XP
+            earnXP(XP_REWARDS['translate'], 'Translated text');
+
+            return resultData;
+        } catch (error) {
+            console.error('Error translating:', error);
+            throw error;
+        } finally {
+            setIsProcessing(false);
+        }
+    }, [currentSelection, currentLesson, earnXP]);
+
+    /**
      * Handle "Read Aloud" action using Speech Synthesis
      */
     const handleReadAloud = useCallback(() => {
@@ -258,6 +299,8 @@ export function SelectionProvider({ children }) {
                 return handleCreateFlashcard();
             case 'quiz':
                 return handleGenerateQuiz();
+            case 'translate':
+                return handleTranslate();
             case 'save':
                 return handleSaveSelection();
             case 'read':
@@ -266,7 +309,7 @@ export function SelectionProvider({ children }) {
                 console.warn('Unknown action type:', action.type);
                 return null;
         }
-    }, [currentSelection, handleAskJeffrey, handleCreateFlashcard, handleGenerateQuiz, handleSaveSelection, handleReadAloud]);
+    }, [currentSelection, handleAskJeffrey, handleCreateFlashcard, handleGenerateQuiz, handleTranslate, handleSaveSelection, handleReadAloud]);
 
     /**
      * Clear the result modal
@@ -303,6 +346,7 @@ export function SelectionProvider({ children }) {
         handleAskJeffrey,
         handleCreateFlashcard,
         handleGenerateQuiz,
+        handleTranslate,
         handleSaveSelection,
         handleReadAloud,
         clearResult,

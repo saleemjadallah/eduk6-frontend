@@ -43,7 +43,7 @@ const getAgeAppropriateActions = (ageGroup) => {
     return [
         { type: 'ask', icon: '\ud83e\udd14', label: 'Ask Jeffrey', color: '#4ECDC4' },
         { type: 'flashcard', icon: '\ud83c\udff4', label: 'Make Flashcard', color: '#A259FF' },
-        { type: 'quiz', icon: '\ud83c\udfae', label: 'Practice Quiz', color: '#FF6B6B' },
+        { type: 'translate', icon: '\ud83c\udf0d', label: 'Translate', color: '#10B981' },
         { type: 'save', icon: '\u2b50', label: 'Save This', color: '#FFD93D' },
         { type: 'read', icon: '\ud83d\udd0a', label: 'Read to Me', color: '#95E1D3' },
     ];
