@@ -95,6 +95,180 @@
 }
 
 /* ============================================
+   COMPACT CONTEXT MENU (Horizontal Layout)
+   ============================================ */
+
+.context-menu-compact {
+    min-width: auto;
+    max-width: none;
+    padding: 10px 12px;
+    border-radius: 16px;
+    border-width: 3px;
+}
+
+/* Arrow pointing up (since menu is below selection) */
+.context-menu-compact::before {
+    bottom: auto;
+    top: -12px;
+    border-top: none;
+    border-bottom: 12px solid #000;
+    border-left: 12px solid transparent;
+    border-right: 12px solid transparent;
+}
+
+.context-menu-compact::after {
+    bottom: auto;
+    top: -8px;
+    border-top: none;
+    border-bottom: 9px solid white;
+    border-left: 9px solid transparent;
+    border-right: 9px solid transparent;
+}
+
+/* Compact header */
+.compact-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+    padding-bottom: 8px;
+    border-bottom: 2px solid #f0f0f0;
+}
+
+.jeffrey-mini {
+    width: 28px;
+    height: 28px;
+    background: linear-gradient(135deg, #60a5fa, #a855f7);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    flex-shrink: 0;
+}
+
+.selected-text-mini {
+    flex: 1;
+    font-size: 12px;
+    color: #666;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 180px;
+}
+
+.dismiss-button-mini {
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: #f0f0f0;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    color: #666;
+    transition: all 0.2s;
+    flex-shrink: 0;
+}
+
+.dismiss-button-mini:hover {
+    background: #e0e0e0;
+    color: #333;
+}
+
+/* Horizontal menu actions */
+.menu-actions-horizontal {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+.menu-button-compact {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    padding: 8px 10px;
+    border: 2px solid #000;
+    border-radius: 10px;
+    font-size: 11px;
+    font-weight: 700;
+    color: #000;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    min-width: 58px;
+}
+
+.menu-button-compact:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.15);
+}
+
+.menu-button-compact:active:not(:disabled) {
+    transform: translateY(0);
+}
+
+.menu-button-compact:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.menu-icon-compact {
+    font-size: 18px;
+    line-height: 1;
+}
+
+.menu-label-compact {
+    font-size: 10px;
+    white-space: nowrap;
+    font-family: 'Comic Sans MS', 'Comic Neue', 'Nunito', cursive, sans-serif;
+}
+
+/* Compact question input */
+.question-input-compact {
+    margin-top: 8px;
+    padding-top: 8px;
+    border-top: 2px solid #f0f0f0;
+}
+
+.question-input-compact input {
+    padding: 8px 10px;
+    font-size: 13px;
+    border: 2px solid #000;
+    border-radius: 8px;
+    font-family: 'Comic Sans MS', 'Comic Neue', 'Nunito', cursive, sans-serif;
+}
+
+.question-input-compact input:focus {
+    outline: none;
+    border-color: #4ECDC4;
+}
+
+.ask-button-compact {
+    padding: 8px 14px;
+    background: #4ECDC4;
+    border: 2px solid #000;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 700;
+    color: #000;
+    cursor: pointer;
+    transition: all 0.15s;
+}
+
+.ask-button-compact:hover:not(:disabled) {
+    background: #3dbdb5;
+}
+
+.ask-button-compact:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* ============================================
    JEFFREY AVATAR
    ============================================ */
 

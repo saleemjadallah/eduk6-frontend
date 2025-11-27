@@ -7,16 +7,19 @@ import { useState, useEffect, useCallback, useRef } from 'react';
  * @param {Function} options.onSelect - Callback when text is selected
  * @param {Function} options.onDeselect - Callback when selection is cleared
  * @param {React.RefObject} options.containerRef - Container reference
+ * @param {number} options.delay - Delay before triggering selection (default 300ms)
  */
 export const useTextSelection = ({
     minLength = 3,
     onSelect,
     onDeselect,
     containerRef,
+    delay = 300,
 } = {}) => {
     const [selection, setSelection] = useState(null);
     const [isSelecting, setIsSelecting] = useState(false);
     const selectionTimeoutRef = useRef(null);
+    const mouseUpTimeRef = useRef(null);
 
     // Get current selection with position data
     const getSelectionData = useCallback(() => {
@@ -60,12 +63,13 @@ export const useTextSelection = ({
         }
     }, [minLength, containerRef]);
 
-    // Handle selection change
-    const handleSelectionChange = useCallback(() => {
+    // Process selection after delay (only called on mouseup)
+    const processSelection = useCallback(() => {
         if (selectionTimeoutRef.current) {
             clearTimeout(selectionTimeoutRef.current);
         }
 
+        // Wait for the configured delay before showing popup
         selectionTimeoutRef.current = setTimeout(() => {
             const selectionData = getSelectionData();
 
@@ -77,21 +81,46 @@ export const useTextSelection = ({
                 setSelection(null);
                 onDeselect?.();
             }
-        }, 100);
-    }, [getSelectionData, selection, onSelect, onDeselect]);
+        }, delay);
+    }, [getSelectionData, selection, onSelect, onDeselect, delay]);
+
+    // Handle deselection (when clicking elsewhere)
+    const handleSelectionChange = useCallback(() => {
+        const windowSelection = window.getSelection();
+        const selectedText = windowSelection?.toString().trim();
+
+        // Only handle deselection, not new selections (mouseup handles those)
+        if (!selectedText && selection) {
+            if (selectionTimeoutRef.current) {
+                clearTimeout(selectionTimeoutRef.current);
+            }
+            setSelection(null);
+            onDeselect?.();
+        }
+    }, [selection, onDeselect]);
 
     // Track selection start
     const handleMouseDown = useCallback(() => {
+        // Cancel any pending selection popup
+        if (selectionTimeoutRef.current) {
+            clearTimeout(selectionTimeoutRef.current);
+        }
         setIsSelecting(true);
     }, []);
 
-    // Track selection end
+    // Track selection end - this is the main trigger for showing popup
     const handleMouseUp = useCallback(() => {
-        setTimeout(handleSelectionChange, 10);
-    }, [handleSelectionChange]);
+        setIsSelecting(false);
+        mouseUpTimeRef.current = Date.now();
+        // Small delay to let the browser finalize the selection
+        setTimeout(processSelection, 10);
+    }, [processSelection]);
 
     // Clear selection programmatically
     const clearSelection = useCallback(() => {
+        if (selectionTimeoutRef.current) {
+            clearTimeout(selectionTimeoutRef.current);
+        }
         window.getSelection()?.removeAllRanges();
         setSelection(null);
         onDeselect?.();
