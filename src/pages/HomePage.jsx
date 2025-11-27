@@ -18,6 +18,11 @@ import {
 } from '../components/Landing';
 
 const HomePage = () => {
+  // Ensure page starts at top when navigating here
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
+
   return (
     <div className="min-h-screen bg-white font-sans text-gray-900">
       {/* Navigation */}
