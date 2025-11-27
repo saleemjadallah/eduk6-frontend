@@ -5,30 +5,7 @@
  * The backend handles Gemini API calls with proper safety filters.
  */
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
-
-// Helper function to make API requests
-async function makeRequest(endpoint, options = {}) {
-  const token = localStorage.getItem('auth_token');
-
-  const config = {
-    headers: {
-      'Content-Type': 'application/json',
-      ...(token && { Authorization: `Bearer ${token}` }),
-      ...options.headers,
-    },
-    ...options,
-  };
-
-  const response = await fetch(`${API_BASE_URL}/api${endpoint}`, config);
-
-  if (!response.ok) {
-    const errorData = await response.json().catch(() => ({}));
-    throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
-  }
-
-  return response.json();
-}
+import { makeAuthenticatedRequest as makeRequest } from './api/apiUtils.js';
 
 // Get child context from localStorage
 function getChildContext() {
@@ -244,6 +221,33 @@ export async function generateQuiz(text, count = 5) {
   }
 }
 
+/**
+ * Translate text to a target language
+ * @param {string} text - Text to translate
+ * @param {string} targetLanguage - Target language name (e.g., "Spanish", "Arabic")
+ * @returns {Promise<Object>} Translation result
+ */
+export async function translateText(text, targetLanguage) {
+  const { childId, ageGroup } = getChildContext();
+
+  try {
+    const response = await makeRequest('/chat/translate', {
+      method: 'POST',
+      body: JSON.stringify({
+        text,
+        targetLanguage,
+        childId,
+        ageGroup,
+      }),
+    });
+
+    return response.data;
+  } catch (error) {
+    console.error('Translation error:', error);
+    throw new Error('Failed to translate text. Please try again.');
+  }
+}
+
 // ============================================
 // DEFAULT EXPORT
 // ============================================
@@ -254,4 +258,5 @@ export default {
   generateChatResponse,
   generateFlashcards,
   generateQuiz,
+  translateText,
 };

@@ -3,31 +3,7 @@
  * Handles fetching child dashboard stats and gamification data
  */
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
-
-// Helper function to make API requests
-async function makeRequest(endpoint, options = {}) {
-  // Try child token first (for child sessions), then parent token
-  const token = localStorage.getItem('child_token') || localStorage.getItem('auth_token');
-
-  const config = {
-    headers: {
-      'Content-Type': 'application/json',
-      ...(token && { Authorization: `Bearer ${token}` }),
-      ...options.headers,
-    },
-    ...options,
-  };
-
-  const response = await fetch(`${API_BASE_URL}/api${endpoint}`, config);
-
-  if (!response.ok) {
-    const errorData = await response.json().catch(() => ({}));
-    throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
-  }
-
-  return response.json();
-}
+import { makeAuthenticatedRequest as makeRequest } from './apiUtils.js';
 
 export const childStatsAPI = {
   /**
