@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { Upload, BookOpen, Trophy, Sparkles, X } from 'lucide-react';
 import { useLessonContext } from '../context/LessonContext';
 import { useAuth } from '../context/AuthContext';
+import { useGamificationContext } from '../context/GamificationContext';
 import { useChildStats } from '../hooks/useChildStats';
 import UploadModal from '../components/Upload/UploadModal';
 
@@ -13,6 +14,14 @@ const ChildDashboard = () => {
     const [deletingLessonId, setDeletingLessonId] = useState(null);
     const { clearCurrentLesson, recentLessons, completedLessonsCount, deleteLesson } = useLessonContext();
     const { stats, loading: statsLoading, refetch: refreshStats } = useChildStats();
+
+    // Get gamification context as additional source for local stats
+    let gamificationStats = null;
+    try {
+        gamificationStats = useGamificationContext();
+    } catch (e) {
+        // GamificationContext not available
+    }
 
     // Get current child profile
     let currentProfile = null;
@@ -135,25 +144,25 @@ const ChildDashboard = () => {
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
                 <div className="bg-white p-4 rounded-xl border-2 border-gray-200 text-center">
                     <div className="text-3xl font-black text-nanobanana-blue">
-                        {statsLoading ? '-' : (stats.lessonsCompleted || completedLessonsCount)}
+                        {statsLoading ? '-' : (stats.lessonsCompleted || gamificationStats?.statistics?.lessonsCompleted || completedLessonsCount || 0)}
                     </div>
                     <div className="text-sm text-gray-600 font-medium">Lessons Done</div>
                 </div>
                 <div className="bg-white p-4 rounded-xl border-2 border-gray-200 text-center">
                     <div className="text-3xl font-black text-nanobanana-green">
-                        {statsLoading ? '-' : (stats.streak?.current || 0)}
+                        {statsLoading ? '-' : (stats.streak?.current || gamificationStats?.streak?.current || 0)}
                     </div>
                     <div className="text-sm text-gray-600 font-medium">Day Streak 🔥</div>
                 </div>
                 <div className="bg-white p-4 rounded-xl border-2 border-gray-200 text-center">
                     <div className="text-3xl font-black text-nanobanana-yellow">
-                        {statsLoading ? '-' : (stats.badgesEarned || 0)}
+                        {statsLoading ? '-' : (stats.badgesEarned || gamificationStats?.badges?.length || 0)}
                     </div>
                     <div className="text-sm text-gray-600 font-medium">Badges Earned</div>
                 </div>
                 <div className="bg-white p-4 rounded-xl border-2 border-gray-200 text-center">
                     <div className="text-3xl font-black text-pink-500">
-                        {statsLoading ? '-' : (stats.xp || 0)}
+                        {statsLoading ? '-' : (stats.xp || gamificationStats?.totalXP || 0)}
                     </div>
                     <div className="text-sm text-gray-600 font-medium">XP Points</div>
                 </div>
