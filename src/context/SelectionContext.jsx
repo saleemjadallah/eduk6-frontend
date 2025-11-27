@@ -74,12 +74,20 @@ export function SelectionProvider({ children }) {
 
             const response = await generateChatResponse(prompt, context);
 
+            // Handle both text responses (string) and image responses (object)
+            const isImageResponse = typeof response === 'object' && response.type === 'image';
+
             const resultData = {
                 type: 'jeffrey-response',
                 content: {
-                    answer: response,
+                    answer: isImageResponse ? response.content : response,
                     question: userQuestion,
                     selectedText: currentSelection.text,
+                    // Include image data if present
+                    ...(isImageResponse && {
+                        imageData: response.imageData,
+                        mimeType: response.mimeType,
+                    }),
                 },
                 xpEarned: XP_REWARDS['ask-jeffrey'],
             };
