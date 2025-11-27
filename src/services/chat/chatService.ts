@@ -5,6 +5,9 @@ export interface ChatMessage {
   role: 'user' | 'assistant' | 'system';
   content: string;
   timestamp: Date;
+  type?: 'text' | 'image' | 'infographic' | 'flashcards' | 'summary' | 'quiz';
+  imageData?: string;
+  mimeType?: string;
   metadata?: {
     lessonId?: string;
     contentType?: string;
@@ -91,12 +94,18 @@ class ChatService {
 
       // Extract response content
       const responseContent = response.data?.content || response.content || "I'm having trouble responding. Let's try again!";
+      const responseType = response.data?.type || 'text';
+      const imageData = response.data?.imageData;
+      const mimeType = response.data?.mimeType;
 
       // Create assistant message
       const assistantMessage: ChatMessage = {
         role: 'assistant',
         content: responseContent,
         timestamp: new Date(),
+        type: responseType,
+        ...(imageData && { imageData }),
+        ...(mimeType && { mimeType }),
         metadata: {
           lessonId: this.config.lessonContext?.lessonId,
         },

@@ -671,6 +671,24 @@ const ChatInterface = ({
                             </div>
                         )}
 
+                        {/* Image message (from chat drawing requests) */}
+                        {msg.messageType === 'image' && msg.imageData && (
+                            <div className="w-full max-w-md p-3 bg-gradient-to-br from-purple-50 to-pink-50 rounded-2xl border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] rounded-bl-none">
+                                <div className="flex items-center gap-2 mb-3 text-sm font-bold text-purple-600">
+                                    <Sparkles className="w-4 h-4" />
+                                    <span>Jeffrey drew this for you!</span>
+                                </div>
+                                <img
+                                    src={`data:${msg.mimeType || 'image/png'};base64,${msg.imageData}`}
+                                    alt="Jeffrey's drawing"
+                                    className="w-full rounded-xl border-2 border-black"
+                                />
+                                {msg.text && (
+                                    <p className="mt-3 text-sm text-gray-700 font-medium">{msg.text}</p>
+                                )}
+                            </div>
+                        )}
+
                         {/* Quiz message */}
                         {msg.messageType === 'quiz' && msg.quiz && (
                             <div className="w-full max-w-lg p-3 bg-gray-100 rounded-2xl border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] rounded-bl-none">
