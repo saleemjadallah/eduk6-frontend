@@ -131,6 +131,30 @@ export const chatAPI = {
       }),
     });
   },
+
+  /**
+   * Generate a quiz from lesson content
+   * @param {Object} data - Quiz generation data
+   * @param {string} data.content - Lesson content to quiz on
+   * @param {string} [data.title] - Lesson title
+   * @param {number} [data.count] - Number of questions (default: 5)
+   * @param {string} [data.type] - Question type: 'multiple_choice', 'true_false', 'fill_blank'
+   * @param {string} [data.childId] - Child ID
+   * @param {string} [data.ageGroup] - Age group
+   * @returns {Promise<Object>} Response with quiz data
+   */
+  generateQuiz: async ({ content, title, count = 5, type = 'multiple_choice', childId, ageGroup }) => {
+    return makeRequest('/quizzes/generate', {
+      method: 'POST',
+      body: JSON.stringify({
+        content,
+        count,
+        type,
+        childId,
+        ageGroup,
+      }),
+    });
+  },
 };
 
 export default chatAPI;

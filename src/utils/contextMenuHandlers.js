@@ -53,6 +53,7 @@ export const createChatPrompt = (selection, promptType = 'explain') => {
         examples: `Can you give me some fun examples about this?\n\n"${text}"`,
         quiz: `Can you ask me a question about this to see if I understand?\n\n"${text}"`,
         story: `Can you tell me a story that helps explain this?\n\n"${text}"`,
+        translate: `Can you translate this text into Spanish, French, and Arabic? Please show me each translation with the language name:\n\n"${text}"`,
     };
 
     return prompts[promptType] || prompts.explain;

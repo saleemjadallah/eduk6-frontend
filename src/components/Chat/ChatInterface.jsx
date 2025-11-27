@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Send, Image, FileText, Sparkles, Clock, RefreshCw, Trash2, BookOpen, Loader2 } from 'lucide-react';
+import { Send, Image, FileText, Sparkles, Clock, RefreshCw, Trash2, BookOpen, Loader2, HelpCircle } from 'lucide-react';
 import Jeffrey from '../Avatar/Jeffrey';
 import SafetyIndicator from './SafetyIndicator';
 import FlashcardInline from './FlashcardInline';
 import SummaryInline from './SummaryInline';
+import QuizInline from './QuizInline';
 import { useLessonContext } from '../../context/LessonContext';
 import { useChatContext } from '../../context/ChatContext';
 import { useLessonActions } from '../../hooks/useLessonActions';
@@ -48,6 +49,7 @@ const ChatInterface = ({
     const [isGeneratingFlashcards, setIsGeneratingFlashcards] = useState(false);
     const [isGeneratingInfographic, setIsGeneratingInfographic] = useState(false);
     const [isGeneratingSummary, setIsGeneratingSummary] = useState(false);
+    const [isGeneratingQuiz, setIsGeneratingQuiz] = useState(false);
 
     // Get messages and state from ChatContext if available
     const messages = chatContext?.messages || demoMessages;
@@ -424,8 +426,69 @@ const ChatInterface = ({
         }
     };
 
+    // Handle Quiz generation
+    const handleGenerateQuiz = async () => {
+        if (!activeLesson || isGeneratingQuiz) return;
+
+        setIsGeneratingQuiz(true);
+        const { childId, ageGroup } = getChildContext();
+
+        try {
+            const content = activeLesson.rawText || activeLesson.content?.rawText || activeLesson.summary || '';
+            const response = await chatAPI.generateQuiz({
+                content,
+                title: activeLesson.title,
+                count: 5,
+                childId,
+                ageGroup,
+            });
+
+            const quiz = response.data;
+
+            // Add user action message
+            const userMsg = {
+                id: Date.now(),
+                role: 'user',
+                content: '🎯 Quiz me on this lesson!',
+                timestamp: new Date(),
+            };
+
+            // Add quiz response
+            const quizMsg = {
+                id: Date.now() + 1,
+                role: 'assistant',
+                content: '',
+                timestamp: new Date(),
+                type: 'quiz',
+                quiz: quiz,
+            };
+
+            if (demoMode) {
+                setDemoMessages(prev => [...prev, userMsg, quizMsg]);
+            } else if (chatContext?.addMessages) {
+                chatContext.addMessages([userMsg, quizMsg]);
+            }
+        } catch (error) {
+            console.error('Quiz generation error:', error);
+            const errorMsg = {
+                id: Date.now(),
+                role: 'assistant',
+                content: "Oops! I couldn't create a quiz right now. Try asking me questions about the lesson instead!",
+                timestamp: new Date(),
+                isError: true,
+            };
+            if (demoMode) {
+                setDemoMessages(prev => [...prev, errorMsg]);
+            } else if (chatContext?.addMessage) {
+                chatContext.addMessage(errorMsg);
+            }
+        } finally {
+            setIsGeneratingQuiz(false);
+        }
+    };
+
     // Check if any tool is loading
-    const isToolLoading = isGeneratingFlashcards || isGeneratingInfographic || isGeneratingSummary;
+    const isToolLoading = isGeneratingFlashcards || isGeneratingInfographic || isGeneratingSummary || isGeneratingQuiz;
 
     // Determine if chat should be disabled
     const isChatDisabled = !demoMode && !activeLesson && !isProcessing;
@@ -443,6 +506,7 @@ const ChatInterface = ({
         messageType: msg.type || 'text',
         flashcards: msg.flashcards,
         summary: msg.summary,
+        quiz: msg.quiz,
         imageData: msg.imageData,
         mimeType: msg.mimeType,
     }));
@@ -606,6 +670,17 @@ const ChatInterface = ({
                                 )}
                             </div>
                         )}
+
+                        {/* Quiz message */}
+                        {msg.messageType === 'quiz' && msg.quiz && (
+                            <div className="w-full max-w-lg p-3 bg-gray-100 rounded-2xl border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] rounded-bl-none">
+                                <div className="flex items-center gap-2 mb-3 text-sm font-bold text-gray-600">
+                                    <HelpCircle className="w-4 h-4" />
+                                    <span>Let's test your knowledge!</span>
+                                </div>
+                                <QuizInline quiz={msg.quiz} />
+                            </div>
+                        )}
                     </motion.div>
                 ))}
 
@@ -624,6 +699,7 @@ const ChatInterface = ({
                                 {isGeneratingFlashcards && "Creating flashcards..."}
                                 {isGeneratingInfographic && "Drawing infographic..."}
                                 {isGeneratingSummary && "Writing summary..."}
+                                {isGeneratingQuiz && "Making a quiz..."}
                                 {!isToolLoading && "Thinking..."}
                             </p>
                         </div>
@@ -653,42 +729,58 @@ const ChatInterface = ({
 
             {/* Gemini Tools */}
             {!demoMode && (
-                <div className="p-2 bg-gray-50 border-t-4 border-black grid grid-cols-3 gap-2">
+                <div className="p-2 bg-gray-50 border-t-4 border-black space-y-2">
+                    {/* Top row - 3 buttons */}
+                    <div className="grid grid-cols-3 gap-2">
+                        <button
+                            onClick={handleGenerateFlashcards}
+                            className="flex flex-col items-center justify-center p-2 bg-white border-2 border-black rounded-xl hover:bg-nanobanana-yellow transition-colors shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] active:translate-y-[2px] active:shadow-none disabled:opacity-50 disabled:cursor-not-allowed"
+                            disabled={isChatDisabled || isToolLoading}
+                        >
+                            {isGeneratingFlashcards ? (
+                                <Loader2 className="w-5 h-5 mb-1 animate-spin" />
+                            ) : (
+                                <FileText className="w-5 h-5 mb-1" />
+                            )}
+                            <span className="text-xs font-bold">Flashcards</span>
+                        </button>
+                        <button
+                            onClick={handleGenerateInfographic}
+                            className="flex flex-col items-center justify-center p-2 bg-white border-2 border-black rounded-xl hover:bg-nanobanana-green transition-colors shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] active:translate-y-[2px] active:shadow-none disabled:opacity-50 disabled:cursor-not-allowed"
+                            disabled={isChatDisabled || isToolLoading}
+                        >
+                            {isGeneratingInfographic ? (
+                                <Loader2 className="w-5 h-5 mb-1 animate-spin" />
+                            ) : (
+                                <Image className="w-5 h-5 mb-1" />
+                            )}
+                            <span className="text-xs font-bold">Infographic</span>
+                        </button>
+                        <button
+                            onClick={handleGenerateSummary}
+                            className="flex flex-col items-center justify-center p-2 bg-white border-2 border-black rounded-xl hover:bg-pink-400 transition-colors shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] active:translate-y-[2px] active:shadow-none disabled:opacity-50 disabled:cursor-not-allowed"
+                            disabled={isChatDisabled || isToolLoading}
+                        >
+                            {isGeneratingSummary ? (
+                                <Loader2 className="w-5 h-5 mb-1 animate-spin" />
+                            ) : (
+                                <BookOpen className="w-5 h-5 mb-1" />
+                            )}
+                            <span className="text-xs font-bold">Summarize</span>
+                        </button>
+                    </div>
+                    {/* Quiz button - full width */}
                     <button
-                        onClick={handleGenerateFlashcards}
-                        className="flex flex-col items-center justify-center p-2 bg-white border-2 border-black rounded-xl hover:bg-nanobanana-yellow transition-colors shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] active:translate-y-[2px] active:shadow-none disabled:opacity-50 disabled:cursor-not-allowed"
+                        onClick={handleGenerateQuiz}
+                        className="w-full flex items-center justify-center gap-2 p-3 bg-purple-500 text-white border-2 border-black rounded-xl hover:bg-purple-600 transition-colors shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] active:translate-y-[2px] active:shadow-none disabled:opacity-50 disabled:cursor-not-allowed"
                         disabled={isChatDisabled || isToolLoading}
                     >
-                        {isGeneratingFlashcards ? (
-                            <Loader2 className="w-5 h-5 mb-1 animate-spin" />
+                        {isGeneratingQuiz ? (
+                            <Loader2 className="w-5 h-5 animate-spin" />
                         ) : (
-                            <FileText className="w-5 h-5 mb-1" />
+                            <HelpCircle className="w-5 h-5" />
                         )}
-                        <span className="text-xs font-bold">Flashcards</span>
-                    </button>
-                    <button
-                        onClick={handleGenerateInfographic}
-                        className="flex flex-col items-center justify-center p-2 bg-white border-2 border-black rounded-xl hover:bg-nanobanana-green transition-colors shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] active:translate-y-[2px] active:shadow-none disabled:opacity-50 disabled:cursor-not-allowed"
-                        disabled={isChatDisabled || isToolLoading}
-                    >
-                        {isGeneratingInfographic ? (
-                            <Loader2 className="w-5 h-5 mb-1 animate-spin" />
-                        ) : (
-                            <Image className="w-5 h-5 mb-1" />
-                        )}
-                        <span className="text-xs font-bold">Infographic</span>
-                    </button>
-                    <button
-                        onClick={handleGenerateSummary}
-                        className="flex flex-col items-center justify-center p-2 bg-white border-2 border-black rounded-xl hover:bg-pink-400 transition-colors shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] active:translate-y-[2px] active:shadow-none disabled:opacity-50 disabled:cursor-not-allowed"
-                        disabled={isChatDisabled || isToolLoading}
-                    >
-                        {isGeneratingSummary ? (
-                            <Loader2 className="w-5 h-5 mb-1 animate-spin" />
-                        ) : (
-                            <BookOpen className="w-5 h-5 mb-1" />
-                        )}
-                        <span className="text-xs font-bold">Summarize</span>
+                        <span className="font-bold">Take a Quiz</span>
                     </button>
                 </div>
             )}
