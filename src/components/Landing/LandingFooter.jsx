@@ -47,9 +47,9 @@ const LandingFooter = () => {
           <div className="col-span-2">
             <Link to="/" className="flex items-center mb-4">
               <img
-                src="/assets/orbit-learn-logo-full.png"
+                src="/assets/orbit-learn-logo-light.png"
                 alt="OrbitLearn"
-                className="h-12 w-auto"
+                className="h-14 w-auto"
               />
             </Link>
             <p className="text-gray-400 mb-6 max-w-xs">
