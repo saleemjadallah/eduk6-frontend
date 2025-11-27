@@ -1,7 +1,8 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { BookOpen, PlayCircle, Star, Clock, FileText, Layers, Sparkles, CheckCircle, Image as ImageIcon, FileType } from 'lucide-react';
+import DOMPurify from 'dompurify';
 import { FlashcardCreator } from '../Flashcards';
 import { useFlashcards } from '../../hooks/useFlashcards';
 import { useLessonContext } from '../../context/LessonContext';
@@ -11,6 +12,33 @@ import { HighlightableContent, SelectionToolbar } from '../Selection';
 import { detectContentType, getContentTypeDisplayInfo } from '../../utils/contentDetection';
 import ContentRenderer from '../LessonView/ContentRenderer';
 import { VocabularyPanel } from '../LessonView/Metadata';
+
+/**
+ * Format raw text content with basic HTML structure
+ * Converts line breaks to paragraphs and handles basic formatting
+ */
+const formatContent = (text) => {
+    if (!text) return '';
+
+    // If content already has HTML tags, just sanitize and return
+    if (/<[a-z][\s\S]*>/i.test(text)) {
+        return DOMPurify.sanitize(text, {
+            ALLOWED_TAGS: ['p', 'br', 'b', 'strong', 'i', 'em', 'u', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'ul', 'ol', 'li', 'span', 'div', 'blockquote'],
+            ALLOWED_ATTR: ['class', 'style'],
+        });
+    }
+
+    // Convert plain text with line breaks to HTML paragraphs
+    const paragraphs = text.split(/\n\n+/).map(para => {
+        // Convert single line breaks to <br>
+        const withBreaks = para.trim().replace(/\n/g, '<br>');
+        return withBreaks ? `<p>${withBreaks}</p>` : '';
+    }).filter(Boolean);
+
+    return DOMPurify.sanitize(paragraphs.join(''), {
+        ALLOWED_TAGS: ['p', 'br', 'b', 'strong', 'i', 'em', 'u'],
+    });
+};
 
 const LessonView = ({ lesson, onComplete, showContentViewer = false }) => {
     const [isCreatorOpen, setIsCreatorOpen] = useState(false);
@@ -289,9 +317,12 @@ const LessonView = ({ lesson, onComplete, showContentViewer = false }) => {
                     {(displayLesson.rawText || displayLesson.content?.rawText) && (
                         <div className="prose prose-lg max-w-none">
                             <div className="bg-white rounded-2xl border-2 border-gray-200 p-6 shadow-sm">
-                                <div className="text-gray-800 leading-relaxed whitespace-pre-wrap">
-                                    {displayLesson.rawText || displayLesson.content?.rawText}
-                                </div>
+                                <div
+                                    className="text-gray-800 leading-relaxed lesson-content"
+                                    dangerouslySetInnerHTML={{
+                                        __html: formatContent(displayLesson.rawText || displayLesson.content?.rawText)
+                                    }}
+                                />
                             </div>
                         </div>
                     )}
