@@ -1,11 +1,14 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Send, Image, Video, FileText, Sparkles, Clock, RefreshCw, Trash2 } from 'lucide-react';
+import { Send, Image, FileText, Sparkles, Clock, RefreshCw, Trash2, BookOpen, Loader2 } from 'lucide-react';
 import Jeffrey from '../Avatar/Jeffrey';
 import SafetyIndicator from './SafetyIndicator';
+import FlashcardInline from './FlashcardInline';
+import SummaryInline from './SummaryInline';
 import { useLessonContext } from '../../context/LessonContext';
 import { useChatContext } from '../../context/ChatContext';
 import { useLessonActions } from '../../hooks/useLessonActions';
+import { chatAPI } from '../../services/api/chatAPI';
 
 const ChatInterface = ({
     demoMode = false,
@@ -40,6 +43,11 @@ const ChatInterface = ({
     // Demo mode state (local state for demo)
     const [demoMessages, setDemoMessages] = useState([]);
     const [demoTyping, setDemoTyping] = useState(false);
+
+    // Tool loading states
+    const [isGeneratingFlashcards, setIsGeneratingFlashcards] = useState(false);
+    const [isGeneratingInfographic, setIsGeneratingInfographic] = useState(false);
+    const [isGeneratingSummary, setIsGeneratingSummary] = useState(false);
 
     // Get messages and state from ChatContext if available
     const messages = chatContext?.messages || demoMessages;
@@ -212,6 +220,213 @@ const ChatInterface = ({
         }
     };
 
+    // Get child context for API calls
+    const getChildContext = () => {
+        const currentProfileId = localStorage.getItem('current_profile_id');
+        const storedChildren = localStorage.getItem('demo_children');
+
+        if (currentProfileId && storedChildren) {
+            try {
+                const children = JSON.parse(storedChildren);
+                const child = children.find(c => c.id === currentProfileId);
+                if (child) {
+                    return {
+                        childId: child.id,
+                        ageGroup: child.age <= 7 ? 'YOUNG' : 'OLDER',
+                    };
+                }
+            } catch (e) {
+                console.error('Error parsing child context:', e);
+            }
+        }
+        return { childId: null, ageGroup: 'OLDER' };
+    };
+
+    // Handle Flashcards generation
+    const handleGenerateFlashcards = async () => {
+        if (!activeLesson || isGeneratingFlashcards) return;
+
+        setIsGeneratingFlashcards(true);
+        const { childId, ageGroup } = getChildContext();
+
+        try {
+            const content = activeLesson.rawText || activeLesson.content?.rawText || activeLesson.summary || '';
+            const response = await chatAPI.generateFlashcards({
+                content,
+                count: 5,
+                childId,
+                ageGroup,
+            });
+
+            const flashcards = response.data || [];
+
+            // Add user action message
+            const userMsg = {
+                id: Date.now(),
+                role: 'user',
+                content: '📚 Generate flashcards for this lesson',
+                timestamp: new Date(),
+            };
+
+            // Add flashcard response
+            const flashcardMsg = {
+                id: Date.now() + 1,
+                role: 'assistant',
+                content: '',
+                timestamp: new Date(),
+                type: 'flashcards',
+                flashcards: flashcards,
+            };
+
+            if (demoMode) {
+                setDemoMessages(prev => [...prev, userMsg, flashcardMsg]);
+            } else if (chatContext?.addMessages) {
+                chatContext.addMessages([userMsg, flashcardMsg]);
+            }
+        } catch (error) {
+            console.error('Flashcard generation error:', error);
+            const errorMsg = {
+                id: Date.now(),
+                role: 'assistant',
+                content: "Oops! I couldn't create flashcards right now. Try asking me to explain the lesson instead!",
+                timestamp: new Date(),
+                isError: true,
+            };
+            if (demoMode) {
+                setDemoMessages(prev => [...prev, errorMsg]);
+            } else if (chatContext?.addMessage) {
+                chatContext.addMessage(errorMsg);
+            }
+        } finally {
+            setIsGeneratingFlashcards(false);
+        }
+    };
+
+    // Handle Infographic generation
+    const handleGenerateInfographic = async () => {
+        if (!activeLesson || isGeneratingInfographic) return;
+
+        setIsGeneratingInfographic(true);
+        const { childId, ageGroup } = getChildContext();
+
+        try {
+            const content = activeLesson.rawText || activeLesson.content?.rawText || activeLesson.summary || '';
+            const response = await chatAPI.generateInfographic({
+                content,
+                title: activeLesson.title,
+                keyConcepts: activeLesson.keyConceptsForChat || activeLesson.chapters?.map(c => c.title),
+                childId,
+                ageGroup,
+            });
+
+            const infographic = response.data;
+
+            // Add user action message
+            const userMsg = {
+                id: Date.now(),
+                role: 'user',
+                content: '🎨 Create an infographic for this lesson',
+                timestamp: new Date(),
+            };
+
+            // Add infographic response
+            const infographicMsg = {
+                id: Date.now() + 1,
+                role: 'assistant',
+                content: infographic.description || 'Here\'s your infographic!',
+                timestamp: new Date(),
+                type: 'infographic',
+                imageData: infographic.imageData,
+                mimeType: infographic.mimeType,
+            };
+
+            if (demoMode) {
+                setDemoMessages(prev => [...prev, userMsg, infographicMsg]);
+            } else if (chatContext?.addMessages) {
+                chatContext.addMessages([userMsg, infographicMsg]);
+            }
+        } catch (error) {
+            console.error('Infographic generation error:', error);
+            const errorMsg = {
+                id: Date.now(),
+                role: 'assistant',
+                content: "Oops! I couldn't create the infographic right now. Image generation might not be available. Try the Summary instead!",
+                timestamp: new Date(),
+                isError: true,
+            };
+            if (demoMode) {
+                setDemoMessages(prev => [...prev, errorMsg]);
+            } else if (chatContext?.addMessage) {
+                chatContext.addMessage(errorMsg);
+            }
+        } finally {
+            setIsGeneratingInfographic(false);
+        }
+    };
+
+    // Handle Summary generation
+    const handleGenerateSummary = async () => {
+        if (!activeLesson || isGeneratingSummary) return;
+
+        setIsGeneratingSummary(true);
+        const { childId, ageGroup } = getChildContext();
+
+        try {
+            const content = activeLesson.rawText || activeLesson.content?.rawText || activeLesson.summary || '';
+            const response = await chatAPI.generateSummary({
+                content,
+                title: activeLesson.title,
+                childId,
+                ageGroup,
+            });
+
+            const summary = response.data;
+
+            // Add user action message
+            const userMsg = {
+                id: Date.now(),
+                role: 'user',
+                content: '📖 Summarize this lesson for me',
+                timestamp: new Date(),
+            };
+
+            // Add summary response
+            const summaryMsg = {
+                id: Date.now() + 1,
+                role: 'assistant',
+                content: '',
+                timestamp: new Date(),
+                type: 'summary',
+                summary: summary,
+            };
+
+            if (demoMode) {
+                setDemoMessages(prev => [...prev, userMsg, summaryMsg]);
+            } else if (chatContext?.addMessages) {
+                chatContext.addMessages([userMsg, summaryMsg]);
+            }
+        } catch (error) {
+            console.error('Summary generation error:', error);
+            const errorMsg = {
+                id: Date.now(),
+                role: 'assistant',
+                content: "Oops! I couldn't create the summary right now. Try asking me about specific parts of the lesson!",
+                timestamp: new Date(),
+                isError: true,
+            };
+            if (demoMode) {
+                setDemoMessages(prev => [...prev, errorMsg]);
+            } else if (chatContext?.addMessage) {
+                chatContext.addMessage(errorMsg);
+            }
+        } finally {
+            setIsGeneratingSummary(false);
+        }
+    };
+
+    // Check if any tool is loading
+    const isToolLoading = isGeneratingFlashcards || isGeneratingInfographic || isGeneratingSummary;
+
     // Determine if chat should be disabled
     const isChatDisabled = !demoMode && !activeLesson && !isProcessing;
     const isInputDisabled = isChatDisabled || chatContext?.isLoading;
@@ -224,6 +439,12 @@ const ChatInterface = ({
         isStreaming: msg.isStreaming,
         isError: msg.isError,
         safetyFlags: msg.metadata?.safetyFlags,
+        // Special content types
+        messageType: msg.type || 'text',
+        flashcards: msg.flashcards,
+        summary: msg.summary,
+        imageData: msg.imageData,
+        mimeType: msg.mimeType,
     }));
 
     return (
@@ -321,27 +542,70 @@ const ChatInterface = ({
                         animate={{ opacity: 1, y: 0 }}
                         className={`flex ${msg.type === 'user' ? 'justify-end' : 'justify-start'}`}
                     >
-                        <div
-                            className={`max-w-[80%] p-3 rounded-2xl border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] ${
-                                msg.type === 'user'
-                                    ? 'bg-nanobanana-blue text-white rounded-br-none'
-                                    : msg.isError
-                                        ? 'bg-red-50 text-red-800 rounded-bl-none border-red-300'
-                                        : 'bg-gray-100 text-black rounded-bl-none'
-                            }`}
-                        >
-                            <p className="font-medium text-sm whitespace-pre-wrap">
-                                {msg.text}
-                                {msg.isStreaming && (
-                                    <span className="inline-block w-1.5 h-4 ml-1 bg-current animate-pulse" />
+                        {/* Regular text message */}
+                        {msg.messageType === 'text' && (
+                            <div
+                                className={`max-w-[80%] p-3 rounded-2xl border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] ${
+                                    msg.type === 'user'
+                                        ? 'bg-nanobanana-blue text-white rounded-br-none'
+                                        : msg.isError
+                                            ? 'bg-red-50 text-red-800 rounded-bl-none border-red-300'
+                                            : 'bg-gray-100 text-black rounded-bl-none'
+                                }`}
+                            >
+                                <p className="font-medium text-sm whitespace-pre-wrap">
+                                    {msg.text}
+                                    {msg.isStreaming && (
+                                        <span className="inline-block w-1.5 h-4 ml-1 bg-current animate-pulse" />
+                                    )}
+                                </p>
+                                {msg.safetyFlags && msg.safetyFlags.length > 0 && (
+                                    <div className="mt-2 pt-2 border-t border-gray-300 flex items-center gap-1 text-xs text-gray-500">
+                                        <span>Content reviewed for safety</span>
+                                    </div>
                                 )}
-                            </p>
-                            {msg.safetyFlags && msg.safetyFlags.length > 0 && (
-                                <div className="mt-2 pt-2 border-t border-gray-300 flex items-center gap-1 text-xs text-gray-500">
-                                    <span>Content reviewed for safety</span>
+                            </div>
+                        )}
+
+                        {/* Flashcards message */}
+                        {msg.messageType === 'flashcards' && msg.flashcards && (
+                            <div className="w-full max-w-md p-3 bg-gray-100 rounded-2xl border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] rounded-bl-none">
+                                <div className="flex items-center gap-2 mb-3 text-sm font-bold text-gray-600">
+                                    <FileText className="w-4 h-4" />
+                                    <span>Flashcards for you!</span>
                                 </div>
-                            )}
-                        </div>
+                                <FlashcardInline flashcards={msg.flashcards} />
+                            </div>
+                        )}
+
+                        {/* Summary message */}
+                        {msg.messageType === 'summary' && msg.summary && (
+                            <div className="w-full max-w-lg p-3 bg-gray-100 rounded-2xl border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] rounded-bl-none">
+                                <div className="flex items-center gap-2 mb-3 text-sm font-bold text-gray-600">
+                                    <BookOpen className="w-4 h-4" />
+                                    <span>Here's your lesson summary!</span>
+                                </div>
+                                <SummaryInline summary={msg.summary} />
+                            </div>
+                        )}
+
+                        {/* Infographic message */}
+                        {msg.messageType === 'infographic' && msg.imageData && (
+                            <div className="w-full max-w-md p-3 bg-gray-100 rounded-2xl border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] rounded-bl-none">
+                                <div className="flex items-center gap-2 mb-3 text-sm font-bold text-gray-600">
+                                    <Image className="w-4 h-4" />
+                                    <span>Here's your infographic!</span>
+                                </div>
+                                <img
+                                    src={`data:${msg.mimeType || 'image/png'};base64,${msg.imageData}`}
+                                    alt="Lesson infographic"
+                                    className="w-full rounded-xl border-2 border-black"
+                                />
+                                {msg.text && (
+                                    <p className="mt-2 text-sm text-gray-600">{msg.text}</p>
+                                )}
+                            </div>
+                        )}
                     </motion.div>
                 ))}
 
@@ -399,25 +663,40 @@ const ChatInterface = ({
             {!demoMode && (
                 <div className="p-2 bg-gray-50 border-t-4 border-black grid grid-cols-3 gap-2">
                     <button
+                        onClick={handleGenerateFlashcards}
                         className="flex flex-col items-center justify-center p-2 bg-white border-2 border-black rounded-xl hover:bg-nanobanana-yellow transition-colors shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] active:translate-y-[2px] active:shadow-none disabled:opacity-50 disabled:cursor-not-allowed"
-                        disabled={isChatDisabled}
+                        disabled={isChatDisabled || isToolLoading}
                     >
-                        <FileText className="w-5 h-5 mb-1" />
+                        {isGeneratingFlashcards ? (
+                            <Loader2 className="w-5 h-5 mb-1 animate-spin" />
+                        ) : (
+                            <FileText className="w-5 h-5 mb-1" />
+                        )}
                         <span className="text-xs font-bold">Flashcards</span>
                     </button>
                     <button
+                        onClick={handleGenerateInfographic}
                         className="flex flex-col items-center justify-center p-2 bg-white border-2 border-black rounded-xl hover:bg-nanobanana-green transition-colors shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] active:translate-y-[2px] active:shadow-none disabled:opacity-50 disabled:cursor-not-allowed"
-                        disabled={isChatDisabled}
+                        disabled={isChatDisabled || isToolLoading}
                     >
-                        <Image className="w-5 h-5 mb-1" />
+                        {isGeneratingInfographic ? (
+                            <Loader2 className="w-5 h-5 mb-1 animate-spin" />
+                        ) : (
+                            <Image className="w-5 h-5 mb-1" />
+                        )}
                         <span className="text-xs font-bold">Infographic</span>
                     </button>
                     <button
+                        onClick={handleGenerateSummary}
                         className="flex flex-col items-center justify-center p-2 bg-white border-2 border-black rounded-xl hover:bg-pink-400 transition-colors shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] active:translate-y-[2px] active:shadow-none disabled:opacity-50 disabled:cursor-not-allowed"
-                        disabled={isChatDisabled}
+                        disabled={isChatDisabled || isToolLoading}
                     >
-                        <Video className="w-5 h-5 mb-1" />
-                        <span className="text-xs font-bold">Video</span>
+                        {isGeneratingSummary ? (
+                            <Loader2 className="w-5 h-5 mb-1 animate-spin" />
+                        ) : (
+                            <BookOpen className="w-5 h-5 mb-1" />
+                        )}
+                        <span className="text-xs font-bold">Summarize</span>
                     </button>
                 </div>
             )}
