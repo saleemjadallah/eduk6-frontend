@@ -30,7 +30,9 @@ async function refreshAccessToken() {
     throw new Error('Token refresh failed');
   }
 
-  const data = await response.json();
+  const responseData = await response.json();
+  // Backend wraps response in { success, data }, unwrap it
+  const data = responseData.data || responseData;
 
   // Store new tokens
   if (data.token) {
