@@ -12,23 +12,17 @@ import {
 } from 'lucide-react';
 import { getContentTypeDisplayInfo } from '../../../utils/contentDetection';
 
-// Subject emoji mapping
+// Subject emoji mapping (keys match backend Prisma Subject enum)
 const SUBJECT_EMOJIS = {
-  math: '🔢',
-  mathematics: '🔢',
-  science: '🔬',
-  english: '📚',
-  reading: '📖',
-  arabic: '🌙',
-  islamic: '☪️',
-  social: '🌍',
-  'social studies': '🌍',
-  history: '📜',
-  geography: '🗺️',
-  art: '🎨',
-  music: '🎵',
-  health: '❤️',
-  other: '📝',
+  MATH: '🔢',
+  SCIENCE: '🔬',
+  ENGLISH: '📚',
+  ARABIC: '🌙',
+  ISLAMIC_STUDIES: '☪️',
+  SOCIAL_STUDIES: '🌍',
+  ART: '🎨',
+  MUSIC: '🎵',
+  OTHER: '📝',
 };
 
 /**
@@ -42,8 +36,8 @@ const LessonHeader = ({
   onShowMenu,
   formatTimeSpent,
 }) => {
-  const subjectLower = lesson.subject?.toLowerCase() || '';
-  const subjectEmoji = SUBJECT_EMOJIS[subjectLower] || '📝';
+  const subjectKey = lesson.subject?.toUpperCase() || '';
+  const subjectEmoji = SUBJECT_EMOJIS[subjectKey] || '📝';
 
   // Get content type info
   const contentType = lesson.contentType || lesson.sourceType || lesson.source?.type || 'text';

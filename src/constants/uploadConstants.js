@@ -42,19 +42,17 @@ export const ACCEPTED_FILE_TYPES = {
 // Maximum file size (10MB)
 export const MAX_FILE_SIZE = 10 * 1024 * 1024;
 
-// Subject options for K-6
+// Subject options for K-6 (values must match backend Prisma Subject enum)
 export const SUBJECTS = [
-  { value: 'mathematics', label: '🔢 Mathematics', color: 'bg-blue-500' },
-  { value: 'science', label: '🔬 Science', color: 'bg-green-500' },
-  { value: 'english', label: '📚 English', color: 'bg-purple-500' },
-  { value: 'reading', label: '📖 Reading', color: 'bg-indigo-500' },
-  { value: 'arabic', label: '🌙 Arabic', color: 'bg-amber-500' },
-  { value: 'islamic', label: '☪️ Islamic Studies', color: 'bg-teal-500' },
-  { value: 'social', label: '🌍 Social Studies', color: 'bg-orange-500' },
-  { value: 'history', label: '📜 History', color: 'bg-rose-500' },
-  { value: 'art', label: '🎨 Art', color: 'bg-pink-500' },
-  { value: 'music', label: '🎵 Music', color: 'bg-cyan-500' },
-  { value: 'other', label: '📝 Other', color: 'bg-gray-500' },
+  { value: 'MATH', label: '🔢 Mathematics', color: 'bg-blue-500' },
+  { value: 'SCIENCE', label: '🔬 Science', color: 'bg-green-500' },
+  { value: 'ENGLISH', label: '📚 English', color: 'bg-purple-500' },
+  { value: 'ARABIC', label: '🌙 Arabic', color: 'bg-amber-500' },
+  { value: 'ISLAMIC_STUDIES', label: '☪️ Islamic Studies', color: 'bg-teal-500' },
+  { value: 'SOCIAL_STUDIES', label: '🌍 Social Studies', color: 'bg-orange-500' },
+  { value: 'ART', label: '🎨 Art', color: 'bg-pink-500' },
+  { value: 'MUSIC', label: '🎵 Music', color: 'bg-cyan-500' },
+  { value: 'OTHER', label: '📝 Other', color: 'bg-gray-500' },
 ];
 
 // Grade levels

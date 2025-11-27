@@ -148,22 +148,17 @@ const LessonView = ({ lesson, onComplete, showContentViewer = false }) => {
     // Use display lesson data
     const displayLesson = lesson;
 
+    // Subject emoji mapping (keys match backend Prisma Subject enum)
     const subjectEmoji = {
-        math: '🔢',
-        mathematics: '🔢',
-        science: '🔬',
-        english: '📚',
-        reading: '📖',
-        arabic: '🌙',
-        islamic: '☪️',
-        social: '🌍',
-        'social studies': '🌍',
-        history: '📜',
-        geography: '🗺️',
-        art: '🎨',
-        music: '🎵',
-        health: '❤️',
-        other: '📝',
+        MATH: '🔢',
+        SCIENCE: '🔬',
+        ENGLISH: '📚',
+        ARABIC: '🌙',
+        ISLAMIC_STUDIES: '☪️',
+        SOCIAL_STUDIES: '🌍',
+        ART: '🎨',
+        MUSIC: '🎵',
+        OTHER: '📝',
     };
 
     // Get time spent on this lesson
@@ -182,7 +177,7 @@ const LessonView = ({ lesson, onComplete, showContentViewer = false }) => {
                 <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center gap-2 flex-wrap">
                         <span className="bg-black text-white px-3 py-1 rounded-full text-xs font-bold uppercase">
-                            {subjectEmoji[displayLesson.subject?.toLowerCase()] || '📝'} {displayLesson.subject || 'Lesson'}
+                            {subjectEmoji[displayLesson.subject?.toUpperCase()] || '📝'} {displayLesson.subject || 'Lesson'}
                         </span>
                         {displayLesson.gradeLevel && (
                             <span className="bg-white/20 text-white px-3 py-1 rounded-full text-xs font-bold">
