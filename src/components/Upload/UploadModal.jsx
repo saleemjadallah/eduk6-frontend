@@ -142,7 +142,7 @@ const UploadModal = ({ isOpen, onClose, onSuccess }) => {
                         initial={{ opacity: 0, scale: 0.9, y: 20 }}
                         animate={{ opacity: 1, scale: 1, y: 0 }}
                         exit={{ opacity: 0, scale: 0.9, y: 20 }}
-                        className="bg-white rounded-3xl border-4 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] w-full max-w-lg max-h-[90vh] overflow-hidden flex flex-col"
+                        className="bg-white rounded-3xl border-4 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] w-full max-w-lg max-h-[80vh] overflow-hidden flex flex-col mt-16"
                     >
                         {/* Header */}
                         <div className="bg-nanobanana-yellow border-b-4 border-black p-4 flex items-center justify-between">

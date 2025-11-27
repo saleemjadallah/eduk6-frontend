@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Link, useParams, useNavigate } from 'react-router-dom';
-import { Trophy, Layers } from 'lucide-react';
+import { LayoutDashboard, TrendingUp } from 'lucide-react';
 import MainLayout from '../components/Layout/MainLayout';
 import LessonView from '../components/Lesson/LessonView';
 import ChatInterface from '../components/Chat/ChatInterface';
@@ -125,18 +125,18 @@ const StudyPage = () => {
                     </div>
                     <div className="flex items-center gap-2">
                         <Link
-                            to="/flashcards"
-                            className="flex items-center gap-2 px-3 py-2 bg-purple-100 rounded-full border-2 border-black font-bold text-sm hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-shadow"
+                            to="/learn"
+                            className="flex items-center gap-2 px-3 py-2 bg-nanobanana-blue rounded-full border-2 border-black font-bold text-sm text-white hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-shadow"
                         >
-                            <Layers className="w-4 h-4 text-purple-600" />
-                            <span className="hidden sm:inline">Flashcards</span>
+                            <LayoutDashboard className="w-4 h-4" />
+                            <span className="hidden sm:inline">Dashboard</span>
                         </Link>
                         <Link
-                            to="/achievements"
+                            to="/learn/achievements"
                             className="flex items-center gap-2 px-3 py-2 bg-nanobanana-yellow rounded-full border-2 border-black font-bold text-sm hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-shadow"
                         >
-                            <Trophy className="w-4 h-4" />
-                            <span className="hidden sm:inline">Achievements</span>
+                            <TrendingUp className="w-4 h-4" />
+                            <span className="hidden sm:inline">Progress</span>
                         </Link>
                     </div>
                 </div>
