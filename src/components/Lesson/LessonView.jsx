@@ -285,59 +285,25 @@ const LessonView = ({ lesson, onComplete, showContentViewer = false }) => {
                         </div>
                     )}
 
-                    {/* Summary */}
-                    {(displayLesson.content?.summary || displayLesson.summary) && (
+                    {/* FULL LESSON CONTENT - Primary display */}
+                    {(displayLesson.rawText || displayLesson.content?.rawText) && (
                         <div className="prose prose-lg max-w-none">
-                            <h3 className="font-comic font-bold text-2xl mb-4 flex items-center gap-2">
-                                <BookOpen className="w-6 h-6" />
-                                Summary
-                            </h3>
-                            <p className="font-medium text-gray-700 leading-relaxed">
-                                {displayLesson.content?.summary || displayLesson.summary}
-                            </p>
-                        </div>
-                    )}
-
-                    {/* Key Points */}
-                    {(displayLesson.content?.keyPoints?.length > 0 || displayLesson.keyConceptsForChat?.length > 0) && (
-                        <div className="my-6 p-4 bg-yellow-50 border-l-8 border-nanobanana-yellow rounded-r-xl">
-                            <h4 className="font-bold text-lg mb-3 flex items-center gap-2">
-                                <Star className="w-5 h-5 fill-yellow-400 text-black" />
-                                Key Points
-                            </h4>
-                            <ul className="space-y-2">
-                                {(displayLesson.content?.keyPoints || displayLesson.keyConceptsForChat || []).map((point, index) => (
-                                    <li key={index} className="flex items-start gap-2">
-                                        <span className="w-6 h-6 bg-nanobanana-yellow rounded-full border-2 border-black flex items-center justify-center text-xs font-bold flex-shrink-0 mt-0.5">
-                                            {index + 1}
-                                        </span>
-                                        <span className="font-medium text-gray-700">{point}</span>
-                                    </li>
-                                ))}
-                            </ul>
-                        </div>
-                    )}
-
-                    {/* Chapters */}
-                    {(displayLesson.content?.chapters?.length > 0 || displayLesson.chapters?.length > 0) && (
-                        <div className="mt-6">
-                            <h4 className="font-bold text-lg mb-3 flex items-center gap-2">
-                                <Layers className="w-5 h-5" />
-                                Chapters
-                            </h4>
-                            <div className="space-y-4">
-                                {(displayLesson.content?.chapters || displayLesson.chapters || []).map((chapter, index) => (
-                                    <div
-                                        key={chapter.id || index}
-                                        className="p-4 bg-white rounded-xl border-2 border-gray-200 hover:border-nanobanana-blue transition-colors"
-                                    >
-                                        <h5 className="font-bold text-lg mb-2">
-                                            {index + 1}. {chapter.title}
-                                        </h5>
-                                        <p className="text-gray-700">{chapter.content}</p>
-                                    </div>
-                                ))}
+                            <div className="bg-white rounded-2xl border-2 border-gray-200 p-6 shadow-sm">
+                                <div className="text-gray-800 leading-relaxed whitespace-pre-wrap">
+                                    {displayLesson.rawText || displayLesson.content?.rawText}
+                                </div>
                             </div>
+                        </div>
+                    )}
+
+                    {/* Divider before study aids */}
+                    {(displayLesson.rawText || displayLesson.content?.rawText) &&
+                     ((displayLesson.content?.vocabulary?.length > 0 || displayLesson.vocabulary?.length > 0) ||
+                      displayLesson.suggestedQuestions?.length > 0) && (
+                        <div className="flex items-center gap-4 my-8">
+                            <div className="flex-1 border-t-2 border-dashed border-gray-300" />
+                            <span className="text-sm font-bold text-gray-400 uppercase">Study Aids</span>
+                            <div className="flex-1 border-t-2 border-dashed border-gray-300" />
                         </div>
                     )}
 
