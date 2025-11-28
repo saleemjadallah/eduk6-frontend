@@ -177,7 +177,7 @@ export function AuthProvider({ children }) {
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [safeSetItem]);
 
   // Sign out function - clears ALL user data
   const signOut = useCallback(async () => {
