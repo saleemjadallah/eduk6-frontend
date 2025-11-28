@@ -13,6 +13,7 @@ const InlineExercise = ({
   exerciseType,
   expectedAnswer, // Only shown after completion
   exercise, // Full exercise object from database (if available)
+  lessonId, // Required for marker ID lookups when exercise is not in database
   onComplete,
 }) => {
   const [isExpanded, setIsExpanded] = useState(false);
@@ -38,7 +39,8 @@ const InlineExercise = ({
     try {
       // Use the exercise ID from database if available, otherwise use the HTML data-id
       const idToUse = exercise?.id || exerciseId;
-      const response = await exerciseAPI.submitAnswer(idToUse, answer);
+      // Pass lessonId for marker ID lookups (when exercise isn't found in database)
+      const response = await exerciseAPI.submitAnswer(idToUse, answer, lessonId);
       setResult(response.data);
 
       if (response.data.isCorrect) {

@@ -364,6 +364,7 @@ const LessonView = ({ lesson, onComplete, showContentViewer = false }) => {
                                         <LessonContentRenderer
                                             content={displayLesson.formattedContent || displayLesson.content?.formattedContent}
                                             exercises={exercises}
+                                            lessonId={displayLesson.id}
                                             onExerciseComplete={(exerciseId, result) => {
                                                 // Update local exercise state
                                                 setExercises(prev => prev.map(ex =>
