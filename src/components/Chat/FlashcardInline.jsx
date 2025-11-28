@@ -5,8 +5,9 @@ import { ChevronLeft, ChevronRight, RotateCcw, Check, X } from 'lucide-react';
 /**
  * FlashcardInline - Displays flashcards inline in the chat
  * Allows flipping, navigation, and marking as learned
+ * @param {boolean} expanded - When true, renders larger card for modal view
  */
-const FlashcardInline = ({ flashcards = [], onComplete }) => {
+const FlashcardInline = ({ flashcards = [], onComplete, expanded = false }) => {
     const [currentIndex, setCurrentIndex] = useState(0);
     const [isFlipped, setIsFlipped] = useState(false);
     const [learned, setLearned] = useState(new Set());
@@ -65,14 +66,14 @@ const FlashcardInline = ({ flashcards = [], onComplete }) => {
     };
 
     return (
-        <div className="w-full max-w-md mx-auto">
+        <div className={`w-full mx-auto ${expanded ? 'max-w-2xl' : 'max-w-md'}`}>
             {/* Progress bar */}
-            <div className="mb-3">
-                <div className="flex justify-between text-xs font-bold text-gray-600 mb-1">
+            <div className={`${expanded ? 'mb-6' : 'mb-3'}`}>
+                <div className={`flex justify-between font-bold text-gray-600 mb-1 ${expanded ? 'text-sm' : 'text-xs'}`}>
                     <span>Card {currentIndex + 1} of {flashcards.length}</span>
                     <span>{progress}% learned</span>
                 </div>
-                <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
+                <div className={`bg-gray-200 rounded-full overflow-hidden ${expanded ? 'h-3' : 'h-2'}`}>
                     <motion.div
                         className="h-full bg-nanobanana-green"
                         initial={{ width: 0 }}
@@ -84,7 +85,7 @@ const FlashcardInline = ({ flashcards = [], onComplete }) => {
 
             {/* Flashcard */}
             <div
-                className="relative h-48 cursor-pointer perspective-1000"
+                className={`relative cursor-pointer perspective-1000 ${expanded ? 'h-72' : 'h-48'}`}
                 onClick={handleFlip}
             >
                 <motion.div
@@ -95,29 +96,29 @@ const FlashcardInline = ({ flashcards = [], onComplete }) => {
                 >
                     {/* Front */}
                     <div
-                        className={`absolute inset-0 p-4 bg-white border-3 border-black rounded-2xl shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] flex flex-col justify-center items-center backface-hidden ${isFlipped ? 'invisible' : ''}`}
+                        className={`absolute inset-0 bg-white border-3 border-black rounded-2xl shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] flex flex-col justify-center items-center backface-hidden ${isFlipped ? 'invisible' : ''} ${expanded ? 'p-8' : 'p-4'}`}
                     >
-                        <div className="absolute top-2 right-2">
-                            <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${getDifficultyColor(currentCard.difficulty)}`}>
+                        <div className={`absolute ${expanded ? 'top-4 right-4' : 'top-2 right-2'}`}>
+                            <span className={`font-bold px-2 py-0.5 rounded-full ${getDifficultyColor(currentCard.difficulty)} ${expanded ? 'text-xs' : 'text-[10px]'}`}>
                                 {currentCard.difficulty || 'medium'}
                             </span>
                         </div>
-                        <p className="text-center font-bold text-lg">{currentCard.front}</p>
+                        <p className={`text-center font-bold ${expanded ? 'text-2xl px-4' : 'text-lg'}`}>{currentCard.front}</p>
                         {currentCard.hint && (
-                            <p className="text-xs text-gray-400 mt-2 italic">Hint: {currentCard.hint}</p>
+                            <p className={`text-gray-400 mt-3 italic ${expanded ? 'text-sm' : 'text-xs'}`}>Hint: {currentCard.hint}</p>
                         )}
-                        <p className="text-[10px] text-gray-400 mt-4">Tap to flip</p>
+                        <p className={`text-gray-400 mt-4 ${expanded ? 'text-xs' : 'text-[10px]'}`}>Tap to flip</p>
                     </div>
 
                     {/* Back */}
                     <div
-                        className={`absolute inset-0 p-4 bg-nanobanana-yellow border-3 border-black rounded-2xl shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] flex flex-col justify-center items-center backface-hidden ${!isFlipped ? 'invisible' : ''}`}
+                        className={`absolute inset-0 bg-nanobanana-yellow border-3 border-black rounded-2xl shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] flex flex-col justify-center items-center backface-hidden ${!isFlipped ? 'invisible' : ''} ${expanded ? 'p-8' : 'p-4'}`}
                         style={{ transform: 'rotateY(180deg)' }}
                     >
-                        <p className="text-center font-bold text-lg">{currentCard.back}</p>
+                        <p className={`text-center font-bold ${expanded ? 'text-2xl px-4' : 'text-lg'}`}>{currentCard.back}</p>
                         {learned.has(currentCard.id) && (
-                            <div className="absolute top-2 right-2">
-                                <Check className="w-5 h-5 text-green-600" />
+                            <div className={`absolute ${expanded ? 'top-4 right-4' : 'top-2 right-2'}`}>
+                                <Check className={`text-green-600 ${expanded ? 'w-6 h-6' : 'w-5 h-5'}`} />
                             </div>
                         )}
                     </div>
@@ -125,36 +126,36 @@ const FlashcardInline = ({ flashcards = [], onComplete }) => {
             </div>
 
             {/* Controls */}
-            <div className="flex justify-between items-center mt-4">
+            <div className={`flex justify-between items-center ${expanded ? 'mt-6' : 'mt-4'}`}>
                 <button
                     onClick={handlePrev}
-                    className="p-2 bg-gray-100 border-2 border-black rounded-lg hover:bg-gray-200 transition-colors"
+                    className={`bg-gray-100 border-2 border-black rounded-lg hover:bg-gray-200 transition-colors ${expanded ? 'p-3' : 'p-2'}`}
                 >
-                    <ChevronLeft className="w-5 h-5" />
+                    <ChevronLeft className={expanded ? 'w-6 h-6' : 'w-5 h-5'} />
                 </button>
 
-                <div className="flex gap-2">
+                <div className={`flex ${expanded ? 'gap-4' : 'gap-2'}`}>
                     <button
                         onClick={handleMarkNotLearned}
-                        className="flex items-center gap-1 px-3 py-2 bg-red-100 border-2 border-black rounded-lg hover:bg-red-200 transition-colors text-sm font-bold"
+                        className={`flex items-center gap-1 bg-red-100 border-2 border-black rounded-lg hover:bg-red-200 transition-colors font-bold ${expanded ? 'px-5 py-3 text-base' : 'px-3 py-2 text-sm'}`}
                     >
-                        <X className="w-4 h-4" />
+                        <X className={expanded ? 'w-5 h-5' : 'w-4 h-4'} />
                         Still learning
                     </button>
                     <button
                         onClick={handleMarkLearned}
-                        className="flex items-center gap-1 px-3 py-2 bg-green-100 border-2 border-black rounded-lg hover:bg-green-200 transition-colors text-sm font-bold"
+                        className={`flex items-center gap-1 bg-green-100 border-2 border-black rounded-lg hover:bg-green-200 transition-colors font-bold ${expanded ? 'px-5 py-3 text-base' : 'px-3 py-2 text-sm'}`}
                     >
-                        <Check className="w-4 h-4" />
+                        <Check className={expanded ? 'w-5 h-5' : 'w-4 h-4'} />
                         Got it!
                     </button>
                 </div>
 
                 <button
                     onClick={handleNext}
-                    className="p-2 bg-gray-100 border-2 border-black rounded-lg hover:bg-gray-200 transition-colors"
+                    className={`bg-gray-100 border-2 border-black rounded-lg hover:bg-gray-200 transition-colors ${expanded ? 'p-3' : 'p-2'}`}
                 >
-                    <ChevronRight className="w-5 h-5" />
+                    <ChevronRight className={expanded ? 'w-6 h-6' : 'w-5 h-5'} />
                 </button>
             </div>
 
