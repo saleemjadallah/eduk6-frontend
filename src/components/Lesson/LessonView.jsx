@@ -1,7 +1,7 @@
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { BookOpen, PlayCircle, Star, Clock, FileText, Layers, Sparkles, CheckCircle, Image as ImageIcon, FileType } from 'lucide-react';
+import { BookOpen, PlayCircle, Star, Clock, FileText, Layers, Sparkles, CheckCircle, Image as ImageIcon, FileType, HelpCircle } from 'lucide-react';
 import DOMPurify from 'dompurify';
 import { FlashcardCreator } from '../Flashcards';
 import { useFlashcards } from '../../hooks/useFlashcards';
@@ -12,6 +12,8 @@ import { HighlightableContent, SelectionToolbar } from '../Selection';
 import { detectContentType, getContentTypeDisplayInfo } from '../../utils/contentDetection';
 import ContentRenderer from '../LessonView/ContentRenderer';
 import { VocabularyPanel } from '../LessonView/Metadata';
+import { ExerciseModal, ExerciseList } from '../Exercise';
+import { exerciseAPI } from '../../services/api/exerciseAPI';
 
 /**
  * Format raw text content with basic HTML structure
@@ -45,6 +47,11 @@ const LessonView = ({ lesson, onComplete, showContentViewer = false }) => {
     const [showVocabulary, setShowVocabulary] = useState(false);
     const [viewMode, setViewMode] = useState('structured'); // 'structured' | 'content'
     const [viewPreferences, setViewPreferences] = useState({ zoom: 1, currentPage: 1 });
+
+    // Exercise state
+    const [exercises, setExercises] = useState([]);
+    const [activeExercise, setActiveExercise] = useState(null);
+    const [exercisesLoading, setExercisesLoading] = useState(false);
 
     const { canCreateDeckFromLesson, getDeckForLesson, createDeckFromLesson } = useFlashcards();
 
@@ -86,6 +93,44 @@ const LessonView = ({ lesson, onComplete, showContentViewer = false }) => {
 
     const existingDeck = lesson ? getDeckForLesson(lesson.id) : null;
     const canCreateDeck = lesson ? canCreateDeckFromLesson(lesson) : false;
+
+    // Fetch exercises when lesson loads
+    useEffect(() => {
+        const fetchExercises = async () => {
+            if (!lesson?.id) {
+                setExercises([]);
+                return;
+            }
+
+            setExercisesLoading(true);
+            try {
+                const response = await exerciseAPI.getExercisesForLesson(lesson.id);
+                setExercises(response.data || []);
+            } catch (error) {
+                console.error('Failed to fetch exercises:', error);
+                setExercises([]);
+            } finally {
+                setExercisesLoading(false);
+            }
+        };
+
+        fetchExercises();
+    }, [lesson?.id]);
+
+    // Handle exercise click - open modal
+    const handleExerciseClick = useCallback((exercise) => {
+        setActiveExercise(exercise);
+    }, []);
+
+    // Handle exercise completion
+    const handleExerciseComplete = useCallback((result) => {
+        // Update the exercise in the list to mark as completed
+        setExercises(prev => prev.map(ex =>
+            ex.id === activeExercise?.id
+                ? { ...ex, isCompleted: true, attemptCount: result.attemptNumber }
+                : ex
+        ));
+    }, [activeExercise?.id]);
 
     const handleCreateFlashcards = () => {
         if (canCreateDeck) {
@@ -382,6 +427,16 @@ const LessonView = ({ lesson, onComplete, showContentViewer = false }) => {
                         </div>
                     )}
 
+                    {/* Interactive Exercises */}
+                    {exercises.length > 0 && (
+                        <div className="mt-6 p-4 bg-gradient-to-r from-orange-50 to-yellow-50 rounded-xl border-2 border-orange-200">
+                            <ExerciseList
+                                exercises={exercises}
+                                onExerciseClick={handleExerciseClick}
+                            />
+                        </div>
+                    )}
+
                     {/* Flashcard Actions */}
                     <div className="mt-8 p-4 bg-gradient-to-r from-purple-50 to-blue-50 rounded-2xl border-2 border-purple-200">
                         <div className="flex items-center justify-between">
@@ -479,6 +534,14 @@ const LessonView = ({ lesson, onComplete, showContentViewer = false }) => {
                 isOpen={isCreatorOpen}
                 onClose={() => setIsCreatorOpen(false)}
                 lessonContent={displayLesson.content}
+            />
+
+            {/* Exercise Modal */}
+            <ExerciseModal
+                exercise={activeExercise}
+                isOpen={!!activeExercise}
+                onClose={() => setActiveExercise(null)}
+                onComplete={handleExerciseComplete}
             />
         </div>
     );
