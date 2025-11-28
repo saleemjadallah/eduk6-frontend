@@ -119,7 +119,11 @@ export function ModeProvider({ children }) {
         setLastActivity(new Date());
 
         // Navigate to parent dashboard
-        navigate('/parent/dashboard');
+        try {
+          navigate('/parent/dashboard');
+        } catch (navErr) {
+          window.location.assign('/parent/dashboard');
+        }
 
         setIsTransitioning(false);
         return { success: true };
@@ -149,7 +153,11 @@ export function ModeProvider({ children }) {
 
     // Navigate to child learning dashboard
     setTimeout(() => {
-      navigate('/learn');
+      try {
+        navigate('/learn');
+      } catch (navErr) {
+        window.location.assign('/learn');
+      }
     }, 0);
   }, [navigate]);
 
