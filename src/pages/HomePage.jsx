@@ -69,12 +69,14 @@ const HomePage = () => {
           <div className="flex items-center gap-3">
             <Link
               to="/login"
+              reloadDocument
               className="hidden sm:inline-flex font-bold hover:text-nanobanana-blue transition-colors"
             >
               Log In
             </Link>
             <Link
               to="/onboarding"
+              reloadDocument
               className="bg-nanobanana-blue text-white px-5 py-2 rounded-xl font-bold border-2 border-black shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] hover:translate-y-[-1px] hover:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-all active:translate-y-[1px] active:shadow-none"
             >
               Sign Up Free
