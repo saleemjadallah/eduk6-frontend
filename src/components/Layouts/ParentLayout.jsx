@@ -49,7 +49,7 @@ const ParentLayout = () => {
       <aside className="parent-sidebar">
         <div className="sidebar-header">
           <button className="sidebar-logo" onClick={handleLogoClick}>
-            <img src="/assets/orbit-learn-icon-hires.png" alt="OrbitLearn" className="logo-image" />
+            <img src="/assets/Logo-nobg.png" alt="OrbitLearn" className="logo-image" />
           </button>
           <span className="parent-badge">Parent</span>
         </div>
