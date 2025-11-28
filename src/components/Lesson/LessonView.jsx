@@ -14,6 +14,7 @@ import ContentRenderer from '../LessonView/ContentRenderer';
 import { VocabularyPanel } from '../LessonView/Metadata';
 import { ExerciseModal, ExerciseList } from '../Exercise';
 import { exerciseAPI } from '../../services/api/exerciseAPI';
+import LessonContentRenderer from './LessonContentRenderer';
 
 /**
  * Format raw text content with basic HTML structure
@@ -357,17 +358,35 @@ const LessonView = ({ lesson, onComplete, showContentViewer = false }) => {
                     {(displayLesson.formattedContent || displayLesson.content?.formattedContent || displayLesson.rawText || displayLesson.content?.rawText) && (
                         <div className="prose prose-lg max-w-none">
                             <div className="bg-white rounded-2xl border-2 border-gray-200 p-6 shadow-sm">
-                                <div
-                                    className="text-gray-800 leading-relaxed lesson-content"
-                                    dangerouslySetInnerHTML={{
-                                        __html: formatContent(
-                                            displayLesson.formattedContent ||
-                                            displayLesson.content?.formattedContent ||
-                                            displayLesson.rawText ||
-                                            displayLesson.content?.rawText
-                                        )
-                                    }}
-                                />
+                                {/* Use LessonContentRenderer if we have formattedContent with exercises */}
+                                {(displayLesson.formattedContent || displayLesson.content?.formattedContent)?.includes('interactive-exercise') ? (
+                                    <div className="text-gray-800 leading-relaxed">
+                                        <LessonContentRenderer
+                                            content={displayLesson.formattedContent || displayLesson.content?.formattedContent}
+                                            exercises={exercises}
+                                            onExerciseComplete={(exerciseId, result) => {
+                                                // Update local exercise state
+                                                setExercises(prev => prev.map(ex =>
+                                                    ex.originalPosition === exerciseId || ex.id === exerciseId
+                                                        ? { ...ex, isCompleted: true }
+                                                        : ex
+                                                ));
+                                            }}
+                                        />
+                                    </div>
+                                ) : (
+                                    <div
+                                        className="text-gray-800 leading-relaxed lesson-content"
+                                        dangerouslySetInnerHTML={{
+                                            __html: formatContent(
+                                                displayLesson.formattedContent ||
+                                                displayLesson.content?.formattedContent ||
+                                                displayLesson.rawText ||
+                                                displayLesson.content?.rawText
+                                            )
+                                        }}
+                                    />
+                                )}
                             </div>
                         </div>
                     )}
