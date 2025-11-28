@@ -1,15 +1,26 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from './AuthContext';
+import { authAPI } from '../services/api/authAPI';
+import { tokenManager } from '../services/api/tokenManager';
+import { storageManager } from '../services/storage/storageManager';
 
 const AUTO_SWITCH_DEFAULT_MINUTES = 15;
-const PIN_LENGTH = 4;
 
 const ModeContext = createContext(null);
 
+/**
+ * Mode Context Provider
+ * Handles parent/child mode switching with backend PIN verification
+ *
+ * Security Improvements:
+ * - PINs are NOT stored in localStorage (handled by backend)
+ * - Child token is managed via tokenManager
+ * - Mode switching requires backend PIN verification with brute force protection
+ * - Auto-switch preferences are namespaced per user
+ */
 export function ModeProvider({ children }) {
   const navigate = useNavigate();
-  const location = useLocation();
 
   // Try to get auth context - may not be available yet
   let authContext = null;
@@ -20,34 +31,32 @@ export function ModeProvider({ children }) {
   }
 
   const user = authContext?.user;
+  const currentProfile = authContext?.currentProfile;
+  const childProfiles = authContext?.children;
 
   const [currentMode, setCurrentMode] = useState('child');
-  const [parentPinVerified, setParentPinVerified] = useState(false);
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [lastActivity, setLastActivity] = useState(new Date());
   const [autoSwitchEnabled, setAutoSwitchEnabled] = useState(true);
   const [autoSwitchMinutes, setAutoSwitchMinutes] = useState(AUTO_SWITCH_DEFAULT_MINUTES);
-  const [pinAttempts, setPinAttempts] = useState(0);
-  const [lockedUntil, setLockedUntil] = useState(null);
+  const [pinError, setPinError] = useState(null);
 
-  // Load mode preferences from localStorage
+  // Load mode preferences from namespaced storage
   useEffect(() => {
     if (user) {
-      const savedAutoSwitch = localStorage.getItem(`auto_switch_${user.id}`);
-
-      if (savedAutoSwitch) {
-        try {
-          const { enabled, minutes } = JSON.parse(savedAutoSwitch);
-          setAutoSwitchEnabled(enabled);
-          setAutoSwitchMinutes(minutes || AUTO_SWITCH_DEFAULT_MINUTES);
-        } catch (e) {
-          // Invalid JSON, use defaults
-        }
+      const prefs = storageManager.getUserPreferences();
+      if (prefs?.autoSwitch) {
+        setAutoSwitchEnabled(prefs.autoSwitch.enabled);
+        setAutoSwitchMinutes(prefs.autoSwitch.minutes || AUTO_SWITCH_DEFAULT_MINUTES);
       }
 
-      // Always start in child mode for safety
-      setCurrentMode('child');
-      setParentPinVerified(false);
+      // Check if we have a child token (determines initial mode)
+      if (tokenManager.isChildMode()) {
+        setCurrentMode('child');
+      } else {
+        // Always start in child mode for safety
+        setCurrentMode('child');
+      }
     }
   }, [user]);
 
@@ -85,180 +94,122 @@ export function ModeProvider({ children }) {
     };
   }, []);
 
-  // Check if locked out from PIN attempts
-  useEffect(() => {
-    if (lockedUntil) {
-      const now = new Date();
-      if (now >= lockedUntil) {
-        setLockedUntil(null);
-        setPinAttempts(0);
-      }
-    }
-  }, [lockedUntil]);
-
-  const hasParentPin = useCallback(() => {
-    if (!user) return false;
-    const pin = localStorage.getItem(`parent_pin_${user.id}`);
-    return !!pin;
-  }, [user]);
-
-  const setParentPin = useCallback(async (pin) => {
-    if (!user) return false;
-
-    // Validate PIN format
-    if (pin.length !== PIN_LENGTH || !/^\d+$/.test(pin)) {
-      return false;
-    }
-
-    // Store PIN (in production, should hash this)
-    localStorage.setItem(`parent_pin_${user.id}`, pin);
-    return true;
-  }, [user]);
-
-  const verifyParentPin = useCallback(async (pin) => {
-    if (!user) return false;
-
-    // Check if locked out
-    if (lockedUntil && new Date() < lockedUntil) {
-      return false;
-    }
-
-    const storedPin = localStorage.getItem(`parent_pin_${user.id}`);
-    if (!storedPin) {
-      // No PIN set, allow first-time setup
-      return true;
-    }
-
-    const isValid = pin === storedPin;
-
-    if (!isValid) {
-      const newAttempts = pinAttempts + 1;
-      setPinAttempts(newAttempts);
-
-      // Lock out after 5 failed attempts
-      if (newAttempts >= 5) {
-        const lockTime = new Date();
-        lockTime.setMinutes(lockTime.getMinutes() + 15);
-        setLockedUntil(lockTime);
-      }
-    } else {
-      setPinAttempts(0);
-    }
-
-    return isValid;
-  }, [user, pinAttempts, lockedUntil]);
-
+  /**
+   * Switch to parent mode with PIN verification
+   * Uses backend for PIN verification (handles brute force protection)
+   */
   const switchToParentMode = useCallback(async (pin) => {
-    if (!user) return false;
-
-    // Check if locked out
-    if (lockedUntil && new Date() < lockedUntil) {
-      return false;
-    }
+    if (!user || !currentProfile) return { success: false, error: 'Not authenticated' };
 
     setIsTransitioning(true);
+    setPinError(null);
 
     try {
-      // If no PIN exists, this is first-time setup
-      if (!hasParentPin()) {
-        const setupSuccess = await setParentPin(pin);
-        if (!setupSuccess) {
-          setIsTransitioning(false);
-          return false;
-        }
+      // Call backend to verify PIN and switch to child mode first
+      // The backend's /auth/children/:childId/switch endpoint handles:
+      // - PIN verification
+      // - Brute force protection
+      // - Child token generation
+      const response = await authAPI.switchToChild(currentProfile.id, pin);
+
+      if (response.success) {
+        // Actually we want parent mode here, so clear the child token
+        authAPI.switchToParent();
+        setCurrentMode('parent');
+        setLastActivity(new Date());
+
+        // Navigate to parent dashboard
+        navigate('/parent/dashboard');
+
+        setIsTransitioning(false);
+        return { success: true };
       } else {
-        // Verify existing PIN
-        const isValid = await verifyParentPin(pin);
-        if (!isValid) {
-          setIsTransitioning(false);
-          return false;
-        }
+        const error = response.error || 'Invalid PIN';
+        setPinError(error);
+        setIsTransitioning(false);
+        return { success: false, error };
       }
-
-      // Switch to parent mode
-      setCurrentMode('parent');
-      setParentPinVerified(true);
-      setLastActivity(new Date());
-
-      // Navigate to parent dashboard
-      navigate('/parent/dashboard');
-
-      setIsTransitioning(false);
-      return true;
     } catch (error) {
       console.error('Switch to parent mode error:', error);
+      const errorMessage = error.message || 'Failed to verify PIN';
+      setPinError(errorMessage);
       setIsTransitioning(false);
-      return false;
+      return { success: false, error: errorMessage };
     }
-  }, [user, hasParentPin, setParentPin, verifyParentPin, navigate, lockedUntil]);
+  }, [user, currentProfile, navigate]);
 
+  /**
+   * Switch to child mode
+   * Clears parent privileges but maintains child session
+   */
   const switchToChildMode = useCallback(() => {
-    // Set mode to child and clear parent verification
+    // Set mode to child
     setCurrentMode('child');
-    setParentPinVerified(false);
+    setPinError(null);
 
     // Navigate to child learning dashboard
-    // Using setTimeout to ensure state updates are processed first
     setTimeout(() => {
       navigate('/learn');
     }, 0);
   }, [navigate]);
 
+  /**
+   * Update auto-switch preferences
+   */
   const updateAutoSwitch = useCallback((enabled, minutes) => {
     setAutoSwitchEnabled(enabled);
     if (minutes !== undefined) {
       setAutoSwitchMinutes(minutes);
     }
 
-    if (user) {
-      localStorage.setItem(
-        `auto_switch_${user.id}`,
-        JSON.stringify({ enabled, minutes: minutes || autoSwitchMinutes })
-      );
-    }
-  }, [user, autoSwitchMinutes]);
+    // Save to namespaced storage
+    const prefs = storageManager.getUserPreferences() || {};
+    storageManager.setUserPreferences({
+      ...prefs,
+      autoSwitch: {
+        enabled,
+        minutes: minutes || autoSwitchMinutes,
+      },
+    });
+  }, [autoSwitchMinutes]);
 
-  const getRemainingAttempts = useCallback(() => {
-    return Math.max(0, 5 - pinAttempts);
-  }, [pinAttempts]);
+  /**
+   * Clear PIN error
+   */
+  const clearPinError = useCallback(() => {
+    setPinError(null);
+  }, []);
 
-  const getTimeUntilUnlock = useCallback(() => {
-    if (!lockedUntil) return null;
-    const now = new Date();
-    if (now >= lockedUntil) return null;
-    return Math.ceil((lockedUntil.getTime() - now.getTime()) / (1000 * 60));
-  }, [lockedUntil]);
+  // Check if in parent mode based on current mode state
+  const isParentMode = currentMode === 'parent';
 
   const value = useMemo(() => ({
     currentMode,
-    parentPinVerified,
+    isParentMode,
+    isChildMode: currentMode === 'child',
     isTransitioning,
+    pinError,
+    currentChild: currentProfile,
+    childProfiles,
     switchToChildMode,
     switchToParentMode,
-    verifyParentPin,
-    setParentPin,
-    hasParentPin: hasParentPin(),
+    clearPinError,
     autoSwitchEnabled,
     autoSwitchMinutes,
     updateAutoSwitch,
-    isLocked: lockedUntil && new Date() < lockedUntil,
-    remainingAttempts: getRemainingAttempts(),
-    timeUntilUnlock: getTimeUntilUnlock(),
   }), [
     currentMode,
-    parentPinVerified,
+    isParentMode,
     isTransitioning,
+    pinError,
+    currentProfile,
+    childProfiles,
     switchToChildMode,
     switchToParentMode,
-    verifyParentPin,
-    setParentPin,
-    hasParentPin,
+    clearPinError,
     autoSwitchEnabled,
     autoSwitchMinutes,
     updateAutoSwitch,
-    lockedUntil,
-    getRemainingAttempts,
-    getTimeUntilUnlock,
   ]);
 
   return <ModeContext.Provider value={value}>{children}</ModeContext.Provider>;

@@ -10,8 +10,8 @@ import { v4 as uuidv4 } from 'uuid';
 import {
   PROCESSING_STAGES,
   DEFAULT_LESSON,
-  STORAGE_KEYS
 } from '../constants/lessonConstants';
+import { storageManager } from '../services/storage/storageManager';
 
 // ============================================
 // INITIAL STATE
@@ -33,6 +33,9 @@ const initialState = {
 
   // UI state
   isLessonDrawerOpen: false,
+
+  // Storage initialized flag
+  storageInitialized: false,
 };
 
 // ============================================
@@ -62,6 +65,9 @@ const ACTIONS = {
   // Progress tracking
   UPDATE_LESSON_PROGRESS: 'UPDATE_LESSON_PROGRESS',
   INCREMENT_TIME_SPENT: 'INCREMENT_TIME_SPENT',
+
+  // Storage
+  SET_STORAGE_INITIALIZED: 'SET_STORAGE_INITIALIZED',
 };
 
 // ============================================
@@ -117,6 +123,7 @@ function lessonReducer(state, action) {
         ...state,
         lessons: action.payload.lessons,
         currentLesson: action.payload.currentLesson,
+        storageInitialized: true,
       };
 
     case ACTIONS.SET_CURRENT_LESSON:
@@ -222,6 +229,13 @@ function lessonReducer(state, action) {
         isLessonDrawerOpen: action.payload ?? !state.isLessonDrawerOpen,
       };
 
+    // --- Storage ---
+    case ACTIONS.SET_STORAGE_INITIALIZED:
+      return {
+        ...state,
+        storageInitialized: action.payload,
+      };
+
     default:
       console.warn(`Unknown action type: ${action.type}`);
       return state;
@@ -239,39 +253,67 @@ const LessonContext = createContext(null);
 export function LessonProvider({ children }) {
   const [state, dispatch] = useReducer(lessonReducer, initialState);
 
-  // --- Persistence: Load from localStorage on mount ---
+  // --- Persistence: Load from namespaced storage on mount ---
   useEffect(() => {
     try {
-      const storedLessons = localStorage.getItem(STORAGE_KEYS.LESSONS);
-      const storedCurrentId = localStorage.getItem(STORAGE_KEYS.CURRENT_LESSON_ID);
+      // Use storage manager which handles namespacing per user/child
+      const lessons = storageManager.getLessons();
+      const currentLessonId = storageManager.getCurrentLessonId();
 
-      if (storedLessons) {
-        const lessons = JSON.parse(storedLessons);
-        const currentLesson = storedCurrentId
-          ? lessons.find(l => l.id === storedCurrentId)
+      if (lessons && lessons.length > 0) {
+        const currentLesson = currentLessonId
+          ? lessons.find(l => l.id === currentLessonId)
           : lessons[0] || null;
 
         dispatch({
           type: ACTIONS.LOAD_LESSONS,
           payload: { lessons, currentLesson }
         });
+      } else {
+        dispatch({ type: ACTIONS.SET_STORAGE_INITIALIZED, payload: true });
       }
     } catch (error) {
       console.error('Failed to load lessons from storage:', error);
+      dispatch({ type: ACTIONS.SET_STORAGE_INITIALIZED, payload: true });
     }
   }, []);
 
-  // --- Persistence: Save to localStorage on state change ---
+  // --- Listen for storage manager changes (e.g., profile switch) ---
   useEffect(() => {
+    const unsubscribe = storageManager.subscribe(({ key }) => {
+      if (key === '__clear__' || key === 'lessons') {
+        // Reload lessons when storage is cleared or lessons change externally
+        const lessons = storageManager.getLessons();
+        const currentLessonId = storageManager.getCurrentLessonId();
+
+        dispatch({
+          type: ACTIONS.LOAD_LESSONS,
+          payload: {
+            lessons: lessons || [],
+            currentLesson: currentLessonId
+              ? (lessons || []).find(l => l.id === currentLessonId)
+              : (lessons || [])[0] || null
+          }
+        });
+      }
+    });
+
+    return unsubscribe;
+  }, []);
+
+  // --- Persistence: Save to namespaced storage on state change ---
+  useEffect(() => {
+    if (!state.storageInitialized) return;
+
     try {
-      localStorage.setItem(STORAGE_KEYS.LESSONS, JSON.stringify(state.lessons));
+      storageManager.setLessons(state.lessons);
       if (state.currentLesson) {
-        localStorage.setItem(STORAGE_KEYS.CURRENT_LESSON_ID, state.currentLesson.id);
+        storageManager.setCurrentLessonId(state.currentLesson.id);
       }
     } catch (error) {
       console.error('Failed to save lessons to storage:', error);
     }
-  }, [state.lessons, state.currentLesson]);
+  }, [state.lessons, state.currentLesson, state.storageInitialized]);
 
   // --- Time tracking: Increment every 30 seconds while lesson is active ---
   useEffect(() => {
@@ -330,7 +372,7 @@ export function LessonProvider({ children }) {
 
   const clearCurrentLesson = useCallback(() => {
     dispatch({ type: ACTIONS.SET_CURRENT_LESSON, payload: null });
-    localStorage.removeItem(STORAGE_KEYS.CURRENT_LESSON_ID);
+    storageManager.remove('currentLessonId', { childScoped: true });
   }, []);
 
   const updateLesson = useCallback((lessonId, updates) => {

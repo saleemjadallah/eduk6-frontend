@@ -3,6 +3,7 @@ import { differenceInCalendarDays, format } from 'date-fns';
 import { calculateXPForLevel } from '../utils/xpCalculations';
 import { checkAchievements } from '../utils/achievementDefinitions';
 import { DAILY_CHALLENGES } from '../constants/gamificationConstants';
+import { storageManager } from '../services/storage/storageManager';
 
 // Initial state
 const initialState = {
@@ -28,6 +29,7 @@ const initialState = {
     },
     recentAchievements: [],
     pendingCelebration: null,
+    storageInitialized: false,
 };
 
 // Action types
@@ -45,6 +47,7 @@ const ACTIONS = {
     RESET_PROGRESS: 'RESET_PROGRESS',
     ADD_RECENT_ACHIEVEMENT: 'ADD_RECENT_ACHIEVEMENT',
     CLEAR_RECENT_ACHIEVEMENT: 'CLEAR_RECENT_ACHIEVEMENT',
+    SET_STORAGE_INITIALIZED: 'SET_STORAGE_INITIALIZED',
 };
 
 // Reducer
@@ -170,10 +173,20 @@ function gamificationReducer(state, action) {
             return {
                 ...state,
                 ...action.payload,
+                storageInitialized: true,
             };
 
         case ACTIONS.RESET_PROGRESS:
-            return initialState;
+            return {
+                ...initialState,
+                storageInitialized: true,
+            };
+
+        case ACTIONS.SET_STORAGE_INITIALIZED:
+            return {
+                ...state,
+                storageInitialized: action.payload,
+            };
 
         default:
             return state;
@@ -187,35 +200,62 @@ const GamificationContext = createContext(null);
 export function GamificationProvider({ children }) {
     const [state, dispatch] = useReducer(gamificationReducer, initialState);
 
-    // Load from localStorage on mount
+    // Load from namespaced storage on mount
     useEffect(() => {
-        const savedProgress = localStorage.getItem('userGameProgress');
-        if (savedProgress) {
-            try {
-                const progress = JSON.parse(savedProgress);
-                dispatch({ type: ACTIONS.LOAD_PROGRESS, payload: progress });
+        try {
+            // Use storage manager which handles namespacing per user/child
+            const savedProgress = storageManager.getGameProgress();
+            if (savedProgress) {
+                dispatch({ type: ACTIONS.LOAD_PROGRESS, payload: savedProgress });
 
                 // Update streak on app open
-                if (progress.streak) {
-                    updateStreakOnAppOpen(progress.streak);
+                if (savedProgress.streak) {
+                    updateStreakOnAppOpen(savedProgress.streak);
                 }
-            } catch (error) {
-                console.error('Error loading progress:', error);
+            } else {
+                dispatch({ type: ACTIONS.SET_STORAGE_INITIALIZED, payload: true });
             }
+        } catch (error) {
+            console.error('Error loading game progress:', error);
+            dispatch({ type: ACTIONS.SET_STORAGE_INITIALIZED, payload: true });
         }
 
         // Initialize daily challenge if needed
         initializeDailyChallenge();
     }, []);
 
-    // Save to localStorage whenever state changes
+    // Listen for storage manager changes (e.g., profile switch, logout)
     useEffect(() => {
-        const stateToSave = {
-            ...state,
-            pendingCelebration: null, // Don't persist celebrations
-            recentAchievements: [], // Don't persist recent achievements
-        };
-        localStorage.setItem('userGameProgress', JSON.stringify(stateToSave));
+        const unsubscribe = storageManager.subscribe(({ key }) => {
+            if (key === '__clear__' || key === 'gameProgress') {
+                // Reload progress when storage is cleared or changes externally
+                const savedProgress = storageManager.getGameProgress();
+                if (savedProgress) {
+                    dispatch({ type: ACTIONS.LOAD_PROGRESS, payload: savedProgress });
+                } else {
+                    dispatch({ type: ACTIONS.RESET_PROGRESS });
+                }
+            }
+        });
+
+        return unsubscribe;
+    }, []);
+
+    // Save to namespaced storage whenever state changes
+    useEffect(() => {
+        if (!state.storageInitialized) return;
+
+        try {
+            const stateToSave = {
+                ...state,
+                pendingCelebration: null, // Don't persist celebrations
+                recentAchievements: [], // Don't persist recent achievements
+                storageInitialized: undefined, // Don't persist this flag
+            };
+            storageManager.setGameProgress(stateToSave);
+        } catch (error) {
+            console.error('Error saving game progress:', error);
+        }
     }, [state]);
 
     // Update streak logic on app open
@@ -278,17 +318,8 @@ export function GamificationProvider({ children }) {
     // Initialize or refresh daily challenge
     const initializeDailyChallenge = useCallback(() => {
         const today = format(new Date(), 'yyyy-MM-dd');
-        const savedProgress = localStorage.getItem('userGameProgress');
-        let currentChallenge = null;
-
-        if (savedProgress) {
-            try {
-                const progress = JSON.parse(savedProgress);
-                currentChallenge = progress.dailyChallenge;
-            } catch (error) {
-                console.error('Error parsing daily challenge:', error);
-            }
-        }
+        const savedProgress = storageManager.getGameProgress();
+        let currentChallenge = savedProgress?.dailyChallenge;
 
         if (!currentChallenge || currentChallenge.date !== today) {
             // Generate new challenge
@@ -329,8 +360,10 @@ export function GamificationProvider({ children }) {
 
     // Check for badges when stats change
     useEffect(() => {
-        checkForNewBadges();
-    }, [state.statistics, state.streak, state.currentLevel]);
+        if (state.storageInitialized) {
+            checkForNewBadges();
+        }
+    }, [state.statistics, state.streak, state.currentLevel, state.storageInitialized]);
 
     const updateDailyChallengeProgress = useCallback((action, value = 1) => {
         if (!state.dailyChallenge || state.dailyChallenge.completed) return;
@@ -389,7 +422,7 @@ export function GamificationProvider({ children }) {
     }, []);
 
     const resetProgress = useCallback(() => {
-        localStorage.removeItem('userGameProgress');
+        storageManager.remove('gameProgress', { childScoped: true });
         dispatch({ type: ACTIONS.RESET_PROGRESS });
     }, []);
 

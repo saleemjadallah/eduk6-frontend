@@ -6,6 +6,7 @@ import { useLessonContext } from '../context/LessonContext';
 import { useAuth } from '../context/AuthContext';
 import { useGamificationContext } from '../context/GamificationContext';
 import { useChildStats } from '../hooks/useChildStats';
+import { api } from '../services/api/apiClient';
 import UploadModal from '../components/Upload/UploadModal';
 
 const ChildDashboard = () => {
@@ -54,17 +55,8 @@ const ChildDashboard = () => {
         setDeletingLessonId(lessonId);
 
         try {
-            // Delete from backend
-            const token = localStorage.getItem('auth_token');
-            if (token) {
-                const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
-                await fetch(`${API_BASE_URL}/api/lessons/${lessonId}`, {
-                    method: 'DELETE',
-                    headers: {
-                        'Authorization': `Bearer ${token}`,
-                    },
-                });
-            }
+            // Delete from backend using unified API client (handles auth automatically)
+            await api.delete(`/lessons/${lessonId}`);
 
             // Delete from local context
             deleteLesson(lessonId);

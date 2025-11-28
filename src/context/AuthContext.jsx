@@ -1,5 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
 import { authAPI } from '../services/api/authAPI';
+import { tokenManager } from '../services/api/tokenManager';
+import { storageManager } from '../services/storage/storageManager';
 
 // Create context
 const AuthContext = createContext(null);
@@ -15,74 +17,72 @@ export function AuthProvider({ children }) {
   const [error, setError] = useState(null);
 
   // Helper to set user data and profile from API response
-  const setUserDataFromResponse = (userData) => {
+  const setUserDataFromResponse = useCallback((userData) => {
     setUser(userData.user);
     setChildProfiles(userData.children || []);
 
-    // Load last active profile
-    const lastProfileId = localStorage.getItem('current_profile_id');
-    if (lastProfileId && userData.children?.length > 0) {
-      const profile = userData.children.find(c => c.id === lastProfileId);
-      setCurrentProfile(profile || userData.children[0]);
-    } else if (userData.children?.length > 0) {
-      setCurrentProfile(userData.children[0]);
-    }
-  };
+    // Initialize storage manager with user context
+    if (userData.user?.id) {
+      const lastProfileId = localStorage.getItem('current_profile_id');
+      let activeChildId = null;
 
-  // Load auth state from localStorage on mount
+      if (lastProfileId && userData.children?.length > 0) {
+        const profile = userData.children.find(c => c.id === lastProfileId);
+        if (profile) {
+          setCurrentProfile(profile);
+          activeChildId = profile.id;
+        } else if (userData.children.length > 0) {
+          setCurrentProfile(userData.children[0]);
+          activeChildId = userData.children[0].id;
+          localStorage.setItem('current_profile_id', activeChildId);
+        }
+      } else if (userData.children?.length > 0) {
+        setCurrentProfile(userData.children[0]);
+        activeChildId = userData.children[0].id;
+        localStorage.setItem('current_profile_id', activeChildId);
+      }
+
+      // Initialize storage manager with user and child context
+      storageManager.initialize(userData.user.id, activeChildId);
+    }
+  }, []);
+
+  // Load auth state on mount
   useEffect(() => {
     const loadAuth = async () => {
       try {
-        const token = localStorage.getItem('auth_token');
-        const refreshToken = localStorage.getItem('refresh_token');
+        // Initialize token manager
+        const { hasAccessToken } = tokenManager.initialize();
 
-        if (!token && !refreshToken) {
+        if (!hasAccessToken && !tokenManager.getRefreshToken()) {
           // No tokens at all - user needs to log in
           return;
         }
 
         // Try to get current user with existing token
-        if (token) {
+        if (hasAccessToken) {
           try {
             const response = await authAPI.getCurrentUser();
-            // Backend wraps response in { success, data }, unwrap it
             const userData = response.data || response;
             setUserDataFromResponse(userData);
-            return; // Success - we're done
+            return;
           } catch (err) {
             console.log('Access token invalid, attempting refresh...');
-            // Token might be expired, try to refresh below
           }
         }
 
         // Try to refresh the token
-        if (refreshToken) {
+        if (tokenManager.getRefreshToken()) {
           try {
-            const refreshResponse = await authAPI.refreshToken();
-            // Backend wraps response in { success, data }, unwrap it
-            const tokens = refreshResponse.data || refreshResponse;
-
-            // Store new tokens
-            if (tokens.token) {
-              localStorage.setItem('auth_token', tokens.token);
-            }
-            if (tokens.refreshToken) {
-              localStorage.setItem('refresh_token', tokens.refreshToken);
-            }
-
-            // Now try to get user data with new token
+            await tokenManager.refreshAccessToken();
             const userResponse = await authAPI.getCurrentUser();
-            // Backend wraps response in { success, data }, unwrap it
             const userData = userResponse.data || userResponse;
             setUserDataFromResponse(userData);
             console.log('Token refreshed successfully');
-            return; // Success
+            return;
           } catch (refreshErr) {
             console.error('Token refresh failed:', refreshErr);
-            // Refresh failed - clear everything
-            localStorage.removeItem('auth_token');
-            localStorage.removeItem('refresh_token');
-            localStorage.removeItem('current_profile_id');
+            tokenManager.clearTokens();
           }
         }
       } catch (err) {
@@ -95,7 +95,7 @@ export function AuthProvider({ children }) {
     };
 
     loadAuth();
-  }, []);
+  }, [setUserDataFromResponse]);
 
   // Sign up function
   const signUp = useCallback(async (email, password, firstName, lastName) => {
@@ -130,23 +130,19 @@ export function AuthProvider({ children }) {
         throw new Error(response.error || 'Sign in failed');
       }
 
-      // Response structure: { success: true, data: { token, refreshToken, parent, children } }
       const data = response.data;
-
-      // Store tokens
-      localStorage.setItem('auth_token', data.token);
-      if (data.refreshToken) {
-        localStorage.setItem('refresh_token', data.refreshToken);
-      }
 
       // Set user data
       setUser(data.parent);
       setChildProfiles(data.children || []);
 
-      // Set first child as current profile
+      // Set first child as current profile and initialize storage
       if (data.children?.length > 0) {
         setCurrentProfile(data.children[0]);
         localStorage.setItem('current_profile_id', data.children[0].id);
+        storageManager.initialize(data.parent.id, data.children[0].id);
+      } else {
+        storageManager.initialize(data.parent.id, null);
       }
 
       return { success: true };
@@ -158,7 +154,7 @@ export function AuthProvider({ children }) {
     }
   }, []);
 
-  // Sign out function
+  // Sign out function - clears ALL user data
   const signOut = useCallback(async () => {
     try {
       // Call backend logout to invalidate tokens
@@ -167,9 +163,13 @@ export function AuthProvider({ children }) {
       console.error('Logout error:', err);
     }
 
-    localStorage.removeItem('auth_token');
-    localStorage.removeItem('refresh_token');
-    localStorage.removeItem('current_profile_id');
+    // Clear all user-specific cached data
+    storageManager.clearUserData();
+
+    // Clear tokens (handled by authAPI.logout, but ensure it's done)
+    tokenManager.clearTokens();
+
+    // Reset state
     setUser(null);
     setCurrentProfile(null);
     setChildProfiles([]);
@@ -182,8 +182,13 @@ export function AuthProvider({ children }) {
     if (profile) {
       setCurrentProfile(profile);
       localStorage.setItem('current_profile_id', childId);
+
+      // Update storage manager context
+      if (user?.id) {
+        storageManager.initialize(user.id, childId);
+      }
     }
-  }, [childProfiles]);
+  }, [childProfiles, user?.id]);
 
   // Update user consent status
   const updateConsentStatus = useCallback((status) => {
@@ -206,10 +211,13 @@ export function AuthProvider({ children }) {
     if (childProfiles.length === 0) {
       setCurrentProfile(newChild);
       localStorage.setItem('current_profile_id', newChild.id);
+      if (user?.id) {
+        storageManager.initialize(user.id, newChild.id);
+      }
     }
 
     return newChild;
-  }, [childProfiles.length]);
+  }, [childProfiles.length, user?.id]);
 
   // Update child profile (updates local state after API call)
   const updateChildProfile = useCallback((childId, updates) => {
@@ -227,6 +235,9 @@ export function AuthProvider({ children }) {
 
   // Remove child profile (updates local state after API call)
   const removeChildProfile = useCallback((childId) => {
+    // Clear child's cached data
+    storageManager.clearChildData(childId);
+
     setChildProfiles(prev => prev.filter(child => child.id !== childId));
 
     // Switch to another profile if current one was removed
@@ -235,18 +246,20 @@ export function AuthProvider({ children }) {
       if (remaining.length > 0) {
         setCurrentProfile(remaining[0]);
         localStorage.setItem('current_profile_id', remaining[0].id);
+        if (user?.id) {
+          storageManager.initialize(user.id, remaining[0].id);
+        }
       } else {
         setCurrentProfile(null);
         localStorage.removeItem('current_profile_id');
       }
     }
-  }, [currentProfile?.id, childProfiles]);
+  }, [currentProfile?.id, childProfiles, user?.id]);
 
   // Refresh auth (re-fetch user data)
   const refreshAuth = useCallback(async () => {
     try {
       const response = await authAPI.getCurrentUser();
-      // Backend wraps response in { success, data }, unwrap it
       const userData = response.data || response;
       setUser(userData.user);
       setChildProfiles(userData.children || []);
@@ -261,12 +274,6 @@ export function AuthProvider({ children }) {
     const response = await authAPI.verifyEmail(email, code);
 
     if (response.success && response.token) {
-      // Store tokens
-      localStorage.setItem('auth_token', response.token);
-      if (response.refreshToken) {
-        localStorage.setItem('refresh_token', response.refreshToken);
-      }
-
       // Set user data
       setUser(response.parent);
       setChildProfiles(response.children || []);
@@ -275,10 +282,39 @@ export function AuthProvider({ children }) {
       if (response.children?.length > 0) {
         setCurrentProfile(response.children[0]);
         localStorage.setItem('current_profile_id', response.children[0].id);
+        storageManager.initialize(response.parent.id, response.children[0].id);
+      } else {
+        storageManager.initialize(response.parent.id, null);
       }
     }
 
     return response;
+  }, []);
+
+  // Switch to child mode (uses child token)
+  const switchToChildMode = useCallback(async (childId, pin) => {
+    try {
+      const response = await authAPI.switchToChild(childId, pin);
+      if (response.success) {
+        // Update current profile
+        const profile = childProfiles.find(c => c.id === childId);
+        if (profile) {
+          setCurrentProfile(profile);
+          localStorage.setItem('current_profile_id', childId);
+          storageManager.setCurrentChild(childId);
+        }
+      }
+      return response;
+    } catch (err) {
+      console.error('Switch to child mode error:', err);
+      throw err;
+    }
+  }, [childProfiles]);
+
+  // Switch back to parent mode
+  const switchToParentMode = useCallback(() => {
+    authAPI.switchToParent();
+    // Stay on current profile but in parent mode
   }, []);
 
   // Derived state
@@ -288,6 +324,7 @@ export function AuthProvider({ children }) {
   const needsConsent = user && user.emailVerified && user.consentStatus !== 'verified';
   const needsChildProfile = user && user.emailVerified && hasConsent && childProfiles.length === 0;
   const isReady = !isLoading && isInitialized;
+  const isChildMode = tokenManager.isChildMode();
 
   // Get max children allowed based on subscription tier
   const maxChildrenAllowed = useMemo(() => {
@@ -323,6 +360,7 @@ export function AuthProvider({ children }) {
     needsConsent,
     needsChildProfile,
     isReady,
+    isChildMode,
     maxChildrenAllowed,
     canAddChild,
 
@@ -332,6 +370,10 @@ export function AuthProvider({ children }) {
     signOut,
     verifyEmail,
     refreshAuth,
+
+    // Child mode actions
+    switchToChildMode,
+    switchToParentMode,
 
     // Consent actions
     updateConsentStatus,
@@ -354,6 +396,7 @@ export function AuthProvider({ children }) {
     needsConsent,
     needsChildProfile,
     isReady,
+    isChildMode,
     maxChildrenAllowed,
     canAddChild,
     signUp,
@@ -361,6 +404,8 @@ export function AuthProvider({ children }) {
     signOut,
     verifyEmail,
     refreshAuth,
+    switchToChildMode,
+    switchToParentMode,
     updateConsentStatus,
     switchProfile,
     addChildProfile,

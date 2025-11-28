@@ -1,95 +1,11 @@
 /**
  * Auth API Service
  * Handles authentication-related API calls
+ * Uses unified API client with token manager
  */
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
-
-// Flag to prevent multiple simultaneous refresh attempts
-let isRefreshing = false;
-let refreshPromise = null;
-
-// Helper function to refresh the access token
-async function refreshAccessToken() {
-  const refreshToken = localStorage.getItem('refresh_token');
-  if (!refreshToken) {
-    throw new Error('No refresh token available');
-  }
-
-  const response = await fetch(`${API_BASE_URL}/api/auth/refresh`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ refreshToken }),
-  });
-
-  if (!response.ok) {
-    // Refresh failed - clear tokens
-    localStorage.removeItem('auth_token');
-    localStorage.removeItem('refresh_token');
-    localStorage.removeItem('current_profile_id');
-    throw new Error('Token refresh failed');
-  }
-
-  const responseData = await response.json();
-  // Backend wraps response in { success, data }, unwrap it
-  const data = responseData.data || responseData;
-
-  // Store new tokens
-  if (data.token) {
-    localStorage.setItem('auth_token', data.token);
-  }
-  if (data.refreshToken) {
-    localStorage.setItem('refresh_token', data.refreshToken);
-  }
-
-  return data;
-}
-
-// Helper function to make API requests with automatic token refresh
-async function makeRequest(endpoint, options = {}, retryCount = 0) {
-  const token = localStorage.getItem('auth_token');
-
-  const config = {
-    headers: {
-      'Content-Type': 'application/json',
-      ...(token && { Authorization: `Bearer ${token}` }),
-      ...options.headers,
-    },
-    ...options,
-  };
-
-  const response = await fetch(`${API_BASE_URL}/api${endpoint}`, config);
-
-  // If unauthorized and we haven't retried yet, try to refresh the token
-  if (response.status === 401 && retryCount === 0 && endpoint !== '/auth/refresh') {
-    try {
-      // Prevent multiple simultaneous refresh attempts
-      if (!isRefreshing) {
-        isRefreshing = true;
-        refreshPromise = refreshAccessToken();
-      }
-
-      await refreshPromise;
-      isRefreshing = false;
-      refreshPromise = null;
-
-      // Retry the original request with new token
-      return makeRequest(endpoint, options, retryCount + 1);
-    } catch (refreshError) {
-      isRefreshing = false;
-      refreshPromise = null;
-      console.error('Token refresh failed:', refreshError);
-      throw new Error('Session expired. Please log in again.');
-    }
-  }
-
-  if (!response.ok) {
-    const errorData = await response.json().catch(() => ({}));
-    throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
-  }
-
-  return response.json();
-}
+import { api, publicRequest } from './apiClient.js';
+import { tokenManager } from './tokenManager.js';
 
 export const authAPI = {
   /**
@@ -99,11 +15,11 @@ export const authAPI = {
    * @param {string} data.password - Parent password
    * @param {string} [data.firstName] - Parent first name
    * @param {string} [data.lastName] - Parent last name
-   * @param {string} [data.country] - Country code (default: 'AE')
+   * @param {string} [data.country] - Country code (default: 'US')
    * @returns {Promise<Object>} Response with success status
    */
   signUp: async ({ email, password, firstName, lastName, country }) => {
-    return makeRequest('/auth/signup', {
+    return publicRequest('/auth/signup', {
       method: 'POST',
       body: JSON.stringify({
         email,
@@ -123,10 +39,20 @@ export const authAPI = {
    * @returns {Promise<Object>} Response with token and user data
    */
   signIn: async ({ email, password }) => {
-    return makeRequest('/auth/login', {
+    const response = await publicRequest('/auth/login', {
       method: 'POST',
       body: JSON.stringify({ email, password }),
     });
+
+    // Store tokens via token manager
+    if (response.success && response.data) {
+      tokenManager.setTokens({
+        token: response.data.token,
+        refreshToken: response.data.refreshToken,
+      });
+    }
+
+    return response;
   },
 
   /**
@@ -134,24 +60,37 @@ export const authAPI = {
    * @returns {Promise<Object>} Response with success status
    */
   logout: async () => {
-    const refreshToken = localStorage.getItem('refresh_token');
-    return makeRequest('/auth/logout', {
-      method: 'POST',
-      body: JSON.stringify({ refreshToken }),
-    });
+    const refreshToken = tokenManager.getRefreshToken();
+    try {
+      const response = await api.post('/auth/logout', { refreshToken });
+      return response;
+    } finally {
+      // Always clear tokens, even if API call fails
+      tokenManager.clearTokens();
+    }
   },
 
   /**
    * Verify email with OTP code
    * @param {string} email - User email
    * @param {string} code - OTP verification code
-   * @returns {Promise<Object>} Response with success status
+   * @returns {Promise<Object>} Response with success status and tokens
    */
   verifyEmail: async (email, code) => {
-    return makeRequest('/auth/verify-email', {
+    const response = await publicRequest('/auth/verify-email', {
       method: 'POST',
       body: JSON.stringify({ email, code }),
     });
+
+    // Store tokens if verification successful
+    if (response.success && response.token) {
+      tokenManager.setTokens({
+        token: response.token,
+        refreshToken: response.refreshToken,
+      });
+    }
+
+    return response;
   },
 
   /**
@@ -160,7 +99,7 @@ export const authAPI = {
    * @returns {Promise<Object>} Response with success status
    */
   resendVerificationEmail: async (email) => {
-    return makeRequest('/auth/resend-verification', {
+    return publicRequest('/auth/resend-verification', {
       method: 'POST',
       body: JSON.stringify({ email }),
     });
@@ -172,7 +111,7 @@ export const authAPI = {
    * @returns {Promise<Object>} Response with success status
    */
   requestPasswordReset: async (email) => {
-    return makeRequest('/auth/forgot-password', {
+    return publicRequest('/auth/forgot-password', {
       method: 'POST',
       body: JSON.stringify({ email }),
     });
@@ -185,7 +124,7 @@ export const authAPI = {
    * @returns {Promise<Object>} Response with success status
    */
   verifyResetCode: async (email, code) => {
-    return makeRequest('/auth/verify-reset-code', {
+    return publicRequest('/auth/verify-reset-code', {
       method: 'POST',
       body: JSON.stringify({ email, code }),
     });
@@ -198,7 +137,7 @@ export const authAPI = {
    * @returns {Promise<Object>} Response with success status
    */
   resetPassword: async (email, newPassword) => {
-    return makeRequest('/auth/reset-password', {
+    return publicRequest('/auth/reset-password', {
       method: 'POST',
       body: JSON.stringify({ email, newPassword }),
     });
@@ -209,15 +148,7 @@ export const authAPI = {
    * @returns {Promise<Object>} Response with new access token
    */
   refreshToken: async () => {
-    const refreshToken = localStorage.getItem('refresh_token');
-    if (!refreshToken) {
-      throw new Error('No refresh token available');
-    }
-
-    return makeRequest('/auth/refresh', {
-      method: 'POST',
-      body: JSON.stringify({ refreshToken }),
-    });
+    return tokenManager.refreshAccessToken();
   },
 
   /**
@@ -225,9 +156,7 @@ export const authAPI = {
    * @returns {Promise<Object>} Current user data with children
    */
   getCurrentUser: async () => {
-    return makeRequest('/auth/me', {
-      method: 'GET',
-    });
+    return api.get('/auth/me');
   },
 
   /**
@@ -236,10 +165,7 @@ export const authAPI = {
    * @returns {Promise<Object>} Updated user data
    */
   updateProfile: async (data) => {
-    return makeRequest('/auth/profile', {
-      method: 'PATCH',
-      body: JSON.stringify(data),
-    });
+    return api.patch('/auth/profile', data);
   },
 
   /**
@@ -249,10 +175,7 @@ export const authAPI = {
    * @returns {Promise<Object>} Response with success status
    */
   changePassword: async (currentPassword, newPassword) => {
-    return makeRequest('/auth/change-password', {
-      method: 'POST',
-      body: JSON.stringify({ currentPassword, newPassword }),
-    });
+    return api.post('/auth/change-password', { currentPassword, newPassword });
   },
 
   /**
@@ -260,9 +183,42 @@ export const authAPI = {
    * @returns {Promise<Object>} Response with success status
    */
   deleteAccount: async () => {
-    return makeRequest('/auth/delete-account', {
-      method: 'DELETE',
-    });
+    return api.delete('/auth/delete-account');
+  },
+
+  /**
+   * Switch to child session
+   * @param {string} childId - Child ID to switch to
+   * @param {string} pin - Parent PIN for verification
+   * @returns {Promise<Object>} Response with child token
+   */
+  switchToChild: async (childId, pin) => {
+    const response = await api.post(`/auth/children/${childId}/switch`, { pin });
+
+    // Store child token if successful
+    if (response.success && response.data?.childToken) {
+      tokenManager.setChildToken(response.data.childToken);
+    }
+
+    return response;
+  },
+
+  /**
+   * Switch back to parent mode
+   * Clears child token
+   */
+  switchToParent: () => {
+    tokenManager.clearChildToken();
+  },
+
+  /**
+   * Logout from all devices
+   * @returns {Promise<Object>} Response with sessions invalidated count
+   */
+  logoutAll: async () => {
+    const response = await api.post('/auth/logout-all', {});
+    tokenManager.clearTokens();
+    return response;
   },
 };
 

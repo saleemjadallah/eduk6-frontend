@@ -6,6 +6,8 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { childStatsAPI } from '../services/api/childStatsAPI';
+import { tokenManager } from '../services/api/tokenManager';
+import { storageManager } from '../services/storage/storageManager';
 
 export function useChildStats() {
     const [stats, setStats] = useState({
@@ -26,12 +28,12 @@ export function useChildStats() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
-    // Load local stats from GamificationContext localStorage as fallback
+    // Load local stats from namespaced storage as fallback
     const loadLocalStats = useCallback(() => {
         try {
-            const savedProgress = localStorage.getItem('userGameProgress');
-            if (savedProgress) {
-                const progress = JSON.parse(savedProgress);
+            // Use storage manager which handles namespacing per user/child
+            const progress = storageManager.getGameProgress();
+            if (progress) {
                 setStats(prev => ({
                     ...prev,
                     xp: progress.totalXP || 0,
@@ -82,18 +84,18 @@ export function useChildStats() {
     }, [loadLocalStats]);
 
     useEffect(() => {
-        // Check for auth token and child profile
-        const authToken = localStorage.getItem('auth_token');
-        const childToken = localStorage.getItem('child_token');
+        // Check for auth using token manager
+        const hasAccessToken = tokenManager.isAuthenticated();
+        const isChildMode = tokenManager.isChildMode();
         const currentProfileId = localStorage.getItem('current_profile_id');
 
-        if (childToken) {
+        if (isChildMode) {
             // Child session - use /children/me/stats
             fetchStats();
-        } else if (authToken && currentProfileId) {
+        } else if (hasAccessToken && currentProfileId) {
             // Parent session with selected child profile - use /children/:childId/stats
             fetchStats(currentProfileId);
-        } else if (authToken) {
+        } else if (hasAccessToken) {
             // Parent session but no child selected - fallback to local
             loadLocalStats();
             setLoading(false);
