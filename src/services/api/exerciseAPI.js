@@ -30,8 +30,9 @@ export const exerciseAPI = {
 
   /**
    * Submit an answer for an exercise
-   * @param {string} exerciseId - The exercise ID
+   * @param {string} exerciseId - The exercise ID (can be UUID or marker like "ex-1")
    * @param {string} answer - The submitted answer
+   * @param {string} [lessonId] - Required when exerciseId is a marker ID like "ex-1"
    * @returns {Promise<Object>} Response with validation result
    * @returns {boolean} response.data.isCorrect - Whether the answer is correct
    * @returns {string} response.data.feedback - Jeffrey's feedback message
@@ -41,12 +42,19 @@ export const exerciseAPI = {
    * @returns {number} response.data.xpAwarded - XP awarded for this attempt
    * @returns {number} response.data.attemptNumber - The attempt number
    */
-  submitAnswer: async (exerciseId, answer) => {
+  submitAnswer: async (exerciseId, answer, lessonId = null) => {
+    const body = {
+      submittedAnswer: answer,
+    };
+
+    // Include lessonId if provided (needed for marker ID lookups like "ex-1")
+    if (lessonId) {
+      body.lessonId = lessonId;
+    }
+
     return makeRequest(`/exercises/${exerciseId}/submit`, {
       method: 'POST',
-      body: JSON.stringify({
-        submittedAnswer: answer,
-      }),
+      body: JSON.stringify(body),
     });
   },
 

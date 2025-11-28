@@ -9,6 +9,7 @@ import { InlineExercise } from '../Exercise';
 const LessonContentRenderer = ({
   content,
   exercises = [], // Exercise data from database for hints/answers
+  lessonId, // Required for exercise submissions with marker IDs
   onExerciseComplete,
 }) => {
   // Create a map of exercises by their HTML ID (stored in originalPosition)
@@ -119,6 +120,7 @@ const LessonContentRenderer = ({
                 questionText={part.questionText}
                 exerciseType={part.exerciseType}
                 exercise={part.exercise}
+                lessonId={lessonId}
                 onComplete={(result) => onExerciseComplete?.(part.exerciseId, result)}
               />
             );
