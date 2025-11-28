@@ -1,4 +1,4 @@
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { createBrowserRouter, RouterProvider, Navigate, Outlet, ScrollRestoration } from 'react-router-dom';
 import { LessonProvider } from './context/LessonContext';
 import { GamificationProvider } from './context/GamificationContext';
 import { FlashcardProvider } from './context/FlashcardContext';
@@ -27,7 +27,7 @@ import ScrollToTop from './components/Routing/ScrollToTop';
 import { ChildLayout, ParentLayout } from './components/Layouts';
 import ParentPinVerification from './components/Parent/ParentPinVerification';
 
-function App() {
+function RootLayout() {
     return (
         <AuthProvider>
             <LessonProvider>
@@ -35,87 +35,11 @@ function App() {
                     <SelectionProvider>
                         <FlashcardProvider>
                             <ChatProvider>
-                                <Router>
                                 <ScrollToTop />
+                                <ScrollRestoration getKey={(location) => location.pathname} />
                                 <ModeProvider>
-                                    <Routes>
-                                        {/* Public routes */}
-                                        <Route path="/" element={<HomePage />} />
-                                        <Route path="/login" element={<LoginPage />} />
-                                        <Route path="/onboarding" element={<OnboardingPage />} />
-
-                                        {/* Child routes - wrapped in ChildLayout */}
-                                        <Route
-                                            path="/learn"
-                                            element={
-                                                <ProtectedRoute>
-                                                    <ModeRoute mode="child">
-                                                        <ChildLayout />
-                                                    </ModeRoute>
-                                                </ProtectedRoute>
-                                            }
-                                        >
-                                            <Route index element={<ChildDashboard />} />
-                                            <Route path="study" element={<Navigate to="/learn" replace />} />
-                                            <Route path="study/:lessonId" element={<StudyPage />} />
-                                            <Route path="achievements" element={<AchievementsPage />} />
-                                            <Route path="flashcards" element={<FlashcardsPage />} />
-                                            <Route path="flashcards/:deckId" element={<FlashcardsPage />} />
-                                        </Route>
-
-                                        {/* Legacy routes - redirect to new structure */}
-                                        <Route path="/study" element={<Navigate to="/learn" replace />} />
-                                        <Route path="/achievements" element={<Navigate to="/learn/achievements" replace />} />
-                                        <Route path="/flashcards" element={<Navigate to="/learn/flashcards" replace />} />
-
-                                        {/* Parent PIN verification route */}
-                                        <Route
-                                            path="/parent/verify-pin"
-                                            element={
-                                                <ProtectedRoute requireProfile={false}>
-                                                    <ParentPinVerification />
-                                                </ProtectedRoute>
-                                            }
-                                        />
-
-                                        {/* Parent routes - wrapped in ParentLayout */}
-                                        <Route
-                                            path="/parent"
-                                            element={
-                                                <ProtectedRoute requireProfile={false}>
-                                                    <ModeRoute mode="parent">
-                                                        <ParentLayout />
-                                                    </ModeRoute>
-                                                </ProtectedRoute>
-                                            }
-                                        >
-                                            <Route index element={<Navigate to="/parent/dashboard" replace />} />
-                                            <Route path="dashboard" element={<ParentDashboard />} />
-                                            <Route path="children" element={<MyChildrenPage />} />
-                                            <Route path="children/:childId" element={<ChildDetailsPage />} />
-                                            <Route path="reports" element={<PlaceholderPage title="Progress Reports" />} />
-                                            <Route path="safety" element={<PlaceholderPage title="Safety Logs" />} />
-                                            <Route path="settings" element={<PlaceholderPage title="Settings" />} />
-                                            <Route path="privacy" element={<PlaceholderPage title="Privacy Controls" />} />
-                                            <Route path="billing" element={<PlaceholderPage title="Subscription" />} />
-                                            <Route path="support" element={<PlaceholderPage title="Support" />} />
-                                        </Route>
-
-                                        {/* Add child route */}
-                                        <Route
-                                            path="/add-child"
-                                            element={
-                                                <ProtectedRoute requireProfile={false}>
-                                                    <OnboardingPage initialStep="create_profile" />
-                                                </ProtectedRoute>
-                                            }
-                                        />
-
-                                        {/* Catch-all redirect */}
-                                        <Route path="*" element={<Navigate to="/learn" replace />} />
-                                    </Routes>
+                                    <Outlet />
                                 </ModeProvider>
-                                </Router>
                                 {/* Global reward popup for celebrations */}
                                 <RewardPopup />
                             </ChatProvider>
@@ -148,5 +72,94 @@ function PlaceholderPage({ title }) {
         </div>
     );
 }
+
+const router = createBrowserRouter([
+    {
+        element: <RootLayout />,
+        children: [
+            // Public routes
+            { path: '/', element: <HomePage /> },
+            { path: '/login', element: <LoginPage /> },
+            { path: '/onboarding', element: <OnboardingPage /> },
+
+            // Child routes - wrapped in ChildLayout
+            {
+                path: '/learn',
+                element: (
+                    <ProtectedRoute>
+                        <ModeRoute mode="child">
+                            <ChildLayout />
+                        </ModeRoute>
+                    </ProtectedRoute>
+                ),
+                children: [
+                    { index: true, element: <ChildDashboard /> },
+                    { path: 'study', element: <Navigate to="/learn" replace /> },
+                    { path: 'study/:lessonId', element: <StudyPage /> },
+                    { path: 'achievements', element: <AchievementsPage /> },
+                    { path: 'flashcards', element: <FlashcardsPage /> },
+                    { path: 'flashcards/:deckId', element: <FlashcardsPage /> },
+                ],
+            },
+
+            // Legacy routes - redirect to new structure
+            { path: '/study', element: <Navigate to="/learn" replace /> },
+            { path: '/achievements', element: <Navigate to="/learn/achievements" replace /> },
+            { path: '/flashcards', element: <Navigate to="/learn/flashcards" replace /> },
+
+            // Parent PIN verification route
+            {
+                path: '/parent/verify-pin',
+                element: (
+                    <ProtectedRoute requireProfile={false}>
+                        <ParentPinVerification />
+                    </ProtectedRoute>
+                ),
+            },
+
+            // Parent routes - wrapped in ParentLayout
+            {
+                path: '/parent',
+                element: (
+                    <ProtectedRoute requireProfile={false}>
+                        <ModeRoute mode="parent">
+                            <ParentLayout />
+                        </ModeRoute>
+                    </ProtectedRoute>
+                ),
+                children: [
+                    { index: true, element: <Navigate to="/parent/dashboard" replace /> },
+                    { path: 'dashboard', element: <ParentDashboard /> },
+                    { path: 'children', element: <MyChildrenPage /> },
+                    { path: 'children/:childId', element: <ChildDetailsPage /> },
+                    { path: 'reports', element: <PlaceholderPage title="Progress Reports" /> },
+                    { path: 'safety', element: <PlaceholderPage title="Safety Logs" /> },
+                    { path: 'settings', element: <PlaceholderPage title="Settings" /> },
+                    { path: 'privacy', element: <PlaceholderPage title="Privacy Controls" /> },
+                    { path: 'billing', element: <PlaceholderPage title="Subscription" /> },
+                    { path: 'support', element: <PlaceholderPage title="Support" /> },
+                ],
+            },
+
+            // Add child route
+            {
+                path: '/add-child',
+                element: (
+                    <ProtectedRoute requireProfile={false}>
+                        <OnboardingPage initialStep="create_profile" />
+                    </ProtectedRoute>
+                ),
+            },
+
+            // Catch-all redirect
+            { path: '*', element: <Navigate to="/learn" replace /> },
+        ],
+    },
+]);
+
+function App() {
+    return <RouterProvider router={router} />;
+}
+
 
 export default App;
