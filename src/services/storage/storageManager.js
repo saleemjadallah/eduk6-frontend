@@ -7,6 +7,7 @@
  * - Clears all user data on logout
  * - Migrates legacy global keys to namespaced keys
  * - Handles JSON serialization/deserialization
+ * - Graceful handling of localStorage restrictions (incognito mode)
  */
 
 // Legacy keys that need migration (global keys without namespacing)
@@ -27,8 +28,95 @@ const PREFIX = {
 let currentUserId = null;
 let currentChildId = null;
 
+// In-memory fallback storage for incognito mode
+const memoryStorage = new Map();
+
 // Event listeners for storage changes
 const storageListeners = new Set();
+
+// Check if localStorage is available
+let localStorageAvailable = true;
+try {
+  const testKey = '__storage_test__';
+  localStorage.setItem(testKey, testKey);
+  localStorage.removeItem(testKey);
+} catch (e) {
+  localStorageAvailable = false;
+  console.warn('localStorage not available (incognito mode?). Using memory-only storage.');
+}
+
+/**
+ * Safe localStorage getter
+ */
+function safeGetItem(key) {
+  if (!localStorageAvailable) {
+    return memoryStorage.get(key) || null;
+  }
+  try {
+    return localStorage.getItem(key);
+  } catch (e) {
+    console.warn(`Failed to read ${key} from localStorage:`, e);
+    return memoryStorage.get(key) || null;
+  }
+}
+
+/**
+ * Safe localStorage setter
+ */
+function safeSetItem(key, value) {
+  // Always store in memory as fallback
+  memoryStorage.set(key, value);
+
+  if (!localStorageAvailable) return;
+  try {
+    localStorage.setItem(key, value);
+  } catch (e) {
+    console.warn(`Failed to write ${key} to localStorage:`, e);
+  }
+}
+
+/**
+ * Safe localStorage remover
+ */
+function safeRemoveItem(key) {
+  memoryStorage.delete(key);
+
+  if (!localStorageAvailable) return;
+  try {
+    localStorage.removeItem(key);
+  } catch (e) {
+    console.warn(`Failed to remove ${key} from localStorage:`, e);
+  }
+}
+
+/**
+ * Safe localStorage key getter
+ */
+function safeKey(index) {
+  if (!localStorageAvailable) {
+    const keys = Array.from(memoryStorage.keys());
+    return keys[index] || null;
+  }
+  try {
+    return localStorage.key(index);
+  } catch (e) {
+    return null;
+  }
+}
+
+/**
+ * Safe localStorage length getter
+ */
+function safeLength() {
+  if (!localStorageAvailable) {
+    return memoryStorage.size;
+  }
+  try {
+    return localStorage.length;
+  } catch (e) {
+    return memoryStorage.size;
+  }
+}
 
 /**
  * Storage Manager singleton
@@ -84,7 +172,7 @@ export const storageManager = {
   get(key, options = {}) {
     try {
       const namespacedKey = this.buildKey(key, options);
-      const value = localStorage.getItem(namespacedKey);
+      const value = safeGetItem(namespacedKey);
       return value ? JSON.parse(value) : null;
     } catch (error) {
       console.error(`Error reading from storage: ${key}`, error);
@@ -101,7 +189,7 @@ export const storageManager = {
   set(key, value, options = {}) {
     try {
       const namespacedKey = this.buildKey(key, options);
-      localStorage.setItem(namespacedKey, JSON.stringify(value));
+      safeSetItem(namespacedKey, JSON.stringify(value));
       this.notifyListeners(key, value);
     } catch (error) {
       console.error(`Error writing to storage: ${key}`, error);
@@ -116,7 +204,7 @@ export const storageManager = {
   remove(key, options = {}) {
     try {
       const namespacedKey = this.buildKey(key, options);
-      localStorage.removeItem(namespacedKey);
+      safeRemoveItem(namespacedKey);
       this.notifyListeners(key, null);
     } catch (error) {
       console.error(`Error removing from storage: ${key}`, error);
@@ -131,10 +219,11 @@ export const storageManager = {
     if (!currentUserId) return;
 
     const keysToRemove = [];
+    const length = safeLength();
 
     // Find all keys for this user
-    for (let i = 0; i < localStorage.length; i++) {
-      const key = localStorage.key(i);
+    for (let i = 0; i < length; i++) {
+      const key = safeKey(i);
       if (key && (
         key.startsWith(`${PREFIX.USER}${currentUserId}`) ||
         (currentChildId && key.startsWith(`${PREFIX.CHILD}${currentChildId}`))
@@ -145,18 +234,21 @@ export const storageManager = {
 
     // Also find all child keys for this user's children
     // We need to clear all children's data, not just the current child
-    for (let i = 0; i < localStorage.length; i++) {
-      const key = localStorage.key(i);
+    for (let i = 0; i < length; i++) {
+      const key = safeKey(i);
       if (key && key.startsWith(PREFIX.CHILD)) {
         keysToRemove.push(key);
       }
     }
 
     // Remove all found keys
-    keysToRemove.forEach(key => localStorage.removeItem(key));
+    keysToRemove.forEach(key => safeRemoveItem(key));
 
     // Also clear legacy keys
-    Object.values(LEGACY_KEYS).forEach(key => localStorage.removeItem(key));
+    Object.values(LEGACY_KEYS).forEach(key => safeRemoveItem(key));
+
+    // Clear memory storage too
+    memoryStorage.clear();
 
     // Clear context
     currentUserId = null;
@@ -171,15 +263,23 @@ export const storageManager = {
    */
   clearChildData(childId) {
     const keysToRemove = [];
+    const length = safeLength();
 
-    for (let i = 0; i < localStorage.length; i++) {
-      const key = localStorage.key(i);
+    for (let i = 0; i < length; i++) {
+      const key = safeKey(i);
       if (key && key.startsWith(`${PREFIX.CHILD}${childId}`)) {
         keysToRemove.push(key);
       }
     }
 
-    keysToRemove.forEach(key => localStorage.removeItem(key));
+    keysToRemove.forEach(key => safeRemoveItem(key));
+
+    // Also clear from memory storage
+    for (const key of memoryStorage.keys()) {
+      if (key.startsWith(`${PREFIX.CHILD}${childId}`)) {
+        memoryStorage.delete(key);
+      }
+    }
   },
 
   /**
@@ -189,30 +289,30 @@ export const storageManager = {
    */
   migrateLegacyData(userId, childId) {
     // Migrate lessons (user-scoped)
-    const legacyLessons = localStorage.getItem(LEGACY_KEYS.LESSONS);
+    const legacyLessons = safeGetItem(LEGACY_KEYS.LESSONS);
     if (legacyLessons && childId) {
       const childLessonsKey = this.buildKey('lessons', { childScoped: true });
-      if (!localStorage.getItem(childLessonsKey)) {
-        localStorage.setItem(childLessonsKey, legacyLessons);
+      if (!safeGetItem(childLessonsKey)) {
+        safeSetItem(childLessonsKey, legacyLessons);
       }
       // Don't remove legacy data yet - wait for successful migration verification
     }
 
     // Migrate current lesson ID (child-scoped)
-    const legacyCurrentLessonId = localStorage.getItem(LEGACY_KEYS.CURRENT_LESSON_ID);
+    const legacyCurrentLessonId = safeGetItem(LEGACY_KEYS.CURRENT_LESSON_ID);
     if (legacyCurrentLessonId && childId) {
       const childCurrentLessonKey = this.buildKey('currentLessonId', { childScoped: true });
-      if (!localStorage.getItem(childCurrentLessonKey)) {
-        localStorage.setItem(childCurrentLessonKey, JSON.stringify(legacyCurrentLessonId));
+      if (!safeGetItem(childCurrentLessonKey)) {
+        safeSetItem(childCurrentLessonKey, JSON.stringify(legacyCurrentLessonId));
       }
     }
 
     // Migrate gamification progress (child-scoped)
-    const legacyGameProgress = localStorage.getItem(LEGACY_KEYS.GAME_PROGRESS);
+    const legacyGameProgress = safeGetItem(LEGACY_KEYS.GAME_PROGRESS);
     if (legacyGameProgress && childId) {
       const childGameProgressKey = this.buildKey('gameProgress', { childScoped: true });
-      if (!localStorage.getItem(childGameProgressKey)) {
-        localStorage.setItem(childGameProgressKey, legacyGameProgress);
+      if (!safeGetItem(childGameProgressKey)) {
+        safeSetItem(childGameProgressKey, legacyGameProgress);
       }
     }
   },
