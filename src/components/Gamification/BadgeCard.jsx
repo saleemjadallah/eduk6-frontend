@@ -16,8 +16,23 @@ const RARITY_BORDERS = {
     legendary: 'border-yellow-500',
 };
 
+const RARITY_GLOW = {
+    common: '',
+    rare: 'shadow-[0_0_15px_rgba(59,130,246,0.5)]',
+    epic: 'shadow-[0_0_20px_rgba(139,92,246,0.6)]',
+    legendary: 'shadow-[0_0_25px_rgba(245,158,11,0.7)]',
+};
+
+// Get badge image path
+const getBadgeImagePath = (badgeId) => `/assets/badges/${badgeId}.png`;
+
 const BadgeCard = ({ badge }) => {
     const [showTooltip, setShowTooltip] = useState(false);
+    const [imageError, setImageError] = useState(false);
+
+    // Check if we should use the generated image
+    const badgeImagePath = getBadgeImagePath(badge.id);
+    const useGeneratedImage = !imageError;
 
     return (
         <div className="relative">
@@ -27,20 +42,47 @@ const BadgeCard = ({ badge }) => {
                 onHoverStart={() => setShowTooltip(true)}
                 onHoverEnd={() => setShowTooltip(false)}
                 className={`
-                    relative aspect-square rounded-2xl border-4 cursor-pointer
+                    relative aspect-square rounded-2xl border-4 cursor-pointer overflow-hidden
                     ${badge.unlocked
-                        ? `${RARITY_BORDERS[badge.rarity]} bg-gradient-to-br ${RARITY_COLORS[badge.rarity]}`
+                        ? `${RARITY_BORDERS[badge.rarity]} ${RARITY_GLOW[badge.rarity]}`
                         : 'border-gray-300 bg-gray-100'
                     }
                     shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]
-                    flex flex-col items-center justify-center p-2
+                    flex flex-col items-center justify-center
                     transition-all
                 `}
             >
-                {/* Badge Icon/Emoji */}
-                <div className={`text-3xl ${!badge.unlocked && 'opacity-30 grayscale'}`}>
-                    {badge.unlocked ? badge.icon : <Lock className="w-6 h-6 text-gray-400" />}
-                </div>
+                {/* Badge Image or Fallback */}
+                {badge.unlocked ? (
+                    useGeneratedImage ? (
+                        <img
+                            src={badgeImagePath}
+                            alt={badge.name}
+                            className="w-full h-full object-cover"
+                            onError={() => setImageError(true)}
+                        />
+                    ) : (
+                        <div className={`text-3xl bg-gradient-to-br ${RARITY_COLORS[badge.rarity]} w-full h-full flex items-center justify-center`}>
+                            {badge.icon}
+                        </div>
+                    )
+                ) : (
+                    <div className="flex flex-col items-center justify-center p-2 opacity-50 grayscale">
+                        {useGeneratedImage ? (
+                            <img
+                                src={badgeImagePath}
+                                alt={badge.name}
+                                className="w-full h-full object-cover opacity-30 grayscale"
+                                onError={() => setImageError(true)}
+                            />
+                        ) : (
+                            <Lock className="w-6 h-6 text-gray-400" />
+                        )}
+                        <div className="absolute inset-0 flex items-center justify-center bg-gray-200/60">
+                            <Lock className="w-6 h-6 text-gray-500" />
+                        </div>
+                    </div>
+                )}
 
                 {/* Rarity indicator for unlocked badges */}
                 {badge.unlocked && badge.rarity !== 'common' && (
