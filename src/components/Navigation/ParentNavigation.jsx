@@ -1,11 +1,9 @@
 import React from 'react';
-import { NavLink, useNavigate } from 'react-router-dom';
+import { NavLink } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import './ParentNavigation.css';
 
 const ParentNavigation = () => {
-  const navigate = useNavigate();
-
   // Try to get auth context
   let childCount = 0;
   try {
@@ -46,25 +44,6 @@ const ParentNavigation = () => {
     }
   ];
 
-  const safeNavigate = (to, e) => {
-    if (e) {
-      e.preventDefault();
-    }
-
-    const targetPath = new URL(to, window.location.origin).pathname;
-
-    try {
-      navigate(to);
-      setTimeout(() => {
-        if (window.location.pathname !== targetPath) {
-          window.location.assign(to);
-        }
-      }, 150);
-    } catch (err) {
-      window.location.assign(to);
-    }
-  };
-
   return (
     <nav className="parent-navigation">
       {navSections.map((section, idx) => (
@@ -75,7 +54,6 @@ const ParentNavigation = () => {
               <li key={item.to}>
                 <NavLink
                   to={item.to}
-                  onClick={(e) => safeNavigate(item.to, e)}
                   className={({ isActive }) =>
                     `parent-nav-item ${isActive ? 'active' : ''}`
                   }

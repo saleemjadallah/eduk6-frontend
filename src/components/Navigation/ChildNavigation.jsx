@@ -1,56 +1,21 @@
 import React from 'react';
-import { NavLink, useNavigate } from 'react-router-dom';
-import { useAuth } from '../../context/AuthContext';
+import { NavLink } from 'react-router-dom';
 import './ChildNavigation.css';
 
 const ChildNavigation = () => {
-  const navigate = useNavigate();
-
-  // Try to get auth context
-  let currentProfile = null;
-  try {
-    const authContext = useAuth();
-    currentProfile = authContext?.currentProfile;
-  } catch (e) {
-    // AuthProvider not available
-  }
-
   // Navigation items - Dashboard and Progress only
-  const getNavItems = () => {
-    return [
-      { to: '/learn', label: 'Dashboard', icon: '🏠', end: true },
-      { to: '/learn/achievements', label: 'Progress', icon: '📈' },
-    ];
-  };
-
-  const safeNavigate = (to, e) => {
-    if (e) {
-      e.preventDefault();
-    }
-
-    const targetPath = new URL(to, window.location.origin).pathname;
-
-    try {
-      navigate(to);
-      // If the SPA transition stalls, force a hard nav shortly after
-      setTimeout(() => {
-        if (window.location.pathname !== targetPath) {
-          window.location.assign(to);
-        }
-      }, 150);
-    } catch (err) {
-      window.location.assign(to);
-    }
-  };
+  const navItems = [
+    { to: '/learn', label: 'Dashboard', icon: '🏠', end: true },
+    { to: '/learn/achievements', label: 'Progress', icon: '📈' },
+  ];
 
   return (
     <nav className="child-navigation">
-      {getNavItems().map(item => (
+      {navItems.map(item => (
         <NavLink
           key={item.to}
           to={item.to}
           end={item.end}
-          onClick={(e) => safeNavigate(item.to, e)}
           className={({ isActive }) =>
             `child-nav-item ${isActive ? 'active' : ''}`
           }

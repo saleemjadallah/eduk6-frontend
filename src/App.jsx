@@ -23,7 +23,6 @@ import LoginPage from './pages/LoginPage';
 import { RewardPopup } from './components/Gamification';
 import ProtectedRoute from './components/Routing/ProtectedRoute';
 import ModeRoute from './components/Routing/ModeRoute';
-import ScrollToTop from './components/Routing/ScrollToTop';
 import { ChildLayout, ParentLayout } from './components/Layouts';
 import ParentPinVerification from './components/Parent/ParentPinVerification';
 
@@ -35,7 +34,6 @@ function RootLayout() {
                     <SelectionProvider>
                         <FlashcardProvider>
                             <ChatProvider>
-                                <ScrollToTop />
                                 <ScrollRestoration getKey={(location) => location.pathname} />
                                 <ModeProvider>
                                     <Outlet />

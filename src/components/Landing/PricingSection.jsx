@@ -7,14 +7,6 @@ const PricingSection = () => {
   const navigate = useNavigate();
   const [showFAQ, setShowFAQ] = useState({});
 
-  const safeNavigate = (path) => {
-    try {
-      navigate(path);
-    } catch (e) {
-      window.location.assign(path);
-    }
-  };
-
   // Pricing tiers - values to be filled in by user
   const tiers = [
     {
@@ -205,7 +197,7 @@ const PricingSection = () => {
 
                 {/* CTA */}
                 <button
-                  onClick={() => safeNavigate('/onboarding')}
+                  onClick={() => navigate('/onboarding')}
                   className={`w-full py-4 rounded-2xl font-bold text-lg border-4 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:translate-y-[-2px] hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] active:translate-y-[2px] active:shadow-none transition-all ${
                     tier.popular
                       ? 'bg-nanobanana-blue text-white'

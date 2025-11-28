@@ -119,17 +119,7 @@ export function ModeProvider({ children }) {
         setLastActivity(new Date());
 
         // Navigate to parent dashboard
-        const targetPath = '/parent/dashboard';
-        try {
-          navigate(targetPath);
-          setTimeout(() => {
-            if (window.location.pathname !== targetPath) {
-              window.location.assign(targetPath);
-            }
-          }, 150);
-        } catch (navErr) {
-          window.location.assign(targetPath);
-        }
+        navigate('/parent/dashboard');
 
         setIsTransitioning(false);
         return { success: true };
@@ -158,19 +148,7 @@ export function ModeProvider({ children }) {
     setPinError(null);
 
     // Navigate to child learning dashboard
-    setTimeout(() => {
-      const targetPath = '/learn';
-      try {
-        navigate(targetPath);
-        setTimeout(() => {
-          if (window.location.pathname !== targetPath) {
-            window.location.assign(targetPath);
-          }
-        }, 150);
-      } catch (navErr) {
-        window.location.assign(targetPath);
-      }
-    }, 0);
+    navigate('/learn');
   }, [navigate]);
 
   /**
