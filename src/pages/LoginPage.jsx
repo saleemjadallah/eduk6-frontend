@@ -35,6 +35,11 @@ const LoginPage = () => {
     }
   };
 
+  // Use a hard navigation when we absolutely need the new screen to render (e.g., after login)
+  const hardNavigate = (path) => {
+    window.location.assign(path);
+  };
+
   // Redirect based on authentication state
   useEffect(() => {
     if (!isReady) return;
@@ -49,7 +54,7 @@ const LoginPage = () => {
         safeNavigate('/onboarding', { step: 'create_profile' });
       } else if (hasConsent && children.length > 0) {
         // Fully set up - go to dashboard
-        safeNavigate('/learn');
+        hardNavigate('/learn');
       }
     }
   }, [isAuthenticated, hasConsent, children, needsEmailVerification, needsConsent, needsChildProfile, isReady, navigate]);
@@ -116,7 +121,7 @@ const LoginPage = () => {
         }
 
         // Fully set up - go to dashboard
-        safeNavigate('/learn');
+        hardNavigate('/learn');
       }
       // Fallback: if for some reason user isn't present, let the effect handle it
     } catch (err) {
