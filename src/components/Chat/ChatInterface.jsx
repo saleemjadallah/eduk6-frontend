@@ -1,11 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Send, Image, FileText, Sparkles, Clock, RefreshCw, Trash2, BookOpen, Loader2, HelpCircle } from 'lucide-react';
+import { Send, Image, FileText, Sparkles, Clock, RefreshCw, Trash2, BookOpen, Loader2, HelpCircle, ZoomIn } from 'lucide-react';
 import Jeffrey from '../Avatar/Jeffrey';
 import SafetyIndicator from './SafetyIndicator';
 import FlashcardInline from './FlashcardInline';
 import SummaryInline from './SummaryInline';
 import QuizInline from './QuizInline';
+import ExpandedViewModal from './ExpandedViewModal';
 import { useLessonContext } from '../../context/LessonContext';
 import { useChatContext } from '../../context/ChatContext';
 import { useLessonActions } from '../../hooks/useLessonActions';
@@ -50,6 +51,17 @@ const ChatInterface = ({
     const [isGeneratingInfographic, setIsGeneratingInfographic] = useState(false);
     const [isGeneratingSummary, setIsGeneratingSummary] = useState(false);
     const [isGeneratingQuiz, setIsGeneratingQuiz] = useState(false);
+
+    // Expanded view modal state
+    const [expandedView, setExpandedView] = useState({ isOpen: false, type: null, data: null });
+
+    const handleExpandView = (type, data) => {
+        setExpandedView({ isOpen: true, type, data });
+    };
+
+    const handleCloseExpandedView = () => {
+        setExpandedView({ isOpen: false, type: null, data: null });
+    };
 
     // Get messages and state from ChatContext if available
     const messages = chatContext?.messages || demoMessages;
@@ -634,9 +646,18 @@ const ChatInterface = ({
                         {/* Flashcards message */}
                         {msg.messageType === 'flashcards' && msg.flashcards && (
                             <div className="w-full max-w-md p-3 bg-gray-100 rounded-2xl border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] rounded-bl-none">
-                                <div className="flex items-center gap-2 mb-3 text-sm font-bold text-gray-600">
-                                    <FileText className="w-4 h-4" />
-                                    <span>Flashcards for you!</span>
+                                <div className="flex items-center justify-between mb-3">
+                                    <div className="flex items-center gap-2 text-sm font-bold text-gray-600">
+                                        <FileText className="w-4 h-4" />
+                                        <span>Flashcards for you!</span>
+                                    </div>
+                                    <button
+                                        onClick={() => handleExpandView('flashcards', msg.flashcards)}
+                                        className="p-1.5 bg-white border-2 border-black rounded-lg hover:bg-nanobanana-yellow transition-colors shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] active:translate-y-[1px] active:shadow-none"
+                                        title="Expand view"
+                                    >
+                                        <ZoomIn className="w-4 h-4" />
+                                    </button>
                                 </div>
                                 <FlashcardInline flashcards={msg.flashcards} />
                             </div>
@@ -645,9 +666,18 @@ const ChatInterface = ({
                         {/* Summary message */}
                         {msg.messageType === 'summary' && msg.summary && (
                             <div className="w-full max-w-lg p-3 bg-gray-100 rounded-2xl border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] rounded-bl-none">
-                                <div className="flex items-center gap-2 mb-3 text-sm font-bold text-gray-600">
-                                    <BookOpen className="w-4 h-4" />
-                                    <span>Here's your lesson summary!</span>
+                                <div className="flex items-center justify-between mb-3">
+                                    <div className="flex items-center gap-2 text-sm font-bold text-gray-600">
+                                        <BookOpen className="w-4 h-4" />
+                                        <span>Here's your lesson summary!</span>
+                                    </div>
+                                    <button
+                                        onClick={() => handleExpandView('summary', msg.summary)}
+                                        className="p-1.5 bg-white border-2 border-black rounded-lg hover:bg-nanobanana-yellow transition-colors shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] active:translate-y-[1px] active:shadow-none"
+                                        title="Expand view"
+                                    >
+                                        <ZoomIn className="w-4 h-4" />
+                                    </button>
                                 </div>
                                 <SummaryInline summary={msg.summary} />
                             </div>
@@ -656,9 +686,18 @@ const ChatInterface = ({
                         {/* Infographic message */}
                         {msg.messageType === 'infographic' && msg.imageData && (
                             <div className="w-full max-w-md p-3 bg-gray-100 rounded-2xl border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] rounded-bl-none">
-                                <div className="flex items-center gap-2 mb-3 text-sm font-bold text-gray-600">
-                                    <Image className="w-4 h-4" />
-                                    <span>Here's your infographic!</span>
+                                <div className="flex items-center justify-between mb-3">
+                                    <div className="flex items-center gap-2 text-sm font-bold text-gray-600">
+                                        <Image className="w-4 h-4" />
+                                        <span>Here's your infographic!</span>
+                                    </div>
+                                    <button
+                                        onClick={() => handleExpandView('infographic', { imageData: msg.imageData, mimeType: msg.mimeType, text: msg.text })}
+                                        className="p-1.5 bg-white border-2 border-black rounded-lg hover:bg-nanobanana-yellow transition-colors shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] active:translate-y-[1px] active:shadow-none"
+                                        title="Expand view"
+                                    >
+                                        <ZoomIn className="w-4 h-4" />
+                                    </button>
                                 </div>
                                 <img
                                     src={`data:${msg.mimeType || 'image/png'};base64,${msg.imageData}`}
@@ -674,9 +713,18 @@ const ChatInterface = ({
                         {/* Image message (from chat drawing requests) */}
                         {msg.messageType === 'image' && msg.imageData && (
                             <div className="w-full max-w-md p-3 bg-gradient-to-br from-purple-50 to-pink-50 rounded-2xl border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] rounded-bl-none">
-                                <div className="flex items-center gap-2 mb-3 text-sm font-bold text-purple-600">
-                                    <Sparkles className="w-4 h-4" />
-                                    <span>Jeffrey drew this for you!</span>
+                                <div className="flex items-center justify-between mb-3">
+                                    <div className="flex items-center gap-2 text-sm font-bold text-purple-600">
+                                        <Sparkles className="w-4 h-4" />
+                                        <span>Jeffrey drew this for you!</span>
+                                    </div>
+                                    <button
+                                        onClick={() => handleExpandView('image', { imageData: msg.imageData, mimeType: msg.mimeType, text: msg.text })}
+                                        className="p-1.5 bg-white border-2 border-black rounded-lg hover:bg-nanobanana-yellow transition-colors shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] active:translate-y-[1px] active:shadow-none"
+                                        title="Expand view"
+                                    >
+                                        <ZoomIn className="w-4 h-4" />
+                                    </button>
                                 </div>
                                 <img
                                     src={`data:${msg.mimeType || 'image/png'};base64,${msg.imageData}`}
@@ -692,9 +740,18 @@ const ChatInterface = ({
                         {/* Quiz message */}
                         {msg.messageType === 'quiz' && msg.quiz && (
                             <div className="w-full max-w-lg p-3 bg-gray-100 rounded-2xl border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] rounded-bl-none">
-                                <div className="flex items-center gap-2 mb-3 text-sm font-bold text-gray-600">
-                                    <HelpCircle className="w-4 h-4" />
-                                    <span>Let's test your knowledge!</span>
+                                <div className="flex items-center justify-between mb-3">
+                                    <div className="flex items-center gap-2 text-sm font-bold text-gray-600">
+                                        <HelpCircle className="w-4 h-4" />
+                                        <span>Let's test your knowledge!</span>
+                                    </div>
+                                    <button
+                                        onClick={() => handleExpandView('quiz', msg.quiz)}
+                                        className="p-1.5 bg-white border-2 border-black rounded-lg hover:bg-nanobanana-yellow transition-colors shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] active:translate-y-[1px] active:shadow-none"
+                                        title="Expand view"
+                                    >
+                                        <ZoomIn className="w-4 h-4" />
+                                    </button>
                                 </div>
                                 <QuizInline quiz={msg.quiz} />
                             </div>
@@ -843,6 +900,14 @@ const ChatInterface = ({
                     </div>
                 )}
             </div>
+
+            {/* Expanded View Modal */}
+            <ExpandedViewModal
+                isOpen={expandedView.isOpen}
+                onClose={handleCloseExpandedView}
+                type={expandedView.type}
+                data={expandedView.data}
+            />
         </div>
     );
 };
