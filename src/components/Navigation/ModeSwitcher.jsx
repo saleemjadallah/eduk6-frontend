@@ -8,8 +8,16 @@ const ModeSwitcher = () => {
   const navigate = useNavigate();
   const [showConfirm, setShowConfirm] = useState(false);
 
+  const safeNavigate = (to) => {
+    try {
+      navigate(to);
+    } catch (err) {
+      window.location.assign(to);
+    }
+  };
+
   const handleSwitchToParent = () => {
-    navigate('/parent/verify-pin');
+    safeNavigate('/parent/verify-pin');
   };
 
   const handleSwitchToChild = () => {

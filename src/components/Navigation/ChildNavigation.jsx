@@ -1,9 +1,11 @@
 import React from 'react';
-import { NavLink } from 'react-router-dom';
+import { NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import './ChildNavigation.css';
 
 const ChildNavigation = () => {
+  const navigate = useNavigate();
+
   // Try to get auth context
   let currentProfile = null;
   try {
@@ -21,6 +23,17 @@ const ChildNavigation = () => {
     ];
   };
 
+  const safeNavigate = (to, e) => {
+    if (e) {
+      e.preventDefault();
+    }
+    try {
+      navigate(to);
+    } catch (err) {
+      window.location.assign(to);
+    }
+  };
+
   return (
     <nav className="child-navigation">
       {getNavItems().map(item => (
@@ -28,6 +41,7 @@ const ChildNavigation = () => {
           key={item.to}
           to={item.to}
           end={item.end}
+          onClick={(e) => safeNavigate(item.to, e)}
           className={({ isActive }) =>
             `child-nav-item ${isActive ? 'active' : ''}`
           }
