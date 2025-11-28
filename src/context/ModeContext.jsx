@@ -119,10 +119,16 @@ export function ModeProvider({ children }) {
         setLastActivity(new Date());
 
         // Navigate to parent dashboard
+        const targetPath = '/parent/dashboard';
         try {
-          navigate('/parent/dashboard');
+          navigate(targetPath);
+          setTimeout(() => {
+            if (window.location.pathname !== targetPath) {
+              window.location.assign(targetPath);
+            }
+          }, 150);
         } catch (navErr) {
-          window.location.assign('/parent/dashboard');
+          window.location.assign(targetPath);
         }
 
         setIsTransitioning(false);
@@ -153,10 +159,16 @@ export function ModeProvider({ children }) {
 
     // Navigate to child learning dashboard
     setTimeout(() => {
+      const targetPath = '/learn';
       try {
-        navigate('/learn');
+        navigate(targetPath);
+        setTimeout(() => {
+          if (window.location.pathname !== targetPath) {
+            window.location.assign(targetPath);
+          }
+        }, 150);
       } catch (navErr) {
-        window.location.assign('/learn');
+        window.location.assign(targetPath);
       }
     }, 0);
   }, [navigate]);

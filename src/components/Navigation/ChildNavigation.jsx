@@ -27,8 +27,17 @@ const ChildNavigation = () => {
     if (e) {
       e.preventDefault();
     }
+
+    const targetPath = new URL(to, window.location.origin).pathname;
+
     try {
       navigate(to);
+      // If the SPA transition stalls, force a hard nav shortly after
+      setTimeout(() => {
+        if (window.location.pathname !== targetPath) {
+          window.location.assign(to);
+        }
+      }, 150);
     } catch (err) {
       window.location.assign(to);
     }

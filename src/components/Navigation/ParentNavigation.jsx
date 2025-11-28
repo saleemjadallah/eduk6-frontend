@@ -50,8 +50,16 @@ const ParentNavigation = () => {
     if (e) {
       e.preventDefault();
     }
+
+    const targetPath = new URL(to, window.location.origin).pathname;
+
     try {
       navigate(to);
+      setTimeout(() => {
+        if (window.location.pathname !== targetPath) {
+          window.location.assign(to);
+        }
+      }, 150);
     } catch (err) {
       window.location.assign(to);
     }
