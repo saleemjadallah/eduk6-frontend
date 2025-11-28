@@ -2,6 +2,7 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { Target, CheckCircle, Clock } from 'lucide-react';
 import { useGamificationContext } from '../../context/GamificationContext';
+import Tooltip from '../UI/Tooltip';
 
 const DailyChallenge = ({ compact = false }) => {
     const { dailyChallenge } = useGamificationContext();
@@ -12,23 +13,33 @@ const DailyChallenge = ({ compact = false }) => {
     const isComplete = dailyChallenge.completed;
 
     if (compact) {
+        const challengeTooltipContent = isComplete
+            ? `Completed! +${dailyChallenge.xpReward} XP earned`
+            : `${dailyChallenge.challenge.description} (${dailyChallenge.xpReward} XP reward)`;
+
         return (
-            <div className={`
-                flex items-center gap-2 px-3 py-2 rounded-full border-2
-                ${isComplete
-                    ? 'bg-green-50 border-green-500'
-                    : 'bg-white border-black'
-                }
-            `}>
-                {isComplete ? (
-                    <CheckCircle className="w-5 h-5 text-green-500" />
-                ) : (
-                    <Target className="w-5 h-5 text-nanobanana-blue" />
-                )}
-                <span className="text-xs font-bold">
-                    {isComplete ? 'Done!' : `${dailyChallenge.progress}/${dailyChallenge.challenge.target}`}
-                </span>
-            </div>
+            <Tooltip
+                title="Daily Challenge"
+                content={challengeTooltipContent}
+                position="bottom"
+            >
+                <div className={`
+                    flex items-center gap-2 px-3 py-2 rounded-full border-2 cursor-default
+                    ${isComplete
+                        ? 'bg-green-50 border-green-500'
+                        : 'bg-white border-black'
+                    }
+                `}>
+                    {isComplete ? (
+                        <CheckCircle className="w-5 h-5 text-green-500" />
+                    ) : (
+                        <Target className="w-5 h-5 text-nanobanana-blue" />
+                    )}
+                    <span className="text-xs font-bold">
+                        {isComplete ? 'Done!' : `${dailyChallenge.progress}/${dailyChallenge.challenge.target}`}
+                    </span>
+                </div>
+            </Tooltip>
         );
     }
 

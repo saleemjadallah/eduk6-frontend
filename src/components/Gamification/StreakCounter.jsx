@@ -2,6 +2,7 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { Flame, Shield } from 'lucide-react';
 import { useGamificationContext } from '../../context/GamificationContext';
+import Tooltip from '../UI/Tooltip';
 
 const StreakCounter = ({ compact = false }) => {
     const { streak } = useGamificationContext();
@@ -26,23 +27,39 @@ const StreakCounter = ({ compact = false }) => {
     };
 
     if (compact) {
+        const streakTooltipContent = streak.freezeAvailable
+            ? `${streak.current} day${streak.current !== 1 ? 's' : ''} in a row! Freeze available`
+            : `${streak.current} day${streak.current !== 1 ? 's' : ''} in a row!`;
+
         return (
-            <div className="flex items-center gap-2 bg-white px-3 py-2 rounded-full border-2 border-black">
-                <motion.div
-                    animate={getFlameAnimation(streak.current)}
-                    transition={{
-                        duration: 1,
-                        repeat: Infinity,
-                        ease: 'easeInOut',
-                    }}
-                >
-                    <Flame className="w-5 h-5 fill-orange-500 text-orange-600" />
-                </motion.div>
-                <span className="font-bold text-sm">{streak.current}</span>
-                {streak.freezeAvailable && (
-                    <Shield className="w-4 h-4 text-blue-500" />
-                )}
-            </div>
+            <Tooltip
+                title="Day Streak"
+                content={streakTooltipContent}
+                position="bottom"
+            >
+                <div className="flex items-center gap-2 bg-white px-3 py-2 rounded-full border-2 border-black cursor-default">
+                    <motion.div
+                        animate={getFlameAnimation(streak.current)}
+                        transition={{
+                            duration: 1,
+                            repeat: Infinity,
+                            ease: 'easeInOut',
+                        }}
+                    >
+                        <Flame className="w-5 h-5 fill-orange-500 text-orange-600" />
+                    </motion.div>
+                    <span className="font-bold text-sm">{streak.current}</span>
+                    {streak.freezeAvailable && (
+                        <Tooltip
+                            title="Streak Freeze"
+                            content="Protects your streak if you miss a day"
+                            position="bottom"
+                        >
+                            <Shield className="w-4 h-4 text-blue-500" />
+                        </Tooltip>
+                    )}
+                </div>
+            </Tooltip>
         );
     }
 

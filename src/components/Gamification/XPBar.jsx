@@ -2,6 +2,7 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { Star, Sparkles } from 'lucide-react';
 import { useGamificationContext } from '../../context/GamificationContext';
+import Tooltip from '../UI/Tooltip';
 
 const XPBar = ({ compact = false, showLabel = true }) => {
     const { currentXP, xpToNextLevel, currentLevel } = useGamificationContext();
@@ -11,20 +12,26 @@ const XPBar = ({ compact = false, showLabel = true }) => {
 
     if (compact) {
         return (
-            <div className="flex items-center gap-2">
-                <div className="flex items-center gap-1 bg-nanobanana-yellow px-2 py-1 rounded-full border-2 border-black text-xs font-bold">
-                    <Star className="w-3 h-3 fill-black" />
-                    {currentLevel}
+            <Tooltip
+                title={`Level ${currentLevel}`}
+                content={`${currentXP}/${xpToNextLevel} XP to next level`}
+                position="bottom"
+            >
+                <div className="flex items-center gap-2 cursor-default">
+                    <div className="flex items-center gap-1 bg-nanobanana-yellow px-2 py-1 rounded-full border-2 border-black text-xs font-bold">
+                        <Star className="w-3 h-3 fill-black" />
+                        {currentLevel}
+                    </div>
+                    <div className="flex-1 h-2 bg-gray-200 rounded-full border-2 border-black overflow-hidden min-w-[60px]">
+                        <motion.div
+                            initial={{ width: 0 }}
+                            animate={{ width: `${progress}%` }}
+                            transition={{ duration: 0.5, ease: 'easeOut' }}
+                            className={`h-full ${isNearLevel ? 'bg-gradient-to-r from-nanobanana-yellow to-orange-400' : 'bg-nanobanana-yellow'}`}
+                        />
+                    </div>
                 </div>
-                <div className="flex-1 h-2 bg-gray-200 rounded-full border-2 border-black overflow-hidden min-w-[60px]">
-                    <motion.div
-                        initial={{ width: 0 }}
-                        animate={{ width: `${progress}%` }}
-                        transition={{ duration: 0.5, ease: 'easeOut' }}
-                        className={`h-full ${isNearLevel ? 'bg-gradient-to-r from-nanobanana-yellow to-orange-400' : 'bg-nanobanana-yellow'}`}
-                    />
-                </div>
-            </div>
+            </Tooltip>
         );
     }
 
