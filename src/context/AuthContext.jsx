@@ -16,6 +16,31 @@ export function AuthProvider({ children }) {
   const [isInitialized, setIsInitialized] = useState(false);
   const [error, setError] = useState(null);
 
+  // Safe localStorage helpers for incognito mode
+  const safeGetItem = useCallback((key) => {
+    try {
+      return localStorage.getItem(key);
+    } catch (e) {
+      return null;
+    }
+  }, []);
+
+  const safeSetItem = useCallback((key, value) => {
+    try {
+      localStorage.setItem(key, value);
+    } catch (e) {
+      console.warn(`Failed to set ${key} in localStorage (incognito mode?)`);
+    }
+  }, []);
+
+  const safeRemoveItem = useCallback((key) => {
+    try {
+      localStorage.removeItem(key);
+    } catch (e) {
+      console.warn(`Failed to remove ${key} from localStorage (incognito mode?)`);
+    }
+  }, []);
+
   // Helper to set user data and profile from API response
   const setUserDataFromResponse = useCallback((userData) => {
     setUser(userData.user);
@@ -23,7 +48,7 @@ export function AuthProvider({ children }) {
 
     // Initialize storage manager with user context
     if (userData.user?.id) {
-      const lastProfileId = localStorage.getItem('current_profile_id');
+      const lastProfileId = safeGetItem('current_profile_id');
       let activeChildId = null;
 
       if (lastProfileId && userData.children?.length > 0) {
@@ -34,18 +59,18 @@ export function AuthProvider({ children }) {
         } else if (userData.children.length > 0) {
           setCurrentProfile(userData.children[0]);
           activeChildId = userData.children[0].id;
-          localStorage.setItem('current_profile_id', activeChildId);
+          safeSetItem('current_profile_id', activeChildId);
         }
       } else if (userData.children?.length > 0) {
         setCurrentProfile(userData.children[0]);
         activeChildId = userData.children[0].id;
-        localStorage.setItem('current_profile_id', activeChildId);
+        safeSetItem('current_profile_id', activeChildId);
       }
 
       // Initialize storage manager with user and child context
       storageManager.initialize(userData.user.id, activeChildId);
     }
-  }, []);
+  }, [safeGetItem, safeSetItem]);
 
   // Load auth state on mount
   useEffect(() => {
@@ -139,7 +164,7 @@ export function AuthProvider({ children }) {
       // Set first child as current profile and initialize storage
       if (data.children?.length > 0) {
         setCurrentProfile(data.children[0]);
-        localStorage.setItem('current_profile_id', data.children[0].id);
+        safeSetItem('current_profile_id', data.children[0].id);
         storageManager.initialize(data.parent.id, data.children[0].id);
       } else {
         storageManager.initialize(data.parent.id, null);
@@ -181,14 +206,14 @@ export function AuthProvider({ children }) {
     const profile = childProfiles.find(c => c.id === childId);
     if (profile) {
       setCurrentProfile(profile);
-      localStorage.setItem('current_profile_id', childId);
+      safeSetItem('current_profile_id', childId);
 
       // Update storage manager context
       if (user?.id) {
         storageManager.initialize(user.id, childId);
       }
     }
-  }, [childProfiles, user?.id]);
+  }, [childProfiles, user?.id, safeSetItem]);
 
   // Update user consent status
   const updateConsentStatus = useCallback((status) => {
@@ -210,14 +235,14 @@ export function AuthProvider({ children }) {
     // Set as current profile if it's the first child
     if (childProfiles.length === 0) {
       setCurrentProfile(newChild);
-      localStorage.setItem('current_profile_id', newChild.id);
+      safeSetItem('current_profile_id', newChild.id);
       if (user?.id) {
         storageManager.initialize(user.id, newChild.id);
       }
     }
 
     return newChild;
-  }, [childProfiles.length, user?.id]);
+  }, [childProfiles.length, user?.id, safeSetItem]);
 
   // Update child profile (updates local state after API call)
   const updateChildProfile = useCallback((childId, updates) => {
@@ -245,16 +270,16 @@ export function AuthProvider({ children }) {
       const remaining = childProfiles.filter(c => c.id !== childId);
       if (remaining.length > 0) {
         setCurrentProfile(remaining[0]);
-        localStorage.setItem('current_profile_id', remaining[0].id);
+        safeSetItem('current_profile_id', remaining[0].id);
         if (user?.id) {
           storageManager.initialize(user.id, remaining[0].id);
         }
       } else {
         setCurrentProfile(null);
-        localStorage.removeItem('current_profile_id');
+        safeRemoveItem('current_profile_id');
       }
     }
-  }, [currentProfile?.id, childProfiles, user?.id]);
+  }, [currentProfile?.id, childProfiles, user?.id, safeSetItem, safeRemoveItem]);
 
   // Refresh auth (re-fetch user data)
   const refreshAuth = useCallback(async () => {
@@ -281,7 +306,7 @@ export function AuthProvider({ children }) {
       // Set first child as current profile if any
       if (response.children?.length > 0) {
         setCurrentProfile(response.children[0]);
-        localStorage.setItem('current_profile_id', response.children[0].id);
+        safeSetItem('current_profile_id', response.children[0].id);
         storageManager.initialize(response.parent.id, response.children[0].id);
       } else {
         storageManager.initialize(response.parent.id, null);
@@ -289,7 +314,7 @@ export function AuthProvider({ children }) {
     }
 
     return response;
-  }, []);
+  }, [safeSetItem]);
 
   // Switch to child mode (uses child token)
   const switchToChildMode = useCallback(async (childId, pin) => {
@@ -300,7 +325,7 @@ export function AuthProvider({ children }) {
         const profile = childProfiles.find(c => c.id === childId);
         if (profile) {
           setCurrentProfile(profile);
-          localStorage.setItem('current_profile_id', childId);
+          safeSetItem('current_profile_id', childId);
           storageManager.setCurrentChild(childId);
         }
       }
@@ -309,7 +334,7 @@ export function AuthProvider({ children }) {
       console.error('Switch to child mode error:', err);
       throw err;
     }
-  }, [childProfiles]);
+  }, [childProfiles, safeSetItem]);
 
   // Switch back to parent mode
   const switchToParentMode = useCallback(() => {
