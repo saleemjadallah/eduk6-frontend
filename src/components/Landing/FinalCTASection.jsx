@@ -6,6 +6,14 @@ import { ArrowRight, Sparkles, Rocket } from 'lucide-react';
 const FinalCTASection = () => {
   const navigate = useNavigate();
 
+  const safeNavigate = (path) => {
+    try {
+      navigate(path);
+    } catch (e) {
+      window.location.assign(path);
+    }
+  };
+
   return (
     <section className="py-20 bg-gradient-to-br from-nanobanana-blue via-blue-600 to-purple-600 relative overflow-hidden">
       {/* Animated background elements */}
@@ -71,7 +79,7 @@ const FinalCTASection = () => {
               <motion.button
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
-                onClick={() => navigate('/onboarding')}
+                onClick={() => safeNavigate('/onboarding')}
                 className="inline-flex items-center justify-center gap-3 bg-nanobanana-yellow text-black text-xl font-bold px-8 py-4 rounded-2xl border-4 border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,0.3)] hover:shadow-[8px_8px_0px_0px_rgba(0,0,0,0.3)] transition-all"
               >
                 <Sparkles className="w-6 h-6" />

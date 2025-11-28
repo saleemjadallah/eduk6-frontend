@@ -155,22 +155,32 @@ export function AuthProvider({ children }) {
         throw new Error(response.error || 'Sign in failed');
       }
 
-      const data = response.data;
+      // Normalize API response in case the backend omits the `data` wrapper
+      const data = response.data || response;
+      const parent = data.parent || data.user;
+      const childList = data.children || [];
 
-      // Set user data
-      setUser(data.parent);
-      setChildProfiles(data.children || []);
-
-      // Set first child as current profile and initialize storage
-      if (data.children?.length > 0) {
-        setCurrentProfile(data.children[0]);
-        safeSetItem('current_profile_id', data.children[0].id);
-        storageManager.initialize(data.parent.id, data.children[0].id);
-      } else {
-        storageManager.initialize(data.parent.id, null);
+      if (!parent) {
+        throw new Error('Invalid login response: missing user data');
       }
 
-      return { success: true };
+      // Set user data
+      setUser(parent);
+      setChildProfiles(childList);
+
+      // Set first child as current profile and initialize storage
+      if (childList.length > 0) {
+        setCurrentProfile(childList[0]);
+        safeSetItem('current_profile_id', childList[0].id);
+        storageManager.initialize(parent.id, childList[0].id);
+      } else {
+        storageManager.initialize(parent.id, null);
+      }
+
+      // Ensure auth state is marked ready after explicit sign-in
+      setIsInitialized(true);
+
+      return { success: true, user: parent, children: childList };
     } catch (err) {
       setError(err.message);
       throw err;

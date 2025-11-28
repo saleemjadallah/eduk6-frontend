@@ -6,8 +6,16 @@ import { ArrowRight, Shield, Star, Sparkles } from 'lucide-react';
 const HeroSection = () => {
   const navigate = useNavigate();
 
+  const safeNavigate = (path) => {
+    try {
+      navigate(path);
+    } catch (e) {
+      window.location.assign(path);
+    }
+  };
+
   const handleGetStarted = () => {
-    navigate('/onboarding');
+    safeNavigate('/onboarding');
   };
 
   return (
