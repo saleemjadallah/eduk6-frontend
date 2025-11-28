@@ -16,8 +16,8 @@ const ExpandedViewModal = ({ isOpen, onClose, type, data }) => {
         switch (type) {
             case 'flashcards':
                 return (
-                    <div className="w-full max-w-2xl">
-                        <FlashcardInline flashcards={data} />
+                    <div className="w-full max-w-3xl min-w-[500px] px-4">
+                        <FlashcardInline flashcards={data} expanded />
                     </div>
                 );
             case 'infographic':
