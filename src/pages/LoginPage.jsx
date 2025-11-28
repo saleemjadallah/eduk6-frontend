@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
@@ -26,21 +26,38 @@ const LoginPage = () => {
   const [apiError, setApiError] = useState('');
   const [showForgotPassword, setShowForgotPassword] = useState(false);
 
+  // Track if we just signed in to handle post-login redirect
+  const justSignedIn = useRef(false);
+
   // Redirect based on authentication state
   useEffect(() => {
     if (!isReady) return;
 
     if (isAuthenticated) {
-      // Check what the user needs to complete
+      // Determine where to redirect
+      let targetPath = '/learn'; // Default destination
+      let targetState = undefined;
+
       if (needsEmailVerification) {
-        navigate('/onboarding', { state: { step: 'email_verification' } });
+        targetPath = '/onboarding';
+        targetState = { step: 'email_verification' };
       } else if (needsConsent) {
-        navigate('/onboarding', { state: { step: 'consent_method' } });
+        targetPath = '/onboarding';
+        targetState = { step: 'consent_method' };
       } else if (needsChildProfile) {
-        navigate('/onboarding', { state: { step: 'create_profile' } });
-      } else if (hasConsent && children.length > 0) {
-        // Fully set up - go to dashboard
-        navigate('/learn');
+        targetPath = '/onboarding';
+        targetState = { step: 'create_profile' };
+      }
+      // If none of the above, targetPath remains '/learn'
+
+      // For post-login redirect, use window.location to ensure clean navigation
+      // This avoids race conditions with React state propagation
+      if (justSignedIn.current) {
+        justSignedIn.current = false;
+        window.location.href = targetPath;
+      } else {
+        // For initial page load redirects (already authenticated), use navigate
+        navigate(targetPath, targetState ? { state: targetState, replace: true } : { replace: true });
       }
     }
   }, [isAuthenticated, hasConsent, children, needsEmailVerification, needsConsent, needsChildProfile, isReady, navigate]);
@@ -84,9 +101,12 @@ const LoginPage = () => {
     setApiError('');
 
     try {
+      // Mark that we're signing in so the useEffect uses window.location
+      justSignedIn.current = true;
       await signIn(formData.email, formData.password);
       // Navigation is handled by the useEffect after auth state updates
     } catch (err) {
+      justSignedIn.current = false;
       setApiError(err.message || 'Failed to sign in. Please check your credentials.');
     }
   };
