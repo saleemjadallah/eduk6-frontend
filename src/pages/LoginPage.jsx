@@ -26,6 +26,15 @@ const LoginPage = () => {
   const [apiError, setApiError] = useState('');
   const [showForgotPassword, setShowForgotPassword] = useState(false);
 
+  const safeNavigate = (path, state) => {
+    try {
+      navigate(path, state ? { state } : undefined);
+    } catch (e) {
+      // If the router fails to transition, force a full page load (fixes stuck navigation)
+      window.location.assign(path);
+    }
+  };
+
   // Redirect based on authentication state
   useEffect(() => {
     if (!isReady) return;
@@ -33,14 +42,14 @@ const LoginPage = () => {
     if (isAuthenticated) {
       // Check what the user needs to complete
       if (needsEmailVerification) {
-        navigate('/onboarding', { state: { step: 'email_verification' } });
+        safeNavigate('/onboarding', { step: 'email_verification' });
       } else if (needsConsent) {
-        navigate('/onboarding', { state: { step: 'consent_method' } });
+        safeNavigate('/onboarding', { step: 'consent_method' });
       } else if (needsChildProfile) {
-        navigate('/onboarding', { state: { step: 'create_profile' } });
+        safeNavigate('/onboarding', { step: 'create_profile' });
       } else if (hasConsent && children.length > 0) {
         // Fully set up - go to dashboard
-        navigate('/learn');
+        safeNavigate('/learn');
       }
     }
   }, [isAuthenticated, hasConsent, children, needsEmailVerification, needsConsent, needsChildProfile, isReady, navigate]);
@@ -92,22 +101,22 @@ const LoginPage = () => {
 
       if (nextUser) {
         if (!nextUser.emailVerified) {
-          navigate('/onboarding', { state: { step: 'email_verification' } });
+          safeNavigate('/onboarding', { step: 'email_verification' });
           return;
         }
 
         if (nextUser.consentStatus !== 'verified') {
-          navigate('/onboarding', { state: { step: 'consent_method' } });
+          safeNavigate('/onboarding', { step: 'consent_method' });
           return;
         }
 
         if (nextChildren.length === 0) {
-          navigate('/onboarding', { state: { step: 'create_profile' } });
+          safeNavigate('/onboarding', { step: 'create_profile' });
           return;
         }
 
         // Fully set up - go to dashboard
-        navigate('/learn');
+        safeNavigate('/learn');
       }
       // Fallback: if for some reason user isn't present, let the effect handle it
     } catch (err) {
