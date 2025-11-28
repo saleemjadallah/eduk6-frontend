@@ -84,32 +84,8 @@ const LoginPage = () => {
     setApiError('');
 
     try {
-      const result = await signIn(formData.email, formData.password);
-
-      // Use the freshest data (from the signIn response) to decide where to go
-      const nextUser = result?.user || null;
-      const nextChildren = result?.children || [];
-
-      if (nextUser) {
-        if (!nextUser.emailVerified) {
-          navigate('/onboarding', { state: { step: 'email_verification' } });
-          return;
-        }
-
-        if (nextUser.consentStatus !== 'verified') {
-          navigate('/onboarding', { state: { step: 'consent_method' } });
-          return;
-        }
-
-        if (nextChildren.length === 0) {
-          navigate('/onboarding', { state: { step: 'create_profile' } });
-          return;
-        }
-
-        // Fully set up - go to dashboard
-        navigate('/learn');
-      }
-      // Fallback: if for some reason user isn't present, let the effect handle it
+      await signIn(formData.email, formData.password);
+      // Navigation is handled by the useEffect after auth state updates
     } catch (err) {
       setApiError(err.message || 'Failed to sign in. Please check your credentials.');
     }
