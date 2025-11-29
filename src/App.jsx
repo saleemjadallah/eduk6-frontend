@@ -1,4 +1,4 @@
-import { createBrowserRouter, RouterProvider, Navigate, Outlet, ScrollRestoration } from 'react-router-dom';
+import { createBrowserRouter, RouterProvider, Navigate, Outlet, ScrollRestoration, Link } from 'react-router-dom';
 import { LessonProvider } from './context/LessonContext';
 import { GamificationProvider } from './context/GamificationContext';
 import { FlashcardProvider } from './context/FlashcardContext';
@@ -72,7 +72,35 @@ function PlaceholderPage({ title }) {
     );
 }
 
+// Simple test layout to isolate routing issues
+function TestLayout() {
+    return (
+        <div style={{ padding: '20px' }}>
+            <h1>Test Layout - Testing React Router</h1>
+            <nav style={{ marginBottom: '20px', display: 'flex', gap: '20px' }}>
+                <Link to="/test" style={{ color: 'blue', textDecoration: 'underline' }}>Test Home</Link>
+                <Link to="/test/page1" style={{ color: 'blue', textDecoration: 'underline' }}>Page 1</Link>
+                <Link to="/test/page2" style={{ color: 'blue', textDecoration: 'underline' }}>Page 2</Link>
+            </nav>
+            <div style={{ border: '2px solid blue', padding: '20px', marginTop: '20px' }}>
+                <p style={{ color: 'gray', marginBottom: '10px' }}>Content below (from Outlet):</p>
+                <Outlet />
+            </div>
+        </div>
+    );
+}
+
 const router = createBrowserRouter([
+    // SIMPLE TEST ROUTES - no auth, no providers
+    {
+        path: '/test',
+        element: <TestLayout />,
+        children: [
+            { index: true, element: <div><h2>Test Home Page</h2><p>Click links above to test navigation</p></div> },
+            { path: 'page1', element: <div><h2>Page 1</h2><p>This is page 1</p></div> },
+            { path: 'page2', element: <div><h2>Page 2</h2><p>This is page 2</p></div> },
+        ],
+    },
     {
         element: <RootLayout />,
         children: [
