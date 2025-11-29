@@ -69,7 +69,7 @@ const RouterDebugOverlay = () => {
           }}
         >
           <div style={{ fontWeight: 700, marginBottom: 8, color: '#fbbf24' }}>
-            Location
+            Location (router)
           </div>
           <pre style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word', margin: 0 }}>
             {JSON.stringify(
@@ -78,6 +78,22 @@ const RouterDebugOverlay = () => {
                 search: location.search,
                 hash: location.hash,
                 key: location.key,
+              },
+              null,
+              2
+            )}
+          </pre>
+
+          <div style={{ fontWeight: 700, margin: '12px 0 8px', color: '#fbbf24' }}>
+            Window location
+          </div>
+          <pre style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word', margin: 0 }}>
+            {JSON.stringify(
+              {
+                href: window.location.href,
+                pathname: window.location.pathname,
+                search: window.location.search,
+                hash: window.location.hash,
               },
               null,
               2

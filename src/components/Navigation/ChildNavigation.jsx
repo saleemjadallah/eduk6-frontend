@@ -22,7 +22,11 @@ const ChildNavigation = () => {
           // the browser updates the URL without React Router rendering the route.
           onClick={(e) => {
             e.preventDefault();
+            console.log('[ChildNavigation] Click', { to: item.to, before: window.location.href });
             navigate(item.to, { replace: item.to === '/learn' });
+            setTimeout(() => {
+              console.log('[ChildNavigation] After navigate', { to: item.to, href: window.location.href });
+            }, 0);
           }}
           className={({ isActive }) =>
             `child-nav-item ${isActive ? 'active' : ''}`

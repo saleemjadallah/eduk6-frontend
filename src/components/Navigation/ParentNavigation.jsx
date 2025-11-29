@@ -58,7 +58,11 @@ const ParentNavigation = () => {
                   to={item.to}
                   onClick={(e) => {
                     e.preventDefault();
+                    console.log('[ParentNavigation] Click', { to: item.to, before: window.location.href });
                     navigate(item.to);
+                    setTimeout(() => {
+                      console.log('[ParentNavigation] After navigate', { to: item.to, href: window.location.href });
+                    }, 0);
                   }}
                   className={({ isActive }) =>
                     `parent-nav-item ${isActive ? 'active' : ''}`
