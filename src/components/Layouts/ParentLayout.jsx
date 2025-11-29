@@ -1,5 +1,5 @@
 import React from 'react';
-import { Outlet, useNavigate } from 'react-router-dom';
+import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { useMode } from '../../context/ModeContext';
 import { ParentNavigation, ModeSwitcher } from '../Navigation';
@@ -7,6 +7,7 @@ import './ParentLayout.css';
 
 const ParentLayout = () => {
   const navigate = useNavigate();
+  const location = useLocation();
 
   // Try to get auth context
   let currentUser = null;
@@ -98,7 +99,7 @@ const ParentLayout = () => {
 
         {/* Main content */}
         <main className="parent-main">
-          <Outlet />
+          <Outlet key={location.pathname} />
         </main>
       </div>
     </div>
