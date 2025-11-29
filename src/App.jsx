@@ -23,7 +23,8 @@ import LoginPage from './pages/LoginPage';
 import { RewardPopup } from './components/Gamification';
 import ProtectedRoute from './components/Routing/ProtectedRoute';
 import ModeRoute from './components/Routing/ModeRoute';
-import { ChildLayout, ParentLayout } from './components/Layouts';
+import { ParentLayout } from './components/Layouts';
+import ProtectedChildLayout from './components/Layouts/ProtectedChildLayout';
 import ParentPinVerification from './components/Parent/ParentPinVerification';
 
 function RootLayout() {
@@ -80,16 +81,10 @@ const router = createBrowserRouter([
             { path: '/login', element: <LoginPage /> },
             { path: '/onboarding', element: <OnboardingPage /> },
 
-            // Child routes - wrapped in ChildLayout
+            // Child routes - using ProtectedChildLayout (auth built into layout)
             {
                 path: '/learn',
-                element: (
-                    <ProtectedRoute>
-                        <ModeRoute mode="child">
-                            <ChildLayout />
-                        </ModeRoute>
-                    </ProtectedRoute>
-                ),
+                element: <ProtectedChildLayout />,
                 children: [
                     { index: true, element: <ChildDashboard /> },
                     { path: 'study', element: <Navigate to="/learn" replace /> },
