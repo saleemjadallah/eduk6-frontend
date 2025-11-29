@@ -45,11 +45,15 @@ export const authAPI = {
     });
 
     // Store tokens via token manager
-    if (response.success && response.data) {
-      tokenManager.setTokens({
-        token: response.data.token,
-        refreshToken: response.data.refreshToken,
-      });
+    // Handle both response.data.token and response.token formats
+    if (response.success) {
+      const data = response.data || response;
+      if (data.token) {
+        tokenManager.setTokens({
+          token: data.token,
+          refreshToken: data.refreshToken,
+        });
+      }
     }
 
     return response;
@@ -196,8 +200,12 @@ export const authAPI = {
     const response = await api.post(`/auth/children/${childId}/switch`, { pin });
 
     // Store child token if successful
-    if (response.success && response.data?.childToken) {
-      tokenManager.setChildToken(response.data.childToken);
+    // Handle both response.data.childToken and response.childToken formats
+    if (response.success) {
+      const data = response.data || response;
+      if (data.childToken) {
+        tokenManager.setChildToken(data.childToken);
+      }
     }
 
     return response;
