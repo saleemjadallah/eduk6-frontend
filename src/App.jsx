@@ -41,6 +41,17 @@ function RootLayout() {
         if (browserUrl !== routerUrl) {
             console.warn('[RouterSync] Resyncing router to window URL', { browserUrl, routerUrl });
             navigate(browserUrl || '/', { replace: true });
+
+            // If the router still doesn't move after a tick, force a full reload.
+            const reloadTimer = setTimeout(() => {
+                const currentRouterUrl = `${location.pathname}${location.search}${location.hash}`;
+                if (currentRouterUrl !== browserUrl) {
+                    console.warn('[RouterSync] Forcing full reload to sync router and window URL');
+                    window.location.assign(browserUrl || '/');
+                }
+            }, 50);
+
+            return () => clearTimeout(reloadTimer);
         }
     }, [location.pathname, location.search, location.hash, navigate]);
 
