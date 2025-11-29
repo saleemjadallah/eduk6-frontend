@@ -43,17 +43,25 @@ export const getActionUnavailableReason = (actionId, selection, userTier = 'free
 
 /**
  * Create chat prompt from selection
+ * Following Gemini best practices for conversational educational prompts
  */
 export const createChatPrompt = (selection, promptType = 'explain') => {
     const { text } = selection;
 
+    // Prompts designed to be conversational and encourage learning
+    // Each prompt gives Jeffrey clear context about what the child needs
     const prompts = {
-        explain: `Can you explain this to me in a simple way? Here's what I'm trying to understand:\n\n"${text}"`,
-        simplify: `Can you make this easier to understand? I'm having trouble with:\n\n"${text}"`,
-        examples: `Can you give me some fun examples about this?\n\n"${text}"`,
-        quiz: `Can you ask me a question about this to see if I understand?\n\n"${text}"`,
-        story: `Can you tell me a story that helps explain this?\n\n"${text}"`,
-        translate: `Can you translate this text into Spanish, French, and Arabic? Please show me each translation with the language name:\n\n"${text}"`,
+        explain: `I found this in my lesson and I want to understand it better. Can you explain what this means using simple words and maybe a fun example I can relate to?\n\nHere's the part I'm curious about:\n"${text}"`,
+
+        simplify: `This part of my lesson is a bit confusing for me. Can you break it down into smaller, easier pieces? Maybe explain it step by step so I can follow along?\n\nHere's what I'm struggling with:\n"${text}"`,
+
+        examples: `I'm learning about this topic and I think some examples would help me understand better! Can you give me 2-3 fun, real-world examples that show how this works in everyday life?\n\nHere's what I want examples about:\n"${text}"`,
+
+        quiz: `I've been studying this topic and I want to test myself! Can you ask me a fun question about this to see if I really understand it? Make it feel like a game, not a test!\n\nHere's what to quiz me on:\n"${text}"`,
+
+        story: `I learn best through stories! Can you create a short, fun story that teaches me about this concept? Maybe with characters I can imagine or a situation I might experience?\n\nHere's what the story should teach:\n"${text}"`,
+
+        translate: `I'm learning about languages! Can you show me how to say this in Spanish, French, and Arabic? For each language, please show the translation and tell me something interesting about how that language works.\n\nHere's what I want to learn to say:\n"${text}"`,
     };
 
     return prompts[promptType] || prompts.explain;
