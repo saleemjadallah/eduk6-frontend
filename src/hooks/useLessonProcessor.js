@@ -82,6 +82,9 @@ export function useLessonProcessor() {
             updateProgress(100);
 
             const lesson = addLesson({
+                // Use database lesson ID if available (for sync with backend)
+                id: analysis.lessonId || undefined,
+
                 // Use provided title or AI-generated title
                 title: title || analysis.title,
                 subject: subject || analysis.subject,
@@ -195,6 +198,9 @@ export function useLessonProcessor() {
             updateProgress(100);
 
             const lesson = addLesson({
+                // Use database lesson ID if available (for sync with backend)
+                id: analysis.lessonId || undefined,
+
                 // Use provided title or video title
                 title: title || video.title || videoMetadata.title || 'YouTube Lesson',
                 subject: subject || analysis.subject,
@@ -307,6 +313,9 @@ export function useLessonProcessor() {
             updateProgress(100);
 
             const lesson = addLesson({
+                // Use database lesson ID if available (for sync with backend)
+                id: analysis.lessonId || undefined,
+
                 title: title || analysis.title || 'New Lesson',
                 subject: subject || analysis.subject,
                 gradeLevel: gradeLevel || analysis.gradeLevel,

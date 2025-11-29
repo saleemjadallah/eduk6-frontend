@@ -13,6 +13,7 @@ import { useLessonContext } from '../context/LessonContext';
 import { useLessonActions } from '../hooks/useLessonActions';
 import { useGameProgress } from '../hooks/useGameProgress';
 import { useFlashcardContext } from '../context/FlashcardContext';
+import { makeAuthenticatedRequest } from '../services/api/apiUtils';
 
 const StudyPage = () => {
     const { lessonId } = useParams();
@@ -20,21 +21,67 @@ const StudyPage = () => {
     const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
     const [studyStartTime, setStudyStartTime] = useState(null);
     const [chatInput, setChatInput] = useState('');
-    const { currentLesson, markLessonComplete, setCurrentLesson } = useLessonContext();
+    const [isLoadingFromDb, setIsLoadingFromDb] = useState(false);
+    const { currentLesson, lessons, markLessonComplete, setCurrentLesson, addLesson } = useLessonContext();
 
     // Set current lesson from URL param when page loads
+    // If not in localStorage, try to fetch from database
     useEffect(() => {
-        if (lessonId && (!currentLesson || currentLesson.id !== lessonId)) {
-            setCurrentLesson(lessonId);
-        }
-    }, [lessonId, currentLesson?.id, setCurrentLesson]);
+        async function loadLesson() {
+            if (!lessonId) return;
 
-    // Redirect to dashboard if no lesson
+            // Check if lesson exists in local context
+            const localLesson = lessons.find(l => l.id === lessonId);
+            if (localLesson) {
+                if (!currentLesson || currentLesson.id !== lessonId) {
+                    setCurrentLesson(lessonId);
+                }
+                return;
+            }
+
+            // Lesson not in localStorage - try fetching from database
+            setIsLoadingFromDb(true);
+            try {
+                const response = await makeAuthenticatedRequest(`/lessons/${lessonId}`);
+                if (response.success && response.data?.lesson) {
+                    const dbLesson = response.data.lesson;
+                    // Add to local context with database data
+                    addLesson({
+                        id: dbLesson.id,
+                        title: dbLesson.title,
+                        subject: dbLesson.subject,
+                        gradeLevel: dbLesson.gradeLevel,
+                        sourceType: dbLesson.sourceType?.toLowerCase() || 'text',
+                        rawText: dbLesson.extractedText,
+                        formattedContent: dbLesson.formattedContent,
+                        summary: dbLesson.summary,
+                        chapters: dbLesson.chapters || [],
+                        keyConceptsForChat: dbLesson.keyConcepts || [],
+                        vocabulary: dbLesson.vocabulary || [],
+                        suggestedQuestions: dbLesson.suggestedQuestions || [],
+                        fileUrl: dbLesson.originalFileUrl,
+                        createdAt: dbLesson.createdAt,
+                        updatedAt: dbLesson.updatedAt,
+                    });
+                }
+            } catch (error) {
+                console.error('Failed to load lesson from database:', error);
+                // Navigate back to dashboard if lesson can't be found
+                navigate('/learn');
+            } finally {
+                setIsLoadingFromDb(false);
+            }
+        }
+
+        loadLesson();
+    }, [lessonId, lessons, currentLesson?.id, setCurrentLesson, addLesson, navigate]);
+
+    // Redirect to dashboard if no lesson and not loading
     useEffect(() => {
-        if (!lessonId && !currentLesson) {
+        if (!lessonId && !currentLesson && !isLoadingFromDb) {
             navigate('/learn');
         }
-    }, [lessonId, currentLesson, navigate]);
+    }, [lessonId, currentLesson, isLoadingFromDb, navigate]);
     const { formatTimeSpent } = useLessonActions();
     const { recordLessonComplete, recordStudyTime, recordChatInteraction } = useGameProgress();
     const { createDeck, addCards } = useFlashcardContext();
@@ -147,7 +194,14 @@ const StudyPage = () => {
 
             {/* Main content with padding for top bar */}
             <div className="pt-16 flex-1 flex">
-                {currentLesson ? (
+                {isLoadingFromDb ? (
+                    <div className="flex-1 flex items-center justify-center">
+                        <div className="text-center">
+                            <div className="animate-spin rounded-full h-12 w-12 border-4 border-nanobanana-blue border-t-transparent mx-auto mb-4"></div>
+                            <p className="text-lg font-medium text-gray-600">Loading lesson...</p>
+                        </div>
+                    </div>
+                ) : currentLesson ? (
                     <HighlightProvider lessonId={currentLesson.id}>
                         {isPdfLesson && currentLesson.fileUrl ? (
                             <>

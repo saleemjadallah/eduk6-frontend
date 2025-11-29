@@ -62,9 +62,15 @@ export async function analyzeContent(text, options = {}) {
     if (onProgress) onProgress(100);
 
     // Backend returns { data: { lesson, analysis } }
-    const analysis = response.data.analysis || response.data;
+    // Extract BOTH the lesson (with database ID) and the analysis
+    const { lesson, analysis: analysisData } = response.data;
+    const analysis = analysisData || response.data;
 
     return {
+      // Include the database lesson ID so frontend can use it
+      lessonId: lesson?.id || null,
+      dbLesson: lesson || null,
+
       title: analysis.title,
       summary: analysis.summary,
       gradeLevel: analysis.gradeLevel || gradeLevel || 'Grade 3-4',

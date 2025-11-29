@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate, Link } from 'react-router-dom';
 import { Upload, BookOpen, Trophy, Sparkles, X } from 'lucide-react';
@@ -18,7 +18,8 @@ const ChildDashboard = () => {
     const navigate = useNavigate();
     const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
     const [deletingLessonId, setDeletingLessonId] = useState(null);
-    const { clearCurrentLesson, recentLessons, deleteLesson } = useLessonContext();
+    const [isLoadingDbLessons, setIsLoadingDbLessons] = useState(false);
+    const { clearCurrentLesson, recentLessons, lessons, deleteLesson, addLesson } = useLessonContext();
     const { stats, loading: statsLoading, refetch: refreshStats } = useChildStats();
 
     // Get gamification context as additional source for local stats
@@ -37,6 +38,50 @@ const ChildDashboard = () => {
     } catch (e) {
         // AuthProvider not available
     }
+
+    // Fetch lessons from database and merge with local lessons
+    useEffect(() => {
+        async function syncLessonsFromDb() {
+            if (!currentProfile?.id) return;
+
+            setIsLoadingDbLessons(true);
+            try {
+                const response = await api.get(`/lessons/child/${currentProfile.id}?limit=20`);
+                if (response.success && response.data?.lessons) {
+                    const dbLessons = response.data.lessons;
+                    // Add any database lessons that aren't in local storage
+                    const localIds = new Set(lessons.map(l => l.id));
+                    for (const dbLesson of dbLessons) {
+                        if (!localIds.has(dbLesson.id)) {
+                            addLesson({
+                                id: dbLesson.id,
+                                title: dbLesson.title,
+                                subject: dbLesson.subject,
+                                gradeLevel: dbLesson.gradeLevel,
+                                sourceType: dbLesson.sourceType?.toLowerCase() || 'text',
+                                rawText: dbLesson.extractedText,
+                                formattedContent: dbLesson.formattedContent,
+                                summary: dbLesson.summary,
+                                chapters: dbLesson.chapters || [],
+                                keyConceptsForChat: dbLesson.keyConcepts || [],
+                                vocabulary: dbLesson.vocabulary || [],
+                                suggestedQuestions: dbLesson.suggestedQuestions || [],
+                                fileUrl: dbLesson.originalFileUrl,
+                                createdAt: dbLesson.createdAt,
+                                updatedAt: dbLesson.updatedAt,
+                            });
+                        }
+                    }
+                }
+            } catch (error) {
+                console.error('Failed to sync lessons from database:', error);
+            } finally {
+                setIsLoadingDbLessons(false);
+            }
+        }
+
+        syncLessonsFromDb();
+    }, [currentProfile?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
     const handleStartNewLesson = () => {
         clearCurrentLesson();
@@ -164,6 +209,12 @@ const ChildDashboard = () => {
             </div>
 
             {/* Recent Lessons */}
+            {isLoadingDbLessons && (!recentLessons || recentLessons.length === 0) ? (
+                <div className="mb-8 flex items-center justify-center py-8">
+                    <div className="animate-spin rounded-full h-8 w-8 border-4 border-nanobanana-blue border-t-transparent"></div>
+                    <span className="ml-3 text-gray-600">Loading your lessons...</span>
+                </div>
+            ) : null}
             {recentLessons && recentLessons.length > 0 && (
                 <div className="mb-8">
                     <h2 className="text-xl font-bold mb-4">Continue Learning</h2>
@@ -226,7 +277,7 @@ const ChildDashboard = () => {
             )}
 
             {/* Empty State */}
-            {(!recentLessons || recentLessons.length === 0) && (
+            {!isLoadingDbLessons && (!recentLessons || recentLessons.length === 0) && (
                 <motion.div
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
