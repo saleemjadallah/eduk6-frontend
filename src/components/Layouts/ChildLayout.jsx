@@ -1,5 +1,5 @@
 import React from 'react';
-import { Outlet } from 'react-router-dom';
+import { Outlet, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useAuth } from '../../context/AuthContext';
 import { ChildNavigation, ModeSwitcher } from '../Navigation';
@@ -67,6 +67,8 @@ const CloudBackground = () => {
 };
 
 const ChildLayout = () => {
+  const location = useLocation();
+
   // Try to get auth context
   let currentProfile = null;
   try {
@@ -115,7 +117,7 @@ const ChildLayout = () => {
 
       {/* Main content */}
       <main className="child-main">
-        <Outlet />
+        <Outlet key={location.pathname} />
       </main>
 
       {/* Floating Jeffrey helper for younger children */}
