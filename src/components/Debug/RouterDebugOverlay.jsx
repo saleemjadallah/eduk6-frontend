@@ -110,7 +110,8 @@ const RouterDebugOverlay = () => {
             {JSON.stringify(
               matches.map((m) => ({
                 id: m.id,
-                path: m.route.path || '(index)',
+                path: m.route?.path ?? '(index)',
+                hasRoute: !!m.route,
                 pathname: m.pathname,
                 pathnameBase: m.pathnameBase,
                 params: m.params,
