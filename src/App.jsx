@@ -26,6 +26,7 @@ import ModeRoute from './components/Routing/ModeRoute';
 import { ParentLayout } from './components/Layouts';
 import ProtectedChildLayout from './components/Layouts/ProtectedChildLayout';
 import ParentPinVerification from './components/Parent/ParentPinVerification';
+import RouterDebugOverlay from './components/Debug/RouterDebugOverlay';
 
 function RootLayout() {
     return (
@@ -40,6 +41,7 @@ function RootLayout() {
                                     <Outlet />
                                 </ModeProvider>
                                 <RewardPopup />
+                                <RouterDebugOverlay />
                             </ChatProvider>
                         </FlashcardProvider>
                     </SelectionProvider>
