@@ -92,12 +92,20 @@ const StudyPage = () => {
         loadLesson();
     }, [lessonId]); // eslint-disable-line react-hooks/exhaustive-deps
 
+    // Track if we've already attempted to set currentLesson for this lessonId
+    const setCurrentLessonAttempted = useRef(new Set());
+
     // Ensure currentLesson is set when the lesson appears in lessons array
     useEffect(() => {
+        // Skip if no lessonId or already set correctly
         if (!lessonId || currentLesson?.id === lessonId) return;
+
+        // Skip if we've already tried setting this lesson (prevents loop)
+        if (setCurrentLessonAttempted.current.has(lessonId)) return;
 
         const lesson = lessons.find(l => l.id === lessonId);
         if (lesson) {
+            setCurrentLessonAttempted.current.add(lessonId);
             setCurrentLesson(lessonId);
         }
     }, [lessonId, lessons, currentLesson?.id, setCurrentLesson]);
