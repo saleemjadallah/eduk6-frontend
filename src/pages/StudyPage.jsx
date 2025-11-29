@@ -40,8 +40,11 @@ const StudyPage = () => {
     const { createDeck, addCards } = useFlashcardContext();
     const studyStartTimeRef = useRef(null);
 
-    // Check if lesson is a PDF
-    const isPdfLesson = currentLesson?.sourceType === 'pdf' || currentLesson?.fileUrl?.endsWith('.pdf');
+    // Only render PDF viewer when we actually have a file URL; otherwise fall back to lesson view
+    const isPdfLesson = !!currentLesson?.fileUrl && (
+        currentLesson?.sourceType === 'pdf' ||
+        currentLesson?.fileUrl?.toLowerCase().endsWith('.pdf')
+    );
 
     // Handle sending selected text to chat
     const handleSendToChat = useCallback((text) => {
