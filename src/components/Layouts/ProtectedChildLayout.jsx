@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Outlet, Navigate, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useAuth } from '../../context/AuthContext';
@@ -22,6 +22,11 @@ const ProtectedChildLayout = () => {
     needsChildProfile,
     currentProfile,
   } = useAuth();
+
+  // Debug: Log navigation changes
+  useEffect(() => {
+    console.log('[ProtectedChildLayout] Route changed:', location.pathname);
+  }, [location.pathname]);
 
   // Show loading while auth initializes
   if (isLoading || !isReady) {

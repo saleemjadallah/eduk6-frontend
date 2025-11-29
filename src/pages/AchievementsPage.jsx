@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { ArrowLeft, Trophy, Star, Flame, BookOpen, Target } from 'lucide-react';
@@ -7,6 +7,11 @@ import { useGamificationContext } from '../context/GamificationContext';
 import { useAchievements } from '../hooks/useAchievements';
 
 const AchievementsPage = () => {
+    // Debug: Log when component mounts/unmounts
+    useEffect(() => {
+        console.log('[AchievementsPage] MOUNTED');
+        return () => console.log('[AchievementsPage] UNMOUNTED');
+    }, []);
     const [selectedCategory, setSelectedCategory] = useState('all');
     const { statistics, currentLevel, totalXP } = useGamificationContext();
     const { unlockedCount, totalCount, getNextBadgeSuggestion } = useAchievements();

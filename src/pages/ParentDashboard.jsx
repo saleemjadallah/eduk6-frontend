@@ -5,6 +5,12 @@ import { parentDashboardAPI } from '../services/api/parentDashboardAPI';
 import './ParentDashboard.css';
 
 const ParentDashboard = () => {
+  // Debug: Log when component mounts/unmounts
+  useEffect(() => {
+    console.log('[ParentDashboard] MOUNTED');
+    return () => console.log('[ParentDashboard] UNMOUNTED');
+  }, []);
+
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
