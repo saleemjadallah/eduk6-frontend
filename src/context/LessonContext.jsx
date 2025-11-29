@@ -353,9 +353,10 @@ export function LessonProvider({ children }) {
     const newLesson = {
       ...DEFAULT_LESSON,
       ...lessonData,
-      id: uuidv4(),
-      createdAt: now,
-      updatedAt: now,
+      // Use provided ID (from database) or generate new UUID for local-only lessons
+      id: lessonData.id || uuidv4(),
+      createdAt: lessonData.createdAt || now,
+      updatedAt: lessonData.updatedAt || now,
       progress: {
         ...DEFAULT_LESSON.progress,
         started: true,
