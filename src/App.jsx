@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { createBrowserRouter, RouterProvider, Navigate, Outlet, ScrollRestoration, useLocation, useNavigate } from 'react-router-dom';
 import { LessonProvider } from './context/LessonContext';
 import { GamificationProvider } from './context/GamificationContext';
@@ -34,7 +35,7 @@ function RootLayout() {
 
     // If the window URL and router state ever diverge (observed in production),
     // force the router to resync to the real URL to avoid a “stuck” page.
-    React.useEffect(() => {
+    useEffect(() => {
         const browserUrl = `${window.location.pathname}${window.location.search}${window.location.hash}`;
         const routerUrl = `${location.pathname}${location.search}${location.hash}`;
         if (browserUrl !== routerUrl) {
