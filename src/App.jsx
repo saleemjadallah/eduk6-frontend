@@ -1,4 +1,4 @@
-import { createBrowserRouter, RouterProvider, Navigate, Outlet, ScrollRestoration } from 'react-router-dom';
+import { createBrowserRouter, RouterProvider, Navigate, Outlet, ScrollRestoration, useLocation, useNavigate } from 'react-router-dom';
 import { LessonProvider } from './context/LessonContext';
 import { GamificationProvider } from './context/GamificationContext';
 import { FlashcardProvider } from './context/FlashcardContext';
@@ -29,6 +29,20 @@ import ParentPinVerification from './components/Parent/ParentPinVerification';
 import RouterDebugOverlay from './components/Debug/RouterDebugOverlay';
 
 function RootLayout() {
+    const location = useLocation();
+    const navigate = useNavigate();
+
+    // If the window URL and router state ever diverge (observed in production),
+    // force the router to resync to the real URL to avoid a “stuck” page.
+    React.useEffect(() => {
+        const browserUrl = `${window.location.pathname}${window.location.search}${window.location.hash}`;
+        const routerUrl = `${location.pathname}${location.search}${location.hash}`;
+        if (browserUrl !== routerUrl) {
+            console.warn('[RouterSync] Resyncing router to window URL', { browserUrl, routerUrl });
+            navigate(browserUrl || '/', { replace: true });
+        }
+    }, [location.pathname, location.search, location.hash, navigate]);
+
     return (
         <AuthProvider>
             <LessonProvider>
