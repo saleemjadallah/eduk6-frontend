@@ -39,6 +39,28 @@ const ChildDashboard = () => {
         // AuthProvider not available
     }
 
+    // Helper to get/set deleted lesson IDs from localStorage
+    const getDeletedLessonIds = useCallback(() => {
+        try {
+            const deleted = localStorage.getItem(`deleted_lessons_${currentProfile?.id}`);
+            return deleted ? JSON.parse(deleted) : [];
+        } catch {
+            return [];
+        }
+    }, [currentProfile?.id]);
+
+    const addDeletedLessonId = useCallback((lessonId) => {
+        try {
+            const deleted = getDeletedLessonIds();
+            if (!deleted.includes(lessonId)) {
+                deleted.push(lessonId);
+                localStorage.setItem(`deleted_lessons_${currentProfile?.id}`, JSON.stringify(deleted));
+            }
+        } catch (e) {
+            console.error('Failed to track deleted lesson:', e);
+        }
+    }, [currentProfile?.id, getDeletedLessonIds]);
+
     // Fetch lessons from database and merge with local lessons
     useEffect(() => {
         async function syncLessonsFromDb() {
@@ -49,28 +71,32 @@ const ChildDashboard = () => {
                 const response = await api.get(`/lessons/child/${currentProfile.id}?limit=20`);
                 if (response.success && response.data?.lessons) {
                     const dbLessons = response.data.lessons;
-                    // Add any database lessons that aren't in local storage
+                    // Get IDs of lessons already in local storage and deleted lessons
                     const localIds = new Set(lessons.map(l => l.id));
+                    const deletedIds = new Set(getDeletedLessonIds());
+
                     for (const dbLesson of dbLessons) {
-                        if (!localIds.has(dbLesson.id)) {
-                            addLesson({
-                                id: dbLesson.id,
-                                title: dbLesson.title,
-                                subject: dbLesson.subject,
-                                gradeLevel: dbLesson.gradeLevel,
-                                sourceType: dbLesson.sourceType?.toLowerCase() || 'text',
-                                rawText: dbLesson.extractedText,
-                                formattedContent: dbLesson.formattedContent,
-                                summary: dbLesson.summary,
-                                chapters: dbLesson.chapters || [],
-                                keyConceptsForChat: dbLesson.keyConcepts || [],
-                                vocabulary: dbLesson.vocabulary || [],
-                                suggestedQuestions: dbLesson.suggestedQuestions || [],
-                                fileUrl: dbLesson.originalFileUrl,
-                                createdAt: dbLesson.createdAt,
-                                updatedAt: dbLesson.updatedAt,
-                            });
+                        // Skip if already in local storage OR was previously deleted
+                        if (localIds.has(dbLesson.id) || deletedIds.has(dbLesson.id)) {
+                            continue;
                         }
+                        addLesson({
+                            id: dbLesson.id,
+                            title: dbLesson.title,
+                            subject: dbLesson.subject,
+                            gradeLevel: dbLesson.gradeLevel,
+                            sourceType: dbLesson.sourceType?.toLowerCase() || 'text',
+                            rawText: dbLesson.extractedText,
+                            formattedContent: dbLesson.formattedContent,
+                            summary: dbLesson.summary,
+                            chapters: dbLesson.chapters || [],
+                            keyConceptsForChat: dbLesson.keyConcepts || [],
+                            vocabulary: dbLesson.vocabulary || [],
+                            suggestedQuestions: dbLesson.suggestedQuestions || [],
+                            fileUrl: dbLesson.originalFileUrl,
+                            createdAt: dbLesson.createdAt,
+                            updatedAt: dbLesson.updatedAt,
+                        });
                     }
                 }
             } catch (error) {
@@ -81,7 +107,7 @@ const ChildDashboard = () => {
         }
 
         syncLessonsFromDb();
-    }, [currentProfile?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+    }, [currentProfile?.id, getDeletedLessonIds]); // eslint-disable-line react-hooks/exhaustive-deps
 
     const handleStartNewLesson = () => {
         clearCurrentLesson();
@@ -101,6 +127,9 @@ const ChildDashboard = () => {
         setDeletingLessonId(lessonId);
 
         try {
+            // Track as deleted locally first (so it won't come back on refresh)
+            addDeletedLessonId(lessonId);
+
             // Delete from backend using unified API client (handles auth automatically)
             await api.delete(`/lessons/${lessonId}`);
 
@@ -113,6 +142,8 @@ const ChildDashboard = () => {
             }
         } catch (error) {
             console.error('Error deleting lesson:', error);
+            // Even if backend delete fails, keep it tracked as deleted locally
+            // so user doesn't see it again until they explicitly want to
         } finally {
             setDeletingLessonId(null);
         }
