@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo, useEffect } from 'react';
+import React, { useState, useCallback, useMemo, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { BookOpen, PlayCircle, Star, Clock, FileText, Layers, Sparkles, CheckCircle, Image as ImageIcon, FileType, HelpCircle } from 'lucide-react';
@@ -95,13 +95,22 @@ const LessonView = ({ lesson, onComplete, showContentViewer = false }) => {
     const existingDeck = lesson ? getDeckForLesson(lesson.id) : null;
     const canCreateDeck = lesson ? canCreateDeckFromLesson(lesson) : false;
 
-    // Fetch exercises when lesson loads
+    // Track which lesson IDs we've already fetched exercises for to prevent loops
+    const fetchedExerciseLessonIds = useRef(new Set());
+
+    // Fetch exercises when lesson loads (only once per lesson ID)
     useEffect(() => {
         const fetchExercises = async () => {
             if (!lesson?.id) {
                 setExercises([]);
                 return;
             }
+
+            // Prevent re-fetching for the same lesson
+            if (fetchedExerciseLessonIds.current.has(lesson.id)) {
+                return;
+            }
+            fetchedExerciseLessonIds.current.add(lesson.id);
 
             setExercisesLoading(true);
             try {
