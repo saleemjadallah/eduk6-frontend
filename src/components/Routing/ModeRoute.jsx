@@ -35,7 +35,7 @@ const ModeRoute = ({
   }
 
   const { isAuthenticated, hasConsent, isLoading } = authContext;
-  const { currentMode, parentPinVerified } = modeContext;
+  const { currentMode, isParentMode } = modeContext;
 
   if (isLoading) {
     return (
@@ -88,7 +88,7 @@ const ModeRoute = ({
   }
 
   // Check mode access
-  if (mode === 'parent' && !parentPinVerified) {
+  if (mode === 'parent' && !isParentMode) {
     // Trying to access parent route without PIN verification
     return <Navigate to="/parent/verify-pin" state={{ from: location }} replace />;
   }
