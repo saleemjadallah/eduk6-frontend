@@ -1,4 +1,4 @@
-import { createBrowserRouter, RouterProvider, Navigate, Outlet, ScrollRestoration, Link } from 'react-router-dom';
+import { createBrowserRouter, RouterProvider, Navigate, Outlet, ScrollRestoration } from 'react-router-dom';
 import { LessonProvider } from './context/LessonContext';
 import { GamificationProvider } from './context/GamificationContext';
 import { FlashcardProvider } from './context/FlashcardContext';
@@ -39,7 +39,6 @@ function RootLayout() {
                                 <ModeProvider>
                                     <Outlet />
                                 </ModeProvider>
-                                {/* Global reward popup for celebrations */}
                                 <RewardPopup />
                             </ChatProvider>
                         </FlashcardProvider>
@@ -72,74 +71,23 @@ function PlaceholderPage({ title }) {
     );
 }
 
-// Simple test layout to isolate routing issues
-function TestLayout() {
-    return (
-        <div style={{ padding: '20px' }}>
-            <h1>Test Layout - Testing React Router</h1>
-            <nav style={{ marginBottom: '20px', display: 'flex', gap: '20px' }}>
-                <Link to="/test" style={{ color: 'blue', textDecoration: 'underline' }}>Test Home</Link>
-                <Link to="/test/page1" style={{ color: 'blue', textDecoration: 'underline' }}>Page 1</Link>
-                <Link to="/test/page2" style={{ color: 'blue', textDecoration: 'underline' }}>Page 2</Link>
-            </nav>
-            <div style={{ border: '2px solid blue', padding: '20px', marginTop: '20px' }}>
-                <p style={{ color: 'gray', marginBottom: '10px' }}>Content below (from Outlet):</p>
-                <Outlet />
-            </div>
-        </div>
-    );
-}
-
-// Simple child layout WITHOUT auth - to test if routing works inside RootLayout
-function SimpleChildLayout() {
-    return (
-        <div style={{ padding: '20px', background: '#f0f0f0', minHeight: '100vh' }}>
-            <h1>Simple Child Layout (No Auth)</h1>
-            <nav style={{ marginBottom: '20px', display: 'flex', gap: '20px' }}>
-                <Link to="/simple" style={{ color: 'blue' }}>Dashboard</Link>
-                <Link to="/simple/achievements" style={{ color: 'blue' }}>Achievements</Link>
-                <Link to="/simple/flashcards" style={{ color: 'blue' }}>Flashcards</Link>
-            </nav>
-            <div style={{ border: '2px solid green', padding: '20px', background: 'white' }}>
-                <Outlet />
-            </div>
-        </div>
-    );
-}
-
 const router = createBrowserRouter([
-    // SIMPLE TEST ROUTES - no auth, no providers
+    // FIX: Use path-based layout route instead of pathless layout route
+    // React Router v7 has known issues with pathless layout routes
     {
-        path: '/test',
-        element: <TestLayout />,
-        children: [
-            { index: true, element: <div><h2>Test Home Page</h2><p>Click links above to test navigation</p></div> },
-            { path: 'page1', element: <div><h2>Page 1</h2><p>This is page 1</p></div> },
-            { path: 'page2', element: <div><h2>Page 2</h2><p>This is page 2</p></div> },
-        ],
-    },
-    {
+        path: '/',
         element: <RootLayout />,
         children: [
-            // SIMPLE TEST inside RootLayout (has providers but no auth)
-            {
-                path: '/simple',
-                element: <SimpleChildLayout />,
-                children: [
-                    { index: true, element: <div><h2>Simple Dashboard</h2></div> },
-                    { path: 'achievements', element: <div><h2>Simple Achievements</h2></div> },
-                    { path: 'flashcards', element: <div><h2>Simple Flashcards</h2></div> },
-                ],
-            },
+            // Home page at root
+            { index: true, element: <HomePage /> },
 
             // Public routes
-            { path: '/', element: <HomePage /> },
-            { path: '/login', element: <LoginPage /> },
-            { path: '/onboarding', element: <OnboardingPage /> },
+            { path: 'login', element: <LoginPage /> },
+            { path: 'onboarding', element: <OnboardingPage /> },
 
             // Child routes - using ProtectedChildLayout (auth built into layout)
             {
-                path: '/learn',
+                path: 'learn',
                 element: <ProtectedChildLayout />,
                 children: [
                     { index: true, element: <ChildDashboard /> },
@@ -152,13 +100,13 @@ const router = createBrowserRouter([
             },
 
             // Legacy routes - redirect to new structure
-            { path: '/study', element: <Navigate to="/learn" replace /> },
-            { path: '/achievements', element: <Navigate to="/learn/achievements" replace /> },
-            { path: '/flashcards', element: <Navigate to="/learn/flashcards" replace /> },
+            { path: 'study', element: <Navigate to="/learn" replace /> },
+            { path: 'achievements', element: <Navigate to="/learn/achievements" replace /> },
+            { path: 'flashcards', element: <Navigate to="/learn/flashcards" replace /> },
 
             // Parent PIN verification route
             {
-                path: '/parent/verify-pin',
+                path: 'parent/verify-pin',
                 element: (
                     <ProtectedRoute requireProfile={false}>
                         <ParentPinVerification />
@@ -168,7 +116,7 @@ const router = createBrowserRouter([
 
             // Parent routes - wrapped in ParentLayout
             {
-                path: '/parent',
+                path: 'parent',
                 element: (
                     <ProtectedRoute requireProfile={false}>
                         <ModeRoute mode="parent">
@@ -192,7 +140,7 @@ const router = createBrowserRouter([
 
             // Add child route
             {
-                path: '/add-child',
+                path: 'add-child',
                 element: (
                     <ProtectedRoute requireProfile={false}>
                         <OnboardingPage initialStep="create_profile" />
