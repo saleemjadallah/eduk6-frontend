@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { Upload, BookOpen, Trophy, Sparkles, X } from 'lucide-react';
 import { useLessonContext } from '../context/LessonContext';
 import { useAuth } from '../context/AuthContext';
@@ -36,10 +36,6 @@ const ChildDashboard = () => {
     const handleStartNewLesson = () => {
         clearCurrentLesson();
         setIsUploadModalOpen(true);
-    };
-
-    const handleContinueLesson = (lessonId) => {
-        navigate(`/learn/study/${lessonId}`);
     };
 
     const handleUploadSuccess = (lessonId) => {
@@ -102,25 +98,27 @@ const ChildDashboard = () => {
                     <span className="font-bold text-lg">Upload Lesson</span>
                 </motion.button>
 
-                <motion.button
-                    whileHover={{ scale: 1.02, y: -4 }}
-                    whileTap={{ scale: 0.98 }}
-                    onClick={() => navigate('/learn/flashcards')}
-                    className="bg-nanobanana-yellow p-6 rounded-2xl border-4 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] flex flex-col items-center gap-3 hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] transition-all"
-                >
-                    <BookOpen className="w-10 h-10" />
-                    <span className="font-bold text-lg">Flashcards</span>
-                </motion.button>
+                <Link to="/learn/flashcards" className="block">
+                    <motion.div
+                        whileHover={{ scale: 1.02, y: -4 }}
+                        whileTap={{ scale: 0.98 }}
+                        className="bg-nanobanana-yellow p-6 rounded-2xl border-4 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] flex flex-col items-center gap-3 hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] transition-all h-full"
+                    >
+                        <BookOpen className="w-10 h-10" />
+                        <span className="font-bold text-lg">Flashcards</span>
+                    </motion.div>
+                </Link>
 
-                <motion.button
-                    whileHover={{ scale: 1.02, y: -4 }}
-                    whileTap={{ scale: 0.98 }}
-                    onClick={() => navigate('/learn/achievements')}
-                    className="bg-nanobanana-blue text-white p-6 rounded-2xl border-4 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] flex flex-col items-center gap-3 hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] transition-all"
-                >
-                    <Trophy className="w-10 h-10" />
-                    <span className="font-bold text-lg">Achievements</span>
-                </motion.button>
+                <Link to="/learn/achievements" className="block">
+                    <motion.div
+                        whileHover={{ scale: 1.02, y: -4 }}
+                        whileTap={{ scale: 0.98 }}
+                        className="bg-nanobanana-blue text-white p-6 rounded-2xl border-4 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] flex flex-col items-center gap-3 hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] transition-all h-full"
+                    >
+                        <Trophy className="w-10 h-10" />
+                        <span className="font-bold text-lg">Achievements</span>
+                    </motion.div>
+                </Link>
 
                 <motion.button
                     whileHover={{ scale: 1.02, y: -4 }}
@@ -174,34 +172,35 @@ const ChildDashboard = () => {
                                     exit={{ opacity: 0, scale: 0.8, transition: { duration: 0.2 } }}
                                     className="relative group"
                                 >
-                                    <motion.button
-                                        whileHover={{ scale: 1.02 }}
-                                        whileTap={{ scale: 0.98 }}
-                                        onClick={() => handleContinueLesson(lesson.id)}
-                                        className="w-full bg-white p-4 rounded-xl border-2 border-gray-200 text-left hover:border-nanobanana-blue transition-colors"
-                                    >
-                                        <div className="flex items-start gap-3">
-                                            <div className="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center text-2xl">
-                                                📚
-                                            </div>
-                                            <div className="flex-1 min-w-0 pr-6">
-                                                <h3 className="font-bold text-sm truncate">{lesson.title}</h3>
-                                                <p className="text-xs text-gray-500">{lesson.subject || 'General'}</p>
-                                                <div className="mt-2 h-2 bg-gray-200 rounded-full overflow-hidden">
-                                                    <div
-                                                        className="h-full bg-nanobanana-green rounded-full"
-                                                        style={{ width: `${lesson.progress?.percentComplete || 0}%` }}
-                                                    />
+                                    <Link to={`/learn/study/${lesson.id}`} className="block">
+                                        <motion.div
+                                            whileHover={{ scale: 1.02 }}
+                                            whileTap={{ scale: 0.98 }}
+                                            className="w-full bg-white p-4 rounded-xl border-2 border-gray-200 text-left hover:border-nanobanana-blue transition-colors"
+                                        >
+                                            <div className="flex items-start gap-3">
+                                                <div className="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center text-2xl">
+                                                    📚
+                                                </div>
+                                                <div className="flex-1 min-w-0 pr-6">
+                                                    <h3 className="font-bold text-sm truncate">{lesson.title}</h3>
+                                                    <p className="text-xs text-gray-500">{lesson.subject || 'General'}</p>
+                                                    <div className="mt-2 h-2 bg-gray-200 rounded-full overflow-hidden">
+                                                        <div
+                                                            className="h-full bg-nanobanana-green rounded-full"
+                                                            style={{ width: `${lesson.progress?.percentComplete || 0}%` }}
+                                                        />
+                                                    </div>
                                                 </div>
                                             </div>
-                                        </div>
-                                    </motion.button>
+                                        </motion.div>
+                                    </Link>
 
                                     {/* Delete Button */}
                                     <button
                                         onClick={(e) => handleDeleteLesson(e, lesson.id)}
                                         disabled={deletingLessonId === lesson.id}
-                                        className="absolute top-2 right-2 w-7 h-7 bg-gray-100 hover:bg-red-100 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-200 hover:text-red-500 border border-gray-200 hover:border-red-300"
+                                        className="absolute top-2 right-2 w-7 h-7 bg-gray-100 hover:bg-red-100 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-200 hover:text-red-500 border border-gray-200 hover:border-red-300 z-10"
                                         title="Delete lesson"
                                     >
                                         {deletingLessonId === lesson.id ? (
