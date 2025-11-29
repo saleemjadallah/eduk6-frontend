@@ -3,7 +3,8 @@
  * Handles child profile management API calls
  */
 
-import { makeAuthenticatedRequest as makeRequest } from './apiUtils.js';
+import { makeAuthenticatedRequest as makeRequest, API_BASE_URL } from './apiUtils.js';
+import { tokenManager } from './tokenManager.js';
 
 export const profileAPI = {
   /**
@@ -106,7 +107,7 @@ export const profileAPI = {
    * @returns {Promise<Object>} Updated profile with new avatar URL
    */
   uploadAvatar: async (childId, file) => {
-    const token = localStorage.getItem('auth_token');
+    const token = tokenManager.getActiveToken();
     const formData = new FormData();
     formData.append('avatar', file);
 
