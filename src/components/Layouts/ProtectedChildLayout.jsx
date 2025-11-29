@@ -1,5 +1,5 @@
-import React, { useEffect } from 'react';
-import { Outlet, Navigate, useLocation } from 'react-router-dom';
+import React, { useEffect, useRef } from 'react';
+import { Outlet, Navigate, useLocation, useMatches } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useAuth } from '../../context/AuthContext';
 import { ChildNavigation, ModeSwitcher } from '../Navigation';
@@ -12,6 +12,10 @@ import './ChildLayout.css';
  */
 const ProtectedChildLayout = () => {
   const location = useLocation();
+  const matches = useMatches();
+  const renderCount = useRef(0);
+  renderCount.current++;
+
   const {
     isAuthenticated,
     hasConsent,
@@ -23,9 +27,16 @@ const ProtectedChildLayout = () => {
     currentProfile,
   } = useAuth();
 
+  // Debug: Log every render with route info
+  useEffect(() => {
+    console.log('[ProtectedChildLayout] Render #' + renderCount.current);
+    console.log('[ProtectedChildLayout] Location:', location.pathname);
+    console.log('[ProtectedChildLayout] Matched routes:', matches.map(m => m.pathname).join(' -> '));
+  });
+
   // Debug: Log navigation changes
   useEffect(() => {
-    console.log('[ProtectedChildLayout] Route changed:', location.pathname);
+    console.log('[ProtectedChildLayout] Route CHANGED to:', location.pathname);
   }, [location.pathname]);
 
   // Show loading while auth initializes
