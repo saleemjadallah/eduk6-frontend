@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate, Link } from 'react-router-dom';
 import { Upload, BookOpen, Trophy, Sparkles, X } from 'lucide-react';
@@ -10,6 +10,11 @@ import { api } from '../services/api/apiClient';
 import UploadModal from '../components/Upload/UploadModal';
 
 const ChildDashboard = () => {
+    // Debug: Log when component mounts/unmounts
+    useEffect(() => {
+        console.log('[ChildDashboard] MOUNTED');
+        return () => console.log('[ChildDashboard] UNMOUNTED');
+    }, []);
     const navigate = useNavigate();
     const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
     const [deletingLessonId, setDeletingLessonId] = useState(null);
