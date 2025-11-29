@@ -24,11 +24,24 @@ const StudyPage = () => {
     const [isLoadingFromDb, setIsLoadingFromDb] = useState(false);
     const { currentLesson, lessons, markLessonComplete, setCurrentLesson, addLesson } = useLessonContext();
 
+    // Track which lesson IDs we've already attempted to fetch to prevent infinite loops
+    const fetchedLessonIds = useRef(new Set());
+
     // Set current lesson from URL param when page loads
     // If not in localStorage, try to fetch from database
     useEffect(() => {
         async function loadLesson() {
             if (!lessonId) return;
+
+            // Prevent re-fetching the same lesson
+            if (fetchedLessonIds.current.has(lessonId)) {
+                // Already fetched, just set current if needed
+                const localLesson = lessons.find(l => l.id === lessonId);
+                if (localLesson && (!currentLesson || currentLesson.id !== lessonId)) {
+                    setCurrentLesson(lessonId);
+                }
+                return;
+            }
 
             // Check if lesson exists in local context
             const localLesson = lessons.find(l => l.id === lessonId);
@@ -38,6 +51,9 @@ const StudyPage = () => {
                 }
                 return;
             }
+
+            // Mark as fetched to prevent re-fetching
+            fetchedLessonIds.current.add(lessonId);
 
             // Lesson not in localStorage - try fetching from database
             setIsLoadingFromDb(true);
@@ -74,7 +90,7 @@ const StudyPage = () => {
         }
 
         loadLesson();
-    }, [lessonId, lessons, currentLesson?.id, setCurrentLesson, addLesson, navigate]);
+    }, [lessonId]); // eslint-disable-line react-hooks/exhaustive-deps
 
     // Redirect to dashboard if no lesson and not loading
     useEffect(() => {
