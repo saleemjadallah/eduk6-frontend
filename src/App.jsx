@@ -90,6 +90,23 @@ function TestLayout() {
     );
 }
 
+// Simple child layout WITHOUT auth - to test if routing works inside RootLayout
+function SimpleChildLayout() {
+    return (
+        <div style={{ padding: '20px', background: '#f0f0f0', minHeight: '100vh' }}>
+            <h1>Simple Child Layout (No Auth)</h1>
+            <nav style={{ marginBottom: '20px', display: 'flex', gap: '20px' }}>
+                <Link to="/simple" style={{ color: 'blue' }}>Dashboard</Link>
+                <Link to="/simple/achievements" style={{ color: 'blue' }}>Achievements</Link>
+                <Link to="/simple/flashcards" style={{ color: 'blue' }}>Flashcards</Link>
+            </nav>
+            <div style={{ border: '2px solid green', padding: '20px', background: 'white' }}>
+                <Outlet />
+            </div>
+        </div>
+    );
+}
+
 const router = createBrowserRouter([
     // SIMPLE TEST ROUTES - no auth, no providers
     {
@@ -104,6 +121,17 @@ const router = createBrowserRouter([
     {
         element: <RootLayout />,
         children: [
+            // SIMPLE TEST inside RootLayout (has providers but no auth)
+            {
+                path: '/simple',
+                element: <SimpleChildLayout />,
+                children: [
+                    { index: true, element: <div><h2>Simple Dashboard</h2></div> },
+                    { path: 'achievements', element: <div><h2>Simple Achievements</h2></div> },
+                    { path: 'flashcards', element: <div><h2>Simple Flashcards</h2></div> },
+                ],
+            },
+
             // Public routes
             { path: '/', element: <HomePage /> },
             { path: '/login', element: <LoginPage /> },
