@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate, Link } from 'react-router-dom';
 import { Upload, BookOpen, Trophy, Sparkles, X } from 'lucide-react';
@@ -21,6 +21,9 @@ const ChildDashboard = () => {
     const [isLoadingDbLessons, setIsLoadingDbLessons] = useState(false);
     const { clearCurrentLesson, recentLessons, lessons, deleteLesson, addLesson } = useLessonContext();
     const { stats, loading: statsLoading, refetch: refreshStats } = useChildStats();
+
+    // Track which profiles we've already synced to prevent duplicate fetches
+    const syncedProfileIds = useRef(new Set());
 
     // Get gamification context as additional source for local stats
     let gamificationStats = null;
@@ -61,10 +64,16 @@ const ChildDashboard = () => {
         }
     }, [currentProfile?.id, getDeletedLessonIds]);
 
-    // Fetch lessons from database and merge with local lessons
+    // Fetch lessons from database and merge with local lessons (only once per profile)
     useEffect(() => {
         async function syncLessonsFromDb() {
             if (!currentProfile?.id) return;
+
+            // Prevent duplicate syncs for the same profile
+            if (syncedProfileIds.current.has(currentProfile.id)) {
+                return;
+            }
+            syncedProfileIds.current.add(currentProfile.id);
 
             setIsLoadingDbLessons(true);
             try {
@@ -107,7 +116,7 @@ const ChildDashboard = () => {
         }
 
         syncLessonsFromDb();
-    }, [currentProfile?.id, getDeletedLessonIds]); // eslint-disable-line react-hooks/exhaustive-deps
+    }, [currentProfile?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
     const handleStartNewLesson = () => {
         clearCurrentLesson();
