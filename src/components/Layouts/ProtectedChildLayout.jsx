@@ -85,8 +85,9 @@ const ProtectedChildLayout = () => {
       </header>
 
       {/* Main content - Outlet renders child routes */}
+      {/* key={location.pathname} forces React to unmount/remount when route changes */}
       <main className="child-main">
-        <Outlet />
+        <Outlet key={location.pathname} />
       </main>
 
       {/* Floating Jeffrey helper for younger children */}
