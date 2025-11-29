@@ -92,6 +92,16 @@ const StudyPage = () => {
         loadLesson();
     }, [lessonId]); // eslint-disable-line react-hooks/exhaustive-deps
 
+    // Ensure currentLesson is set when the lesson appears in lessons array
+    useEffect(() => {
+        if (!lessonId || currentLesson?.id === lessonId) return;
+
+        const lesson = lessons.find(l => l.id === lessonId);
+        if (lesson) {
+            setCurrentLesson(lessonId);
+        }
+    }, [lessonId, lessons, currentLesson?.id, setCurrentLesson]);
+
     // Redirect to dashboard if no lesson and not loading
     useEffect(() => {
         if (!lessonId && !currentLesson && !isLoadingFromDb) {
