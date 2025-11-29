@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, FileText, Youtube, Camera, Sparkles, AlertCircle } from 'lucide-react';
 import FileDropzone from './FileDropzone';
@@ -24,8 +24,9 @@ const UploadModal = ({ isOpen, onClose, onSuccess }) => {
     const [gradeLevel, setGradeLevel] = useState('');
     const [localError, setLocalError] = useState(null);
     const [completedLesson, setCompletedLesson] = useState(null);
+    const hasNavigatedRef = useRef(false);
 
-    const { isProcessing, processingStage, processingProgress, error: contextError } = useLessonContext();
+    const { isProcessing, processingStage, processingProgress, error: contextError, setCurrentLesson } = useLessonContext();
     const { processFile, processYouTube } = useLessonProcessor();
 
     // Clear local error when tab changes
@@ -84,6 +85,14 @@ const UploadModal = ({ isOpen, onClose, onSuccess }) => {
             // Store the completed lesson to use when navigating
             if (lesson) {
                 setCompletedLesson(lesson);
+                setCurrentLesson(lesson.id);
+
+                // Navigate immediately after creation to avoid missing the lesson view
+                if (onSuccess && !hasNavigatedRef.current) {
+                    hasNavigatedRef.current = true;
+                    onClose();
+                    onSuccess(lesson.id);
+                }
             }
         } catch (error) {
             // Error is already handled in the processor and set in context
@@ -93,7 +102,7 @@ const UploadModal = ({ isOpen, onClose, onSuccess }) => {
 
     // Auto-close modal and navigate when processing completes successfully
     useEffect(() => {
-        if (processingStage === 'complete' && !contextError && completedLesson) {
+        if (processingStage === 'complete' && !contextError && completedLesson && !hasNavigatedRef.current) {
             // Delay slightly to let user see completion
             const timer = setTimeout(() => {
                 const lessonId = completedLesson.id;
@@ -101,6 +110,7 @@ const UploadModal = ({ isOpen, onClose, onSuccess }) => {
                 onClose();
                 // Call onSuccess callback with the lesson ID to trigger navigation
                 if (onSuccess) {
+                    hasNavigatedRef.current = true;
                     onSuccess(lessonId);
                 }
             }, 800);
@@ -117,6 +127,7 @@ const UploadModal = ({ isOpen, onClose, onSuccess }) => {
         setActiveTab('file');
         setLocalError(null);
         setCompletedLesson(null);
+        hasNavigatedRef.current = false;
     };
 
     const canSubmit = (selectedFile || selectedVideo) && lessonTitle.trim() && !isProcessing;
