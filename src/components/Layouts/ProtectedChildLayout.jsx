@@ -41,6 +41,7 @@ const ProtectedChildLayout = () => {
 
   // Show loading while auth initializes
   if (isLoading || !isReady) {
+    console.log('[ProtectedChildLayout] Showing LOADING (isLoading:', isLoading, 'isReady:', isReady, ')');
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="animate-spin w-10 h-10 border-4 border-gray-200 border-t-yellow-400 rounded-full" />
@@ -50,23 +51,29 @@ const ProtectedChildLayout = () => {
 
   // Not authenticated - redirect to login
   if (!isAuthenticated) {
+    console.log('[ProtectedChildLayout] Redirecting to LOGIN (not authenticated)');
     return <Navigate to="/login" state={{ from: location.pathname }} replace />;
   }
 
   // Needs email verification
   if (needsEmailVerification) {
+    console.log('[ProtectedChildLayout] Redirecting to ONBOARDING (email verification)');
     return <Navigate to="/onboarding" state={{ step: 'email_verification' }} replace />;
   }
 
   // Needs consent
   if (needsConsent) {
+    console.log('[ProtectedChildLayout] Redirecting to ONBOARDING (consent)');
     return <Navigate to="/onboarding" state={{ step: 'consent_method' }} replace />;
   }
 
   // Needs child profile
   if (needsChildProfile) {
+    console.log('[ProtectedChildLayout] Redirecting to ONBOARDING (child profile)');
     return <Navigate to="/onboarding" state={{ step: 'create_profile' }} replace />;
   }
+
+  console.log('[ProtectedChildLayout] Rendering FULL LAYOUT for:', location.pathname);
 
   // Age-based UI class
   const getLayoutClass = () => {
@@ -101,9 +108,9 @@ const ProtectedChildLayout = () => {
       </header>
 
       {/* Main content - Outlet renders child routes */}
-      {/* key={location.pathname} forces React to unmount/remount when route changes */}
-      <main className="child-main">
-        <Outlet key={location.pathname} />
+      {/* Wrapping in keyed div forces React to remount child route components */}
+      <main className="child-main" key={location.pathname}>
+        <Outlet />
       </main>
 
       {/* Floating Jeffrey helper for younger children */}
