@@ -19,6 +19,7 @@ import LessonContentRenderer from './LessonContentRenderer';
 /**
  * Format raw text content with basic HTML structure
  * Converts line breaks to paragraphs and handles basic formatting
+ * This is the PRIMARY way content is displayed - we show the original extracted text
  */
 const formatContent = (text) => {
     if (!text) return '';
@@ -26,21 +27,57 @@ const formatContent = (text) => {
     // If content already has HTML tags, just sanitize and return
     if (/<[a-z][\s\S]*>/i.test(text)) {
         return DOMPurify.sanitize(text, {
-            ALLOWED_TAGS: ['p', 'br', 'b', 'strong', 'i', 'em', 'u', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'ul', 'ol', 'li', 'span', 'div', 'blockquote'],
+            ALLOWED_TAGS: ['p', 'br', 'b', 'strong', 'i', 'em', 'u', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'ul', 'ol', 'li', 'span', 'div', 'blockquote', 'table', 'thead', 'tbody', 'tr', 'th', 'td'],
             ALLOWED_ATTR: ['class', 'style'],
         });
     }
 
     // Convert plain text with line breaks to HTML paragraphs
-    const paragraphs = text.split(/\n\n+/).map(para => {
+    // Handle multiple formatting patterns commonly found in educational content
+    let formatted = text;
+
+    // Detect and format numbered lists (1. 2. 3. or 1) 2) 3))
+    formatted = formatted.replace(/^(\d+[\.\)]\s+)/gm, '<strong>$1</strong>');
+
+    // Detect and format bullet points (-, *, •)
+    formatted = formatted.replace(/^([\-\*\•]\s+)/gm, '&bull; ');
+
+    // Detect and format section headers (lines that are ALL CAPS or end with :)
+    formatted = formatted.replace(/^([A-Z][A-Z\s]{5,}):?\s*$/gm, '<h3>$1</h3>');
+
+    // Split by double line breaks for paragraphs
+    const paragraphs = formatted.split(/\n\n+/).map(para => {
+        const trimmed = para.trim();
+        if (!trimmed) return '';
+
+        // Check if it's already a heading
+        if (trimmed.startsWith('<h3>')) {
+            return trimmed;
+        }
+
         // Convert single line breaks to <br>
-        const withBreaks = para.trim().replace(/\n/g, '<br>');
-        return withBreaks ? `<p>${withBreaks}</p>` : '';
+        const withBreaks = trimmed.replace(/\n/g, '<br>');
+        return `<p>${withBreaks}</p>`;
     }).filter(Boolean);
 
     return DOMPurify.sanitize(paragraphs.join(''), {
-        ALLOWED_TAGS: ['p', 'br', 'b', 'strong', 'i', 'em', 'u'],
+        ALLOWED_TAGS: ['p', 'br', 'b', 'strong', 'i', 'em', 'u', 'h3', 'h4'],
     });
+};
+
+/**
+ * Get the primary content to display
+ * Priority: extractedText > formattedContent > rawText
+ */
+const getPrimaryContent = (lesson) => {
+    // Prefer extractedText (the original content from the uploaded file)
+    return lesson?.extractedText ||
+           lesson?.content?.extractedText ||
+           lesson?.formattedContent ||
+           lesson?.content?.formattedContent ||
+           lesson?.rawText ||
+           lesson?.content?.rawText ||
+           '';
 };
 
 const LessonView = ({ lesson, onComplete, showContentViewer = false }) => {
@@ -364,45 +401,22 @@ const LessonView = ({ lesson, onComplete, showContentViewer = false }) => {
                     )}
 
                     {/* FULL LESSON CONTENT - Primary display */}
-                    {(displayLesson.formattedContent || displayLesson.content?.formattedContent || displayLesson.rawText || displayLesson.content?.rawText) && (
+                    {/* We display the original extractedText to preserve full content */}
+                    {getPrimaryContent(displayLesson) && (
                         <div className="prose prose-lg max-w-none">
                             <div className="bg-white rounded-2xl border-2 border-gray-200 p-6 shadow-sm">
-                                {/* Use LessonContentRenderer if we have formattedContent with exercises */}
-                                {(displayLesson.formattedContent || displayLesson.content?.formattedContent)?.includes('interactive-exercise') ? (
-                                    <div className="text-gray-800 leading-relaxed">
-                                        <LessonContentRenderer
-                                            content={displayLesson.formattedContent || displayLesson.content?.formattedContent}
-                                            exercises={exercises}
-                                            lessonId={displayLesson.id}
-                                            onExerciseComplete={(exerciseId, result) => {
-                                                // Update local exercise state
-                                                setExercises(prev => prev.map(ex =>
-                                                    ex.originalPosition === exerciseId || ex.id === exerciseId
-                                                        ? { ...ex, isCompleted: true }
-                                                        : ex
-                                                ));
-                                            }}
-                                        />
-                                    </div>
-                                ) : (
-                                    <div
-                                        className="text-gray-800 leading-relaxed lesson-content"
-                                        dangerouslySetInnerHTML={{
-                                            __html: formatContent(
-                                                displayLesson.formattedContent ||
-                                                displayLesson.content?.formattedContent ||
-                                                displayLesson.rawText ||
-                                                displayLesson.content?.rawText
-                                            )
-                                        }}
-                                    />
-                                )}
+                                <div
+                                    className="text-gray-800 leading-relaxed lesson-content"
+                                    dangerouslySetInnerHTML={{
+                                        __html: formatContent(getPrimaryContent(displayLesson))
+                                    }}
+                                />
                             </div>
                         </div>
                     )}
 
                     {/* Divider before study aids */}
-                    {(displayLesson.rawText || displayLesson.content?.rawText) &&
+                    {getPrimaryContent(displayLesson) &&
                      ((displayLesson.content?.vocabulary?.length > 0 || displayLesson.vocabulary?.length > 0) ||
                       displayLesson.suggestedQuestions?.length > 0) && (
                         <div className="flex items-center gap-4 my-8">
