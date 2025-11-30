@@ -292,11 +292,14 @@ function transformDbLesson(dbLesson) {
     subject: dbLesson.subject,
     gradeLevel: dbLesson.gradeLevel,
     sourceType: dbLesson.sourceType?.toLowerCase() || 'text',
-    rawText: dbLesson.extractedText,
-    formattedContent: dbLesson.formattedContent,
+    // Primary content: extractedText (the original full content)
+    extractedText: dbLesson.extractedText,
+    rawText: dbLesson.extractedText, // Alias for backwards compatibility
+    formattedContent: dbLesson.formattedContent, // Deprecated, may be null
     summary: dbLesson.summary,
     chapters: dbLesson.chapters || [],
-    keyConceptsForChat: dbLesson.keyConcepts || [],
+    keyConcepts: dbLesson.keyConcepts || [], // Used for Jeffrey context
+    keyConceptsForChat: dbLesson.keyConcepts || [], // Alias
     vocabulary: dbLesson.vocabulary || [],
     suggestedQuestions: dbLesson.suggestedQuestions || [],
     fileUrl: dbLesson.originalFileUrl,
