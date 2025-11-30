@@ -4,14 +4,16 @@ import React, {
   useReducer,
   useCallback,
   useEffect,
-  useMemo
+  useMemo,
+  useRef
 } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import {
   PROCESSING_STAGES,
   DEFAULT_LESSON,
 } from '../constants/lessonConstants';
-import { storageManager } from '../services/storage/storageManager';
+import { api } from '../services/api/apiClient';
+import { useAuth } from './AuthContext';
 
 // ============================================
 // INITIAL STATE
@@ -34,8 +36,12 @@ const initialState = {
   // UI state
   isLessonDrawerOpen: false,
 
-  // Storage initialized flag
-  storageInitialized: false,
+  // Loading state for database fetch
+  isLoadingLessons: false,
+  lessonsLoaded: false,
+
+  // Track which child's lessons are loaded
+  loadedChildId: null,
 };
 
 // ============================================
@@ -66,8 +72,10 @@ const ACTIONS = {
   UPDATE_LESSON_PROGRESS: 'UPDATE_LESSON_PROGRESS',
   INCREMENT_TIME_SPENT: 'INCREMENT_TIME_SPENT',
 
-  // Storage
-  SET_STORAGE_INITIALIZED: 'SET_STORAGE_INITIALIZED',
+  // Loading state
+  SET_LOADING_LESSONS: 'SET_LOADING_LESSONS',
+  SET_LESSONS_LOADED: 'SET_LESSONS_LOADED',
+  CLEAR_LESSONS: 'CLEAR_LESSONS',
 };
 
 // ============================================
@@ -109,6 +117,16 @@ function lessonReducer(state, action) {
 
     // --- Lesson CRUD ---
     case ACTIONS.ADD_LESSON:
+      // Prevent duplicates
+      if (state.lessons.some(l => l.id === action.payload.id)) {
+        return {
+          ...state,
+          currentLesson: action.payload,
+          isProcessing: false,
+          processingProgress: 100,
+          processingStage: 'complete',
+        };
+      }
       return {
         ...state,
         lessons: [action.payload, ...state.lessons], // Newest first
@@ -123,7 +141,9 @@ function lessonReducer(state, action) {
         ...state,
         lessons: action.payload.lessons,
         currentLesson: action.payload.currentLesson,
-        storageInitialized: true,
+        isLoadingLessons: false,
+        lessonsLoaded: true,
+        loadedChildId: action.payload.childId,
       };
 
     case ACTIONS.SET_CURRENT_LESSON:
@@ -229,11 +249,26 @@ function lessonReducer(state, action) {
         isLessonDrawerOpen: action.payload ?? !state.isLessonDrawerOpen,
       };
 
-    // --- Storage ---
-    case ACTIONS.SET_STORAGE_INITIALIZED:
+    // --- Loading State ---
+    case ACTIONS.SET_LOADING_LESSONS:
       return {
         ...state,
-        storageInitialized: action.payload,
+        isLoadingLessons: action.payload,
+      };
+
+    case ACTIONS.SET_LESSONS_LOADED:
+      return {
+        ...state,
+        lessonsLoaded: action.payload,
+      };
+
+    case ACTIONS.CLEAR_LESSONS:
+      return {
+        ...state,
+        lessons: [],
+        currentLesson: null,
+        lessonsLoaded: false,
+        loadedChildId: null,
       };
 
     default:
@@ -248,72 +283,123 @@ function lessonReducer(state, action) {
 const LessonContext = createContext(null);
 
 // ============================================
+// HELPER: Transform DB lesson to local format
+// ============================================
+function transformDbLesson(dbLesson) {
+  return {
+    id: dbLesson.id,
+    title: dbLesson.title,
+    subject: dbLesson.subject,
+    gradeLevel: dbLesson.gradeLevel,
+    sourceType: dbLesson.sourceType?.toLowerCase() || 'text',
+    rawText: dbLesson.extractedText,
+    formattedContent: dbLesson.formattedContent,
+    summary: dbLesson.summary,
+    chapters: dbLesson.chapters || [],
+    keyConceptsForChat: dbLesson.keyConcepts || [],
+    vocabulary: dbLesson.vocabulary || [],
+    suggestedQuestions: dbLesson.suggestedQuestions || [],
+    fileUrl: dbLesson.originalFileUrl,
+    createdAt: dbLesson.createdAt,
+    updatedAt: dbLesson.updatedAt,
+    progress: {
+      started: true,
+      percentComplete: dbLesson.progress?.percentComplete || 0,
+      timeSpent: dbLesson.progress?.timeSpent || 0,
+      lastAccessedAt: dbLesson.progress?.lastAccessedAt || dbLesson.updatedAt,
+    },
+  };
+}
+
+// ============================================
 // PROVIDER COMPONENT
 // ============================================
 export function LessonProvider({ children }) {
   const [state, dispatch] = useReducer(lessonReducer, initialState);
 
-  // --- Persistence: Load from namespaced storage on mount ---
-  useEffect(() => {
-    try {
-      // Use storage manager which handles namespacing per user/child
-      const lessons = storageManager.getLessons();
-      const currentLessonId = storageManager.getCurrentLessonId();
+  // Get current profile from AuthContext
+  const { currentProfile, isInitialized: authInitialized } = useAuth();
+  const childId = currentProfile?.id;
 
-      if (lessons && lessons.length > 0) {
-        const currentLesson = currentLessonId
-          ? lessons.find(l => l.id === currentLessonId)
-          : lessons[0] || null;
+  // Track fetch in progress to prevent duplicate calls
+  const fetchInProgress = useRef(false);
+  const lastFetchedChildId = useRef(null);
 
-        dispatch({
-          type: ACTIONS.LOAD_LESSONS,
-          payload: { lessons, currentLesson }
-        });
-      } else {
-        dispatch({ type: ACTIONS.SET_STORAGE_INITIALIZED, payload: true });
-      }
-    } catch (error) {
-      console.error('Failed to load lessons from storage:', error);
-      dispatch({ type: ACTIONS.SET_STORAGE_INITIALIZED, payload: true });
+  // ============================================
+  // DATABASE FETCH: Load lessons when childId changes
+  // ============================================
+  const fetchLessons = useCallback(async (profileId) => {
+    if (!profileId) {
+      dispatch({ type: ACTIONS.CLEAR_LESSONS });
+      return;
     }
-  }, []);
 
-  // --- Listen for storage manager changes (e.g., profile switch) ---
-  useEffect(() => {
-    const unsubscribe = storageManager.subscribe(({ key }) => {
-      if (key === '__clear__' || key === 'lessons') {
-        // Reload lessons when storage is cleared or lessons change externally
-        const lessons = storageManager.getLessons();
-        const currentLessonId = storageManager.getCurrentLessonId();
+    // Prevent duplicate fetches
+    if (fetchInProgress.current && lastFetchedChildId.current === profileId) {
+      return;
+    }
+
+    fetchInProgress.current = true;
+    lastFetchedChildId.current = profileId;
+    dispatch({ type: ACTIONS.SET_LOADING_LESSONS, payload: true });
+
+    try {
+      const response = await api.get(`/lessons/child/${profileId}?limit=50`);
+
+      if (response.success && response.data?.lessons) {
+        const dbLessons = response.data.lessons;
+        const transformedLessons = dbLessons.map(transformDbLesson);
 
         dispatch({
           type: ACTIONS.LOAD_LESSONS,
           payload: {
-            lessons: lessons || [],
-            currentLesson: currentLessonId
-              ? (lessons || []).find(l => l.id === currentLessonId)
-              : (lessons || [])[0] || null
+            lessons: transformedLessons,
+            currentLesson: transformedLessons[0] || null,
+            childId: profileId,
+          }
+        });
+      } else {
+        // No lessons found - set empty array
+        dispatch({
+          type: ACTIONS.LOAD_LESSONS,
+          payload: {
+            lessons: [],
+            currentLesson: null,
+            childId: profileId,
           }
         });
       }
-    });
-
-    return unsubscribe;
+    } catch (error) {
+      console.error('Failed to fetch lessons from database:', error);
+      // Still mark as loaded to prevent infinite retries
+      dispatch({
+        type: ACTIONS.LOAD_LESSONS,
+        payload: {
+          lessons: [],
+          currentLesson: null,
+          childId: profileId,
+        }
+      });
+    } finally {
+      fetchInProgress.current = false;
+    }
   }, []);
 
-  // --- Persistence: Save to namespaced storage on state change ---
+  // Fetch lessons when childId changes
   useEffect(() => {
-    if (!state.storageInitialized) return;
-
-    try {
-      storageManager.setLessons(state.lessons);
-      if (state.currentLesson) {
-        storageManager.setCurrentLessonId(state.currentLesson.id);
-      }
-    } catch (error) {
-      console.error('Failed to save lessons to storage:', error);
+    // Wait for auth to initialize
+    if (!authInitialized) {
+      return;
     }
-  }, [state.lessons, state.currentLesson, state.storageInitialized]);
+
+    // If childId changed, fetch new lessons
+    if (childId && childId !== state.loadedChildId) {
+      fetchLessons(childId);
+    } else if (!childId && state.loadedChildId) {
+      // Child logged out - clear lessons
+      dispatch({ type: ACTIONS.CLEAR_LESSONS });
+    }
+  }, [childId, authInitialized, state.loadedChildId, fetchLessons]);
 
   // --- Time tracking: Increment every 30 seconds while lesson is active ---
   useEffect(() => {
@@ -373,7 +459,6 @@ export function LessonProvider({ children }) {
 
   const clearCurrentLesson = useCallback(() => {
     dispatch({ type: ACTIONS.SET_CURRENT_LESSON, payload: null });
-    storageManager.remove('currentLessonId', { childScoped: true });
   }, []);
 
   const updateLesson = useCallback((lessonId, updates) => {
@@ -383,6 +468,15 @@ export function LessonProvider({ children }) {
   const deleteLesson = useCallback((lessonId) => {
     dispatch({ type: ACTIONS.DELETE_LESSON, payload: lessonId });
   }, []);
+
+  // Refresh lessons from database
+  const refreshLessons = useCallback(() => {
+    if (childId) {
+      // Reset the lastFetchedChildId to force a refetch
+      lastFetchedChildId.current = null;
+      fetchLessons(childId);
+    }
+  }, [childId, fetchLessons]);
 
   // Progress tracking
   const updateLessonProgress = useCallback((lessonId, progress) => {
@@ -463,6 +557,7 @@ export function LessonProvider({ children }) {
     clearCurrentLesson,
     updateLesson,
     deleteLesson,
+    refreshLessons,
 
     // Progress tracking
     updateLessonProgress,
@@ -486,6 +581,7 @@ export function LessonProvider({ children }) {
     clearCurrentLesson,
     updateLesson,
     deleteLesson,
+    refreshLessons,
     updateLessonProgress,
     markLessonComplete,
     setError,

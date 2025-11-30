@@ -11,9 +11,8 @@
  */
 
 // Legacy keys that need migration (global keys without namespacing)
+// Note: Lessons are now fetched directly from database - no localStorage caching
 const LEGACY_KEYS = {
-  LESSONS: 'orbitlearn_lessons',
-  CURRENT_LESSON_ID: 'orbitlearn_current_lesson_id',
   GAME_PROGRESS: 'userGameProgress',
 };
 
@@ -288,25 +287,6 @@ export const storageManager = {
    * @param {string} childId - Child ID
    */
   migrateLegacyData(userId, childId) {
-    // Migrate lessons (user-scoped)
-    const legacyLessons = safeGetItem(LEGACY_KEYS.LESSONS);
-    if (legacyLessons && childId) {
-      const childLessonsKey = this.buildKey('lessons', { childScoped: true });
-      if (!safeGetItem(childLessonsKey)) {
-        safeSetItem(childLessonsKey, legacyLessons);
-      }
-      // Don't remove legacy data yet - wait for successful migration verification
-    }
-
-    // Migrate current lesson ID (child-scoped)
-    const legacyCurrentLessonId = safeGetItem(LEGACY_KEYS.CURRENT_LESSON_ID);
-    if (legacyCurrentLessonId && childId) {
-      const childCurrentLessonKey = this.buildKey('currentLessonId', { childScoped: true });
-      if (!safeGetItem(childCurrentLessonKey)) {
-        safeSetItem(childCurrentLessonKey, JSON.stringify(legacyCurrentLessonId));
-      }
-    }
-
     // Migrate gamification progress (child-scoped)
     const legacyGameProgress = safeGetItem(LEGACY_KEYS.GAME_PROGRESS);
     if (legacyGameProgress && childId) {
@@ -315,6 +295,7 @@ export const storageManager = {
         safeSetItem(childGameProgressKey, legacyGameProgress);
       }
     }
+    // Note: Lessons are now fetched directly from database - no migration needed
   },
 
   /**
@@ -337,34 +318,6 @@ export const storageManager = {
   },
 
   // Convenience methods for common data types
-
-  /**
-   * Get lessons for current child
-   */
-  getLessons() {
-    return this.get('lessons', { childScoped: true }) || [];
-  },
-
-  /**
-   * Set lessons for current child
-   */
-  setLessons(lessons) {
-    this.set('lessons', lessons, { childScoped: true });
-  },
-
-  /**
-   * Get current lesson ID for current child
-   */
-  getCurrentLessonId() {
-    return this.get('currentLessonId', { childScoped: true });
-  },
-
-  /**
-   * Set current lesson ID for current child
-   */
-  setCurrentLessonId(lessonId) {
-    this.set('currentLessonId', lessonId, { childScoped: true });
-  },
 
   /**
    * Get gamification progress for current child
