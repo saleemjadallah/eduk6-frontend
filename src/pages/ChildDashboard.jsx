@@ -81,7 +81,7 @@ const ChildDashboard = () => {
         }
     };
 
-    const childName = currentProfile?.name || 'Learner';
+    const childName = currentProfile?.displayName || currentProfile?.name || 'Learner';
 
     // Determine loading state
     const isLoading = isLoadingLessons && !lessonsLoaded;
@@ -146,29 +146,29 @@ const ChildDashboard = () => {
                 </motion.button>
             </div>
 
-            {/* Stats Row */}
+            {/* Stats Row - uses useChildStats which fetches from database */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
                 <div className="bg-white p-4 rounded-xl border-2 border-gray-200 text-center">
                     <div className="text-3xl font-black text-nanobanana-blue">
-                        {gamificationStats?.statistics?.lessonsCompleted || 0}
+                        {statsLoading ? '-' : stats.lessonsCompleted}
                     </div>
                     <div className="text-sm text-gray-600 font-medium">Lessons Done</div>
                 </div>
                 <div className="bg-white p-4 rounded-xl border-2 border-gray-200 text-center">
                     <div className="text-3xl font-black text-nanobanana-green">
-                        {statsLoading ? '-' : (stats.streak?.current || gamificationStats?.streak?.current || 0)}
+                        {statsLoading ? '-' : stats.streak?.current}
                     </div>
                     <div className="text-sm text-gray-600 font-medium">Day Streak</div>
                 </div>
                 <div className="bg-white p-4 rounded-xl border-2 border-gray-200 text-center">
                     <div className="text-3xl font-black text-nanobanana-yellow">
-                        {statsLoading ? '-' : (stats.badgesEarned || gamificationStats?.badges?.length || 0)}
+                        {statsLoading ? '-' : stats.badgesEarned}
                     </div>
                     <div className="text-sm text-gray-600 font-medium">Badges Earned</div>
                 </div>
                 <div className="bg-white p-4 rounded-xl border-2 border-gray-200 text-center">
                     <div className="text-3xl font-black text-pink-500">
-                        {statsLoading ? '-' : (stats.xp || gamificationStats?.totalXP || 0)}
+                        {statsLoading ? '-' : stats.xp}
                     </div>
                     <div className="text-sm text-gray-600 font-medium">XP Points</div>
                 </div>
