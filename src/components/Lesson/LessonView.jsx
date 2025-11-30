@@ -15,53 +15,32 @@ import { VocabularyPanel } from '../LessonView/Metadata';
 import { ExerciseModal, ExerciseList } from '../Exercise';
 import { exerciseAPI } from '../../services/api/exerciseAPI';
 import LessonContentRenderer from './LessonContentRenderer';
+import { formatEducationalText } from '../../utils/smartTextFormatter';
 
 /**
- * Format raw text content with basic HTML structure
- * Converts line breaks to paragraphs and handles basic formatting
+ * Format raw text content with smart HTML structure
+ * Uses the smartTextFormatter to detect headers, lists, and educational patterns
  * This is the PRIMARY way content is displayed - we show the original extracted text
  */
 const formatContent = (text) => {
     if (!text) return '';
 
-    // If content already has HTML tags, just sanitize and return
-    if (/<[a-z][\s\S]*>/i.test(text)) {
+    // If content already has substantial HTML tags, just sanitize and return
+    const htmlTagCount = (text.match(/<[a-z][^>]*>/gi) || []).length;
+    if (htmlTagCount > 5) {
         return DOMPurify.sanitize(text, {
-            ALLOWED_TAGS: ['p', 'br', 'b', 'strong', 'i', 'em', 'u', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'ul', 'ol', 'li', 'span', 'div', 'blockquote', 'table', 'thead', 'tbody', 'tr', 'th', 'td'],
-            ALLOWED_ATTR: ['class', 'style'],
+            ALLOWED_TAGS: ['p', 'br', 'b', 'strong', 'i', 'em', 'u', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'ul', 'ol', 'li', 'span', 'div', 'blockquote', 'table', 'thead', 'tbody', 'tr', 'th', 'td', 'code'],
+            ALLOWED_ATTR: ['class', 'style', 'data-page'],
         });
     }
 
-    // Convert plain text with line breaks to HTML paragraphs
-    // Handle multiple formatting patterns commonly found in educational content
-    let formatted = text;
+    // Use the smart educational text formatter
+    const formatted = formatEducationalText(text);
 
-    // Detect and format numbered lists (1. 2. 3. or 1) 2) 3))
-    formatted = formatted.replace(/^(\d+[\.\)]\s+)/gm, '<strong>$1</strong>');
-
-    // Detect and format bullet points (-, *, •)
-    formatted = formatted.replace(/^([\-\*\•]\s+)/gm, '&bull; ');
-
-    // Detect and format section headers (lines that are ALL CAPS or end with :)
-    formatted = formatted.replace(/^([A-Z][A-Z\s]{5,}):?\s*$/gm, '<h3>$1</h3>');
-
-    // Split by double line breaks for paragraphs
-    const paragraphs = formatted.split(/\n\n+/).map(para => {
-        const trimmed = para.trim();
-        if (!trimmed) return '';
-
-        // Check if it's already a heading
-        if (trimmed.startsWith('<h3>')) {
-            return trimmed;
-        }
-
-        // Convert single line breaks to <br>
-        const withBreaks = trimmed.replace(/\n/g, '<br>');
-        return `<p>${withBreaks}</p>`;
-    }).filter(Boolean);
-
-    return DOMPurify.sanitize(paragraphs.join(''), {
-        ALLOWED_TAGS: ['p', 'br', 'b', 'strong', 'i', 'em', 'u', 'h3', 'h4'],
+    // Sanitize the output
+    return DOMPurify.sanitize(formatted, {
+        ALLOWED_TAGS: ['p', 'br', 'b', 'strong', 'i', 'em', 'u', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'ul', 'ol', 'li', 'span', 'div', 'blockquote', 'code'],
+        ALLOWED_ATTR: ['class', 'style', 'data-page'],
     });
 };
 
