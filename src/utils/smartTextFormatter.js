@@ -2,7 +2,53 @@
  * Smart Text Formatter
  * Intelligently formats plain text into structured HTML
  * Detects headers, lists, paragraphs, and educational content patterns
+ *
+ * IMPORTANT: This formatter handles text that may have lost its line breaks
+ * during PDF/image extraction. It first restores logical structure, then formats.
  */
+
+/**
+ * Patterns for inserting line breaks (text that should start on a new line)
+ */
+const LINE_BREAK_PATTERNS = [
+  // Page markers
+  /(\[Page\s*\d+\])/gi,
+
+  // Section headers - these should start on new lines
+  /((?:Learning Objectives?|Prerequisites?|Key Concepts?|Summary|Introduction|Overview|Conclusion|Review|Materials?|Vocabulary|Definitions?|Formula|Rules?|Examples?|Practice|Exercises?|Problems?|Activities?|Steps?|Procedure|Instructions?|Note|Tip|Remember|Important|Warning):)/gi,
+
+  // Numbered patterns - Step 1:, Example 1:, etc.
+  /((?:Step|Example|Part|Section|Chapter|Lesson|Problem|Question|Exercise|Activity|Set)\s*\d+\s*[:.)]\s*)/gi,
+
+  // Bullet points
+  /(•\s*)/g,
+
+  // Grade/Subject/Duration metadata
+  /((?:Grade Level|Subject|Topic|Duration|Time|Prerequisites?):\s*)/gi,
+
+  // "The [Something] Rule/Formula/Method" patterns
+  /(The\s+(?:Simple\s+)?(?:Rule|Formula|Method|Steps?|Key|Basic|Main)\s+(?:for|of|to)\s+)/gi,
+
+  // Question starters after periods
+  /(\.\s*)(What\s+(?:is|are|does|do|happens?)|How\s+(?:do|does|can|to)|Why\s+(?:do|does|is|are)|When\s+(?:do|does|should))/gi,
+
+  // "Answer:" pattern
+  /(Answer:\s*)/gi,
+
+  // "Tip:" or "Note:" inline
+  /((?:Tip|Note|Hint|Remember):\s*)/gi,
+];
+
+/**
+ * Patterns for paragraph breaks (more significant breaks)
+ */
+const PARAGRAPH_BREAK_PATTERNS = [
+  // Page markers get extra spacing
+  /(\[Page\s*\d+\])/gi,
+
+  // Major section headers
+  /((?:Learning Objectives?|Prerequisites?|Key Concepts?|Summary|Introduction|Overview|Conclusion|Examples? to Master|More Examples?|Practice Problems?)(?::|$))/gi,
+];
 
 /**
  * Pattern definitions for educational content
@@ -173,6 +219,63 @@ function formatInlineText(text) {
 }
 
 /**
+ * Restore line breaks to text that lost them during extraction
+ * This is critical for PDFs and images where text is often extracted as one long string
+ */
+function restoreLineBreaks(text) {
+  if (!text) return '';
+
+  let result = text;
+
+  // First, normalize any existing multiple spaces to single space
+  result = result.replace(/\s{2,}/g, ' ');
+
+  // Insert paragraph breaks before major sections
+  for (const pattern of PARAGRAPH_BREAK_PATTERNS) {
+    result = result.replace(pattern, '\n\n$1');
+  }
+
+  // Insert line breaks before other patterns
+  // Page markers
+  result = result.replace(/(\[Page\s*\d+\])/gi, '\n\n$1\n');
+
+  // Section headers that end with colon
+  result = result.replace(/(Learning Objectives?|Prerequisites?|Key Concepts?|Summary|Introduction|Overview|Conclusion|Review|Vocabulary|Definitions?|Materials?):/gi, '\n\n$1:\n');
+
+  // Numbered items: Step 1:, Example 1:, etc.
+  result = result.replace(/(Step|Example|Part|Problem|Question|Exercise|Activity|Set)\s*(\d+)\s*:/gi, '\n\n$1 $2:\n');
+
+  // Bullet points - insert newline before each bullet
+  result = result.replace(/\s*•\s*/g, '\n• ');
+
+  // "The [X] Rule/Formula for" patterns - new paragraph
+  result = result.replace(/(The\s+(?:Simple\s+)?(?:Rule|Formula|Method|Steps?)\s+(?:for|of|to)\s+)/gi, '\n\n$1');
+
+  // Metadata patterns
+  result = result.replace(/(Grade Level|Subject|Topic|Duration|Time):\s*/gi, '\n$1: ');
+
+  // Answer patterns
+  result = result.replace(/\s*(Answer):\s*/gi, '\n$1: ');
+
+  // Tip/Note patterns
+  result = result.replace(/\s*(Tip|Note|Hint|Remember):\s*/gi, '\n\n$1: ');
+
+  // Questions that follow a period (likely new sections)
+  result = result.replace(/\.\s+(What Does It Mean|What is|How do you|How to|Why do|When should)/gi, '.\n\n$1');
+
+  // "To multiply/divide/add" instruction starts
+  result = result.replace(/\.\s+(To\s+(?:multiply|divide|add|subtract|solve|find|calculate))/gi, '.\n\n$1');
+
+  // Clean up excessive newlines
+  result = result.replace(/\n{3,}/g, '\n\n');
+
+  // Trim leading/trailing whitespace from each line
+  result = result.split('\n').map(line => line.trim()).join('\n');
+
+  return result.trim();
+}
+
+/**
  * Process page markers and split content
  */
 function processPageMarkers(text) {
@@ -186,8 +289,18 @@ function processPageMarkers(text) {
 export function formatEducationalText(text) {
   if (!text || typeof text !== 'string') return '';
 
-  // Pre-process: normalize line endings and handle page markers
-  let processed = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+  // Step 1: Check if text has reasonable line breaks already
+  // If less than 1 newline per 500 chars, it probably needs line break restoration
+  const newlineRatio = (text.match(/\n/g) || []).length / text.length;
+  let processed = text;
+
+  if (newlineRatio < 0.002) {
+    // Text likely lost its line breaks during extraction - restore them
+    processed = restoreLineBreaks(processed);
+  }
+
+  // Step 2: Normalize line endings and handle page markers
+  processed = processed.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
   processed = processPageMarkers(processed);
 
   // Split into lines
