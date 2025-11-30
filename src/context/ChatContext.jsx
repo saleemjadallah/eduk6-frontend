@@ -76,17 +76,30 @@ export function ChatProvider({ children, userProfile: propUserProfile }) {
   const { currentXP, currentLevel, streak, earnXP, recordActivity, updateDailyChallengeProgress } = gamificationContext || {};
 
   // Build lesson context for ChatService
+  // This provides Jeffrey with the full lesson content for answering contextual questions
   const buildLessonContext = useCallback(() => {
     if (!currentLesson) return undefined;
 
+    // Get the full content - prioritize extractedText (original content)
+    const fullContent = currentLesson.extractedText ||
+                        currentLesson.rawText ||
+                        currentLesson.content?.extractedText ||
+                        currentLesson.content?.rawText ||
+                        '';
+
     return {
       lessonId: currentLesson.id,
+      title: currentLesson.title,
       subject: currentLesson.subject,
       topic: currentLesson.title || currentLesson.topic,
-      grade: currentLesson.grade,
-      contentType: currentLesson.contentType,
-      uploadedContent: currentLesson.rawText || currentLesson.content,
+      grade: currentLesson.grade || currentLesson.gradeLevel,
+      contentType: currentLesson.contentType || currentLesson.sourceType,
+      // Full content for Jeffrey to reference when answering questions
+      // This allows Jeffrey to answer questions like "what does question 3 mean?"
+      content: fullContent,
+      uploadedContent: fullContent, // Alias for backwards compatibility
       summary: currentLesson.summary,
+      keyConcepts: currentLesson.keyConcepts || currentLesson.keyConceptsForChat || [],
       keyPoints: currentLesson.keyPoints || currentLesson.chapters?.map(c => c.title),
       learningObjectives: currentLesson.learningObjectives,
     };
@@ -139,10 +152,30 @@ export function ChatProvider({ children, userProfile: propUserProfile }) {
     }
   }, [userProfile.id]);
 
+  // Track previous lesson ID to detect lesson changes
+  const previousLessonIdRef = useRef(currentLesson?.id);
+
   // Update ChatService when lesson context changes
   useEffect(() => {
     if (chatServiceRef.current) {
       const lessonCtx = buildLessonContext();
+      const previousLessonId = previousLessonIdRef.current;
+      const currentLessonId = currentLesson?.id;
+
+      // Clear chat history when switching to a different lesson
+      // This ensures each lesson starts with a fresh conversation
+      if (previousLessonId && currentLessonId && previousLessonId !== currentLessonId) {
+        chatServiceRef.current.clearHistory();
+        setMessages([]);
+        setError(null);
+        setSafetyFlags([]);
+        setLastUserMessage('');
+      }
+
+      // Update the previous lesson ID ref
+      previousLessonIdRef.current = currentLessonId;
+
+      // Update lesson context in ChatService
       chatServiceRef.current.updateConfig({
         lessonContext: lessonCtx,
       });
@@ -150,7 +183,7 @@ export function ChatProvider({ children, userProfile: propUserProfile }) {
       // Update suggested questions based on new lesson
       setSuggestedQuestions(chatServiceRef.current.getSuggestedQuestions());
     }
-  }, [currentLesson, buildLessonContext]);
+  }, [currentLesson?.id, buildLessonContext]);
 
   // Send message function
   const sendMessage = useCallback(async (message) => {
