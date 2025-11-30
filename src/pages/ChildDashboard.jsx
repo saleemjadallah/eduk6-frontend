@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate, Link } from 'react-router-dom';
 import { Upload, BookOpen, Trophy, Sparkles, X } from 'lucide-react';
@@ -10,20 +10,22 @@ import { api } from '../services/api/apiClient';
 import UploadModal from '../components/Upload/UploadModal';
 
 const ChildDashboard = () => {
-    // Debug: Log when component mounts/unmounts
-    useEffect(() => {
-        console.log('[ChildDashboard] MOUNTED');
-        return () => console.log('[ChildDashboard] UNMOUNTED');
-    }, []);
     const navigate = useNavigate();
     const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
     const [deletingLessonId, setDeletingLessonId] = useState(null);
-    const [isLoadingDbLessons, setIsLoadingDbLessons] = useState(false);
-    const { clearCurrentLesson, recentLessons, lessons, deleteLesson, addLesson } = useLessonContext();
-    const { stats, loading: statsLoading, refetch: refreshStats } = useChildStats();
 
-    // Track which profiles we've already synced to prevent duplicate fetches
-    const syncedProfileIds = useRef(new Set());
+    // Get lessons directly from context - database is the source of truth
+    const {
+        clearCurrentLesson,
+        recentLessons,
+        lessons,
+        deleteLesson,
+        isLoadingLessons,
+        lessonsLoaded,
+        refreshLessons
+    } = useLessonContext();
+
+    const { stats, loading: statsLoading, refetch: refreshStats } = useChildStats();
 
     // Get gamification context as additional source for local stats
     let gamificationStats = null;
@@ -42,88 +44,14 @@ const ChildDashboard = () => {
         // AuthProvider not available
     }
 
-    // Helper to get/set deleted lesson IDs from localStorage
-    const getDeletedLessonIds = useCallback(() => {
-        try {
-            const deleted = localStorage.getItem(`deleted_lessons_${currentProfile?.id}`);
-            return deleted ? JSON.parse(deleted) : [];
-        } catch {
-            return [];
-        }
-    }, [currentProfile?.id]);
-
-    const addDeletedLessonId = useCallback((lessonId) => {
-        try {
-            const deleted = getDeletedLessonIds();
-            if (!deleted.includes(lessonId)) {
-                deleted.push(lessonId);
-                localStorage.setItem(`deleted_lessons_${currentProfile?.id}`, JSON.stringify(deleted));
-            }
-        } catch (e) {
-            console.error('Failed to track deleted lesson:', e);
-        }
-    }, [currentProfile?.id, getDeletedLessonIds]);
-
-    // Fetch lessons from database and merge with local lessons (only once per profile)
-    useEffect(() => {
-        async function syncLessonsFromDb() {
-            if (!currentProfile?.id) return;
-
-            // Prevent duplicate syncs for the same profile
-            if (syncedProfileIds.current.has(currentProfile.id)) {
-                return;
-            }
-            syncedProfileIds.current.add(currentProfile.id);
-
-            setIsLoadingDbLessons(true);
-            try {
-                const response = await api.get(`/lessons/child/${currentProfile.id}?limit=20`);
-                if (response.success && response.data?.lessons) {
-                    const dbLessons = response.data.lessons;
-                    // Get IDs of lessons already in local storage and deleted lessons
-                    const localIds = new Set(lessons.map(l => l.id));
-                    const deletedIds = new Set(getDeletedLessonIds());
-
-                    for (const dbLesson of dbLessons) {
-                        // Skip if already in local storage OR was previously deleted
-                        if (localIds.has(dbLesson.id) || deletedIds.has(dbLesson.id)) {
-                            continue;
-                        }
-                        addLesson({
-                            id: dbLesson.id,
-                            title: dbLesson.title,
-                            subject: dbLesson.subject,
-                            gradeLevel: dbLesson.gradeLevel,
-                            sourceType: dbLesson.sourceType?.toLowerCase() || 'text',
-                            rawText: dbLesson.extractedText,
-                            formattedContent: dbLesson.formattedContent,
-                            summary: dbLesson.summary,
-                            chapters: dbLesson.chapters || [],
-                            keyConceptsForChat: dbLesson.keyConcepts || [],
-                            vocabulary: dbLesson.vocabulary || [],
-                            suggestedQuestions: dbLesson.suggestedQuestions || [],
-                            fileUrl: dbLesson.originalFileUrl,
-                            createdAt: dbLesson.createdAt,
-                            updatedAt: dbLesson.updatedAt,
-                        });
-                    }
-                }
-            } catch (error) {
-                console.error('Failed to sync lessons from database:', error);
-            } finally {
-                setIsLoadingDbLessons(false);
-            }
-        }
-
-        syncLessonsFromDb();
-    }, [currentProfile?.id]); // eslint-disable-line react-hooks/exhaustive-deps
-
     const handleStartNewLesson = () => {
         clearCurrentLesson();
         setIsUploadModalOpen(true);
     };
 
     const handleUploadSuccess = (lessonId) => {
+        // Refresh lessons from database to ensure we have the latest
+        refreshLessons();
         // Navigate directly to the lesson
         navigate(`/learn/study/${lessonId}`);
     };
@@ -136,9 +64,6 @@ const ChildDashboard = () => {
         setDeletingLessonId(lessonId);
 
         try {
-            // Track as deleted locally first (so it won't come back on refresh)
-            addDeletedLessonId(lessonId);
-
             // Delete from backend using unified API client (handles auth automatically)
             await api.delete(`/lessons/${lessonId}`);
 
@@ -151,14 +76,15 @@ const ChildDashboard = () => {
             }
         } catch (error) {
             console.error('Error deleting lesson:', error);
-            // Even if backend delete fails, keep it tracked as deleted locally
-            // so user doesn't see it again until they explicitly want to
         } finally {
             setDeletingLessonId(null);
         }
     };
 
     const childName = currentProfile?.name || 'Learner';
+
+    // Determine loading state
+    const isLoading = isLoadingLessons && !lessonsLoaded;
 
     return (
         <div className="min-h-full p-6 relative">
@@ -169,7 +95,7 @@ const ChildDashboard = () => {
                 className="mb-8"
             >
                 <h1 className="text-3xl md:text-4xl font-black font-comic mb-2">
-                    Hi, {childName}! 👋
+                    Hi, {childName}!
                 </h1>
                 <p className="text-lg text-gray-600">
                     Ready to learn something amazing today?
@@ -232,7 +158,7 @@ const ChildDashboard = () => {
                     <div className="text-3xl font-black text-nanobanana-green">
                         {statsLoading ? '-' : (stats.streak?.current || gamificationStats?.streak?.current || 0)}
                     </div>
-                    <div className="text-sm text-gray-600 font-medium">Day Streak 🔥</div>
+                    <div className="text-sm text-gray-600 font-medium">Day Streak</div>
                 </div>
                 <div className="bg-white p-4 rounded-xl border-2 border-gray-200 text-center">
                     <div className="text-3xl font-black text-nanobanana-yellow">
@@ -248,14 +174,16 @@ const ChildDashboard = () => {
                 </div>
             </div>
 
-            {/* Recent Lessons */}
-            {isLoadingDbLessons && (!recentLessons || recentLessons.length === 0) ? (
+            {/* Loading State */}
+            {isLoading && (
                 <div className="mb-8 flex items-center justify-center py-8">
                     <div className="animate-spin rounded-full h-8 w-8 border-4 border-nanobanana-blue border-t-transparent"></div>
                     <span className="ml-3 text-gray-600">Loading your lessons...</span>
                 </div>
-            ) : null}
-            {recentLessons && recentLessons.length > 0 && (
+            )}
+
+            {/* Recent Lessons */}
+            {!isLoading && recentLessons && recentLessons.length > 0 && (
                 <div className="mb-8">
                     <h2 className="text-xl font-bold mb-4">Continue Learning</h2>
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -317,7 +245,7 @@ const ChildDashboard = () => {
             )}
 
             {/* Empty State */}
-            {!isLoadingDbLessons && (!recentLessons || recentLessons.length === 0) && (
+            {!isLoading && lessonsLoaded && (!recentLessons || recentLessons.length === 0) && (
                 <motion.div
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}

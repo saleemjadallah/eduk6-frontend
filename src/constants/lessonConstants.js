@@ -87,12 +87,6 @@ export const SUPPORTED_FILE_TYPES = {
   'text/plain': { ext: '.txt', maxSize: 2 * 1024 * 1024 },       // 2MB
 };
 
-// Local storage keys
-export const STORAGE_KEYS = {
-  LESSONS: 'orbitlearn_lessons',
-  CURRENT_LESSON_ID: 'orbitlearn_current_lesson_id',
-};
-
 // Default suggested questions when no lesson is loaded
 export const DEFAULT_SUGGESTED_QUESTIONS = [
   "What should I learn today?",
