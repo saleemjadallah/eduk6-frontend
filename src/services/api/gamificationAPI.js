@@ -51,8 +51,7 @@ export const gamificationAPI = {
 
   /**
    * Award XP to current child
-   * Note: Only works in child mode (requires child token)
-   * In parent mode, XP is awarded through other actions (exercises, etc.)
+   * Works in both child mode and parent mode
    * @param {number} amount - XP amount to award (1-1000)
    * @param {string} reason - Reason for XP
    * @param {string} [sourceType] - Source type
@@ -61,41 +60,65 @@ export const gamificationAPI = {
    */
   awardXP: async (amount, reason, sourceType = null, sourceId = null) => {
     const isChildMode = tokenManager.isChildMode();
+    const childId = getCurrentChildId();
 
-    // Only attempt if in child mode
-    if (!isChildMode) {
-      console.log('XP award skipped - not in child mode');
-      return { success: false, error: 'XP can only be awarded in child mode' };
+    // If in child mode, use /me endpoint
+    if (isChildMode) {
+      return makeRequest('/children/me/xp', {
+        method: 'POST',
+        body: JSON.stringify({
+          amount,
+          reason,
+          sourceType,
+          sourceId,
+        }),
+      });
     }
 
-    return makeRequest('/children/me/xp', {
-      method: 'POST',
-      body: JSON.stringify({
-        amount,
-        reason,
-        sourceType,
-        sourceId,
-      }),
-    });
+    // If parent mode with selected child, use /:childId endpoint
+    if (childId) {
+      return makeRequest(`/children/${childId}/xp`, {
+        method: 'POST',
+        body: JSON.stringify({
+          amount,
+          reason,
+          sourceType,
+          sourceId,
+        }),
+      });
+    }
+
+    // No child context
+    console.log('XP award skipped - no child profile selected');
+    return { success: false, error: 'No child profile selected' };
   },
 
   /**
    * Record activity for streak tracking
-   * Only works in child mode
+   * Works in both child mode and parent mode
    * @returns {Promise<Object>} Updated streak info
    */
   recordActivity: async () => {
     const isChildMode = tokenManager.isChildMode();
+    const childId = getCurrentChildId();
 
-    // Only attempt if in child mode
-    if (!isChildMode) {
-      console.log('Activity recording skipped - not in child mode');
-      return { success: false, error: 'Activity can only be recorded in child mode' };
+    // If in child mode, use /me endpoint
+    if (isChildMode) {
+      return makeRequest('/children/me/activity', {
+        method: 'POST',
+      });
     }
 
-    return makeRequest('/children/me/activity', {
-      method: 'POST',
-    });
+    // If parent mode with selected child, use /:childId endpoint
+    if (childId) {
+      return makeRequest(`/children/${childId}/activity`, {
+        method: 'POST',
+      });
+    }
+
+    // No child context
+    console.log('Activity recording skipped - no child profile selected');
+    return { success: false, error: 'No child profile selected' };
   },
 
   /**
