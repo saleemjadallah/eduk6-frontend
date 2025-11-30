@@ -46,14 +46,14 @@ const formatContent = (text) => {
 
 /**
  * Get the primary content to display
- * Priority: extractedText > formattedContent > rawText
+ * Priority: formattedContent (AI-formatted) > extractedText > rawText
  */
 const getPrimaryContent = (lesson) => {
-    // Prefer extractedText (the original content from the uploaded file)
-    return lesson?.extractedText ||
-           lesson?.content?.extractedText ||
-           lesson?.formattedContent ||
+    // Prefer formattedContent (AI-formatted with proper line breaks)
+    return lesson?.formattedContent ||
            lesson?.content?.formattedContent ||
+           lesson?.extractedText ||
+           lesson?.content?.extractedText ||
            lesson?.rawText ||
            lesson?.content?.rawText ||
            '';
