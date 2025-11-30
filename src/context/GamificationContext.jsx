@@ -279,24 +279,45 @@ export function GamificationProvider({ children }) {
   }, [childId, state.isInitialized]);
 
   // Award XP via API
-  const earnXP = useCallback(async (amount, reason = 'OTHER') => {
+  const earnXP = useCallback(async (amount, reason = 'CHAT_QUESTION') => {
     if (!childId || amount <= 0) return null;
 
     try {
-      // Map common reasons to backend enum
+      // Map common reasons to backend XPReason enum values
       const reasonMap = {
+        // Chat interactions
         'Chat interaction': 'CHAT_QUESTION',
+        'Asked Jeffrey a question': 'CHAT_QUESTION',
+        'Chat question': 'CHAT_QUESTION',
+
+        // Lesson activities
         'Lesson complete': 'LESSON_COMPLETE',
         'Lesson progress': 'LESSON_PROGRESS',
+
+        // Flashcard activities
         'Flashcard review': 'FLASHCARD_REVIEW',
         'Flashcard correct': 'FLASHCARD_CORRECT',
+        'Created a flashcard': 'FLASHCARD_REVIEW',
+
+        // Quiz activities
         'Quiz complete': 'QUIZ_COMPLETE',
         'Quiz perfect': 'QUIZ_PERFECT',
+        'Generated a quiz': 'QUIZ_COMPLETE',
+
+        // Other activities
         'Daily challenge': 'DAILY_CHALLENGE',
         'Text selection': 'TEXT_SELECTION',
+        'Translated text': 'TEXT_SELECTION',
+        'Saved a selection': 'TEXT_SELECTION',
+        'Used read aloud': 'TEXT_SELECTION',
+
+        // Exercise activities
+        'Exercise correct': 'EXERCISE_CORRECT',
+        'Exercise perfect': 'EXERCISE_PERFECT',
       };
 
-      const xpReason = reasonMap[reason] || reason;
+      // Map to backend enum, fallback to CHAT_QUESTION for unknown reasons
+      const xpReason = reasonMap[reason] || (reason.includes('_') ? reason : 'CHAT_QUESTION');
 
       const response = await gamificationAPI.awardXP(amount, xpReason);
 
