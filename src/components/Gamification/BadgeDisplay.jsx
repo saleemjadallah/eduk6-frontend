@@ -17,12 +17,13 @@ const BadgeDisplay = ({ limit = null, category = null, showHeader = true }) => {
         : allBadges;
 
     // Separate unlocked and locked badges
-    const unlockedIds = new Set(badges.map(b => b.id));
+    // Note: Backend returns 'code' as the badge identifier, frontend uses 'id'
+    const unlockedCodes = new Set(badges.map(b => b.code || b.id));
     const displayBadges = filteredBadges.map(badge => ({
         ...badge,
-        unlocked: unlockedIds.has(badge.id),
-        unlockedAt: badges.find(b => b.id === badge.id)?.unlockedAt,
-        progress: !unlockedIds.has(badge.id)
+        unlocked: unlockedCodes.has(badge.id),
+        unlockedAt: badges.find(b => (b.code || b.id) === badge.id)?.unlockedAt || badges.find(b => (b.code || b.id) === badge.id)?.earnedAt,
+        progress: !unlockedCodes.has(badge.id)
             ? getBadgeProgress(badge.id, statistics, streak, currentLevel)
             : undefined,
     }));
