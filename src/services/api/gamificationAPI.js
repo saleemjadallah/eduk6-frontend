@@ -136,11 +136,11 @@ export const gamificationAPI = {
       });
     }
 
-    // Parent mode - badges endpoint doesn't exist for /:childId
-    // Return empty for now (parent sees badges through stats)
+    // Parent mode - use /:childId/badges endpoint
     if (childId) {
-      // Could add a parent-accessible badges endpoint later
-      return { success: true, data: { earned: [], available: [] } };
+      return makeRequest(`/children/${childId}/badges`, {
+        method: 'GET',
+      });
     }
 
     return { success: false, error: 'No child profile selected' };
