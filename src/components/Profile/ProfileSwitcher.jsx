@@ -73,6 +73,11 @@ const ProfileSwitcher = ({ compact = false }) => {
     return AVATAR_EMOJIS[avatarId] || '🐱';
   };
 
+  const getGradeLabel = (grade) => {
+    if (grade === 0) return 'Pre-K';
+    return `Grade ${grade}`;
+  };
+
   return (
     <div className={`profile-switcher ${compact ? 'compact' : ''}`} ref={dropdownRef}>
       <button
@@ -88,7 +93,7 @@ const ProfileSwitcher = ({ compact = false }) => {
           <>
             <div className="profile-info">
               <span className="profile-name">{currentProfile.displayName}</span>
-              <span className="profile-grade">Grade {currentProfile.gradeLevel ?? currentProfile.grade}</span>
+              <span className="profile-grade">{getGradeLabel(currentProfile.gradeLevel ?? currentProfile.grade)}</span>
             </div>
             <span className={`dropdown-arrow ${isOpen ? 'open' : ''}`}>
               <svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -126,7 +131,7 @@ const ProfileSwitcher = ({ compact = false }) => {
                   <div className="option-info">
                     <span className="option-name">{child.displayName}</span>
                     <span className="option-details">
-                      {child.age ? `Age ${child.age}` : ''} • Grade {child.gradeLevel ?? child.grade}
+                      {child.age ? `Age ${child.age}` : ''} • {getGradeLabel(child.gradeLevel ?? child.grade)}
                     </span>
                   </div>
                   {child.id === currentProfile.id && (
