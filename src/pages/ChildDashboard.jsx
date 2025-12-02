@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate, Link } from 'react-router-dom';
 import { Upload, BookOpen, Trophy, Sparkles, X } from 'lucide-react';
@@ -43,6 +43,19 @@ const ChildDashboard = () => {
     } catch (e) {
         // AuthProvider not available
     }
+
+    // Auto-refresh data when child profile changes
+    useEffect(() => {
+        if (currentProfile?.id) {
+            // Refresh stats and lessons when switching to a different child
+            if (refreshStats) {
+                refreshStats(currentProfile.id);
+            }
+            if (refreshLessons) {
+                refreshLessons();
+            }
+        }
+    }, [currentProfile?.id, refreshStats, refreshLessons]);
 
     const handleStartNewLesson = () => {
         clearCurrentLesson();
