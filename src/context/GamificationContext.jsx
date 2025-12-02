@@ -221,13 +221,17 @@ export function GamificationProvider({ children }) {
     dispatch({ type: ACTIONS.SET_LOADING, payload: true });
 
     try {
-      const response = await gamificationAPI.getMyStats();
+      // Fetch stats and badges in parallel
+      const [statsResponse, badgesResponse] = await Promise.all([
+        gamificationAPI.getMyStats(),
+        gamificationAPI.getMyBadges(),
+      ]);
 
-      if (response.success && response.data) {
+      if (statsResponse.success && statsResponse.data) {
         dispatch({
           type: ACTIONS.LOAD_STATS,
           payload: {
-            ...response.data,
+            ...statsResponse.data,
             childId: profileId,
           },
         });
@@ -236,6 +240,14 @@ export function GamificationProvider({ children }) {
         dispatch({
           type: ACTIONS.LOAD_STATS,
           payload: { childId: profileId },
+        });
+      }
+
+      // Load badges
+      if (badgesResponse.success && badgesResponse.data) {
+        dispatch({
+          type: ACTIONS.LOAD_BADGES,
+          payload: badgesResponse.data,
         });
       }
     } catch (error) {
@@ -272,6 +284,21 @@ export function GamificationProvider({ children }) {
           type: ACTIONS.UPDATE_STREAK,
           payload: response.data.streak,
         });
+
+        // Handle any new badges awarded from streak milestone
+        if (response.data.newBadges?.length > 0) {
+          dispatch({
+            type: ACTIONS.UPDATE_XP,
+            payload: {
+              currentXP: state.currentXP,
+              totalXP: state.totalXP,
+              level: state.currentLevel,
+              leveledUp: false,
+              xpAwarded: 0,
+              newBadges: response.data.newBadges,
+            },
+          });
+        }
       }
     }).catch(err => {
       console.error('Failed to record activity:', err);

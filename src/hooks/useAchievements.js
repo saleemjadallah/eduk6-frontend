@@ -6,13 +6,15 @@ export function useAchievements() {
     const { badges, statistics, streak, currentLevel } = useGamificationContext();
 
     // Get all badges with their unlock status and progress
+    // Note: Backend returns badges with 'code' as the identifier (e.g., 'first_lesson')
+    // Frontend uses 'id' in achievementDefinitions which matches the backend 'code'
     const allBadgesWithStatus = useMemo(() => {
-        const unlockedIds = new Set(badges.map(b => b.id));
+        const unlockedCodes = new Set(badges.map(b => b.code || b.id));
         return ALL_BADGES.map(badge => ({
             ...badge,
-            unlocked: unlockedIds.has(badge.id),
-            unlockedAt: badges.find(b => b.id === badge.id)?.unlockedAt,
-            progress: !unlockedIds.has(badge.id)
+            unlocked: unlockedCodes.has(badge.id),
+            unlockedAt: badges.find(b => (b.code || b.id) === badge.id)?.unlockedAt || badges.find(b => (b.code || b.id) === badge.id)?.earnedAt,
+            progress: !unlockedCodes.has(badge.id)
                 ? getBadgeProgress(badge.id, statistics, streak, currentLevel)
                 : 100,
         }));
@@ -31,11 +33,11 @@ export function useAchievements() {
 
     // Get next achievable badge suggestion
     const getNextBadgeSuggestion = useCallback(() => {
-        const unlockedIds = new Set(badges.map(b => b.id));
+        const unlockedCodes = new Set(badges.map(b => b.code || b.id));
 
         // Find badges that are close to being unlocked (>50% progress)
         const closeBadges = ALL_BADGES
-            .filter(b => !unlockedIds.has(b.id))
+            .filter(b => !unlockedCodes.has(b.id))
             .map(badge => ({
                 ...badge,
                 progress: getBadgeProgress(badge.id, statistics, streak, currentLevel),
@@ -79,13 +81,13 @@ export function useAchievements() {
     // Get badges by category with status
     const getBadgesByCategoryWithStatus = useCallback((category) => {
         const categoryBadges = getBadgesByCategory(category);
-        const unlockedIds = new Set(badges.map(b => b.id));
+        const unlockedCodes = new Set(badges.map(b => b.code || b.id));
 
         return categoryBadges.map(badge => ({
             ...badge,
-            unlocked: unlockedIds.has(badge.id),
-            unlockedAt: badges.find(b => b.id === badge.id)?.unlockedAt,
-            progress: !unlockedIds.has(badge.id)
+            unlocked: unlockedCodes.has(badge.id),
+            unlockedAt: badges.find(b => (b.code || b.id) === badge.id)?.unlockedAt || badges.find(b => (b.code || b.id) === badge.id)?.earnedAt,
+            progress: !unlockedCodes.has(badge.id)
                 ? getBadgeProgress(badge.id, statistics, streak, currentLevel)
                 : 100,
         }));
@@ -94,7 +96,10 @@ export function useAchievements() {
     // Get recently unlocked badges (within last 24 hours)
     const recentlyUnlocked = useMemo(() => {
         const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
-        return badges.filter(b => b.unlockedAt && b.unlockedAt > oneDayAgo);
+        return badges.filter(b => {
+            const earnedDate = b.unlockedAt || b.earnedAt;
+            return earnedDate && earnedDate > oneDayAgo;
+        });
     }, [badges]);
 
     return {
