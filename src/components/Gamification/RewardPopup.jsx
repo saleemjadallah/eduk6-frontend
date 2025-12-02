@@ -1,8 +1,11 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Star, Trophy, Flame, Gift } from 'lucide-react';
 import { useGamificationContext } from '../../context/GamificationContext';
 import ConfettiEffect from './ConfettiEffect';
+
+// Get badge image path
+const getBadgeImagePath = (badgeCode) => `/assets/badges/${badgeCode}.png`;
 
 const RewardPopup = () => {
     const { pendingCelebration, clearCelebration } = useGamificationContext();
@@ -49,7 +52,11 @@ const RewardPopup = () => {
                     </>
                 );
 
-            case 'badge':
+            case 'badge': {
+                // Use badge code to get image path
+                const badgeCode = pendingCelebration.badge.code || pendingCelebration.badge.id;
+                const badgeImagePath = getBadgeImagePath(badgeCode);
+
                 return (
                     <>
                         <motion.div
@@ -61,16 +68,25 @@ const RewardPopup = () => {
                                 duration: 0.8,
                             }}
                             className={`
-                                w-24 h-24 rounded-full border-4
-                                ${pendingCelebration.badge.rarity === 'legendary' ? 'border-yellow-500 bg-gradient-to-br from-yellow-400 to-orange-500' :
-                                    pendingCelebration.badge.rarity === 'epic' ? 'border-purple-500 bg-gradient-to-br from-purple-400 to-purple-600' :
-                                    pendingCelebration.badge.rarity === 'rare' ? 'border-blue-500 bg-gradient-to-br from-blue-400 to-blue-600' :
-                                    'border-gray-500 bg-gradient-to-br from-gray-300 to-gray-400'}
+                                w-28 h-28 rounded-2xl border-4 overflow-hidden
+                                ${pendingCelebration.badge.rarity === 'legendary' ? 'border-yellow-500 shadow-[0_0_25px_rgba(245,158,11,0.7)]' :
+                                    pendingCelebration.badge.rarity === 'epic' ? 'border-purple-500 shadow-[0_0_20px_rgba(139,92,246,0.6)]' :
+                                    pendingCelebration.badge.rarity === 'rare' ? 'border-blue-500 shadow-[0_0_15px_rgba(59,130,246,0.5)]' :
+                                    'border-gray-500'}
                                 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]
-                                flex items-center justify-center mb-4 text-5xl
+                                flex items-center justify-center mb-4
                             `}
                         >
-                            {pendingCelebration.badge.icon}
+                            <img
+                                src={badgeImagePath}
+                                alt={pendingCelebration.badge.name}
+                                className="w-full h-full object-cover"
+                                onError={(e) => {
+                                    // Fallback to emoji if image fails
+                                    e.target.style.display = 'none';
+                                    e.target.parentElement.innerHTML = `<span class="text-5xl">${pendingCelebration.badge.icon || '🏆'}</span>`;
+                                }}
+                            />
                         </motion.div>
                         <h2 className="text-4xl font-black font-comic mb-2">
                             New Badge!
@@ -83,6 +99,7 @@ const RewardPopup = () => {
                         </p>
                     </>
                 );
+            }
 
             case 'streakMilestone':
                 return (
