@@ -363,13 +363,14 @@ export function AuthProvider({ children }) {
 
   // Get max children allowed based on subscription tier
   const maxChildrenAllowed = useMemo(() => {
-    switch (user?.subscriptionTier) {
-      case 'free':
+    const tier = user?.subscriptionTier?.toUpperCase();
+    switch (tier) {
+      case 'FREE':
         return 1;
-      case 'family':
-      case 'annual':
+      case 'FAMILY':
+      case 'ANNUAL':
         return 2;
-      case 'family_plus':
+      case 'FAMILY_PLUS':
         return 4;
       default:
         return 1;
