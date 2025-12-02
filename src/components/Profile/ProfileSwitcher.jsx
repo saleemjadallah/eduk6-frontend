@@ -82,13 +82,13 @@ const ProfileSwitcher = ({ compact = false }) => {
         aria-expanded={isOpen}
       >
         <div className="profile-avatar">
-          <span className="avatar-emoji">{getAvatarEmoji(currentProfile.avatarId)}</span>
+          <span className="avatar-emoji">{getAvatarEmoji(currentProfile.avatarUrl || currentProfile.avatarId)}</span>
         </div>
         {!compact && (
           <>
             <div className="profile-info">
               <span className="profile-name">{currentProfile.displayName}</span>
-              <span className="profile-grade">Grade {currentProfile.grade}</span>
+              <span className="profile-grade">Grade {currentProfile.gradeLevel ?? currentProfile.grade}</span>
             </div>
             <span className={`dropdown-arrow ${isOpen ? 'open' : ''}`}>
               <svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -121,12 +121,12 @@ const ProfileSwitcher = ({ compact = false }) => {
                   onClick={() => handleSwitchProfile(child.id)}
                 >
                   <div className="option-avatar">
-                    <span className="avatar-emoji">{getAvatarEmoji(child.avatarId)}</span>
+                    <span className="avatar-emoji">{getAvatarEmoji(child.avatarUrl || child.avatarId)}</span>
                   </div>
                   <div className="option-info">
                     <span className="option-name">{child.displayName}</span>
                     <span className="option-details">
-                      Age {child.age} • Grade {child.grade}
+                      {child.age ? `Age ${child.age}` : ''} • Grade {child.gradeLevel ?? child.grade}
                     </span>
                   </div>
                   {child.id === currentProfile.id && (
