@@ -17,8 +17,109 @@ import { exerciseAPI } from '../../services/api/exerciseAPI';
 import LessonContentRenderer from './LessonContentRenderer';
 
 /**
- * Simple text to HTML formatter
- * Preserves line breaks from Gemini's formatting - no complex processing
+ * Format a single line with inline styling (bold, italic, highlights)
+ */
+const formatInline = (text) => {
+    let result = text;
+
+    // Escape HTML first
+    result = result
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;');
+
+    // Bold: **text** or words in ALL CAPS (3+ letters)
+    result = result.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+    result = result.replace(/\b([A-Z]{3,})\b/g, '<strong class="text-indigo-700">$1</strong>');
+
+    // Italic: *text* (single asterisks)
+    result = result.replace(/\*([^*]+)\*/g, '<em>$1</em>');
+
+    // Highlight key terms followed by definitions
+    result = result.replace(
+        /\b([A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)\s+(means?|is defined as|refers to|are called)\b/g,
+        '<strong class="text-purple-700">$1</strong> <em>$2</em>'
+    );
+
+    return result;
+};
+
+/**
+ * Detect line type and return appropriate HTML
+ */
+const formatLine = (line) => {
+    const trimmed = line.trim();
+    if (!trimmed) return null;
+
+    // Section markers: [Section 1], [Section 2], etc.
+    if (/^\[Section\s*\d+\]$/i.test(trimmed)) {
+        const num = trimmed.match(/\d+/)[0];
+        return `<div class="my-6 py-3 px-4 bg-gradient-to-r from-indigo-500 to-purple-500 text-white font-bold rounded-xl text-center shadow-md">📚 Section ${num}</div>`;
+    }
+
+    // Major headers: Learning Objectives, Materials Needed, Review Questions, etc.
+    const majorHeaders = /^(Learning Objectives?|Materials? Needed|Review Questions?|Vocabulary|Summary|Introduction|Conclusion|Activities?|Hands-On Activities|Art Vocabulary|Famous Artists)/i;
+    if (majorHeaders.test(trimmed)) {
+        return `<h2 class="text-xl font-bold text-indigo-800 mt-6 mb-3 pb-2 border-b-2 border-indigo-200">✨ ${formatInline(trimmed)}</h2>`;
+    }
+
+    // Sub-headers: Activity 1:, Step 1:, Example 1:, Creating ORANGE, etc.
+    const subHeaders = /^(Activity\s*\d+|Step\s*\d+|Example\s*\d+|Part\s*\d+|Creating\s+[A-Z]+|The\s+(?:Primary|Secondary|Color|Warm|Cool)\s+\w+|Fun Fact|Mixing Tips|Artist's Secret)/i;
+    if (subHeaders.test(trimmed)) {
+        return `<h3 class="text-lg font-semibold text-purple-700 mt-5 mb-2">🎯 ${formatInline(trimmed)}</h3>`;
+    }
+
+    // Numbered headers with colon: "1. Creating ORANGE" or "2. Creating GREEN"
+    if (/^\d+\.\s+[A-Z]/.test(trimmed) && trimmed.length < 50) {
+        return `<h3 class="text-lg font-semibold text-teal-700 mt-4 mb-2">📌 ${formatInline(trimmed)}</h3>`;
+    }
+
+    // Bullet points
+    if (/^[•·∙‣⁃○●◦▪▸]\s*/.test(trimmed)) {
+        const content = trimmed.replace(/^[•·∙‣⁃○●◦▪▸]\s*/, '');
+        return `<li class="ml-6 mb-1 text-gray-700">${formatInline(content)}</li>`;
+    }
+
+    // Numbered list items (1., 2., etc. that aren't headers)
+    if (/^\d+[.)]\s+/.test(trimmed) && trimmed.length > 50) {
+        const content = trimmed.replace(/^\d+[.)]\s+/, '');
+        return `<li class="ml-6 mb-2 text-gray-700 list-decimal">${formatInline(content)}</li>`;
+    }
+
+    // Metadata lines: Grade Level:, Subject:, Duration:, Topic:
+    if (/^(Grade Level|Subject|Topic|Duration|Materials Needed):/i.test(trimmed)) {
+        return `<p class="text-sm text-gray-500 bg-gray-50 px-3 py-1 rounded-lg inline-block mb-1">${formatInline(trimmed)}</p>`;
+    }
+
+    // Color formulas: RED + YELLOW = ORANGE
+    if (/[A-Z]+\s*\+\s*[A-Z]+\s*=\s*[A-Z]+/.test(trimmed)) {
+        return `<p class="text-center font-bold text-lg my-3 py-2 px-4 bg-gradient-to-r from-yellow-100 to-orange-100 rounded-xl border-2 border-orange-200">${formatInline(trimmed)}</p>`;
+    }
+
+    // Table-like rows with | separators
+    if (trimmed.includes('|') && trimmed.split('|').length >= 2) {
+        const cells = trimmed.split('|').map(c => c.trim()).filter(Boolean);
+        const cellsHtml = cells.map(c => `<td class="px-3 py-2 border border-gray-200">${formatInline(c)}</td>`).join('');
+        return `<tr class="even:bg-gray-50">${cellsHtml}</tr>`;
+    }
+
+    // Questions (lines ending with ?)
+    if (/\?$/.test(trimmed)) {
+        return `<p class="text-gray-800 bg-blue-50 px-4 py-2 rounded-lg border-l-4 border-blue-400 my-2"><strong>❓</strong> ${formatInline(trimmed)}</p>`;
+    }
+
+    // Answers section items
+    if (/^Answers?:/i.test(trimmed)) {
+        return `<h3 class="text-lg font-semibold text-green-700 mt-5 mb-2">✅ ${formatInline(trimmed)}</h3>`;
+    }
+
+    // Regular paragraph
+    return `<p class="text-gray-700 mb-2 leading-relaxed">${formatInline(trimmed)}</p>`;
+};
+
+/**
+ * Smart text to HTML formatter with styling
+ * Preserves Gemini's formatting and adds visual enhancements
  */
 const formatContent = (text) => {
     if (!text) return '';
@@ -32,32 +133,68 @@ const formatContent = (text) => {
         });
     }
 
-    // Simple conversion: preserve Gemini's line breaks
-    // Split by double newlines (paragraphs), then handle single newlines as <br>
-    const paragraphs = text.split(/\n\n+/);
+    // Process line by line for better control
+    const lines = text.split('\n');
+    const result = [];
+    let inList = false;
+    let inTable = false;
 
-    const html = paragraphs
-        .map(para => {
-            const trimmed = para.trim();
-            if (!trimmed) return '';
+    for (let i = 0; i < lines.length; i++) {
+        const line = lines[i];
+        const trimmed = line.trim();
 
-            // Convert single newlines within paragraph to <br>
-            const withBreaks = trimmed
-                .replace(/\n/g, '<br>')
-                .replace(/&/g, '&amp;')
-                .replace(/</g, '&lt;')
-                .replace(/>/g, '&gt;');
+        // Handle empty lines
+        if (!trimmed) {
+            if (inList) {
+                result.push('</ul>');
+                inList = false;
+            }
+            if (inTable) {
+                result.push('</tbody></table>');
+                inTable = false;
+            }
+            continue;
+        }
 
-            // Restore <br> tags after escaping
-            const restored = withBreaks.replace(/&lt;br&gt;/g, '<br>');
+        const formatted = formatLine(trimmed);
+        if (!formatted) continue;
 
-            return `<p>${restored}</p>`;
-        })
-        .filter(Boolean)
-        .join('\n');
+        // Handle list grouping
+        if (formatted.startsWith('<li')) {
+            if (!inList) {
+                result.push('<ul class="my-3 space-y-1">');
+                inList = true;
+            }
+            result.push(formatted);
+        }
+        // Handle table grouping
+        else if (formatted.startsWith('<tr')) {
+            if (!inTable) {
+                result.push('<table class="w-full my-4 border-collapse border border-gray-200 rounded-lg overflow-hidden"><tbody>');
+                inTable = true;
+            }
+            result.push(formatted);
+        }
+        else {
+            // Close any open list/table
+            if (inList) {
+                result.push('</ul>');
+                inList = false;
+            }
+            if (inTable) {
+                result.push('</tbody></table>');
+                inTable = false;
+            }
+            result.push(formatted);
+        }
+    }
 
-    return DOMPurify.sanitize(html, {
-        ALLOWED_TAGS: ['p', 'br', 'b', 'strong', 'i', 'em', 'u', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'ul', 'ol', 'li', 'span', 'div', 'blockquote', 'code'],
+    // Close any remaining open tags
+    if (inList) result.push('</ul>');
+    if (inTable) result.push('</tbody></table>');
+
+    return DOMPurify.sanitize(result.join('\n'), {
+        ALLOWED_TAGS: ['p', 'br', 'b', 'strong', 'i', 'em', 'u', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'ul', 'ol', 'li', 'span', 'div', 'blockquote', 'code', 'table', 'tbody', 'tr', 'td', 'th'],
         ALLOWED_ATTR: ['class', 'style', 'data-page'],
     });
 };
