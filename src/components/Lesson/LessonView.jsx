@@ -15,12 +15,10 @@ import { VocabularyPanel } from '../LessonView/Metadata';
 import { ExerciseModal, ExerciseList } from '../Exercise';
 import { exerciseAPI } from '../../services/api/exerciseAPI';
 import LessonContentRenderer from './LessonContentRenderer';
-import { formatEducationalText } from '../../utils/smartTextFormatter';
 
 /**
- * Format raw text content with smart HTML structure
- * Uses the smartTextFormatter to detect headers, lists, and educational patterns
- * This is the PRIMARY way content is displayed - we show the original extracted text
+ * Simple text to HTML formatter
+ * Preserves line breaks from Gemini's formatting - no complex processing
  */
 const formatContent = (text) => {
     if (!text) return '';
@@ -34,11 +32,31 @@ const formatContent = (text) => {
         });
     }
 
-    // Use the smart educational text formatter
-    const formatted = formatEducationalText(text);
+    // Simple conversion: preserve Gemini's line breaks
+    // Split by double newlines (paragraphs), then handle single newlines as <br>
+    const paragraphs = text.split(/\n\n+/);
 
-    // Sanitize the output
-    return DOMPurify.sanitize(formatted, {
+    const html = paragraphs
+        .map(para => {
+            const trimmed = para.trim();
+            if (!trimmed) return '';
+
+            // Convert single newlines within paragraph to <br>
+            const withBreaks = trimmed
+                .replace(/\n/g, '<br>')
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;');
+
+            // Restore <br> tags after escaping
+            const restored = withBreaks.replace(/&lt;br&gt;/g, '<br>');
+
+            return `<p>${restored}</p>`;
+        })
+        .filter(Boolean)
+        .join('\n');
+
+    return DOMPurify.sanitize(html, {
         ALLOWED_TAGS: ['p', 'br', 'b', 'strong', 'i', 'em', 'u', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'ul', 'ol', 'li', 'span', 'div', 'blockquote', 'code'],
         ALLOWED_ATTR: ['class', 'style', 'data-page'],
     });
