@@ -106,7 +106,7 @@ body {
   margin-bottom: 0.5rem;
 }
 
-.lesson-content .page-break {
+.lesson-content .section-break {
   margin: 2rem 0;
   padding: 0.75rem;
   text-align: center;
@@ -115,7 +115,7 @@ body {
   background: linear-gradient(90deg, transparent, #f7fafc 20%, #f7fafc 80%, transparent);
 }
 
-.lesson-content .page-marker {
+.lesson-content .section-marker {
   background: #edf2f7;
   padding: 0.375rem 1rem;
   border-radius: 1rem;

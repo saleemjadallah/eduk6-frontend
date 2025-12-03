@@ -305,8 +305,9 @@ function restoreLineBreaksSmart(text) {
 
   // Phase 3: Handle specific patterns that always need breaks
 
-  // Page markers - high priority
-  result = result.replace(/\s*(\[Page\s*\d+\])\s*/gi, '\n\n$1\n\n');
+  // Section/Page markers - high priority (convert Page to Section)
+  result = result.replace(/\s*\[Page\s*(\d+)\]\s*/gi, '\n\n[Section $1]\n\n');
+  result = result.replace(/\s*(\[Section\s*\d+\])\s*/gi, '\n\n$1\n\n');
 
   // Bullets (all Unicode variants) - must start on new lines
   result = result.replace(/\s*([•·∙‣⁃○●◦▪▸])\s*/g, '\n$1 ');
@@ -411,8 +412,8 @@ function formatInlineText(text) {
 // ============================================================================
 
 const PATTERNS = {
-  // Page markers: [Page 1], [Page 2], etc.
-  pageMarker: /\[Page\s*(\d+)\]/gi,
+  // Section/Page markers: [Section 1], [Page 1], etc.
+  sectionMarker: /\[(?:Section|Page)\s*(\d+)\]/gi,
 
   // Section headers (common educational patterns)
   sectionHeaders: [
@@ -534,11 +535,11 @@ function isListItem(line) {
 }
 
 /**
- * Process page markers and split content
+ * Process section/page markers and split content
  */
-function processPageMarkers(text) {
-  // Replace page markers with section dividers
-  return text.replace(PATTERNS.pageMarker, '\n\n---PAGE $1---\n\n');
+function processSectionMarkers(text) {
+  // Replace section/page markers with section dividers
+  return text.replace(PATTERNS.sectionMarker, '\n\n---SECTION $1---\n\n');
 }
 
 /**
@@ -558,9 +559,9 @@ export function formatEducationalText(text) {
     processed = restoreLineBreaksSmart(processed);
   }
 
-  // Step 2: Normalize line endings and handle page markers
+  // Step 2: Normalize line endings and handle section markers
   processed = processed.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
-  processed = processPageMarkers(processed);
+  processed = processSectionMarkers(processed);
 
   // Split into lines
   const lines = processed.split('\n');
@@ -603,12 +604,12 @@ export function formatEducationalText(text) {
       continue;
     }
 
-    // Check for page dividers
-    if (trimmed.match(/^---PAGE\s*(\d+)---$/)) {
+    // Check for section dividers
+    if (trimmed.match(/^---SECTION\s*(\d+)---$/)) {
       flushList();
       flushParagraph();
-      const pageNum = trimmed.match(/(\d+)/)[1];
-      result.push(`<div class="page-break" data-page="${pageNum}"><span class="page-marker">Page ${pageNum}</span></div>`);
+      const sectionNum = trimmed.match(/(\d+)/)[1];
+      result.push(`<div class="section-break" data-section="${sectionNum}"><span class="section-marker">Section ${sectionNum}</span></div>`);
       continue;
     }
 
@@ -708,14 +709,14 @@ export const formatterStyles = `
     margin-bottom: 0.5rem;
   }
 
-  .lesson-content .page-break {
+  .lesson-content .section-break {
     margin: 2rem 0;
     padding: 0.5rem;
     text-align: center;
     border-top: 1px dashed #cbd5e0;
   }
 
-  .lesson-content .page-marker {
+  .lesson-content .section-marker {
     background: #edf2f7;
     padding: 0.25rem 0.75rem;
     border-radius: 1rem;
