@@ -778,24 +778,55 @@ const ChatInterface = ({
                     </motion.div>
                 ))}
 
-                {/* Typing indicator with Jeffrey */}
+                {/* Typing indicator - Jeffrey avatar with animated dots */}
                 {(isTyping || demoTyping || isToolLoading) && !isStreaming && (
                     <motion.div
                         initial={{ opacity: 0, scale: 0.8 }}
                         animate={{ opacity: 1, scale: 1 }}
-                        className="flex justify-start items-end gap-2"
+                        className="flex justify-start"
                     >
-                        <div className="scale-50 origin-bottom-left -ml-4 -mb-4">
-                            <Jeffrey isTyping={true} />
-                        </div>
-                        <div className="bg-gray-100 px-4 py-2 rounded-2xl border-2 border-black rounded-bl-none mb-2">
-                            <p className="text-sm text-gray-600 font-medium">
-                                {isGeneratingFlashcards && "Creating flashcards..."}
-                                {isGeneratingInfographic && "Drawing infographic..."}
-                                {isGeneratingSummary && "Writing summary..."}
-                                {isGeneratingQuiz && "Making a quiz..."}
-                                {!isToolLoading && "Thinking..."}
-                            </p>
+                        <div className="relative">
+                            {/* Jeffrey circular avatar */}
+                            <motion.div
+                                className="w-12 h-12"
+                                animate={{ y: [-2, 2] }}
+                                transition={{
+                                    duration: 1.5,
+                                    repeat: Infinity,
+                                    repeatType: 'reverse',
+                                    ease: 'easeInOut',
+                                }}
+                            >
+                                <img
+                                    src="/assets/images/jeffrey-avatar.png"
+                                    alt="Jeffrey thinking"
+                                    className="w-full h-full object-cover rounded-full border-3 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]"
+                                />
+                            </motion.div>
+                            {/* Animated typing dots */}
+                            <motion.div
+                                initial={{ opacity: 0, scale: 0 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                className="absolute -bottom-1 -right-1 bg-white px-2 py-1.5 rounded-full border-2 border-black shadow-md"
+                            >
+                                <div className="flex gap-1">
+                                    <motion.div
+                                        animate={{ y: [0, -4, 0] }}
+                                        transition={{ repeat: Infinity, duration: 0.6, delay: 0 }}
+                                        className="w-2 h-2 bg-nanobanana-blue rounded-full"
+                                    />
+                                    <motion.div
+                                        animate={{ y: [0, -4, 0] }}
+                                        transition={{ repeat: Infinity, duration: 0.6, delay: 0.15 }}
+                                        className="w-2 h-2 bg-nanobanana-blue rounded-full"
+                                    />
+                                    <motion.div
+                                        animate={{ y: [0, -4, 0] }}
+                                        transition={{ repeat: Infinity, duration: 0.6, delay: 0.3 }}
+                                        className="w-2 h-2 bg-nanobanana-blue rounded-full"
+                                    />
+                                </div>
+                            </motion.div>
                         </div>
                     </motion.div>
                 )}

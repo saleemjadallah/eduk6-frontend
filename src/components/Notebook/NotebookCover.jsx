@@ -1,10 +1,11 @@
 import React from 'react';
 import { motion } from 'framer-motion';
+import { BookOpen, Star, Heart, Sparkles } from 'lucide-react';
 import { COVER_PATTERNS, STICKERS } from '../../constants/notebookConstants';
 
 /**
- * NotebookCover - Animated decorative notebook cover
- * Features child's name, avatar, patterns, and stickers
+ * NotebookCover - Playful animated notebook cover with 3D flip effect
+ * Features child's name, avatar, patterns, stickers, and decorative elements
  */
 const NotebookCover = ({
   isOpen = false,
@@ -20,32 +21,32 @@ const NotebookCover = ({
     switch (pattern) {
       case 'dots':
         return {
-          backgroundImage: `radial-gradient(circle, rgba(255,255,255,0.3) 2px, transparent 2px)`,
-          backgroundSize: '20px 20px',
+          backgroundImage: `radial-gradient(circle, rgba(255,255,255,0.4) 3px, transparent 3px)`,
+          backgroundSize: '24px 24px',
         };
       case 'lines':
         return {
-          backgroundImage: `repeating-linear-gradient(0deg, transparent, transparent 10px, rgba(255,255,255,0.2) 10px, rgba(255,255,255,0.2) 12px)`,
+          backgroundImage: `repeating-linear-gradient(0deg, transparent, transparent 12px, rgba(255,255,255,0.25) 12px, rgba(255,255,255,0.25) 14px)`,
         };
       case 'stars':
         return {
-          backgroundImage: `url("data:image/svg+xml,%3Csvg width='20' height='20' viewBox='0 0 20 20' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M10 2l2 6h6l-5 4 2 6-5-4-5 4 2-6-5-4h6z' fill='rgba(255,255,255,0.2)'/%3E%3C/svg%3E")`,
-          backgroundSize: '40px 40px',
+          backgroundImage: `url("data:image/svg+xml,%3Csvg width='24' height='24' viewBox='0 0 24 24' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M12 2l2.4 7.2h7.6l-6 4.8 2.4 7.2-6.4-4.8-6.4 4.8 2.4-7.2-6-4.8h7.6z' fill='rgba(255,255,255,0.25)'/%3E%3C/svg%3E")`,
+          backgroundSize: '48px 48px',
         };
       case 'hearts':
         return {
-          backgroundImage: `url("data:image/svg+xml,%3Csvg width='24' height='24' viewBox='0 0 24 24' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z' fill='rgba(255,255,255,0.2)'/%3E%3C/svg%3E")`,
-          backgroundSize: '48px 48px',
+          backgroundImage: `url("data:image/svg+xml,%3Csvg width='28' height='28' viewBox='0 0 28 28' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M14 24.35l-1.45-1.32C6.4 17.36 3 14.28 3 10.5 3 7.42 5.42 5 8.5 5c1.74 0 3.41.81 4.5 2.09C14.09 5.81 15.76 5 17.5 5 20.58 5 23 7.42 23 10.5c0 3.78-3.4 6.86-8.55 11.54L14 24.35z' fill='rgba(255,255,255,0.25)'/%3E%3C/svg%3E")`,
+          backgroundSize: '56px 56px',
         };
       case 'waves':
         return {
-          backgroundImage: `url("data:image/svg+xml,%3Csvg width='100' height='20' viewBox='0 0 100 20' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M21.184 20c.357-.13.72-.264 1.088-.402l1.768-.661C33.64 15.347 39.647 14 50 14c10.271 0 15.362 1.222 24.629 4.928.955.383 1.869.74 2.75 1.072h6.225c-2.51-.73-5.139-1.691-7.604-2.751C66.892 13.617 60.157 12 50 12c-10.271 0-16.182 1.754-25.871 5.969l-1.778.664C15.68 20.86 8.937 23.26.177 24.548H0c6.68-.61 12.844-2.32 18.958-4.533H21.184z' fill='rgba(255,255,255,0.15)'/%3E%3C/svg%3E")`,
-          backgroundSize: '100px 20px',
+          backgroundImage: `url("data:image/svg+xml,%3Csvg width='120' height='24' viewBox='0 0 120 24' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0 12c10 0 10-8 20-8s10 8 20 8 10-8 20-8 10 8 20 8 10-8 20-8 10 8 20 8' stroke='rgba(255,255,255,0.2)' fill='none' stroke-width='2'/%3E%3C/svg%3E")`,
+          backgroundSize: '120px 24px',
         };
       case 'confetti':
         return {
-          backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Crect x='10' y='5' width='4' height='8' fill='rgba(255,255,255,0.25)' transform='rotate(15 12 9)'/%3E%3Crect x='45' y='15' width='3' height='6' fill='rgba(255,255,255,0.2)' transform='rotate(-20 46.5 18)'/%3E%3Crect x='25' y='40' width='4' height='8' fill='rgba(255,255,255,0.3)' transform='rotate(45 27 44)'/%3E%3Ccircle cx='50' cy='45' r='2' fill='rgba(255,255,255,0.25)'/%3E%3Ccircle cx='15' cy='50' r='2.5' fill='rgba(255,255,255,0.2)'/%3E%3C/svg%3E")`,
-          backgroundSize: '60px 60px',
+          backgroundImage: `url("data:image/svg+xml,%3Csvg width='80' height='80' viewBox='0 0 80 80' xmlns='http://www.w3.org/2000/svg'%3E%3Crect x='15' y='8' width='6' height='12' fill='rgba(255,255,255,0.3)' transform='rotate(25 18 14)'/%3E%3Crect x='55' y='20' width='5' height='10' fill='rgba(255,255,255,0.25)' transform='rotate(-15 57.5 25)'/%3E%3Crect x='30' y='55' width='6' height='12' fill='rgba(255,255,255,0.35)' transform='rotate(40 33 61)'/%3E%3Ccircle cx='65' cy='60' r='4' fill='rgba(255,255,255,0.3)'/%3E%3Ccircle cx='20' cy='65' r='5' fill='rgba(255,255,255,0.25)'/%3E%3Ccircle cx='70' cy='15' r='3' fill='rgba(255,255,255,0.2)'/%3E%3C/svg%3E")`,
+          backgroundSize: '80px 80px',
         };
       default:
         return {};
@@ -63,44 +64,113 @@ const NotebookCover = ({
     const r = parseInt(hex.slice(1, 3), 16);
     const g = parseInt(hex.slice(3, 5), 16);
     const b = parseInt(hex.slice(5, 7), 16);
-    return `rgb(${Math.max(0, r - 40)}, ${Math.max(0, g - 40)}, ${Math.max(0, b - 40)})`;
+    return `rgb(${Math.max(0, r - 50)}, ${Math.max(0, g - 50)}, ${Math.max(0, b - 50)})`;
   };
+
+  // Lighten color for highlights
+  const getLighterColor = (hex) => {
+    const r = parseInt(hex.slice(1, 3), 16);
+    const g = parseInt(hex.slice(3, 5), 16);
+    const b = parseInt(hex.slice(5, 7), 16);
+    return `rgb(${Math.min(255, r + 30)}, ${Math.min(255, g + 30)}, ${Math.min(255, b + 30)})`;
+  };
+
+  // Get avatar emoji from URL
+  const getAvatarEmoji = () => {
+    if (avatarUrl && avatarUrl.startsWith('avatar_')) {
+      const avatarMap = {
+        avatar_1: '🐱', avatar_2: '🐶', avatar_3: '🦉', avatar_4: '🦁',
+        avatar_5: '🐼', avatar_6: '🐰', avatar_7: '🐧', avatar_8: '🐘',
+      };
+      return avatarMap[avatarUrl] || '📚';
+    }
+    return null;
+  };
+
+  const avatarEmoji = getAvatarEmoji();
 
   return (
     <motion.div
       className="relative cursor-pointer select-none"
       style={{
-        width: '280px',
-        height: '360px',
-        perspective: '1200px',
+        width: '300px',
+        height: '400px',
+        perspective: '1500px',
         transformStyle: 'preserve-3d',
       }}
       onClick={onClick}
+      whileHover={!isOpen ? { scale: 1.02 } : {}}
     >
-      {/* Notebook spine shadow */}
+      {/* Background pages effect (visible behind) */}
       <div
-        className="absolute left-0 top-2 bottom-2 w-4 rounded-l-lg"
+        className="absolute rounded-r-lg"
         style={{
-          background: getDarkerColor(coverColor),
-          boxShadow: 'inset -2px 0 4px rgba(0,0,0,0.2)',
+          left: '20px',
+          top: '8px',
+          right: '-4px',
+          bottom: '-4px',
+          background: '#f8f5e6',
+          border: '3px solid #000',
+          zIndex: -2,
+        }}
+      />
+      <div
+        className="absolute rounded-r-lg"
+        style={{
+          left: '20px',
+          top: '4px',
+          right: '-2px',
+          bottom: '-2px',
+          background: '#faf7ea',
+          border: '3px solid #000',
+          zIndex: -1,
         }}
       />
 
-      {/* Main cover */}
-      <motion.div
-        className="absolute inset-0 rounded-lg overflow-hidden"
+      {/* Notebook spine */}
+      <div
+        className="absolute left-0 top-0 bottom-0 w-6 rounded-l-xl"
         style={{
+          background: `linear-gradient(to right, ${getDarkerColor(coverColor)}, ${coverColor})`,
+          borderLeft: '4px solid #000',
+          borderTop: '4px solid #000',
+          borderBottom: '4px solid #000',
+          zIndex: 5,
+        }}
+      >
+        {/* Spine ridges */}
+        <div className="absolute inset-x-0 top-8 bottom-8 flex flex-col justify-around">
+          {[...Array(5)].map((_, i) => (
+            <div
+              key={i}
+              className="h-1 mx-1 rounded-full"
+              style={{ background: 'rgba(0,0,0,0.15)' }}
+            />
+          ))}
+        </div>
+      </div>
+
+      {/* Main cover with 3D flip */}
+      <motion.div
+        className="absolute rounded-r-2xl overflow-hidden"
+        style={{
+          left: '20px',
+          top: 0,
+          right: 0,
+          bottom: 0,
           backgroundColor: coverColor,
           border: '4px solid #000',
-          boxShadow: '6px 6px 0px 0px rgba(0,0,0,1)',
+          boxShadow: isOpen
+            ? '-8px 8px 0px 0px rgba(0,0,0,0.9)'
+            : '8px 8px 0px 0px rgba(0,0,0,1)',
           transformOrigin: 'left center',
           transformStyle: 'preserve-3d',
         }}
-        animate={isOpen ? { rotateY: -160 } : { rotateY: 0 }}
+        animate={isOpen ? { rotateY: -165 } : { rotateY: 0 }}
         transition={{
           type: 'spring',
-          damping: 20,
-          stiffness: 100,
+          damping: 18,
+          stiffness: 80,
           delay: isOpen ? 0.1 : 0,
         }}
       >
@@ -110,101 +180,217 @@ const NotebookCover = ({
           style={getPatternStyles(coverPattern)}
         />
 
+        {/* Gradient overlay for depth */}
+        <div
+          className="absolute inset-0 pointer-events-none"
+          style={{
+            background: `linear-gradient(135deg, ${getLighterColor(coverColor)} 0%, transparent 30%, transparent 70%, ${getDarkerColor(coverColor)} 100%)`,
+            opacity: 0.4,
+          }}
+        />
+
         {/* Spiral binding */}
-        <div className="absolute left-2 top-6 bottom-6 flex flex-col justify-around">
-          {[...Array(8)].map((_, i) => (
-            <div
+        <div className="absolute left-0 top-4 bottom-4 w-8 flex flex-col justify-around items-center z-10">
+          {[...Array(10)].map((_, i) => (
+            <motion.div
               key={i}
-              className="relative"
-              style={{
-                width: '20px',
-                height: '14px',
-              }}
+              initial={{ scale: 0, rotate: -90 }}
+              animate={{ scale: 1, rotate: 0 }}
+              transition={{ delay: 0.05 * i, type: 'spring', stiffness: 300 }}
             >
               <div
-                className="absolute"
+                className="relative"
                 style={{
-                  width: '16px',
-                  height: '14px',
-                  border: '3px solid #333',
-                  borderRadius: '50%',
-                  background: '#f5f5f5',
-                  boxShadow: '1px 1px 2px rgba(0,0,0,0.2)',
+                  width: '22px',
+                  height: '18px',
                 }}
-              />
-            </div>
+              >
+                {/* Ring outer */}
+                <div
+                  className="absolute"
+                  style={{
+                    width: '20px',
+                    height: '18px',
+                    border: '4px solid #2a2a2a',
+                    borderRadius: '50%',
+                    background: 'linear-gradient(180deg, #e8e8e8 0%, #c0c0c0 50%, #d8d8d8 100%)',
+                    boxShadow: 'inset 0 2px 4px rgba(255,255,255,0.5), inset 0 -2px 4px rgba(0,0,0,0.2), 2px 2px 4px rgba(0,0,0,0.3)',
+                  }}
+                />
+              </div>
+            </motion.div>
           ))}
         </div>
 
+        {/* Ribbon bookmark */}
+        <motion.div
+          className="absolute top-0 right-8 w-6 z-20"
+          style={{
+            height: '80px',
+            background: 'linear-gradient(180deg, #ef4444 0%, #dc2626 100%)',
+            clipPath: 'polygon(0 0, 100% 0, 100% 100%, 50% 85%, 0 100%)',
+            boxShadow: '2px 2px 4px rgba(0,0,0,0.3)',
+          }}
+          initial={{ y: -80 }}
+          animate={{ y: 0 }}
+          transition={{ delay: 0.5, type: 'spring', stiffness: 100 }}
+        />
+
         {/* Cover content */}
-        <div className="absolute inset-0 pl-10 pr-4 py-6 flex flex-col items-center justify-center">
-          {/* Avatar */}
-          <div
-            className="w-20 h-20 rounded-full border-4 border-black mb-4 overflow-hidden flex items-center justify-center"
-            style={{
-              background: avatarUrl ? 'transparent' : 'white',
-              boxShadow: '3px 3px 0px rgba(0,0,0,1)',
-            }}
+        <div className="absolute inset-0 pl-12 pr-6 py-8 flex flex-col items-center justify-center">
+          {/* Decorative corner flourishes */}
+          <div className="absolute top-4 right-4 text-2xl opacity-60">✨</div>
+          <div className="absolute bottom-4 left-12 text-2xl opacity-60">⭐</div>
+
+          {/* Avatar with decorative frame */}
+          <motion.div
+            className="relative mb-6"
+            initial={{ scale: 0, rotate: -180 }}
+            animate={{ scale: 1, rotate: 0 }}
+            transition={{ delay: 0.3, type: 'spring', stiffness: 150 }}
           >
-            {avatarUrl ? (
-              <img
-                src={avatarUrl}
-                alt={childName}
-                className="w-full h-full object-cover"
+            {/* Decorative ring behind avatar */}
+            <div
+              className="absolute -inset-3 rounded-full"
+              style={{
+                background: `conic-gradient(from 0deg, ${getLighterColor(coverColor)}, white, ${coverColor}, white, ${getLighterColor(coverColor)})`,
+                opacity: 0.6,
+              }}
+            />
+            <div
+              className="relative w-24 h-24 rounded-full border-4 border-black overflow-hidden flex items-center justify-center"
+              style={{
+                background: avatarEmoji || avatarUrl ? 'white' : `linear-gradient(135deg, ${getLighterColor(coverColor)}, white)`,
+                boxShadow: '4px 4px 0px rgba(0,0,0,1), inset 0 -4px 8px rgba(0,0,0,0.1)',
+              }}
+            >
+              {avatarEmoji ? (
+                <span className="text-5xl">{avatarEmoji}</span>
+              ) : avatarUrl ? (
+                <img
+                  src={avatarUrl}
+                  alt={childName}
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <span className="text-5xl">📓</span>
+              )}
+            </div>
+            {/* Sparkle decorations */}
+            <motion.div
+              className="absolute -top-2 -right-2 text-xl"
+              animate={{ rotate: [0, 15, -15, 0], scale: [1, 1.2, 1] }}
+              transition={{ duration: 2, repeat: Infinity }}
+            >
+              ✨
+            </motion.div>
+          </motion.div>
+
+          {/* Child's name with playful typography */}
+          <motion.div
+            className="text-center relative"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.4 }}
+          >
+            {/* Name banner */}
+            <div
+              className="relative px-6 py-2 mb-2 rounded-full"
+              style={{
+                background: 'rgba(255,255,255,0.9)',
+                border: '3px solid #000',
+                boxShadow: '3px 3px 0px rgba(0,0,0,1)',
+              }}
+            >
+              <span
+                className="text-2xl font-black"
+                style={{
+                  fontFamily: '"Comic Neue", cursive',
+                  color: '#000',
+                }}
+              >
+                {childName}'s
+              </span>
+            </div>
+
+            {/* "Notebook" text with fun styling */}
+            <div className="relative">
+              <span
+                className="text-4xl font-black block"
+                style={{
+                  fontFamily: '"Comic Neue", cursive',
+                  color: '#000',
+                  textShadow: '3px 3px 0px rgba(255,255,255,0.8), 5px 5px 0px rgba(0,0,0,0.2)',
+                  letterSpacing: '2px',
+                }}
+              >
+                NOTEBOOK
+              </span>
+              {/* Underline decoration */}
+              <motion.div
+                className="h-2 mx-auto mt-1 rounded-full"
+                style={{
+                  background: 'linear-gradient(90deg, transparent, rgba(0,0,0,0.3), transparent)',
+                  width: '80%',
+                }}
+                initial={{ scaleX: 0 }}
+                animate={{ scaleX: 1 }}
+                transition={{ delay: 0.6 }}
               />
-            ) : (
-              <span className="text-4xl">📓</span>
-            )}
-          </div>
+            </div>
+          </motion.div>
 
-          {/* Child's name */}
-          <div className="text-center">
-            <span
-              className="text-2xl font-bold block"
-              style={{
-                fontFamily: '"Comic Neue", cursive',
-                color: '#000',
-                textShadow: '2px 2px 0px rgba(255,255,255,0.5)',
-              }}
-            >
-              {childName}'s
-            </span>
-            <span
-              className="text-3xl font-black block mt-1"
-              style={{
-                fontFamily: '"Comic Neue", cursive',
-                color: '#000',
-                textShadow: '2px 2px 0px rgba(255,255,255,0.5)',
-              }}
-            >
-              Notebook
-            </span>
-          </div>
+          {/* Decorative divider */}
+          <motion.div
+            className="flex items-center gap-2 mt-4"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.7 }}
+          >
+            <div className="w-8 h-0.5 bg-black/20 rounded-full" />
+            <Star size={14} className="text-black/40" fill="currentColor" />
+            <div className="w-8 h-0.5 bg-black/20 rounded-full" />
+          </motion.div>
 
-          {/* Decorative line */}
-          <div
-            className="w-32 h-1 mt-4 rounded-full"
-            style={{ background: 'rgba(0,0,0,0.2)' }}
-          />
-
-          {/* Stickers */}
+          {/* Stickers area */}
           {coverStickers.length > 0 && (
-            <div className="absolute bottom-4 right-4 flex gap-1">
-              {coverStickers.slice(0, 4).map((stickerId, index) => (
+            <div className="absolute bottom-6 right-6 flex flex-wrap gap-1 max-w-[100px] justify-end">
+              {coverStickers.slice(0, 5).map((stickerId, index) => (
                 <motion.span
                   key={stickerId}
-                  className="text-2xl"
+                  className="text-3xl drop-shadow-md"
                   initial={{ scale: 0, rotate: -180 }}
-                  animate={{ scale: 1, rotate: 0 }}
+                  animate={{ scale: 1, rotate: (index - 2) * 8 }}
                   transition={{
-                    delay: 0.3 + index * 0.1,
+                    delay: 0.5 + index * 0.1,
                     type: 'spring',
                     stiffness: 200,
                   }}
+                  whileHover={{ scale: 1.2, rotate: 0 }}
                 >
                   {getStickerEmoji(stickerId)}
                 </motion.span>
               ))}
+            </div>
+          )}
+
+          {/* Default stickers if none selected */}
+          {coverStickers.length === 0 && (
+            <div className="absolute bottom-6 right-6 flex gap-2">
+              <motion.span
+                className="text-2xl opacity-40"
+                animate={{ y: [0, -4, 0] }}
+                transition={{ duration: 2, repeat: Infinity, delay: 0 }}
+              >
+                📝
+              </motion.span>
+              <motion.span
+                className="text-2xl opacity-40"
+                animate={{ y: [0, -4, 0] }}
+                transition={{ duration: 2, repeat: Infinity, delay: 0.3 }}
+              >
+                ✏️
+              </motion.span>
             </div>
           )}
         </div>
@@ -213,30 +399,36 @@ const NotebookCover = ({
         <div
           className="absolute inset-0 pointer-events-none"
           style={{
-            background: 'linear-gradient(135deg, rgba(255,255,255,0.3) 0%, transparent 50%, rgba(0,0,0,0.1) 100%)',
+            background: 'linear-gradient(135deg, rgba(255,255,255,0.4) 0%, transparent 40%, transparent 60%, rgba(0,0,0,0.1) 100%)',
+          }}
+        />
+
+        {/* Edge highlight */}
+        <div
+          className="absolute top-0 left-8 right-0 h-1 pointer-events-none"
+          style={{
+            background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.5), transparent)',
           }}
         />
       </motion.div>
 
-      {/* Back cover (visible when open) */}
-      <div
-        className="absolute inset-0 rounded-lg"
-        style={{
-          backgroundColor: getDarkerColor(coverColor),
-          border: '4px solid #000',
-          zIndex: -1,
-        }}
-      />
-
-      {/* Tap hint */}
+      {/* Tap hint with animation */}
       {!isOpen && (
         <motion.div
-          className="absolute -bottom-8 left-0 right-0 text-center text-sm text-gray-500"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 1 }}
+          className="absolute -bottom-10 left-0 right-0 text-center"
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 1.2 }}
         >
-          Tap to open
+          <motion.span
+            className="inline-flex items-center gap-2 px-4 py-2 bg-white/90 rounded-full text-sm font-bold text-gray-600 border-2 border-black"
+            style={{ boxShadow: '2px 2px 0px rgba(0,0,0,1)' }}
+            animate={{ y: [0, -3, 0] }}
+            transition={{ duration: 1.5, repeat: Infinity }}
+          >
+            <BookOpen size={16} />
+            Tap to open
+          </motion.span>
         </motion.div>
       )}
     </motion.div>
