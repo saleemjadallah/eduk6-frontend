@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Send, Image, FileText, Sparkles, Clock, RefreshCw, Trash2, BookOpen, Loader2, HelpCircle, ZoomIn } from 'lucide-react';
+import { Send, Image, FileText, Sparkles, Clock, RefreshCw, Trash2, BookOpen, Loader2, HelpCircle, ZoomIn, ChevronDown, ChevronUp } from 'lucide-react';
 import Jeffrey from '../Avatar/Jeffrey';
 import SafetyIndicator from './SafetyIndicator';
 import FlashcardInline from './FlashcardInline';
@@ -54,6 +54,9 @@ const ChatInterface = ({
 
     // Expanded view modal state
     const [expandedView, setExpandedView] = useState({ isOpen: false, type: null, data: null });
+
+    // Suggested questions collapsed state (collapsed by default)
+    const [showSuggestedQuestions, setShowSuggestedQuestions] = useState(false);
 
     const handleExpandView = (type, data) => {
         setExpandedView({ isOpen: true, type, data });
@@ -447,6 +450,8 @@ const ChatInterface = ({
 
         try {
             const content = activeLesson.rawText || activeLesson.content?.rawText || activeLesson.summary || '';
+            console.log('[Quiz] Generating quiz for content length:', content.length);
+
             const response = await chatAPI.generateQuiz({
                 content,
                 title: activeLesson.title,
@@ -455,7 +460,13 @@ const ChatInterface = ({
                 ageGroup,
             });
 
+            console.log('[Quiz] API Response:', response);
             const quiz = response.data;
+            console.log('[Quiz] Quiz data:', quiz);
+
+            if (!quiz || !quiz.questions || quiz.questions.length === 0) {
+                throw new Error('Invalid quiz data received');
+            }
 
             // Add user action message
             const userMsg = {
@@ -475,10 +486,16 @@ const ChatInterface = ({
                 quiz: quiz,
             };
 
+            console.log('[Quiz] Adding messages, demoMode:', demoMode, 'chatContext:', !!chatContext);
+
             if (demoMode) {
                 setDemoMessages(prev => [...prev, userMsg, quizMsg]);
             } else if (chatContext?.addMessages) {
                 chatContext.addMessages([userMsg, quizMsg]);
+            } else {
+                // Fallback: use local state if chatContext not available
+                console.warn('[Quiz] No chatContext, using fallback');
+                setDemoMessages(prev => [...prev, userMsg, quizMsg]);
             }
         } catch (error) {
             console.error('Quiz generation error:', error);
@@ -493,6 +510,8 @@ const ChatInterface = ({
                 setDemoMessages(prev => [...prev, errorMsg]);
             } else if (chatContext?.addMessage) {
                 chatContext.addMessage(errorMsg);
+            } else {
+                setDemoMessages(prev => [...prev, errorMsg]);
             }
         } finally {
             setIsGeneratingQuiz(false);
@@ -784,21 +803,39 @@ const ChatInterface = ({
                 <div ref={messagesEndRef} />
             </div>
 
-            {/* Suggested Questions */}
+            {/* Suggested Questions - Collapsible */}
             {!demoMode && activeLesson && displayMessages.length <= 2 && suggestedQuestions.length > 0 && (
                 <div className="px-4 pb-2">
-                    <p className="text-xs font-bold text-gray-500 mb-2">Try asking:</p>
-                    <div className="flex flex-wrap gap-2">
-                        {suggestedQuestions.slice(0, 4).map((question, index) => (
-                            <button
-                                key={index}
-                                onClick={() => handleSuggestedQuestion(question)}
-                                className="px-3 py-1 text-xs font-medium bg-gray-100 hover:bg-nanobanana-yellow border-2 border-black rounded-full transition-colors"
+                    <button
+                        onClick={() => setShowSuggestedQuestions(!showSuggestedQuestions)}
+                        className="flex items-center gap-1 text-xs font-bold text-gray-500 hover:text-gray-700 transition-colors"
+                    >
+                        {showSuggestedQuestions ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+                        Try asking ({suggestedQuestions.length})
+                    </button>
+                    <AnimatePresence>
+                        {showSuggestedQuestions && (
+                            <motion.div
+                                initial={{ height: 0, opacity: 0 }}
+                                animate={{ height: 'auto', opacity: 1 }}
+                                exit={{ height: 0, opacity: 0 }}
+                                transition={{ duration: 0.2 }}
+                                className="overflow-hidden"
                             >
-                                {question}
-                            </button>
-                        ))}
-                    </div>
+                                <div className="flex flex-wrap gap-2 mt-2">
+                                    {suggestedQuestions.slice(0, 4).map((question, index) => (
+                                        <button
+                                            key={index}
+                                            onClick={() => handleSuggestedQuestion(question)}
+                                            className="px-3 py-1 text-xs font-medium bg-gray-100 hover:bg-nanobanana-yellow border-2 border-black rounded-full transition-colors"
+                                        >
+                                            {question}
+                                        </button>
+                                    ))}
+                                </div>
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
                 </div>
             )}
 
