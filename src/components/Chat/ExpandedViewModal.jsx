@@ -41,7 +41,7 @@ const ExpandedViewModal = ({ isOpen, onClose, type, data }) => {
                 );
             case 'quiz':
                 return (
-                    <div className="w-full max-w-2xl">
+                    <div className="w-full max-w-2xl max-h-[85vh] overflow-y-auto no-scrollbar p-2">
                         <QuizInline quiz={data} />
                     </div>
                 );

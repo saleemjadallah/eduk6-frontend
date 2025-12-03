@@ -326,7 +326,7 @@ export function ChatProvider({ children, userProfile: propUserProfile }) {
     setMessages(prev => [...prev, systemMessage]);
   }, []);
 
-  // Add a custom message (supports special types like flashcards, summary, infographic)
+  // Add a custom message (supports special types like flashcards, summary, infographic, quiz)
   const addMessage = useCallback((message) => {
     const newMessage = {
       id: message.id || Date.now(),
@@ -337,6 +337,7 @@ export function ChatProvider({ children, userProfile: propUserProfile }) {
       // Special content
       flashcards: message.flashcards,
       summary: message.summary,
+      quiz: message.quiz,
       imageData: message.imageData,
       mimeType: message.mimeType,
       // Metadata
@@ -357,6 +358,7 @@ export function ChatProvider({ children, userProfile: propUserProfile }) {
       type: msg.type || 'text',
       flashcards: msg.flashcards,
       summary: msg.summary,
+      quiz: msg.quiz,
       imageData: msg.imageData,
       mimeType: msg.mimeType,
       isError: msg.isError,
