@@ -398,6 +398,16 @@ const ChildDetailsPage = () => {
                   </button>
                   <button
                     className="settings-btn"
+                    onClick={() => navigate(`/parent/children/${childId}/notebook`)}
+                  >
+                    <span className="settings-btn-icon">📓</span>
+                    <div className="settings-btn-content">
+                      <span className="settings-btn-title">View Notebook</span>
+                      <span className="settings-btn-desc">See notes and leave encouragement</span>
+                    </div>
+                  </button>
+                  <button
+                    className="settings-btn"
                     onClick={() => navigate(`/parent/children/${childId}/safety`)}
                   >
                     <span className="settings-btn-icon">🛡️</span>

@@ -6,6 +6,7 @@ import { ChatProvider } from './context/ChatContext';
 import { AuthProvider } from './context/AuthContext';
 import { ModeProvider } from './context/ModeContext';
 import { SelectionProvider } from './context/SelectionContext';
+import { NotebookProvider } from './context/NotebookContext';
 
 // Pages
 import HomePage from './pages/HomePage';
@@ -13,11 +14,13 @@ import ChildDashboard from './pages/ChildDashboard';
 import StudyPage from './pages/StudyPage';
 import AchievementsPage from './pages/AchievementsPage';
 import FlashcardsPage from './pages/FlashcardsPage';
+import NotebookView from './pages/NotebookView';
 import OnboardingPage from './pages/OnboardingPage';
 import ParentDashboard from './pages/ParentDashboard';
 import MyChildrenPage from './pages/MyChildrenPage';
 import ChildDetailsPage from './pages/ChildDetailsPage';
 import LoginPage from './pages/LoginPage';
+import ParentNotebookView from './pages/ParentNotebookView';
 
 // Components
 import { RewardPopup } from './components/Gamification';
@@ -26,23 +29,27 @@ import ModeRoute from './components/Routing/ModeRoute';
 import { ParentLayout } from './components/Layouts';
 import ProtectedChildLayout from './components/Layouts/ProtectedChildLayout';
 import ParentPinVerification from './components/Parent/ParentPinVerification';
+import { NotebookModal } from './components/Notebook';
 
 function RootLayout() {
     return (
         <AuthProvider>
             <LessonProvider>
                 <GamificationProvider>
-                    <SelectionProvider>
-                        <FlashcardProvider>
-                            <ChatProvider>
-                                <ScrollRestoration getKey={(location) => location.pathname} />
-                                <ModeProvider>
-                                    <Outlet />
-                                </ModeProvider>
-                                <RewardPopup />
-                            </ChatProvider>
-                        </FlashcardProvider>
-                    </SelectionProvider>
+                    <NotebookProvider>
+                        <SelectionProvider>
+                            <FlashcardProvider>
+                                <ChatProvider>
+                                    <ScrollRestoration getKey={(location) => location.pathname} />
+                                    <ModeProvider>
+                                        <Outlet />
+                                    </ModeProvider>
+                                    <RewardPopup />
+                                    <NotebookModal />
+                                </ChatProvider>
+                            </FlashcardProvider>
+                        </SelectionProvider>
+                    </NotebookProvider>
                 </GamificationProvider>
             </LessonProvider>
         </AuthProvider>
@@ -96,6 +103,7 @@ const router = createBrowserRouter([
                     { path: 'achievements', element: <AchievementsPage /> },
                     { path: 'flashcards', element: <FlashcardsPage /> },
                     { path: 'flashcards/:deckId', element: <FlashcardsPage /> },
+                    { path: 'notebook', element: <NotebookView /> },
                 ],
             },
 
@@ -129,6 +137,7 @@ const router = createBrowserRouter([
                     { path: 'dashboard', element: <ParentDashboard /> },
                     { path: 'children', element: <MyChildrenPage /> },
                     { path: 'children/:childId', element: <ChildDetailsPage /> },
+                    { path: 'children/:childId/notebook', element: <ParentNotebookView /> },
                     { path: 'reports', element: <PlaceholderPage title="Progress Reports" /> },
                     { path: 'safety', element: <PlaceholderPage title="Safety Logs" /> },
                     { path: 'settings', element: <PlaceholderPage title="Settings" /> },

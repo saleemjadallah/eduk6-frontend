@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate, Link } from 'react-router-dom';
-import { Upload, BookOpen, Trophy, Sparkles, X } from 'lucide-react';
+import { Upload, BookOpen, Trophy, BookMarked, X } from 'lucide-react';
 import { useLessonContext } from '../context/LessonContext';
 import { useAuth } from '../context/AuthContext';
 import { useGamificationContext } from '../context/GamificationContext';
@@ -149,14 +149,16 @@ const ChildDashboard = () => {
                     </motion.div>
                 </Link>
 
-                <motion.button
-                    whileHover={{ scale: 1.02, y: -4 }}
-                    whileTap={{ scale: 0.98 }}
-                    className="bg-pink-400 text-white p-6 rounded-2xl border-4 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] flex flex-col items-center gap-3 hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] transition-all"
-                >
-                    <Sparkles className="w-10 h-10" />
-                    <span className="font-bold text-lg">Practice</span>
-                </motion.button>
+                <Link to="/learn/notebook" className="block">
+                    <motion.div
+                        whileHover={{ scale: 1.02, y: -4 }}
+                        whileTap={{ scale: 0.98 }}
+                        className="bg-pink-400 text-white p-6 rounded-2xl border-4 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] flex flex-col items-center gap-3 hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] transition-all h-full"
+                    >
+                        <BookMarked className="w-10 h-10" />
+                        <span className="font-bold text-lg">My Notebook</span>
+                    </motion.div>
+                </Link>
             </div>
 
             {/* Stats Row - uses useChildStats which fetches from database */}

@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useCallback } from 'react';
 import { useGamificationContext } from './GamificationContext';
 import { useLessonContext } from './LessonContext';
+import { useNotebookContext } from './NotebookContext';
 import { generateChatResponse, generateFlashcards, generateQuiz, translateText } from '../services/geminiService';
 
 // XP rewards for different actions
@@ -31,6 +32,7 @@ export function SelectionProvider({ children }) {
     // Get context hooks
     const { earnXP, updateStatistics, updateDailyChallengeProgress } = useGamificationContext();
     const { currentLesson } = useLessonContext();
+    const { openNotebookModal } = useNotebookContext();
 
     /**
      * Set the current text selection
@@ -193,31 +195,26 @@ export function SelectionProvider({ children }) {
     }, [currentSelection, currentLesson, earnXP]);
 
     /**
-     * Handle "Save Selection" action
+     * Handle "Save Selection" action - Opens the Notebook Modal
      */
     const handleSaveSelection = useCallback(() => {
         if (!currentSelection) return null;
 
-        const savedItem = {
-            id: `saved-${Date.now()}`,
-            text: currentSelection.text,
+        // Open the notebook modal with the selected text and lesson context
+        openNotebookModal({
+            originalText: currentSelection.text,
             lessonId: currentLesson?.id,
             lessonTitle: currentLesson?.title,
-            createdAt: new Date().toISOString(),
-            tags: [],
-        };
+            subject: currentLesson?.subject,
+        });
 
-        setSavedSelections(prev => [...prev, savedItem]);
-
-        // Award XP
-        earnXP(XP_REWARDS['save-selection'], 'Saved a selection');
+        // Clear the selection after opening the modal
+        clearSelection();
 
         return {
-            type: 'saved',
-            content: savedItem,
-            xpEarned: XP_REWARDS['save-selection'],
+            type: 'notebook-opened',
         };
-    }, [currentSelection, currentLesson, earnXP]);
+    }, [currentSelection, currentLesson, openNotebookModal, clearSelection]);
 
     /**
      * Handle "Translate" action
