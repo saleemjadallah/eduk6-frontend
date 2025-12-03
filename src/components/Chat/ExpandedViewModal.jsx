@@ -67,15 +67,15 @@ const ExpandedViewModal = ({ isOpen, onClose, type, data }) => {
         <AnimatePresence>
             {isOpen && (
                 <motion.div
-                    className="fixed inset-0 z-50 flex items-center justify-center p-4"
+                    className="fixed inset-0 z-[9999] flex items-center justify-center p-4"
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
                     transition={{ duration: 0.2 }}
                 >
-                    {/* Backdrop */}
+                    {/* Backdrop - covers everything including toolbars */}
                     <motion.div
-                        className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+                        className="absolute inset-0 bg-black/70 backdrop-blur-md"
                         onClick={onClose}
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
@@ -84,7 +84,7 @@ const ExpandedViewModal = ({ isOpen, onClose, type, data }) => {
 
                     {/* Content Container */}
                     <motion.div
-                        className="relative z-10 bg-white rounded-3xl p-6 border-4 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]"
+                        className="relative z-10 bg-white rounded-3xl p-6 border-4 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] max-h-[90vh] overflow-hidden"
                         initial={{ scale: 0.8, opacity: 0 }}
                         animate={{ scale: 1, opacity: 1 }}
                         exit={{ scale: 0.8, opacity: 0 }}
