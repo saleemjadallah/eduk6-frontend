@@ -133,8 +133,16 @@ const formatContent = (text) => {
         });
     }
 
+    // Clean up formatting artifacts from Gemini
+    let cleanedText = text
+        // Remove literal \n that got partially escaped (showing as "n" or "nn")
+        .replace(/(\d+\.)\s*n+\s+/g, '$1 ')  // "2. nn Something" -> "2. Something"
+        .replace(/^n+\s+/gm, '')              // Lines starting with n/nn
+        .replace(/\s+n+\s+(?=[A-Z])/g, ' ')   // Stray n/nn before capital letters
+        .replace(/\\n/g, '\n');               // Literal \n -> actual newline
+
     // Process line by line for better control
-    const lines = text.split('\n');
+    const lines = cleanedText.split('\n');
     const result = [];
     let inList = false;
     let inTable = false;
