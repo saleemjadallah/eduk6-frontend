@@ -2,19 +2,27 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { Star, Sparkles } from 'lucide-react';
 import { useGamificationContext } from '../../context/GamificationContext';
+import { calculateXPForLevel } from '../../utils/xpCalculations';
 import Tooltip from '../UI/Tooltip';
 
 const XPBar = ({ compact = false, showLabel = true }) => {
-    const { currentXP, xpToNextLevel, currentLevel } = useGamificationContext();
+    const { currentXP, currentLevel } = useGamificationContext();
 
-    const progress = xpToNextLevel > 0 ? (currentXP / xpToNextLevel) * 100 : 0;
+    // Calculate XP progress within current level
+    const xpForCurrentLevel = calculateXPForLevel(currentLevel);
+    const xpForNextLevel = calculateXPForLevel(currentLevel + 1);
+    const xpIntoCurrentLevel = currentXP - xpForCurrentLevel;
+    const xpNeededForLevel = xpForNextLevel - xpForCurrentLevel;
+    const xpRemaining = xpForNextLevel - currentXP;
+
+    const progress = xpNeededForLevel > 0 ? (xpIntoCurrentLevel / xpNeededForLevel) * 100 : 0;
     const isNearLevel = progress > 80;
 
     if (compact) {
         return (
             <Tooltip
                 title={`Level ${currentLevel}`}
-                content={`${currentXP}/${xpToNextLevel} XP to next level`}
+                content={`${xpIntoCurrentLevel}/${xpNeededForLevel} XP (${xpRemaining} to next level)`}
                 position="bottom"
             >
                 <div className="flex items-center gap-2 cursor-default">
@@ -44,7 +52,7 @@ const XPBar = ({ compact = false, showLabel = true }) => {
                         <span className="font-bold font-comic">Level {currentLevel}</span>
                     </div>
                     <span className="text-sm font-medium text-gray-600">
-                        {currentXP} / {xpToNextLevel} XP
+                        {xpIntoCurrentLevel} / {xpNeededForLevel} XP
                     </span>
                 </div>
             )}
@@ -93,7 +101,7 @@ const XPBar = ({ compact = false, showLabel = true }) => {
             {/* Next level preview */}
             {showLabel && (
                 <p className="text-xs text-gray-500 mt-2 text-center">
-                    {xpToNextLevel - currentXP} XP to Level {currentLevel + 1}!
+                    {xpRemaining} XP to Level {currentLevel + 1}!
                 </p>
             )}
         </div>

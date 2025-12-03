@@ -4,6 +4,26 @@ import { useAuth } from '../context/AuthContext';
 import { parentDashboardAPI } from '../services/api/parentDashboardAPI';
 import './ParentDashboard.css';
 
+// Avatar mapping - matches CreateProfileStep
+const AVATARS = {
+  avatar_1: { name: 'Cool Cat', emoji: '🐱' },
+  avatar_2: { name: 'Happy Dog', emoji: '🐶' },
+  avatar_3: { name: 'Smart Owl', emoji: '🦉' },
+  avatar_4: { name: 'Brave Lion', emoji: '🦁' },
+  avatar_5: { name: 'Friendly Panda', emoji: '🐼' },
+  avatar_6: { name: 'Curious Bunny', emoji: '🐰' },
+  avatar_7: { name: 'Playful Penguin', emoji: '🐧' },
+  avatar_8: { name: 'Mighty Elephant', emoji: '🐘' },
+};
+
+// Get avatar emoji from avatarId/avatarUrl
+function getAvatarEmoji(avatarId) {
+  if (avatarId && AVATARS[avatarId]) {
+    return AVATARS[avatarId].emoji;
+  }
+  return '🧒'; // Default fallback
+}
+
 const ParentDashboard = () => {
   // Debug: Log when component mounts/unmounts
   useEffect(() => {
@@ -147,46 +167,46 @@ const ParentDashboard = () => {
         {hasChildren ? (
           <div className="children-grid">
             {childrenData.map((child) => (
-              <div key={child.id} className="child-card">
-                <div className="child-header">
-                  <div className="child-avatar">
-                    {child.avatarUrl ? (
-                      <img src={child.avatarUrl} alt={child.displayName} />
-                    ) : (
-                      getAvatarEmoji(child.ageGroup)
-                    )}
+              <div key={child.id} className="child-card-new">
+                <div className="child-card-top">
+                  <div className="child-avatar-large">
+                    {getAvatarEmoji(child.avatarUrl)}
                   </div>
-                  <div className="child-info">
-                    <h3>{child.displayName}</h3>
-                    <span className="child-age">{child.age} years old</span>
+                  <div className="child-details">
+                    <h3 className="child-name">{child.displayName}</h3>
+                    <span className="child-age-text">{child.age} years old</span>
                   </div>
-                  <span className={`status-badge ${child.wasActiveToday ? 'active' : ''}`}>
+                  <span className={`activity-badge ${child.wasActiveToday ? 'active-today' : ''}`}>
                     {child.lastActive}
                   </span>
                 </div>
-                <div className="child-stats">
-                  <div className="mini-stat">
-                    <span className="mini-stat-value">{child.lessonsCompleted}</span>
-                    <span className="mini-stat-label">Lessons</span>
-                  </div>
-                  <div className="mini-stat">
-                    <span className="mini-stat-value">{child.currentStreak}</span>
-                    <span className="mini-stat-label">Streak</span>
-                  </div>
-                  <div className="mini-stat progress-stat">
-                    <div className="progress-bar">
-                      <div
-                        className="progress-fill"
-                        style={{
-                          width: `${Math.min(100, (child.lessonsCompleted / Math.max(1, child.lessonsCompleted + 5)) * 100)}%`,
-                        }}
-                      ></div>
+
+                <div className="child-stats-row">
+                  <div className="stat-item">
+                    <span className="stat-icon-small">📚</span>
+                    <div className="stat-content">
+                      <span className="stat-number">{child.lessonsCompleted}</span>
+                      <span className="stat-text">Lessons</span>
                     </div>
-                    <span className="mini-stat-label">Level {child.level}</span>
+                  </div>
+                  <div className="stat-item">
+                    <span className="stat-icon-small">🔥</span>
+                    <div className="stat-content">
+                      <span className="stat-number">{child.currentStreak}</span>
+                      <span className="stat-text">Day Streak</span>
+                    </div>
+                  </div>
+                  <div className="stat-item">
+                    <span className="stat-icon-small">⭐</span>
+                    <div className="stat-content">
+                      <span className="stat-number">{child.level}</span>
+                      <span className="stat-text">Level</span>
+                    </div>
                   </div>
                 </div>
+
                 <button
-                  className="view-details-btn"
+                  className="view-details-btn-new"
                   onClick={() => navigate(`/parent/children/${child.id}`)}
                 >
                   View Details
@@ -257,10 +277,5 @@ const ParentDashboard = () => {
     </div>
   );
 };
-
-// Helper function to get avatar emoji based on age group
-function getAvatarEmoji(ageGroup) {
-  return ageGroup === 'YOUNG' ? '🧒' : '👧';
-}
 
 export default ParentDashboard;
