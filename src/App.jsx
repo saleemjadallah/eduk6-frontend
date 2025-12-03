@@ -21,6 +21,11 @@ import MyChildrenPage from './pages/MyChildrenPage';
 import ChildDetailsPage from './pages/ChildDetailsPage';
 import LoginPage from './pages/LoginPage';
 import ParentNotebookView from './pages/ParentNotebookView';
+import SafetyLogsPage from './pages/SafetyLogsPage';
+import SettingsPage from './pages/SettingsPage';
+import PrivacyControlsPage from './pages/PrivacyControlsPage';
+import ProgressReportsPage from './pages/ProgressReportsPage';
+import SupportPage from './pages/SupportPage';
 
 // Components
 import { RewardPopup } from './components/Gamification';
@@ -138,12 +143,12 @@ const router = createBrowserRouter([
                     { path: 'children', element: <MyChildrenPage /> },
                     { path: 'children/:childId', element: <ChildDetailsPage /> },
                     { path: 'children/:childId/notebook', element: <ParentNotebookView /> },
-                    { path: 'reports', element: <PlaceholderPage title="Progress Reports" /> },
-                    { path: 'safety', element: <PlaceholderPage title="Safety Logs" /> },
-                    { path: 'settings', element: <PlaceholderPage title="Settings" /> },
-                    { path: 'privacy', element: <PlaceholderPage title="Privacy Controls" /> },
+                    { path: 'reports', element: <ProgressReportsPage /> },
+                    { path: 'safety', element: <SafetyLogsPage /> },
+                    { path: 'settings', element: <SettingsPage /> },
+                    { path: 'privacy', element: <PrivacyControlsPage /> },
                     { path: 'billing', element: <PlaceholderPage title="Subscription" /> },
-                    { path: 'support', element: <PlaceholderPage title="Support" /> },
+                    { path: 'support', element: <SupportPage /> },
                 ],
             },
 
