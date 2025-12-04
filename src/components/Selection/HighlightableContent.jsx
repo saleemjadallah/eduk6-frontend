@@ -156,6 +156,20 @@ const HighlightableContent = ({
         }
     }, [clearSelection]);
 
+    // Handle when user starts typing in the input field (pause auto-dismiss)
+    const handleInputModeStart = useCallback(() => {
+        // Clear auto-dismiss timers when user is actively typing a question
+        if (dismissTimerRef.current) {
+            clearTimeout(dismissTimerRef.current);
+            dismissTimerRef.current = null;
+        }
+        if (promptTimerRef.current) {
+            clearTimeout(promptTimerRef.current);
+            promptTimerRef.current = null;
+        }
+        setShowDismissPrompt(false);
+    }, []);
+
     // Handle action from context menu
     const handleMenuAction = useCallback(async (action) => {
         // Clear timers when action is taken
@@ -242,6 +256,7 @@ const HighlightableContent = ({
                         onDismiss={handleDismiss}
                         isProcessing={isProcessing}
                         showDismissPrompt={showDismissPrompt}
+                        onInputModeStart={handleInputModeStart}
                     />
                 )}
             </AnimatePresence>

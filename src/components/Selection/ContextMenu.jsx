@@ -61,6 +61,7 @@ const ContextMenu = ({
     onDismiss,
     isProcessing,
     showDismissPrompt,
+    onInputModeStart,
 }) => {
     const [showQuestionInput, setShowQuestionInput] = useState(false);
     const [showLanguageSelector, setShowLanguageSelector] = useState(false);
@@ -69,6 +70,13 @@ const ContextMenu = ({
     const menuRef = useRef(null);
 
     const actions = getAgeAppropriateActions(ageGroup);
+
+    // Notify parent when input mode starts (to pause auto-dismiss timers)
+    useEffect(() => {
+        if (showQuestionInput && onInputModeStart) {
+            onInputModeStart();
+        }
+    }, [showQuestionInput, onInputModeStart]);
 
     // Focus input when it appears
     useEffect(() => {

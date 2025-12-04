@@ -38,10 +38,10 @@ const HomePage = () => {
     <div className="min-h-screen bg-white font-sans text-gray-900">
       {/* iPad-Optimized Floating Navigation */}
       <motion.nav
-        initial={{ y: -20, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
+        initial={{ y: -20, opacity: 0, x: '-50%' }}
+        animate={{ y: 0, opacity: 1, x: '-50%' }}
         transition={{ duration: 0.5, ease: 'easeOut' }}
-        className="fixed top-4 md:top-6 left-1/2 -translate-x-1/2 z-50 w-[calc(100%-2rem)] max-w-5xl"
+        className="fixed top-4 md:top-6 left-1/2 z-50 w-[calc(100%-2rem)] max-w-5xl"
       >
         <div
           className={`
