@@ -486,8 +486,17 @@ export function LessonProvider({ children }) {
     dispatch({ type: ACTIONS.UPDATE_LESSON_PROGRESS, payload: { id: lessonId, progress } });
   }, []);
 
-  const markLessonComplete = useCallback((lessonId) => {
+  const markLessonComplete = useCallback(async (lessonId) => {
+    // Update local state immediately for responsive UI
     updateLessonProgress(lessonId, { percentComplete: 100, completedAt: new Date().toISOString() });
+
+    // Persist to backend
+    try {
+      await api.post(`/lessons/${lessonId}/complete`);
+    } catch (error) {
+      console.error('Failed to mark lesson as complete on backend:', error);
+      // Local state is already updated, so user still sees completion
+    }
   }, [updateLessonProgress]);
 
   // Error handling
