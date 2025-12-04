@@ -15,6 +15,9 @@
     -ms-user-select: text;
     cursor: text;
     line-height: 1.8;
+    /* iOS/iPad touch selection support */
+    -webkit-touch-callout: default;
+    touch-action: auto;
 }
 
 /* Selection highlight - bright yellow for visibility */

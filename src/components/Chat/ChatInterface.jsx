@@ -543,7 +543,7 @@ const ChatInterface = ({
     }));
 
     return (
-        <div className={`flex-1 flex flex-col bg-white rounded-3xl shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] border-4 border-black overflow-hidden ${demoMode ? 'h-full' : ''}`}>
+        <div className={`flex-1 flex flex-col bg-white rounded-2xl md:rounded-3xl shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] md:shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] border-3 md:border-4 border-black overflow-hidden ${demoMode ? 'h-full' : ''}`}>
             {/* Header */}
             <div className="bg-nanobanana-yellow border-b-4 border-black p-4 flex items-center justify-between">
                 <div className="flex items-center gap-3">
@@ -870,52 +870,52 @@ const ChatInterface = ({
                 </div>
             )}
 
-            {/* Gemini Tools */}
+            {/* Gemini Tools - iPad touch optimized */}
             {!demoMode && (
-                <div className="p-2 bg-gray-50 border-t-4 border-black space-y-2">
+                <div className="p-1.5 md:p-2 bg-gray-50 border-t-2 md:border-t-4 border-black space-y-1.5 md:space-y-2">
                     {/* Top row - 3 buttons */}
-                    <div className="grid grid-cols-3 gap-2">
+                    <div className="grid grid-cols-3 gap-1.5 md:gap-2">
                         <button
                             onClick={handleGenerateFlashcards}
-                            className="flex flex-col items-center justify-center p-2 bg-white border-2 border-black rounded-xl hover:bg-nanobanana-yellow transition-colors shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] active:translate-y-[2px] active:shadow-none disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="flex flex-col items-center justify-center p-2 md:p-3 min-h-[52px] md:min-h-[60px] bg-white border-2 border-black rounded-xl hover:bg-nanobanana-yellow transition-colors shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] active:translate-y-[2px] active:shadow-none disabled:opacity-50 disabled:cursor-not-allowed"
                             disabled={isChatDisabled || isToolLoading}
                         >
                             {isGeneratingFlashcards ? (
-                                <Loader2 className="w-5 h-5 mb-1 animate-spin" />
+                                <Loader2 className="w-5 h-5 md:w-6 md:h-6 mb-1 animate-spin" />
                             ) : (
-                                <FileText className="w-5 h-5 mb-1" />
+                                <FileText className="w-5 h-5 md:w-6 md:h-6 mb-1" />
                             )}
-                            <span className="text-xs font-bold">Flashcards</span>
+                            <span className="text-[10px] md:text-xs font-bold">Flashcards</span>
                         </button>
                         <button
                             onClick={handleGenerateInfographic}
-                            className="flex flex-col items-center justify-center p-2 bg-white border-2 border-black rounded-xl hover:bg-nanobanana-green transition-colors shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] active:translate-y-[2px] active:shadow-none disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="flex flex-col items-center justify-center p-2 md:p-3 min-h-[52px] md:min-h-[60px] bg-white border-2 border-black rounded-xl hover:bg-nanobanana-green transition-colors shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] active:translate-y-[2px] active:shadow-none disabled:opacity-50 disabled:cursor-not-allowed"
                             disabled={isChatDisabled || isToolLoading}
                         >
                             {isGeneratingInfographic ? (
-                                <Loader2 className="w-5 h-5 mb-1 animate-spin" />
+                                <Loader2 className="w-5 h-5 md:w-6 md:h-6 mb-1 animate-spin" />
                             ) : (
-                                <Image className="w-5 h-5 mb-1" />
+                                <Image className="w-5 h-5 md:w-6 md:h-6 mb-1" />
                             )}
-                            <span className="text-xs font-bold">Infographic</span>
+                            <span className="text-[10px] md:text-xs font-bold">Infographic</span>
                         </button>
                         <button
                             onClick={handleGenerateSummary}
-                            className="flex flex-col items-center justify-center p-2 bg-white border-2 border-black rounded-xl hover:bg-pink-400 transition-colors shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] active:translate-y-[2px] active:shadow-none disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="flex flex-col items-center justify-center p-2 md:p-3 min-h-[52px] md:min-h-[60px] bg-white border-2 border-black rounded-xl hover:bg-pink-400 transition-colors shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] active:translate-y-[2px] active:shadow-none disabled:opacity-50 disabled:cursor-not-allowed"
                             disabled={isChatDisabled || isToolLoading}
                         >
                             {isGeneratingSummary ? (
-                                <Loader2 className="w-5 h-5 mb-1 animate-spin" />
+                                <Loader2 className="w-5 h-5 md:w-6 md:h-6 mb-1 animate-spin" />
                             ) : (
-                                <BookOpen className="w-5 h-5 mb-1" />
+                                <BookOpen className="w-5 h-5 md:w-6 md:h-6 mb-1" />
                             )}
-                            <span className="text-xs font-bold">Summarize</span>
+                            <span className="text-[10px] md:text-xs font-bold">Summarize</span>
                         </button>
                     </div>
                     {/* Quiz button - full width */}
                     <button
                         onClick={handleGenerateQuiz}
-                        className="w-full flex items-center justify-center gap-2 p-3 bg-purple-500 text-white border-2 border-black rounded-xl hover:bg-purple-600 transition-colors shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] active:translate-y-[2px] active:shadow-none disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="w-full flex items-center justify-center gap-2 p-2.5 md:p-3 min-h-[48px] md:min-h-[52px] bg-purple-500 text-white border-2 border-black rounded-xl hover:bg-purple-600 transition-colors shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] active:translate-y-[2px] active:shadow-none disabled:opacity-50 disabled:cursor-not-allowed"
                         disabled={isChatDisabled || isToolLoading}
                     >
                         {isGeneratingQuiz ? (
@@ -923,7 +923,7 @@ const ChatInterface = ({
                         ) : (
                             <HelpCircle className="w-5 h-5" />
                         )}
-                        <span className="font-bold">Take a Quiz</span>
+                        <span className="font-bold text-sm md:text-base">Take a Quiz</span>
                     </button>
                 </div>
             )}

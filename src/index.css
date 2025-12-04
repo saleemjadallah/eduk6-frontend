@@ -154,3 +154,234 @@ body {
   font-size: 1em;
   border: 1px solid #fbbf24;
 }
+
+/* ==========================================
+   iPad & Tablet Optimizations
+   ========================================== */
+
+/* iPad touch-friendly improvements */
+@media (min-width: 768px) and (max-width: 1366px) and (pointer: coarse) {
+  /* Larger touch targets */
+  button, a, [role="button"] {
+    min-height: 44px;
+  }
+
+  /* Better spacing for touch */
+  .gap-4 {
+    gap: 1.25rem;
+  }
+}
+
+/* iPad Portrait (768px - 834px) */
+@media (min-width: 768px) and (max-width: 834px) {
+  /* Dashboard welcome section */
+  .text-3xl {
+    font-size: 2rem;
+  }
+
+  /* Stats cards - larger text */
+  .text-3xl.font-black {
+    font-size: 2.25rem;
+  }
+}
+
+/* iPad Pro & larger tablets (1024px+) */
+@media (min-width: 1024px) {
+  /* Larger action buttons on iPad */
+  .p-6.rounded-2xl {
+    padding: 2rem;
+  }
+
+  /* Larger icons on iPad */
+  .w-10.h-10 {
+    width: 3rem;
+    height: 3rem;
+  }
+
+  /* Better lesson card sizing */
+  .w-12.h-12 {
+    width: 4rem;
+    height: 4rem;
+  }
+
+  /* Larger stats text */
+  .text-3xl.font-black {
+    font-size: 2.5rem;
+  }
+
+  /* More padding for stats cards */
+  .p-4.rounded-xl {
+    padding: 1.5rem;
+  }
+}
+
+/* iPad Landscape specific */
+@media (min-width: 1024px) and (orientation: landscape) {
+  /* Full width utilization in landscape */
+  .grid.lg\:grid-cols-4 {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 1.5rem;
+  }
+
+  .grid.lg\:grid-cols-3 {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 1.5rem;
+  }
+}
+
+/* Safe area insets for notched iPads */
+@supports (padding: max(0px)) {
+  .child-layout {
+    padding-left: max(0px, env(safe-area-inset-left));
+    padding-right: max(0px, env(safe-area-inset-right));
+  }
+}
+
+/* Capacitor/iOS specific WebView fixes */
+@media screen and (-webkit-min-device-pixel-ratio: 2) {
+  /* Prevent text size adjustment on orientation change */
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+
+  /* Smooth scrolling for iOS */
+  .overflow-auto, .overflow-y-auto, .overflow-x-auto {
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Disable callout on long press */
+  a, button, img {
+    -webkit-touch-callout: none;
+  }
+}
+
+/* ==========================================
+   Landing Page - iPad Optimizations
+   ========================================== */
+
+/* Floating nav on iPad - enhanced glass effect */
+@media (min-width: 768px) and (max-width: 1366px) {
+  /* Landing nav glass morphism enhancement */
+  nav .backdrop-blur-xl {
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+  }
+
+  /* Hero section - better vertical rhythm */
+  header.min-h-\[85vh\] {
+    min-height: 80vh;
+    padding-top: 6rem;
+  }
+
+  /* Trust badges wrap nicely */
+  .flex.flex-wrap.gap-4 {
+    gap: 0.75rem;
+  }
+}
+
+/* iPad Portrait - Landing page adjustments */
+@media (min-width: 768px) and (max-width: 1023px) {
+  /* Two-column grid becomes full width on iPad portrait */
+  .grid.lg\:grid-cols-2 {
+    grid-template-columns: 1fr;
+  }
+
+  /* Center hero content on iPad portrait */
+  .grid.lg\:grid-cols-2 > div:first-child {
+    text-align: center;
+    max-width: 100%;
+  }
+
+  .grid.lg\:grid-cols-2 .flex.flex-wrap {
+    justify-content: center;
+  }
+
+  /* Hide hero image on iPad portrait for cleaner look */
+  .grid.lg\:grid-cols-2 > div.hidden.md\:block {
+    display: none !important;
+  }
+}
+
+/* iPad Landscape - Full experience */
+@media (min-width: 1024px) and (max-width: 1366px) and (orientation: landscape) {
+  /* Show hero image on iPad landscape */
+  .grid.lg\:grid-cols-2 > div.hidden.md\:block {
+    display: block !important;
+  }
+
+  /* Better hero sizing */
+  .grid.lg\:grid-cols-2 {
+    gap: 3rem;
+  }
+}
+
+/* ==========================================
+   Study Page - iPad Split View
+   ========================================== */
+
+/* iPad Portrait & Landscape - Study interface */
+@media (min-width: 768px) {
+  /* Reduce padding in split view */
+  .study-split-view {
+    gap: 0.75rem;
+  }
+
+  /* Lesson view header - more compact */
+  .bg-nanobanana-green.border-b-4.border-black.p-6 {
+    padding: 1rem 1.25rem;
+  }
+
+  /* Chat header - more compact */
+  .bg-nanobanana-yellow.border-b-4.border-black.p-4 {
+    padding: 0.75rem 1rem;
+  }
+
+  /* Lesson content - better readability */
+  .lesson-content {
+    font-size: 1.0625rem;
+    line-height: 1.8;
+  }
+
+  /* Chat messages area - better spacing */
+  .flex-1.overflow-y-auto.p-4.space-y-4 {
+    padding: 0.75rem;
+  }
+}
+
+/* iPad Landscape - Maximize content */
+@media (min-width: 1024px) and (max-width: 1366px) {
+  /* Lesson title - appropriate size */
+  .text-3xl.font-black.font-comic {
+    font-size: 1.5rem;
+  }
+
+  /* Chat title */
+  .font-bold.text-xl.font-comic {
+    font-size: 1.125rem;
+  }
+
+  /* Tool buttons in chat - larger touch targets */
+  .grid.grid-cols-3.gap-2 button {
+    min-height: 56px;
+    padding: 0.75rem;
+  }
+
+  /* Quiz button - larger */
+  .w-full.flex.items-center.justify-center.gap-2.p-3 {
+    padding: 1rem;
+    min-height: 52px;
+  }
+}
+
+/* iPad Pro 12.9" - Extra space utilization */
+@media (min-width: 1024px) and (min-height: 1300px) {
+  /* Larger text for better readability */
+  .lesson-content {
+    font-size: 1.125rem;
+  }
+
+  /* More generous padding */
+  .p-2.md\:p-4 {
+    padding: 1.25rem;
+  }
+}

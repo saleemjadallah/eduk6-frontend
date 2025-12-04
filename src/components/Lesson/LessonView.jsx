@@ -404,7 +404,7 @@ const LessonView = ({ lesson, onComplete, showContentViewer = false }) => {
     const progressPercent = displayLesson.progress?.percentComplete || 0;
 
     return (
-        <div className="flex-[1.5] bg-white rounded-3xl shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] border-4 border-black overflow-hidden flex flex-col">
+        <div className="flex-1 bg-white rounded-2xl md:rounded-3xl shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] md:shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] border-3 md:border-4 border-black overflow-hidden flex flex-col">
             {/* Lesson Header */}
             <div className="bg-nanobanana-green border-b-4 border-black p-6">
                 {/* Top row with view toggle and vocabulary */}

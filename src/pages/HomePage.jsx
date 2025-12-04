@@ -1,4 +1,4 @@
-import React, { useLayoutEffect } from 'react';
+import React, { useLayoutEffect, useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 
@@ -18,72 +18,71 @@ import {
 } from '../components/Landing';
 
 const HomePage = () => {
+  const [scrolled, setScrolled] = useState(false);
+
   // Ensure page starts at top when navigating here
   useLayoutEffect(() => {
     window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
   }, []);
 
+  // Track scroll for header visibility/style changes
+  useEffect(() => {
+    const handleScroll = () => {
+      setScrolled(window.scrollY > 100);
+    };
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
   return (
     <div className="min-h-screen bg-white font-sans text-gray-900">
-      {/* Navigation */}
-      <nav className="sticky top-0 z-50 bg-white/95 backdrop-blur-sm border-b-4 border-black">
-        <div className="h-24 md:h-28 px-6 flex justify-between items-center max-w-7xl mx-auto">
-          {/* Logo */}
+      {/* iPad-Optimized Floating Navigation */}
+      <motion.nav
+        initial={{ y: -20, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ duration: 0.5, ease: 'easeOut' }}
+        className="fixed top-4 md:top-6 left-1/2 -translate-x-1/2 z-50 w-[calc(100%-2rem)] max-w-5xl"
+      >
+        <div
+          className={`
+            flex justify-between items-center px-4 md:px-6 py-3 md:py-4
+            rounded-2xl md:rounded-[1.25rem]
+            transition-all duration-300 ease-out
+            border-2 border-black/10
+            ${scrolled
+              ? 'bg-white/95 backdrop-blur-xl shadow-[0_8px_32px_rgba(0,0,0,0.15)]'
+              : 'bg-white/90 backdrop-blur-md shadow-[0_4px_24px_rgba(0,0,0,0.08)]'
+            }
+          `}
+        >
+          {/* Logo - Compact for iPad */}
           <Link to="/" className="flex items-center">
             <img
               src="/assets/orbit-learn-logo-hires.png"
               alt="OrbitLearn"
-              className="h-20 md:h-24 w-auto"
+              className="h-12 md:h-14 w-auto"
             />
           </Link>
 
-          {/* Desktop Navigation */}
-          <div className="hidden md:flex items-center gap-6">
-            <a
-              href="#features"
-              className="font-bold hover:text-nanobanana-blue transition-colors"
-            >
-              Features
-            </a>
-            <a
-              href="#how-it-works"
-              className="font-bold hover:text-nanobanana-blue transition-colors"
-            >
-              How It Works
-            </a>
-            <a
-              href="#for-parents"
-              className="font-bold hover:text-nanobanana-blue transition-colors"
-            >
-              For Parents
-            </a>
-            <a
-              href="#pricing"
-              className="font-bold hover:text-nanobanana-blue transition-colors"
-            >
-              Pricing
-            </a>
-          </div>
-
-          {/* Auth Buttons */}
-          <div className="flex items-center gap-3">
+          {/* Right side - Minimal CTAs */}
+          <div className="flex items-center gap-2 md:gap-3">
             <Link
               to="/login"
               reloadDocument
-              className="hidden sm:inline-flex font-bold hover:text-nanobanana-blue transition-colors"
+              className="inline-flex items-center justify-center px-3 md:px-4 py-2 md:py-2.5 font-bold text-gray-700 hover:text-nanobanana-blue transition-colors rounded-xl hover:bg-black/5 text-sm md:text-base"
             >
-              Log In
+              Sign In
             </Link>
             <Link
               to="/onboarding"
               reloadDocument
-              className="bg-nanobanana-blue text-white px-5 py-2 rounded-xl font-bold border-2 border-black shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] hover:translate-y-[-1px] hover:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-all active:translate-y-[1px] active:shadow-none"
+              className="inline-flex items-center justify-center bg-nanobanana-blue text-white px-4 md:px-6 py-2 md:py-3 rounded-xl md:rounded-2xl font-bold text-sm md:text-base border-2 border-black shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] hover:translate-y-[-1px] hover:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-all active:translate-y-[1px] active:shadow-none"
             >
-              Sign Up Free
+              Get Started
             </Link>
           </div>
         </div>
-      </nav>
+      </motion.nav>
 
       {/* Main Content */}
       <main>

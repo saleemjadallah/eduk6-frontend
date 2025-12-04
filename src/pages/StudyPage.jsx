@@ -201,25 +201,25 @@ const StudyPage = () => {
             className={!currentLesson ? "bg-[#F0F8FF]" : undefined}
             showClouds={!currentLesson}
         >
-            {/* Progress Widget - Top bar */}
-            <div className="absolute top-0 left-0 right-0 bg-white border-b-4 border-black p-3 z-20">
-                <div className="flex items-center justify-between gap-4">
-                    <div className="flex-1">
+            {/* Progress Widget - Top bar - iPad optimized */}
+            <div className="absolute top-0 left-0 right-0 bg-white/95 backdrop-blur-sm border-b-2 md:border-b-4 border-black p-2 md:p-3 z-20">
+                <div className="flex items-center justify-between gap-2 md:gap-4">
+                    <div className="flex-1 min-w-0">
                         <ProgressWidget layout="compact" />
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-1.5 md:gap-2 flex-shrink-0">
                         <Link
                             to="/learn"
-                            className="flex items-center gap-2 px-3 py-2 bg-nanobanana-blue rounded-full border-2 border-black font-bold text-sm text-white hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-shadow"
+                            className="flex items-center gap-1.5 md:gap-2 px-2.5 md:px-3 py-1.5 md:py-2 bg-nanobanana-blue rounded-full border-2 border-black font-bold text-xs md:text-sm text-white hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-shadow"
                         >
-                            <LayoutDashboard className="w-4 h-4" />
+                            <LayoutDashboard className="w-3.5 h-3.5 md:w-4 md:h-4" />
                             <span className="hidden sm:inline">Dashboard</span>
                         </Link>
                         <Link
                             to="/learn/achievements"
-                            className="flex items-center gap-2 px-3 py-2 bg-nanobanana-yellow rounded-full border-2 border-black font-bold text-sm hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-shadow"
+                            className="flex items-center gap-1.5 md:gap-2 px-2.5 md:px-3 py-1.5 md:py-2 bg-nanobanana-yellow rounded-full border-2 border-black font-bold text-xs md:text-sm hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-shadow"
                         >
-                            <TrendingUp className="w-4 h-4" />
+                            <TrendingUp className="w-3.5 h-3.5 md:w-4 md:h-4" />
                             <span className="hidden sm:inline">Progress</span>
                         </Link>
                     </div>
@@ -227,7 +227,8 @@ const StudyPage = () => {
             </div>
 
             {/* Main content with padding for top bar */}
-            <div className="pt-16 flex-1 flex">
+            {/* iPad Split-View Layout: Side-by-side on tablet+, stacked on mobile */}
+            <div className="pt-14 md:pt-16 flex-1 flex flex-col md:flex-row overflow-hidden">
                 {isLoadingFromDb ? (
                     <div className="flex-1 flex items-center justify-center">
                         <div className="text-center">
@@ -240,7 +241,7 @@ const StudyPage = () => {
                         {isPdfLesson && currentLesson.fileUrl ? (
                             <>
                                 {/* PDF Viewer - Left Pane */}
-                                <div className="w-3/5 p-4 h-full">
+                                <div className="w-full md:w-3/5 p-4 h-1/2 md:h-full overflow-hidden">
                                     <PDFViewer
                                         pdfUrl={currentLesson.fileUrl}
                                         lessonId={currentLesson.id}
@@ -252,7 +253,7 @@ const StudyPage = () => {
                                     />
                                 </div>
                                 {/* Chat Interface - Right Pane */}
-                                <div className="w-2/5 border-l-4 border-black flex flex-col">
+                                <div className="w-full md:w-2/5 md:border-l-4 border-t-4 md:border-t-0 border-black flex flex-col h-1/2 md:h-full">
                                     <SelectedTextPreview onSendToChat={handleSendToChat} />
                                     <ChatInterface
                                         lesson={currentLesson}
@@ -264,14 +265,20 @@ const StudyPage = () => {
                             </>
                         ) : (
                             <>
-                                <LessonView
-                                    lesson={currentLesson}
-                                    onComplete={handleLessonComplete}
-                                />
-                                <ChatInterface
-                                    lesson={currentLesson}
-                                    onInteraction={handleChatInteraction}
-                                />
+                                {/* iPad Split View: Lesson Content (left) | Chat (right) */}
+                                {/* Mobile: Stacked with lesson on top, chat below */}
+                                <div className="w-full md:w-[55%] lg:w-[60%] h-[45%] md:h-full overflow-hidden flex flex-col p-2 md:p-4">
+                                    <LessonView
+                                        lesson={currentLesson}
+                                        onComplete={handleLessonComplete}
+                                    />
+                                </div>
+                                <div className="w-full md:w-[45%] lg:w-[40%] h-[55%] md:h-full overflow-hidden flex flex-col p-2 md:p-4 md:pl-0">
+                                    <ChatInterface
+                                        lesson={currentLesson}
+                                        onInteraction={handleChatInteraction}
+                                    />
+                                </div>
                             </>
                         )}
                     </HighlightProvider>

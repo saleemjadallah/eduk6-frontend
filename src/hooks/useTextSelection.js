@@ -99,7 +99,7 @@ export const useTextSelection = ({
         }
     }, [selection, onDeselect]);
 
-    // Track selection start
+    // Track selection start (mouse)
     const handleMouseDown = useCallback(() => {
         // Cancel any pending selection popup
         if (selectionTimeoutRef.current) {
@@ -108,13 +108,59 @@ export const useTextSelection = ({
         setIsSelecting(true);
     }, []);
 
-    // Track selection end - this is the main trigger for showing popup
+    // Track selection end (mouse) - this is the main trigger for showing popup
     const handleMouseUp = useCallback(() => {
         setIsSelecting(false);
         mouseUpTimeRef.current = Date.now();
         // Small delay to let the browser finalize the selection
         setTimeout(processSelection, 10);
     }, [processSelection]);
+
+    // Track selection start (touch) - for iPad/tablet support
+    const handleTouchStart = useCallback(() => {
+        // Cancel any pending selection popup
+        if (selectionTimeoutRef.current) {
+            clearTimeout(selectionTimeoutRef.current);
+        }
+        setIsSelecting(true);
+    }, []);
+
+    // Track selection end (touch) - for iPad/tablet support
+    const handleTouchEnd = useCallback(() => {
+        setIsSelecting(false);
+        mouseUpTimeRef.current = Date.now();
+        // Longer delay for touch to let iOS finalize the selection
+        setTimeout(processSelection, 100);
+    }, [processSelection]);
+
+    // Handle selection change from iOS text selection handles
+    const handleSelectionChangeForTouch = useCallback(() => {
+        const windowSelection = window.getSelection();
+        const selectedText = windowSelection?.toString().trim();
+
+        // On iOS, selectionchange fires when user adjusts selection handles
+        if (selectedText && selectedText.length >= minLength) {
+            // Debounce to avoid too many updates while dragging handles
+            if (selectionTimeoutRef.current) {
+                clearTimeout(selectionTimeoutRef.current);
+            }
+            selectionTimeoutRef.current = setTimeout(() => {
+                const selectionData = getSelectionData();
+                if (selectionData) {
+                    setSelection(selectionData);
+                    setIsSelecting(false);
+                    onSelect?.(selectionData);
+                }
+            }, delay);
+        } else if (!selectedText && selection) {
+            // Handle deselection
+            if (selectionTimeoutRef.current) {
+                clearTimeout(selectionTimeoutRef.current);
+            }
+            setSelection(null);
+            onDeselect?.();
+        }
+    }, [getSelectionData, selection, onSelect, onDeselect, delay, minLength]);
 
     // Clear selection programmatically
     const clearSelection = useCallback(() => {
@@ -126,14 +172,32 @@ export const useTextSelection = ({
         onDeselect?.();
     }, [onDeselect]);
 
+    // Detect if we're on a touch device
+    const isTouchDevice = typeof window !== 'undefined' && ('ontouchstart' in window || navigator.maxTouchPoints > 0);
+
     // Set up event listeners
     useEffect(() => {
-        document.addEventListener('selectionchange', handleSelectionChange);
+        // Use touch-optimized handler on touch devices
+        if (isTouchDevice) {
+            document.addEventListener('selectionchange', handleSelectionChangeForTouch);
+            document.addEventListener('touchstart', handleTouchStart, { passive: true });
+            document.addEventListener('touchend', handleTouchEnd, { passive: true });
+        } else {
+            document.addEventListener('selectionchange', handleSelectionChange);
+        }
+
+        // Always listen for mouse events (for devices with both touch and mouse)
         document.addEventListener('mousedown', handleMouseDown);
         document.addEventListener('mouseup', handleMouseUp);
 
         return () => {
-            document.removeEventListener('selectionchange', handleSelectionChange);
+            if (isTouchDevice) {
+                document.removeEventListener('selectionchange', handleSelectionChangeForTouch);
+                document.removeEventListener('touchstart', handleTouchStart);
+                document.removeEventListener('touchend', handleTouchEnd);
+            } else {
+                document.removeEventListener('selectionchange', handleSelectionChange);
+            }
             document.removeEventListener('mousedown', handleMouseDown);
             document.removeEventListener('mouseup', handleMouseUp);
 
@@ -141,7 +205,7 @@ export const useTextSelection = ({
                 clearTimeout(selectionTimeoutRef.current);
             }
         };
-    }, [handleSelectionChange, handleMouseDown, handleMouseUp]);
+    }, [handleSelectionChange, handleSelectionChangeForTouch, handleMouseDown, handleMouseUp, handleTouchStart, handleTouchEnd, isTouchDevice]);
 
     return {
         selection,
