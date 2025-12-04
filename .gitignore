@@ -36,3 +36,11 @@ lerna-debug.log*
 # Vite
 .vite/
 *.local
+
+# iOS Sensitive Files
+ios/App/App/GoogleService-Info.plist
+ios/App/App/GoogleService-Info*.plist
+ios/App/App/*.entitlements
+
+# iOS Build artifacts (optional - uncomment if you don't want to track iOS project)
+# ios/
