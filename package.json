@@ -10,6 +10,11 @@
         "preview": "vite preview"
     },
     "dependencies": {
+        "@capacitor-community/camera-preview": "^7.0.2",
+        "@capacitor/camera": "^7.0.2",
+        "@capacitor/cli": "^7.4.4",
+        "@capacitor/core": "^7.4.4",
+        "@capacitor/ios": "^7.4.4",
         "@floating-ui/react": "^0.27.16",
         "@google/generative-ai": "^0.24.1",
         "clsx": "^2.1.0",

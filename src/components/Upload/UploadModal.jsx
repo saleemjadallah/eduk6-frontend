@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { X, FileText, Youtube, Camera, Sparkles, AlertCircle } from 'lucide-react';
 import FileDropzone from './FileDropzone';
 import YouTubeInput from './YouTubeInput';
+import CameraCapture from './CameraCapture';
 import ProcessingAnimation from './ProcessingAnimation';
 import SubjectSelector from './SubjectSelector';
 import GradeLevelSelector from './GradeLevelSelector';
@@ -19,6 +20,8 @@ const UploadModal = ({ isOpen, onClose, onSuccess }) => {
     const [activeTab, setActiveTab] = useState('file');
     const [selectedFile, setSelectedFile] = useState(null);
     const [selectedVideo, setSelectedVideo] = useState(null);
+    const [capturedImage, setCapturedImage] = useState(null);
+    const [capturedImagePreview, setCapturedImagePreview] = useState(null);
     const [lessonTitle, setLessonTitle] = useState('');
     const [subject, setSubject] = useState('');
     const [gradeLevel, setGradeLevel] = useState('');
@@ -62,8 +65,28 @@ const UploadModal = ({ isOpen, onClose, onSuccess }) => {
 
     const handleClearVideo = useCallback(() => {
         setSelectedVideo(null);
-        if (!selectedFile) setLessonTitle('');
-    }, [selectedFile]);
+        if (!selectedFile && !capturedImage) setLessonTitle('');
+    }, [selectedFile, capturedImage]);
+
+    const handleImageCapture = useCallback((file, previewUrl) => {
+        setCapturedImage(file);
+        setCapturedImagePreview(previewUrl);
+        setLocalError(null);
+        // Auto-fill title for camera captures
+        const timestamp = new Date().toLocaleDateString('en-US', {
+            month: 'short',
+            day: 'numeric',
+            hour: 'numeric',
+            minute: '2-digit'
+        });
+        setLessonTitle(`Photo Lesson - ${timestamp}`);
+    }, []);
+
+    const handleClearImage = useCallback(() => {
+        setCapturedImage(null);
+        setCapturedImagePreview(null);
+        if (!selectedFile && !selectedVideo) setLessonTitle('');
+    }, [selectedFile, selectedVideo]);
 
     const handleSubmit = async () => {
         if (!lessonTitle.trim()) {
@@ -80,6 +103,9 @@ const UploadModal = ({ isOpen, onClose, onSuccess }) => {
                 lesson = await processFile(selectedFile, lessonTitle, subject, gradeLevel);
             } else if (selectedVideo) {
                 lesson = await processYouTube(selectedVideo, lessonTitle, subject, gradeLevel);
+            } else if (capturedImage) {
+                // Process camera-captured image same as file upload
+                lesson = await processFile(capturedImage, lessonTitle, subject, gradeLevel);
             }
 
             // Store the completed lesson to use when navigating
@@ -121,6 +147,8 @@ const UploadModal = ({ isOpen, onClose, onSuccess }) => {
     const handleReset = () => {
         setSelectedFile(null);
         setSelectedVideo(null);
+        setCapturedImage(null);
+        setCapturedImagePreview(null);
         setLessonTitle('');
         setSubject('');
         setGradeLevel('');
@@ -130,7 +158,7 @@ const UploadModal = ({ isOpen, onClose, onSuccess }) => {
         hasNavigatedRef.current = false;
     };
 
-    const canSubmit = (selectedFile || selectedVideo) && lessonTitle.trim() && !isProcessing;
+    const canSubmit = (selectedFile || selectedVideo || capturedImage) && lessonTitle.trim() && !isProcessing;
 
     // Backdrop click handler
     const handleBackdropClick = (e) => {
@@ -264,15 +292,12 @@ const UploadModal = ({ isOpen, onClose, onSuccess }) => {
                                                     initial={{ opacity: 0, x: -20 }}
                                                     animate={{ opacity: 1, x: 0 }}
                                                     exit={{ opacity: 0, x: 20 }}
-                                                    className="p-8 text-center bg-gray-50 rounded-2xl border-4 border-dashed border-gray-300"
                                                 >
-                                                    <Camera className="w-12 h-12 mx-auto mb-4 text-gray-400" />
-                                                    <p className="font-bold text-gray-500">
-                                                        Camera capture coming soon!
-                                                    </p>
-                                                    <p className="text-sm text-gray-400 mt-1">
-                                                        Take photos of worksheets and textbook pages
-                                                    </p>
+                                                    <CameraCapture
+                                                        onImageCapture={handleImageCapture}
+                                                        capturedImage={capturedImagePreview}
+                                                        onClear={handleClearImage}
+                                                    />
                                                 </motion.div>
                                             )}
                                         </AnimatePresence>
