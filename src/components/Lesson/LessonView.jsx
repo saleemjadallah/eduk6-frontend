@@ -128,8 +128,8 @@ const formatContent = (text) => {
     const htmlTagCount = (text.match(/<[a-z][^>]*>/gi) || []).length;
     if (htmlTagCount > 5) {
         return DOMPurify.sanitize(text, {
-            ALLOWED_TAGS: ['p', 'br', 'b', 'strong', 'i', 'em', 'u', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'ul', 'ol', 'li', 'span', 'div', 'blockquote', 'table', 'thead', 'tbody', 'tr', 'th', 'td', 'code'],
-            ALLOWED_ATTR: ['class', 'style', 'data-page'],
+            ALLOWED_TAGS: ['p', 'br', 'b', 'strong', 'i', 'em', 'u', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'ul', 'ol', 'li', 'span', 'div', 'blockquote', 'table', 'thead', 'tbody', 'tr', 'th', 'td', 'code', 'mark'],
+            ALLOWED_ATTR: ['class', 'style', 'data-page', 'data-exercise-id', 'data-type', 'data-definition', 'data-section', 'data-numerator', 'data-denominator', 'title'],
         });
     }
 
@@ -202,8 +202,8 @@ const formatContent = (text) => {
     if (inTable) result.push('</tbody></table>');
 
     return DOMPurify.sanitize(result.join('\n'), {
-        ALLOWED_TAGS: ['p', 'br', 'b', 'strong', 'i', 'em', 'u', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'ul', 'ol', 'li', 'span', 'div', 'blockquote', 'code', 'table', 'tbody', 'tr', 'td', 'th'],
-        ALLOWED_ATTR: ['class', 'style', 'data-page'],
+        ALLOWED_TAGS: ['p', 'br', 'b', 'strong', 'i', 'em', 'u', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'ul', 'ol', 'li', 'span', 'div', 'blockquote', 'code', 'table', 'tbody', 'tr', 'td', 'th', 'mark'],
+        ALLOWED_ATTR: ['class', 'style', 'data-page', 'data-exercise-id', 'data-type', 'data-definition', 'data-section', 'data-numerator', 'data-denominator', 'title'],
     });
 };
 
