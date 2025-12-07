@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Comic+Neue:wght@400;700&family=Outfit:wght@400;500;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Comic+Neue:wght@400;700&family=Outfit:wght@400;500;700&family=Fraunces:ital,opsz,wght@0,9..144,100..900;1,9..144,100..900&family=JetBrains+Mono:wght@400;500;600&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -384,4 +384,451 @@ body {
   .p-2.md\:p-4 {
     padding: 1.25rem;
   }
+}
+
+/* ==========================================
+   Camera Preview - Transparent Background
+   ========================================== */
+
+/* When camera is active, make everything transparent except camera UI */
+body.camera-active {
+  background-color: transparent !important;
+}
+
+body.camera-active #root {
+  background-color: transparent !important;
+}
+
+/* Hide all app content except the camera view when camera is active */
+body.camera-active #root > *:not([class*="z-[100]"]) {
+  visibility: hidden;
+}
+
+/* Ensure the camera overlay stays visible */
+body.camera-active .fixed.inset-0.z-\[100\] {
+  visibility: visible;
+}
+
+/* Make sure camera container itself is fully transparent */
+#camera-preview-container {
+  background-color: transparent !important;
+}
+
+/* ==========================================
+   Teacher Portal Styles
+   ========================================== */
+
+/* Teacher Portal base typography */
+.teacher-portal {
+  font-family: 'Outfit', sans-serif;
+  background-color: #FDF8F3;
+  min-height: 100vh;
+}
+
+.teacher-portal h1,
+.teacher-portal h2,
+.teacher-portal h3 {
+  font-family: 'Fraunces', serif;
+  font-weight: 600;
+  color: #1E2A3A;
+}
+
+/* Decorative paper texture overlay */
+.teacher-paper-bg {
+  position: relative;
+}
+
+.teacher-paper-bg::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.02'/%3E%3C/svg%3E");
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Chalkboard-style card headers */
+.teacher-chalkboard {
+  background: linear-gradient(135deg, #2D5A4A 0%, #1E4035 100%);
+  color: #FAF7F2;
+  position: relative;
+  overflow: hidden;
+}
+
+.teacher-chalkboard::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='chalk'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23chalk)' opacity='0.08'/%3E%3C/svg%3E");
+  pointer-events: none;
+}
+
+/* Teacher card styles */
+.teacher-card {
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 4px 6px rgba(30,42,58,0.05), 0 10px 15px rgba(30,42,58,0.1);
+  border: 1px solid rgba(30,42,58,0.06);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.teacher-card:hover {
+  box-shadow: 0 8px 30px rgba(30,42,58,0.12), 0 4px 8px rgba(30,42,58,0.06);
+  transform: translateY(-2px);
+}
+
+/* Quirky accent borders (nod to child site) */
+.teacher-accent-border {
+  position: relative;
+}
+
+.teacher-accent-border::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, #C75B39, #D4A853, #7BAE7F, #7B5EA7);
+  border-radius: 0 0 16px 16px;
+}
+
+/* Teacher button styles */
+.teacher-btn-primary {
+  background: linear-gradient(135deg, #2D5A4A 0%, #3D7A6A 100%);
+  color: white;
+  font-weight: 600;
+  padding: 12px 24px;
+  border-radius: 12px;
+  border: 2px solid #1E4035;
+  box-shadow: 0 4px 0 #1E4035;
+  transition: all 0.15s ease;
+}
+
+.teacher-btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 0 #1E4035;
+}
+
+.teacher-btn-primary:active {
+  transform: translateY(2px);
+  box-shadow: 0 2px 0 #1E4035;
+}
+
+.teacher-btn-secondary {
+  background: white;
+  color: #1E2A3A;
+  font-weight: 600;
+  padding: 12px 24px;
+  border-radius: 12px;
+  border: 2px solid #1E2A3A;
+  box-shadow: 0 4px 0 #1E2A3A;
+  transition: all 0.15s ease;
+}
+
+.teacher-btn-secondary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 0 #1E2A3A;
+  background: #FAF7F2;
+}
+
+.teacher-btn-secondary:active {
+  transform: translateY(2px);
+  box-shadow: 0 2px 0 #1E2A3A;
+}
+
+/* Gold accent button */
+.teacher-btn-gold {
+  background: linear-gradient(135deg, #D4A853 0%, #E8C97A 100%);
+  color: #1E2A3A;
+  font-weight: 600;
+  padding: 12px 24px;
+  border-radius: 12px;
+  border: 2px solid #B8923F;
+  box-shadow: 0 4px 0 #B8923F;
+  transition: all 0.15s ease;
+}
+
+.teacher-btn-gold:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 0 #B8923F;
+}
+
+/* Progress bars for teacher */
+.teacher-progress {
+  height: 8px;
+  background: #E8E4DF;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.teacher-progress-bar {
+  height: 100%;
+  background: linear-gradient(90deg, #7BAE7F, #A8D4AB);
+  border-radius: 4px;
+  transition: width 0.5s ease;
+}
+
+.teacher-progress-bar.warning {
+  background: linear-gradient(90deg, #D4A853, #E8C97A);
+}
+
+.teacher-progress-bar.danger {
+  background: linear-gradient(90deg, #E07B6B, #C75B39);
+}
+
+/* Sidebar navigation */
+.teacher-sidebar {
+  background: white;
+  border-right: 1px solid rgba(30,42,58,0.08);
+  box-shadow: 4px 0 15px rgba(30,42,58,0.03);
+}
+
+.teacher-nav-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  border-radius: 10px;
+  color: #3D4F66;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  margin: 4px 8px;
+}
+
+.teacher-nav-item:hover {
+  background: #FAF7F2;
+  color: #1E2A3A;
+}
+
+.teacher-nav-item.active {
+  background: linear-gradient(135deg, #2D5A4A 0%, #3D7A6A 100%);
+  color: white;
+  box-shadow: 0 2px 8px rgba(45,90,74,0.3);
+}
+
+/* Stat cards with quirky icons */
+.teacher-stat-card {
+  background: white;
+  border-radius: 16px;
+  padding: 24px;
+  border: 2px solid rgba(30,42,58,0.06);
+  position: relative;
+  overflow: hidden;
+}
+
+.teacher-stat-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 4px;
+  height: 100%;
+}
+
+.teacher-stat-card.chalk::before {
+  background: #2D5A4A;
+}
+
+.teacher-stat-card.gold::before {
+  background: #D4A853;
+}
+
+.teacher-stat-card.terracotta::before {
+  background: #C75B39;
+}
+
+.teacher-stat-card.sage::before {
+  background: #7BAE7F;
+}
+
+/* Decorative notebook lines */
+.notebook-lines {
+  background-image: repeating-linear-gradient(
+    transparent,
+    transparent 31px,
+    rgba(30,42,58,0.08) 31px,
+    rgba(30,42,58,0.08) 32px
+  );
+  background-position: 0 8px;
+}
+
+/* Red margin line (like a notebook) */
+.notebook-margin {
+  position: relative;
+}
+
+.notebook-margin::before {
+  content: '';
+  position: absolute;
+  left: 60px;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: rgba(199,91,57,0.2);
+}
+
+/* Badge/tag styles */
+.teacher-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.teacher-badge.free {
+  background: #E8E4DF;
+  color: #3D4F66;
+}
+
+.teacher-badge.basic {
+  background: linear-gradient(135deg, #7BAE7F, #A8D4AB);
+  color: #1E2A3A;
+}
+
+.teacher-badge.professional {
+  background: linear-gradient(135deg, #D4A853, #E8C97A);
+  color: #1E2A3A;
+}
+
+.teacher-badge.enterprise {
+  background: linear-gradient(135deg, #7B5EA7, #9D85C4);
+  color: white;
+}
+
+/* Floating action button */
+.teacher-fab {
+  position: fixed;
+  bottom: 32px;
+  right: 32px;
+  width: 64px;
+  height: 64px;
+  border-radius: 20px;
+  background: linear-gradient(135deg, #C75B39 0%, #E8846A 100%);
+  color: white;
+  border: 3px solid #1E2A3A;
+  box-shadow: 0 6px 0 #1E2A3A, 0 8px 20px rgba(199,91,57,0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  z-index: 50;
+}
+
+.teacher-fab:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 9px 0 #1E2A3A, 0 12px 25px rgba(199,91,57,0.4);
+}
+
+.teacher-fab:active {
+  transform: translateY(2px);
+  box-shadow: 0 4px 0 #1E2A3A;
+}
+
+/* Decorative elements */
+.teacher-doodle {
+  position: absolute;
+  opacity: 0.08;
+  pointer-events: none;
+}
+
+/* Animated underline on hover */
+.teacher-link {
+  position: relative;
+  color: #2D5A4A;
+  font-weight: 500;
+}
+
+.teacher-link::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 0;
+  width: 0;
+  height: 2px;
+  background: #D4A853;
+  transition: width 0.3s ease;
+}
+
+.teacher-link:hover::after {
+  width: 100%;
+}
+
+/* Custom scrollbar for teacher portal */
+.teacher-portal ::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.teacher-portal ::-webkit-scrollbar-track {
+  background: #FAF7F2;
+  border-radius: 4px;
+}
+
+.teacher-portal ::-webkit-scrollbar-thumb {
+  background: #C5BFB8;
+  border-radius: 4px;
+}
+
+.teacher-portal ::-webkit-scrollbar-thumb:hover {
+  background: #9D9790;
+}
+
+/* Content type icons with background */
+.teacher-content-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.teacher-content-icon.lesson {
+  background: linear-gradient(135deg, #2D5A4A, #3D7A6A);
+  color: white;
+}
+
+.teacher-content-icon.quiz {
+  background: linear-gradient(135deg, #D4A853, #E8C97A);
+  color: #1E2A3A;
+}
+
+.teacher-content-icon.flashcard {
+  background: linear-gradient(135deg, #7B5EA7, #9D85C4);
+  color: white;
+}
+
+.teacher-content-icon.guide {
+  background: linear-gradient(135deg, #C75B39, #E8846A);
+  color: white;
+}
+
+/* Hover card effect with depth */
+.teacher-depth-card {
+  background: white;
+  border-radius: 16px;
+  box-shadow:
+    0 1px 2px rgba(30,42,58,0.04),
+    0 2px 4px rgba(30,42,58,0.04),
+    0 4px 8px rgba(30,42,58,0.04),
+    0 8px 16px rgba(30,42,58,0.04),
+    0 16px 32px rgba(30,42,58,0.04);
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.teacher-depth-card:hover {
+  transform: translateY(-4px) scale(1.01);
+  box-shadow:
+    0 2px 4px rgba(30,42,58,0.04),
+    0 4px 8px rgba(30,42,58,0.04),
+    0 8px 16px rgba(30,42,58,0.04),
+    0 16px 32px rgba(30,42,58,0.06),
+    0 32px 64px rgba(30,42,58,0.08);
 }

@@ -4,6 +4,7 @@ import { GamificationProvider } from './context/GamificationContext';
 import { FlashcardProvider } from './context/FlashcardContext';
 import { ChatProvider } from './context/ChatContext';
 import { AuthProvider } from './context/AuthContext';
+import { TeacherAuthProvider } from './context/TeacherAuthContext';
 import { ModeProvider } from './context/ModeContext';
 import { SelectionProvider } from './context/SelectionContext';
 import { NotebookProvider } from './context/NotebookContext';
@@ -27,9 +28,23 @@ import PrivacyControlsPage from './pages/PrivacyControlsPage';
 import ProgressReportsPage from './pages/ProgressReportsPage';
 import SupportPage from './pages/SupportPage';
 
+// Teacher Pages
+import {
+  TeacherLoginPage,
+  TeacherSignupPage,
+  TeacherEmailVerificationPage,
+  TeacherDashboardPage,
+  ContentListPage,
+  CreateContentPage,
+  ContentEditorPage,
+  TeacherUsagePage,
+  TeacherGradingPage,
+} from './pages/teacher';
+
 // Components
 import { RewardPopup } from './components/Gamification';
 import ProtectedRoute from './components/Routing/ProtectedRoute';
+import ProtectedTeacherRoute from './components/Routing/ProtectedTeacherRoute';
 import ModeRoute from './components/Routing/ModeRoute';
 import { ParentLayout } from './components/Layouts';
 import ProtectedChildLayout from './components/Layouts/ProtectedChildLayout';
@@ -58,6 +73,16 @@ function RootLayout() {
                 </GamificationProvider>
             </LessonProvider>
         </AuthProvider>
+    );
+}
+
+// Teacher root layout - separate auth context from parent/child
+function TeacherRootLayout() {
+    return (
+        <TeacherAuthProvider>
+            <ScrollRestoration getKey={(location) => location.pathname} />
+            <Outlet />
+        </TeacherAuthProvider>
     );
 }
 
@@ -162,8 +187,90 @@ const router = createBrowserRouter([
                 ),
             },
 
-            // Catch-all redirect
+            // Catch-all redirect (excluding teacher routes)
             { path: '*', element: <Navigate to="/learn" replace /> },
+        ],
+    },
+    // Teacher routes - separate context from parent/child
+    {
+        path: '/teacher',
+        element: <TeacherRootLayout />,
+        children: [
+            // Public teacher routes
+            { path: 'login', element: <TeacherLoginPage /> },
+            { path: 'signup', element: <TeacherSignupPage /> },
+            { path: 'verify-email', element: <TeacherEmailVerificationPage /> },
+
+            // Protected teacher routes
+            {
+                index: true,
+                element: (
+                    <ProtectedTeacherRoute>
+                        <Navigate to="/teacher/dashboard" replace />
+                    </ProtectedTeacherRoute>
+                ),
+            },
+            {
+                path: 'dashboard',
+                element: (
+                    <ProtectedTeacherRoute>
+                        <TeacherDashboardPage />
+                    </ProtectedTeacherRoute>
+                ),
+            },
+
+            // Content management routes
+            {
+                path: 'content',
+                element: (
+                    <ProtectedTeacherRoute>
+                        <ContentListPage />
+                    </ProtectedTeacherRoute>
+                ),
+            },
+            {
+                path: 'content/create',
+                element: (
+                    <ProtectedTeacherRoute>
+                        <CreateContentPage />
+                    </ProtectedTeacherRoute>
+                ),
+            },
+            {
+                path: 'content/:id',
+                element: (
+                    <ProtectedTeacherRoute>
+                        <ContentEditorPage />
+                    </ProtectedTeacherRoute>
+                ),
+            },
+
+            // Usage & Billing
+            {
+                path: 'usage',
+                element: (
+                    <ProtectedTeacherRoute>
+                        <TeacherUsagePage />
+                    </ProtectedTeacherRoute>
+                ),
+            },
+
+            // Grading Center (coming soon)
+            {
+                path: 'grading',
+                element: (
+                    <ProtectedTeacherRoute>
+                        <TeacherGradingPage />
+                    </ProtectedTeacherRoute>
+                ),
+            },
+
+            // Future teacher routes
+            // { path: 'rubrics', element: <ProtectedTeacherRoute><RubricsPage /></ProtectedTeacherRoute> },
+            // { path: 'settings', element: <ProtectedTeacherRoute><TeacherSettingsPage /></ProtectedTeacherRoute> },
+
+            // Catch-all for teacher routes
+            { path: '*', element: <Navigate to="/teacher/dashboard" replace /> },
         ],
     },
 ]);
