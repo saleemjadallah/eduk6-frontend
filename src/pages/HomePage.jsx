@@ -14,6 +14,7 @@ import {
   TestimonialsSection,
   PricingSection,
   FinalCTASection,
+  TeacherCTASection,
   LandingFooter,
 } from '../components/Landing';
 
@@ -67,6 +68,12 @@ const HomePage = () => {
           {/* Right side - Minimal CTAs */}
           <div className="flex items-center gap-2 md:gap-3">
             <Link
+              to="/teacher/login"
+              className="hidden sm:inline-flex items-center justify-center px-3 md:px-4 py-2 md:py-2.5 font-bold text-gray-500 hover:text-[#2D5A4A] transition-colors rounded-xl hover:bg-[#2D5A4A]/5 text-sm"
+            >
+              For Teachers
+            </Link>
+            <Link
               to="/login"
               reloadDocument
               className="inline-flex items-center justify-center px-3 md:px-4 py-2 md:py-2.5 font-bold text-gray-700 hover:text-nanobanana-blue transition-colors rounded-xl hover:bg-black/5 text-sm md:text-base"
@@ -118,6 +125,9 @@ const HomePage = () => {
 
         {/* Final CTA */}
         <FinalCTASection />
+
+        {/* Teacher Portal CTA */}
+        <TeacherCTASection />
       </main>
 
       {/* Footer */}

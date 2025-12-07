@@ -9,5 +9,6 @@ export { default as SubjectCoverageSection } from './SubjectCoverageSection';
 export { default as TestimonialsSection } from './TestimonialsSection';
 export { default as PricingSection } from './PricingSection';
 export { default as FinalCTASection } from './FinalCTASection';
+export { default as TeacherCTASection } from './TeacherCTASection';
 export { default as LandingFooter } from './LandingFooter';
 export { default as AIGeneratedImage } from './AIGeneratedImage';
