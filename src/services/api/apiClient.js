@@ -71,8 +71,8 @@ export async function apiRequest(endpoint, options = {}, config = {}) {
   try {
     const response = await fetch(`${API_BASE_URL}/api${endpoint}`, fetchConfig);
 
-    // Handle 401 Unauthorized
-    if (response.status === 401 && retryCount === 0 && !endpoint.includes('/auth/refresh')) {
+    // Handle 401 Unauthorized - but skip token refresh for public requests
+    if (response.status === 401 && retryCount === 0 && !endpoint.includes('/auth/refresh') && !skipAuth) {
       // If we have a child token and it expired, clear it and fall back to parent token
       if (tokenManager.isChildMode() && useChildToken) {
         tokenManager.clearChildToken();
