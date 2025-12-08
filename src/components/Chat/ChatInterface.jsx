@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Send, Image, FileText, Sparkles, Clock, RefreshCw, Trash2, BookOpen, Loader2, HelpCircle, ZoomIn, ChevronDown, ChevronUp } from 'lucide-react';
+import { Send, Image, FileText, Sparkles, Clock, RefreshCw, Trash2, BookOpen, Loader2, HelpCircle, ZoomIn, ChevronDown, ChevronUp, ArrowRight } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import Jeffrey from '../Avatar/Jeffrey';
 import SafetyIndicator from './SafetyIndicator';
 import FlashcardInline from './FlashcardInline';
@@ -12,6 +13,9 @@ import { useChatContext } from '../../context/ChatContext';
 import { useLessonActions } from '../../hooks/useLessonActions';
 import { chatAPI } from '../../services/api/chatAPI';
 
+// Maximum messages allowed in demo mode before prompting sign-up
+const DEMO_MESSAGE_LIMIT = 3;
+
 const ChatInterface = ({
     demoMode = false,
     lesson = null,
@@ -22,6 +26,12 @@ const ChatInterface = ({
     const [input, setInput] = useState(initialInput);
     const messagesEndRef = useRef(null);
     const inputRef = useRef(null);
+    const navigate = useNavigate();
+
+    // Demo mode - track user message count and limit reached state
+    const [demoUserMessageCount, setDemoUserMessageCount] = useState(0);
+    const [demoLimitReached, setDemoLimitReached] = useState(false);
+    const [demoSessionId] = useState(() => `demo_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`);
 
     // Use context for enhanced features
     const lessonContext = useLessonContext();
@@ -97,57 +107,25 @@ const ChatInterface = ({
         }
     }, [messages, demoMode]);
 
-    // Initialize with context-aware greeting for demo mode
+    // Initialize with interactive greeting for demo mode
     useEffect(() => {
         if (demoMode) {
-            if (activeLesson) {
-                setDemoMessages([{
-                    id: 1,
-                    role: 'assistant',
-                    content: `Hi! I'm Jeffrey! I just read "${activeLesson.title}" and I'm ready to help you learn! What would you like to know?`,
-                    timestamp: new Date(),
-                }]);
-            } else {
-                setDemoMessages([{
-                    id: 1,
-                    role: 'assistant',
-                    content: "Hi! I'm Jeffrey. Upload a lesson and I'll help you learn!",
-                    timestamp: new Date(),
-                }]);
-            }
-        }
-    }, [demoMode, activeLesson?.id]);
-
-    // Demo mode sequence
-    useEffect(() => {
-        if (demoMode) {
-            const demoSequence = [
-                { delay: 1000, role: 'user', content: "Tell me about the sun!" },
-                { delay: 2500, role: 'assistant', content: "The Sun is a giant star at the center of our Solar System!" },
-                { delay: 4500, role: 'assistant', content: "It gives us light and heat. Without it, Earth would be frozen!" },
-                { delay: 6000, role: 'user', content: "Wow, that's hot!" },
-                { delay: 7500, role: 'assistant', content: "Super hot! It's about 27 million degrees Fahrenheit at the core!" }
-            ];
-
-            let timeouts = [];
-            demoSequence.forEach(({ delay, role, content }, index) => {
-                const timeout = setTimeout(() => {
-                    setDemoMessages(prev => [...prev, {
-                        id: Date.now() + index,
-                        role,
-                        content,
-                        timestamp: new Date(),
-                    }]);
-                }, delay);
-                timeouts.push(timeout);
-            });
-
-            return () => timeouts.forEach(clearTimeout);
+            setDemoMessages([{
+                id: 1,
+                role: 'assistant',
+                content: "Hi there! I'm Jeffrey, your learning buddy! Ask me anything you'd like to learn about - try questions like \"What are black holes?\" or \"How do plants grow?\" 🌟",
+                timestamp: new Date(),
+            }]);
         }
     }, [demoMode]);
 
     const handleSend = async () => {
         if (!input.trim()) return;
+
+        // Check demo mode limit
+        if (demoMode && demoLimitReached) {
+            return;
+        }
 
         const messageContent = input;
         handleInputChange('');
@@ -157,24 +135,69 @@ const ChatInterface = ({
             await chatContext.sendMessage(messageContent);
         } else if (demoMode) {
             // Demo mode - add user message locally
-            setDemoMessages(prev => [...prev, {
+            const userMessage = {
                 id: Date.now(),
                 role: 'user',
                 content: messageContent,
                 timestamp: new Date(),
-            }]);
+            };
+            setDemoMessages(prev => [...prev, userMessage]);
 
-            // Simulate bot response for demo
+            // Increment user message count
+            const newCount = demoUserMessageCount + 1;
+            setDemoUserMessageCount(newCount);
+
+            // Check if limit reached after this message
+            if (newCount >= DEMO_MESSAGE_LIMIT) {
+                setDemoLimitReached(true);
+                // Add limit reached message
+                setDemoTyping(true);
+                setTimeout(() => {
+                    setDemoMessages(prev => [...prev, {
+                        id: Date.now() + 1,
+                        role: 'assistant',
+                        content: "I'm having so much fun chatting with you! 🎉 To keep learning together, sign up for free - it only takes a minute!",
+                        timestamp: new Date(),
+                        isLimitMessage: true,
+                    }]);
+                    setDemoTyping(false);
+                }, 800);
+                return;
+            }
+
+            // Make real API call for demo
             setDemoTyping(true);
-            setTimeout(() => {
+            try {
+                // Build conversation history for context
+                const conversationHistory = demoMessages
+                    .filter(m => m.role === 'user' || m.role === 'assistant')
+                    .slice(-6) // Last 6 messages for context
+                    .map(m => ({ role: m.role, content: m.content }));
+
+                const response = await chatAPI.sendDemoMessage({
+                    message: messageContent,
+                    conversationHistory,
+                    sessionId: demoSessionId,
+                });
+
                 setDemoMessages(prev => [...prev, {
                     id: Date.now() + 1,
                     role: 'assistant',
-                    content: generateDemoResponse(messageContent, activeLesson),
+                    content: response.data?.reply || response.reply || "That's a great question! I'd love to explore that with you.",
                     timestamp: new Date(),
                 }]);
+            } catch (error) {
+                console.error('Demo chat error:', error);
+                // Fallback response if API fails
+                setDemoMessages(prev => [...prev, {
+                    id: Date.now() + 1,
+                    role: 'assistant',
+                    content: getDemoFallbackResponse(messageContent),
+                    timestamp: new Date(),
+                }]);
+            } finally {
                 setDemoTyping(false);
-            }, 1000);
+            }
         }
 
         // Notify parent of interaction (for gamification)
@@ -182,31 +205,35 @@ const ChatInterface = ({
             onInteraction();
         }
 
-        // Refocus input
-        setTimeout(() => {
-            inputRef.current?.focus();
-        }, 100);
+        // Refocus input (skip in demo mode to not trigger page scroll)
+        if (!demoMode) {
+            setTimeout(() => {
+                inputRef.current?.focus();
+            }, 100);
+        }
     };
 
-    // Generate a demo response (fallback for demo mode)
-    const generateDemoResponse = (question, lesson) => {
-        if (!lesson) {
-            return "Upload a lesson first, and I'll help you learn about it!";
+    // Fallback responses when API fails in demo mode
+    const getDemoFallbackResponse = (question) => {
+        const lowercaseQ = question.toLowerCase();
+
+        if (lowercaseQ.includes('hello') || lowercaseQ.includes('hi ') || lowercaseQ === 'hi') {
+            return "Hello! 👋 I'm so happy to meet you! What would you like to learn about today?";
+        }
+        if (lowercaseQ.includes('sun') || lowercaseQ.includes('star')) {
+            return "The Sun is amazing! It's a giant ball of hot gas that gives us light and warmth. Did you know it's so big that about 1.3 million Earths could fit inside it? ☀️";
+        }
+        if (lowercaseQ.includes('dinosaur')) {
+            return "Dinosaurs are so cool! They lived millions of years ago and came in all sizes - from tiny ones the size of chickens to massive ones like T-Rex! 🦕";
+        }
+        if (lowercaseQ.includes('space') || lowercaseQ.includes('planet')) {
+            return "Space is incredible! Our solar system has 8 planets, and Earth is the only one we know has life. There are billions of stars in our galaxy! 🚀";
+        }
+        if (lowercaseQ.includes('animal') || lowercaseQ.includes('dog') || lowercaseQ.includes('cat')) {
+            return "Animals are fascinating! Each species has unique adaptations that help them survive. What's your favorite animal? I'd love to tell you fun facts about it! 🐾";
         }
 
-        const lowercaseQuestion = question.toLowerCase();
-
-        if (lowercaseQuestion.includes('summary') || lowercaseQuestion.includes('about')) {
-            return lesson.content?.summary || "Let me help you understand this lesson better!";
-        }
-        if (lowercaseQuestion.includes('key') || lowercaseQuestion.includes('important')) {
-            const keyPoints = lesson.content?.keyPoints || [];
-            if (keyPoints.length > 0) {
-                return `Here are the key points:\n${keyPoints.map((p, i) => `${i + 1}. ${p}`).join('\n')}`;
-            }
-        }
-
-        return "That's a great question! Let me help you understand this better.";
+        return "That's a fantastic question! I love curious minds. Want to explore this topic together? Sign up to continue our learning adventure! 🌟";
     };
 
     const handleSuggestedQuestion = (question) => {
@@ -934,9 +961,40 @@ const ChatInterface = ({
             {/* Input Area */}
             <div className="p-4 bg-white border-t-2 border-gray-200">
                 {demoMode ? (
-                    <div className="h-12 bg-gray-100 rounded-xl border-2 border-gray-300 flex items-center px-4 text-gray-400 italic text-sm">
-                        Ask Jeffrey anything...
-                    </div>
+                    demoLimitReached ? (
+                        // Show sign-up CTA when limit reached
+                        <motion.button
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            onClick={() => navigate('/onboarding')}
+                            className="w-full flex items-center justify-center gap-2 p-3 bg-nanobanana-green text-white border-2 border-black rounded-xl hover:bg-green-600 transition-colors shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] active:translate-y-[1px] active:shadow-none font-bold"
+                        >
+                            <Sparkles className="w-5 h-5" />
+                            Sign Up Free to Keep Learning!
+                            <ArrowRight className="w-5 h-5" />
+                        </motion.button>
+                    ) : (
+                        // Interactive demo input
+                        <div className="flex gap-2">
+                            <input
+                                ref={inputRef}
+                                type="text"
+                                value={input}
+                                onChange={(e) => handleInputChange(e.target.value)}
+                                onKeyDown={handleKeyDown}
+                                placeholder="Ask me anything! Try: What are dinosaurs?"
+                                disabled={demoTyping}
+                                className="flex-1 p-3 border-2 border-black rounded-xl focus:outline-none focus:ring-2 focus:ring-nanobanana-yellow shadow-[2px_2px_0px_0px_rgba(0,0,0,0.1)] disabled:bg-gray-100 disabled:cursor-not-allowed text-sm"
+                            />
+                            <button
+                                onClick={handleSend}
+                                disabled={demoTyping || !input.trim()}
+                                className="p-3 bg-nanobanana-blue text-white border-2 border-black rounded-xl hover:bg-blue-600 transition-colors shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] active:translate-y-[2px] active:shadow-none disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                                <Send className="w-5 h-5" />
+                            </button>
+                        </div>
+                    )
                 ) : (
                     <div className="flex gap-2">
                         <input
@@ -956,6 +1014,14 @@ const ChatInterface = ({
                         >
                             <Send className="w-5 h-5" />
                         </button>
+                    </div>
+                )}
+
+                {/* Demo mode message counter */}
+                {demoMode && !demoLimitReached && (
+                    <div className="mt-1 flex items-center justify-between text-[10px] text-gray-400 px-1">
+                        <span>Press Enter to send</span>
+                        <span>{DEMO_MESSAGE_LIMIT - demoUserMessageCount} free messages left</span>
                     </div>
                 )}
 

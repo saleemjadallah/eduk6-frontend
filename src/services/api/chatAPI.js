@@ -4,8 +4,29 @@
  */
 
 import { makeAuthenticatedRequest as makeRequest } from './apiUtils.js';
+import { publicRequest } from './apiClient.js';
 
 export const chatAPI = {
+  /**
+   * Send a demo message to Jeffrey AI (no authentication required)
+   * Used for landing page interactive demo - limited to 3 messages per session
+   * @param {Object} data - Message data
+   * @param {string} data.message - The user's message
+   * @param {Array} [data.conversationHistory] - Previous messages for context
+   * @param {string} [data.sessionId] - Session ID for tracking demo usage
+   * @returns {Promise<Object>} Response with AI reply
+   */
+  sendDemoMessage: async ({ message, conversationHistory, sessionId }) => {
+    return publicRequest('/chat/demo', {
+      method: 'POST',
+      body: JSON.stringify({
+        message,
+        conversationHistory,
+        sessionId,
+      }),
+    });
+  },
+
   /**
    * Send a message to Jeffrey AI assistant
    * @param {Object} data - Message data
