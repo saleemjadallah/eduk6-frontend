@@ -90,10 +90,12 @@ const ChatInterface = ({
     };
 
     // Scroll to bottom when messages change
-    // Use block: 'nearest' to prevent scrolling the entire page when in demo mode on landing page
+    // Skip scrolling entirely in demo mode to prevent page scroll on landing page
     useEffect(() => {
-        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-    }, [messages]);
+        if (!demoMode) {
+            messagesEndRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+    }, [messages, demoMode]);
 
     // Initialize with context-aware greeting for demo mode
     useEffect(() => {
