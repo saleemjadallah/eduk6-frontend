@@ -1,0 +1,11 @@
+{
+  "appId": "com.orbitlearn.app",
+  "appName": "OrbitLearn",
+  "webDir": "dist",
+  "server": {
+    "androidScheme": "https"
+  },
+  "ios": {
+    "contentInset": "automatic"
+  }
+}

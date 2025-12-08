@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { teacherAPI } from '../../services/api/teacherAPI';
+import ExportMenu from '../../components/teacher/ExportMenu';
 
 // Icons
 const BackIcon = () => (
@@ -314,6 +315,10 @@ export default function ContentEditorPage() {
         <div style={styles.headerActions}>
           {!isEditing ? (
             <>
+              <ExportMenu
+                contentId={id}
+                contentTitle={content.title}
+              />
               <button
                 onClick={() => setIsEditing(true)}
                 style={styles.secondaryButton}

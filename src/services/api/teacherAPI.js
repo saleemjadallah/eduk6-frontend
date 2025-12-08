@@ -527,6 +527,144 @@ export const teacherAPI = {
       body: JSON.stringify(data),
     });
   },
+
+  // ============================================
+  // EXPORT & GOOGLE DRIVE
+  // ============================================
+
+  /**
+   * Export content to PDF
+   * @param {string} contentId - The content ID
+   * @param {Object} options - { format, includeAnswers, includeTeacherNotes, paperSize, colorScheme }
+   * @returns {Promise<Blob>} PDF blob for download
+   */
+  exportContentPDF: async (contentId, options = {}) => {
+    const params = new URLSearchParams();
+    if (options.format) params.append('format', options.format);
+    if (options.includeAnswers !== undefined) params.append('includeAnswers', options.includeAnswers);
+    if (options.includeTeacherNotes !== undefined) params.append('includeTeacherNotes', options.includeTeacherNotes);
+    if (options.paperSize) params.append('paperSize', options.paperSize);
+    if (options.colorScheme) params.append('colorScheme', options.colorScheme);
+
+    const token = teacherTokenManager.getAccessToken();
+    const response = await fetch(`${API_BASE_URL}/api/teacher/export/${contentId}?${params}`, {
+      method: 'GET',
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      credentials: 'include',
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to export content');
+    }
+
+    const blob = await response.blob();
+    const filename = response.headers.get('content-disposition')?.match(/filename="(.+)"/)?.[1] || 'export.pdf';
+    return { blob, filename };
+  },
+
+  /**
+   * Export multiple content items as single PDF
+   * @param {string[]} contentIds - Array of content IDs
+   * @param {Object} options - Export options
+   * @returns {Promise<Blob>} PDF blob
+   */
+  exportBatchPDF: async (contentIds, options = {}) => {
+    const token = teacherTokenManager.getAccessToken();
+    const response = await fetch(`${API_BASE_URL}/api/teacher/export/batch`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      credentials: 'include',
+      body: JSON.stringify({ contentIds, options }),
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to export content');
+    }
+
+    const blob = await response.blob();
+    const filename = response.headers.get('content-disposition')?.match(/filename="(.+)"/)?.[1] || 'export.pdf';
+    return { blob, filename };
+  },
+
+  /**
+   * Check Google Drive connection status
+   */
+  getGoogleDriveStatus: async () => {
+    return teacherRequest('/export/drive/status', { method: 'GET' });
+  },
+
+  /**
+   * Get Google Drive authorization URL
+   */
+  getGoogleDriveAuthUrl: async () => {
+    return teacherRequest('/export/drive/auth-url', { method: 'GET' });
+  },
+
+  /**
+   * Complete Google Drive OAuth callback
+   * @param {string} code - OAuth authorization code
+   */
+  connectGoogleDrive: async (code) => {
+    return teacherRequest('/export/drive/callback', {
+      method: 'POST',
+      body: JSON.stringify({ code }),
+    });
+  },
+
+  /**
+   * Disconnect Google Drive
+   */
+  disconnectGoogleDrive: async () => {
+    return teacherRequest('/export/drive/disconnect', { method: 'DELETE' });
+  },
+
+  /**
+   * Save content to Google Drive
+   * @param {string} contentId - Content ID
+   * @param {Object} options - Export options
+   */
+  saveToGoogleDrive: async (contentId, options = {}) => {
+    return teacherRequest(`/export/${contentId}/drive`, {
+      method: 'POST',
+      body: JSON.stringify(options),
+    });
+  },
+
+  /**
+   * Save multiple content items to Google Drive
+   * @param {string[]} contentIds - Array of content IDs
+   * @param {Object} options - Export options
+   */
+  saveBatchToGoogleDrive: async (contentIds, options = {}) => {
+    return teacherRequest('/export/batch/drive', {
+      method: 'POST',
+      body: JSON.stringify({ contentIds, options }),
+    });
+  },
+
+  /**
+   * List files in Google Drive Orbit folder
+   * @param {number} pageSize - Number of files to return
+   * @param {string} pageToken - Pagination token
+   */
+  listGoogleDriveFiles: async (pageSize = 20, pageToken = null) => {
+    const params = new URLSearchParams({ pageSize: String(pageSize) });
+    if (pageToken) params.append('pageToken', pageToken);
+    return teacherRequest(`/export/drive/files?${params}`, { method: 'GET' });
+  },
+
+  /**
+   * Delete file from Google Drive
+   * @param {string} fileId - Google Drive file ID
+   */
+  deleteGoogleDriveFile: async (fileId) => {
+    return teacherRequest(`/export/drive/files/${fileId}`, { method: 'DELETE' });
+  },
 };
 
 export default teacherAPI;
