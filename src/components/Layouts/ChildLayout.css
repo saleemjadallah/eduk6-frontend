@@ -272,6 +272,34 @@
   font-size: 0.9375rem;
 }
 
+/* iPad Optimization */
+@media (min-width: 768px) and (max-width: 1366px) {
+  .child-main {
+    max-width: 100%;
+    padding: 24px 32px;
+  }
+}
+
+/* iPad Pro 12.9" and larger tablets */
+@media (min-width: 1024px) {
+  .child-main {
+    max-width: 1400px;
+    padding: 32px 48px;
+  }
+
+  .child-header {
+    padding: 0 48px;
+  }
+}
+
+/* iPad landscape */
+@media (min-width: 1024px) and (orientation: landscape) {
+  .child-main {
+    max-width: 100%;
+    padding: 24px 64px;
+  }
+}
+
 /* Responsive */
 @media (max-width: 768px) {
   .child-header {

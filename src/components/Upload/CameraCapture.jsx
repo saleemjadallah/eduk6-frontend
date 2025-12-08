@@ -17,48 +17,81 @@ const CameraCapture = ({ onImageCapture, capturedImage, onClear }) => {
 
     // Open document camera view (native)
     const handleCameraCapture = useCallback(() => {
+        console.log('[CameraCapture] handleCameraCapture called');
         clearError();
         setShowDocumentCamera(true);
     }, [clearError]);
 
     // Handle capture from document camera view
     const handleDocumentCapture = useCallback((result) => {
+        console.log('[CameraCapture] handleDocumentCapture called:', {
+            hasResult: !!result,
+            hasFile: !!result?.file,
+            fileSize: result?.file?.size,
+            base64Length: result?.base64?.length || 0,
+            format: result?.format,
+        });
         setShowDocumentCamera(false);
         if (result) {
             const url = `data:image/${result.format};base64,${result.base64}`;
+            console.log('[CameraCapture] Created preview URL, length:', url.length);
             setPreviewUrl(url);
             onImageCapture(result.file, url);
+        } else {
+            console.warn('[CameraCapture] No result from document camera');
         }
     }, [onImageCapture]);
 
     // Close document camera view
     const handleCloseDocumentCamera = useCallback(() => {
+        console.log('[CameraCapture] handleCloseDocumentCamera called');
         setShowDocumentCamera(false);
     }, []);
 
     // Handle gallery selection (native)
     const handleGallerySelect = useCallback(async () => {
+        console.log('[CameraCapture] handleGallerySelect called');
         clearError();
         try {
             const result = await pickFromGallery();
+            console.log('[CameraCapture] Gallery result:', {
+                hasResult: !!result,
+                hasFile: !!result?.file,
+                fileSize: result?.file?.size,
+                base64Length: result?.base64?.length || 0,
+            });
             if (result) {
                 const url = `data:image/${result.format};base64,${result.base64}`;
                 setPreviewUrl(url);
                 onImageCapture(result.file, url);
             }
         } catch (err) {
-            console.error('Gallery selection failed:', err);
+            console.error('[CameraCapture] Gallery selection failed:', {
+                message: err.message,
+                stack: err.stack,
+            });
         }
     }, [pickFromGallery, onImageCapture, clearError]);
 
     // Handle file input change (web fallback)
     const handleFileChange = useCallback((e) => {
+        console.log('[CameraCapture] handleFileChange called');
         const file = e.target.files?.[0];
+        console.log('[CameraCapture] File selected:', {
+            hasFile: !!file,
+            fileName: file?.name,
+            fileSize: file?.size,
+            fileType: file?.type,
+        });
         if (file && file.type.startsWith('image/')) {
             const reader = new FileReader();
             reader.onload = () => {
+                console.log('[CameraCapture] FileReader complete, result length:', reader.result?.length || 0);
                 setPreviewUrl(reader.result);
                 onImageCapture(file, reader.result);
+            };
+            reader.onerror = (err) => {
+                console.error('[CameraCapture] FileReader error:', err);
             };
             reader.readAsDataURL(file);
         }

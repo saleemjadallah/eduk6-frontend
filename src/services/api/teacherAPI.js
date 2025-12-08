@@ -515,6 +515,18 @@ export const teacherAPI = {
       body: JSON.stringify({ content, ...options }),
     });
   },
+
+  /**
+   * Generate an infographic from content
+   * @param {string} contentId - The content ID
+   * @param {Object} data - { topic, keyPoints, style?, gradeLevel?, subject? }
+   */
+  generateInfographic: async (contentId, data) => {
+    return teacherRequest(`/content/${contentId}/generate/infographic`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  },
 };
 
 export default teacherAPI;

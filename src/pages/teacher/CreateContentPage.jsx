@@ -243,7 +243,7 @@ const CreateContentPage = () => {
 
     const isFullLesson = lessonDetails.lessonType === 'full';
     addMessage('jeffrey',
-      `Perfect! I'm now creating your ${isFullLesson ? 'full lesson' : 'lesson guide'} on "${lessonDetails.topic}"...\n\nBuilding lesson structure\nWriting content sections${isFullLesson ? '\nCreating detailed explanations\nDeveloping student materials' : ''}\n${lessonDetails.includeQuiz ? 'Generating quiz questions\n' : ''}${lessonDetails.includeFlashcards ? 'Creating flashcards\n' : ''}${lessonDetails.includeActivities ? 'Designing activities\n' : ''}\n${isFullLesson ? 'This will take a bit longer for the comprehensive content...' : 'This may take a moment...'}`
+      `Perfect! I'm now creating your ${isFullLesson ? 'full lesson' : 'lesson guide'} on "${lessonDetails.topic}"...\n\nBuilding lesson structure\nWriting content sections${isFullLesson ? '\nCreating detailed explanations\nDeveloping student materials' : ''}\n${lessonDetails.includeQuiz ? 'Generating quiz questions\n' : ''}${lessonDetails.includeFlashcards ? 'Creating flashcards\n' : ''}${lessonDetails.includeActivities ? 'Designing activities\n' : ''}${lessonDetails.includeInfographic ? 'Generating infographic\n' : ''}\n${isFullLesson ? 'This will take a bit longer for the comprehensive content...' : 'This may take a moment...'}`
     );
 
     try {
@@ -288,9 +288,35 @@ const CreateContentPage = () => {
             }
           }
 
+          // Generate infographic if requested
+          let infographicGenerated = false;
+          if (lessonDetails.includeInfographic) {
+            try {
+              // Extract key points from the lesson for the infographic
+              const keyPoints = [
+                ...(result.data.objectives || []).slice(0, 3),
+                ...(result.data.sections || []).slice(0, 4).map(s => s.title),
+                ...(result.data.vocabulary || []).slice(0, 3).map(v => `${v.term}: ${v.definition}`),
+              ].filter(Boolean).slice(0, 8);
+
+              if (keyPoints.length >= 3) {
+                await teacherAPI.generateInfographic(contentId, {
+                  topic: result.data.title || lessonDetails.topic,
+                  keyPoints,
+                  style: 'colorful',
+                  gradeLevel: lessonDetails.gradeLevel,
+                  subject: lessonDetails.subject,
+                });
+                infographicGenerated = true;
+              }
+            } catch (e) {
+              console.warn('Infographic generation failed:', e);
+            }
+          }
+
           setConversationStage('complete');
           addMessage('jeffrey',
-            `Your lesson is ready!\n\nI've created:\n- Complete lesson plan with ${result.data.sections?.length || 0} sections\n${result.data.objectives?.length ? `- ${result.data.objectives.length} learning objectives\n` : ''}${result.data.vocabulary?.length ? `- ${result.data.vocabulary.length} vocabulary terms\n` : ''}${result.data.assessment?.questions?.length ? `- ${result.data.assessment.questions.length} assessment questions\n` : ''}${lessonDetails.includeFlashcards ? '- Study flashcards\n' : ''}\nClick below to view and edit your lesson!`
+            `Your lesson is ready!\n\nI've created:\n- Complete lesson plan with ${result.data.sections?.length || 0} sections\n${result.data.objectives?.length ? `- ${result.data.objectives.length} learning objectives\n` : ''}${result.data.vocabulary?.length ? `- ${result.data.vocabulary.length} vocabulary terms\n` : ''}${result.data.assessment?.questions?.length ? `- ${result.data.assessment.questions.length} assessment questions\n` : ''}${lessonDetails.includeFlashcards ? '- Study flashcards\n' : ''}${infographicGenerated ? '- Visual infographic\n' : ''}\nClick below to view and edit your lesson!`
           );
 
           setTimeout(() => {

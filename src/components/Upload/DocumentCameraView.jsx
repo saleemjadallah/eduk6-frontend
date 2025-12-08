@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Camera, X, RotateCcw, Zap, ZapOff, SwitchCamera, Check } from 'lucide-react';
 import { CameraPreview } from '@capacitor-community/camera-preview';
@@ -33,10 +34,27 @@ const DocumentCameraView = ({ isOpen, onCapture, onClose }) => {
     }, [isOpen]);
 
     const startCamera = async () => {
+        console.log('[DocumentCamera] startCamera called, platform:', Capacitor.getPlatform());
         try {
             setError(null);
 
-            await CameraPreview.start({
+            // Make webview transparent so camera can show through from behind
+            document.body.classList.add('camera-active');
+            document.documentElement.style.backgroundColor = 'transparent';
+            document.body.style.backgroundColor = 'transparent';
+
+            // Hide all root children (app content) so camera shows through
+            const appRoot = document.getElementById('root');
+            if (appRoot) {
+                appRoot.style.backgroundColor = 'transparent';
+                // Hide all direct children of root
+                Array.from(appRoot.children).forEach(child => {
+                    child.setAttribute('data-camera-hidden', 'true');
+                    child.style.visibility = 'hidden';
+                });
+            }
+
+            const cameraConfig = {
                 position: cameraPosition,
                 toBack: true, // Put camera behind the webview
                 parent: 'camera-preview-container',
@@ -47,12 +65,40 @@ const DocumentCameraView = ({ isOpen, onCapture, onClose }) => {
                 height: window.innerHeight,
                 x: 0,
                 y: 0,
-            });
+            };
 
+            console.log('[DocumentCamera] Starting CameraPreview with config:', cameraConfig);
+
+            await CameraPreview.start(cameraConfig);
+
+            console.log('[DocumentCamera] CameraPreview started successfully');
             setIsStarted(true);
         } catch (err) {
-            console.error('Failed to start camera:', err);
+            console.error('[DocumentCamera] Failed to start camera:', {
+                message: err.message,
+                code: err.code,
+                stack: err.stack,
+            });
             setError(err.message || 'Failed to start camera');
+            // Restore backgrounds on error
+            restoreBackgrounds();
+        }
+    };
+
+    const restoreBackgrounds = () => {
+        document.body.classList.remove('camera-active');
+        document.documentElement.style.backgroundColor = '';
+        document.body.style.backgroundColor = '';
+        const appRoot = document.getElementById('root');
+        if (appRoot) {
+            appRoot.style.backgroundColor = '';
+            // Restore visibility of all children
+            Array.from(appRoot.children).forEach(child => {
+                if (child.getAttribute('data-camera-hidden') === 'true') {
+                    child.removeAttribute('data-camera-hidden');
+                    child.style.visibility = '';
+                }
+            });
         }
     };
 
@@ -60,26 +106,44 @@ const DocumentCameraView = ({ isOpen, onCapture, onClose }) => {
         try {
             await CameraPreview.stop();
             setIsStarted(false);
+            restoreBackgrounds();
         } catch (err) {
             console.error('Failed to stop camera:', err);
+            restoreBackgrounds();
         }
     };
 
     const handleCapture = async () => {
         if (isCapturing) return;
 
+        console.log('[DocumentCamera] handleCapture called');
         setIsCapturing(true);
         try {
+            console.log('[DocumentCamera] Calling CameraPreview.capture with quality: 90');
             const result = await CameraPreview.capture({
                 quality: 90,
+            });
+
+            console.log('[DocumentCamera] CameraPreview.capture returned:', {
+                hasValue: !!result.value,
+                valueLength: result.value?.length || 0,
+                valuePreview: result.value?.substring(0, 50) + '...',
             });
 
             if (result.value) {
                 const base64 = result.value;
                 setCapturedImage(base64);
+                console.log('[DocumentCamera] Image captured, base64 length:', base64.length);
+            } else {
+                console.error('[DocumentCamera] No value in capture result');
+                setError('No image data received from camera');
             }
         } catch (err) {
-            console.error('Capture failed:', err);
+            console.error('[DocumentCamera] Capture failed:', {
+                message: err.message,
+                code: err.code,
+                stack: err.stack,
+            });
             setError(err.message || 'Failed to capture photo');
         } finally {
             setIsCapturing(false);
@@ -87,15 +151,29 @@ const DocumentCameraView = ({ isOpen, onCapture, onClose }) => {
     };
 
     const handleConfirm = useCallback(() => {
+        console.log('[DocumentCamera] handleConfirm called, capturedImage length:', capturedImage?.length || 0);
         if (capturedImage) {
-            // Convert base64 to File
-            const file = base64ToFile(capturedImage, `document_${Date.now()}.jpg`);
-            onCapture({
-                file,
-                base64: capturedImage,
-                format: 'jpeg',
-            });
-            stopCamera();
+            try {
+                // Convert base64 to File
+                const file = base64ToFile(capturedImage, `document_${Date.now()}.jpg`);
+                console.log('[DocumentCamera] File created:', {
+                    name: file.name,
+                    size: file.size,
+                    type: file.type,
+                });
+                onCapture({
+                    file,
+                    base64: capturedImage,
+                    format: 'jpeg',
+                });
+                stopCamera();
+            } catch (err) {
+                console.error('[DocumentCamera] handleConfirm error:', {
+                    message: err.message,
+                    stack: err.stack,
+                });
+                setError(`Failed to process image: ${err.message}`);
+            }
         }
     }, [capturedImage, onCapture]);
 
@@ -143,16 +221,19 @@ const DocumentCameraView = ({ isOpen, onCapture, onClose }) => {
         );
     }
 
-    return (
+    // Use portal to render outside #root, so hiding root children doesn't affect camera UI
+    return createPortal(
         <AnimatePresence>
             <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
-                className="fixed inset-0 z-[100] bg-black"
+                className="fixed inset-0 z-[100]"
+                style={{ backgroundColor: 'transparent' }}
                 ref={containerRef}
             >
                 {/* Camera Preview Container - this is where native camera renders */}
+                {/* With toBack: true, camera renders behind webview so container must be transparent */}
                 <div
                     id="camera-preview-container"
                     className="absolute inset-0"
@@ -292,7 +373,8 @@ const DocumentCameraView = ({ isOpen, onCapture, onClose }) => {
                     </div>
                 )}
             </motion.div>
-        </AnimatePresence>
+        </AnimatePresence>,
+        document.body
     );
 };
 
@@ -301,33 +383,33 @@ const DocumentCameraView = ({ isOpen, onCapture, onClose }) => {
  */
 const DocumentFrameGuide = () => {
     return (
-        <div className="absolute inset-0 flex items-center justify-center p-6">
-            {/* Semi-transparent overlay with cutout */}
-            <div className="relative w-full max-w-md aspect-[3/4]">
-                {/* Corner Markers */}
+        <div className="absolute inset-0 flex items-center justify-center px-4 py-16">
+            {/* Semi-transparent overlay with cutout - wider frame closer to screen edges */}
+            <div className="relative w-full max-w-2xl h-full max-h-[80vh]">
+                {/* Corner Markers - larger for better visibility */}
                 <div className="absolute inset-0">
                     {/* Top Left */}
-                    <div className="absolute top-0 left-0 w-12 h-12">
-                        <div className="absolute top-0 left-0 w-full h-1 bg-white rounded-full shadow-lg" />
-                        <div className="absolute top-0 left-0 w-1 h-full bg-white rounded-full shadow-lg" />
+                    <div className="absolute top-0 left-0 w-16 h-16">
+                        <div className="absolute top-0 left-0 w-full h-1.5 bg-white rounded-full shadow-lg" />
+                        <div className="absolute top-0 left-0 w-1.5 h-full bg-white rounded-full shadow-lg" />
                     </div>
 
                     {/* Top Right */}
-                    <div className="absolute top-0 right-0 w-12 h-12">
-                        <div className="absolute top-0 right-0 w-full h-1 bg-white rounded-full shadow-lg" />
-                        <div className="absolute top-0 right-0 w-1 h-full bg-white rounded-full shadow-lg" />
+                    <div className="absolute top-0 right-0 w-16 h-16">
+                        <div className="absolute top-0 right-0 w-full h-1.5 bg-white rounded-full shadow-lg" />
+                        <div className="absolute top-0 right-0 w-1.5 h-full bg-white rounded-full shadow-lg" />
                     </div>
 
                     {/* Bottom Left */}
-                    <div className="absolute bottom-0 left-0 w-12 h-12">
-                        <div className="absolute bottom-0 left-0 w-full h-1 bg-white rounded-full shadow-lg" />
-                        <div className="absolute bottom-0 left-0 w-1 h-full bg-white rounded-full shadow-lg" />
+                    <div className="absolute bottom-0 left-0 w-16 h-16">
+                        <div className="absolute bottom-0 left-0 w-full h-1.5 bg-white rounded-full shadow-lg" />
+                        <div className="absolute bottom-0 left-0 w-1.5 h-full bg-white rounded-full shadow-lg" />
                     </div>
 
                     {/* Bottom Right */}
-                    <div className="absolute bottom-0 right-0 w-12 h-12">
-                        <div className="absolute bottom-0 right-0 w-full h-1 bg-white rounded-full shadow-lg" />
-                        <div className="absolute bottom-0 right-0 w-1 h-full bg-white rounded-full shadow-lg" />
+                    <div className="absolute bottom-0 right-0 w-16 h-16">
+                        <div className="absolute bottom-0 right-0 w-full h-1.5 bg-white rounded-full shadow-lg" />
+                        <div className="absolute bottom-0 right-0 w-1.5 h-full bg-white rounded-full shadow-lg" />
                     </div>
                 </div>
 
@@ -469,16 +551,69 @@ const WebCameraFallback = ({ onCapture, onClose }) => {
 
 /**
  * Convert base64 string to File object
+ * Enhanced with detailed logging for iPad debugging
  */
 function base64ToFile(base64String, filename) {
+    console.log('[DocumentCamera] base64ToFile called:', {
+        filename,
+        base64Length: base64String?.length || 0,
+    });
+
     const mimeType = 'image/jpeg';
-    const binaryString = atob(base64String);
-    const bytes = new Uint8Array(binaryString.length);
-    for (let i = 0; i < binaryString.length; i++) {
-        bytes[i] = binaryString.charCodeAt(i);
+
+    try {
+        // Validate input
+        if (!base64String || typeof base64String !== 'string') {
+            throw new Error('Invalid base64 string provided');
+        }
+
+        // Clean base64 string - remove data URL prefix if present
+        let cleanBase64 = base64String;
+        if (base64String.includes(',')) {
+            cleanBase64 = base64String.split(',')[1];
+            console.log('[DocumentCamera] Stripped data URL prefix');
+        }
+
+        // Validate and clean base64 characters
+        const base64Regex = /^[A-Za-z0-9+/]*={0,2}$/;
+        if (!base64Regex.test(cleanBase64)) {
+            console.warn('[DocumentCamera] Invalid base64 characters detected, cleaning...');
+            cleanBase64 = cleanBase64.replace(/[^A-Za-z0-9+/=]/g, '');
+        }
+
+        // Ensure proper padding
+        while (cleanBase64.length % 4 !== 0) {
+            cleanBase64 += '=';
+        }
+
+        console.log('[DocumentCamera] Clean base64 length:', cleanBase64.length);
+
+        const binaryString = atob(cleanBase64);
+        console.log('[DocumentCamera] atob successful, binary length:', binaryString.length);
+
+        const bytes = new Uint8Array(binaryString.length);
+        for (let i = 0; i < binaryString.length; i++) {
+            bytes[i] = binaryString.charCodeAt(i);
+        }
+
+        const blob = new Blob([bytes], { type: mimeType });
+        const file = new File([blob], filename, { type: mimeType });
+
+        console.log('[DocumentCamera] File created:', {
+            name: file.name,
+            size: file.size,
+            type: file.type,
+        });
+
+        return file;
+    } catch (error) {
+        console.error('[DocumentCamera] base64ToFile error:', {
+            message: error.message,
+            stack: error.stack,
+            base64Length: base64String?.length || 0,
+        });
+        throw error;
     }
-    const blob = new Blob([bytes], { type: mimeType });
-    return new File([blob], filename, { type: mimeType });
 }
 
 export default DocumentCameraView;

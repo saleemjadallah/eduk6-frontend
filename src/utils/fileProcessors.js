@@ -112,19 +112,57 @@ const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
 /**
  * Extract text from an image using backend OCR service (Gemini Vision)
+ * Enhanced with detailed logging for iPad debugging
  * @param {File} file - Image file object
  * @param {Function} onProgress - Progress callback
  * @returns {Promise<{ text: string, metadata: Object }>}
  */
 export async function extractTextFromImage(file, onProgress = () => {}) {
+  console.log('[OCR] extractTextFromImage called:', {
+    fileName: file?.name,
+    fileSize: file?.size,
+    fileType: file?.type,
+    apiUrl: API_BASE_URL,
+  });
+
   const token = localStorage.getItem('auth_token');
+  console.log('[OCR] Auth token present:', !!token);
 
   onProgress(10);
 
   try {
     // Convert file to base64
+    console.log('[OCR] Converting file to base64...');
     const base64 = await fileToBase64(file);
+    console.log('[OCR] Base64 conversion complete:', {
+      base64Length: base64?.length || 0,
+      hasDataPrefix: base64?.startsWith('data:'),
+      preview: base64?.substring(0, 80) + '...',
+    });
     onProgress(30);
+
+    // Validate base64 before sending
+    if (!base64 || base64.length < 100) {
+      console.error('[OCR] Invalid base64 data:', {
+        base64Length: base64?.length || 0,
+        base64Type: typeof base64,
+      });
+      throw new Error('Failed to convert image to base64');
+    }
+
+    // Prepare request body
+    const requestBody = {
+      image: base64,
+      filename: file.name,
+      mimeType: file.type || 'image/jpeg',
+    };
+
+    console.log('[OCR] Sending request to backend:', {
+      url: `${API_BASE_URL}/api/ocr/extract`,
+      bodySize: JSON.stringify(requestBody).length,
+      filename: requestBody.filename,
+      mimeType: requestBody.mimeType,
+    });
 
     // Send to backend for OCR processing
     const response = await fetch(`${API_BASE_URL}/api/ocr/extract`, {
@@ -133,21 +171,49 @@ export async function extractTextFromImage(file, onProgress = () => {}) {
         'Content-Type': 'application/json',
         ...(token && { Authorization: `Bearer ${token}` }),
       },
-      body: JSON.stringify({
-        image: base64,
-        filename: file.name,
-        mimeType: file.type,
-      }),
+      body: JSON.stringify(requestBody),
+    });
+
+    console.log('[OCR] Backend response:', {
+      status: response.status,
+      statusText: response.statusText,
+      ok: response.ok,
+      headers: Object.fromEntries(response.headers.entries()),
     });
 
     onProgress(80);
 
     if (!response.ok) {
-      throw new Error('OCR extraction failed');
+      // Try to get error details from response
+      let errorDetails = '';
+      try {
+        const errorData = await response.json();
+        errorDetails = errorData.message || errorData.error || JSON.stringify(errorData);
+        console.error('[OCR] Backend error response:', errorData);
+      } catch (parseError) {
+        const textError = await response.text().catch(() => 'Unable to read error');
+        errorDetails = textError;
+        console.error('[OCR] Backend error (non-JSON):', textError);
+      }
+
+      throw new Error(`OCR extraction failed (${response.status}): ${errorDetails}`);
     }
 
     const data = await response.json();
+    console.log('[OCR] Backend success response:', {
+      success: data.success,
+      hasText: !!data.data?.text,
+      textLength: data.data?.text?.length || 0,
+      confidence: data.data?.confidence,
+      textPreview: data.data?.text?.substring(0, 100) + '...',
+    });
+
     onProgress(100);
+
+    if (!data.data?.text) {
+      console.warn('[OCR] No text extracted from image');
+      throw new Error('No text could be extracted from the image. Please ensure the image contains readable text.');
+    }
 
     return {
       text: data.data?.text || '',
@@ -159,23 +225,97 @@ export async function extractTextFromImage(file, onProgress = () => {}) {
       },
     };
   } catch (error) {
-    console.error('OCR extraction error:', error);
+    console.error('[OCR] extractTextFromImage error:', {
+      message: error.message,
+      name: error.name,
+      stack: error.stack,
+      fileName: file?.name,
+      fileSize: file?.size,
+    });
     onProgress(100);
-    throw new Error('Failed to extract text from image. Please try again.');
+
+    // Provide more specific error messages
+    if (error.message.includes('Failed to fetch') || error.message.includes('NetworkError')) {
+      throw new Error('Network error: Unable to reach the server. Please check your internet connection.');
+    }
+    if (error.message.includes('Failed to convert')) {
+      throw new Error('Image processing error: Could not read the image file.');
+    }
+    if (error.message.includes('No text could be extracted')) {
+      throw error; // Re-throw as-is
+    }
+    if (error.message.includes('OCR extraction failed')) {
+      throw error; // Re-throw with backend details
+    }
+
+    throw new Error(`Failed to extract text from image: ${error.message}`);
   }
 }
 
 /**
  * Convert file to base64 string
+ * Enhanced with detailed logging for iPad debugging
  * @param {File} file - File to convert
  * @returns {Promise<string>} Base64 string
  */
 function fileToBase64(file) {
+  console.log('[OCR] fileToBase64 called:', {
+    fileName: file?.name,
+    fileSize: file?.size,
+    fileType: file?.type,
+  });
+
   return new Promise((resolve, reject) => {
+    if (!file) {
+      console.error('[OCR] fileToBase64: No file provided');
+      reject(new Error('No file provided'));
+      return;
+    }
+
     const reader = new FileReader();
-    reader.readAsDataURL(file);
-    reader.onload = () => resolve(reader.result);
-    reader.onerror = error => reject(error);
+
+    reader.onloadstart = () => {
+      console.log('[OCR] FileReader: loadstart');
+    };
+
+    reader.onprogress = (event) => {
+      if (event.lengthComputable) {
+        const progress = Math.round((event.loaded / event.total) * 100);
+        console.log('[OCR] FileReader progress:', progress + '%');
+      }
+    };
+
+    reader.onload = () => {
+      const result = reader.result;
+      console.log('[OCR] FileReader: load complete', {
+        resultType: typeof result,
+        resultLength: result?.length || 0,
+        hasDataPrefix: result?.startsWith?.('data:'),
+      });
+      resolve(result);
+    };
+
+    reader.onerror = (error) => {
+      console.error('[OCR] FileReader error:', {
+        error: error,
+        readerError: reader.error,
+        errorMessage: reader.error?.message,
+      });
+      reject(new Error(`FileReader error: ${reader.error?.message || 'Unknown error'}`));
+    };
+
+    reader.onabort = () => {
+      console.warn('[OCR] FileReader: aborted');
+      reject(new Error('File read was aborted'));
+    };
+
+    try {
+      reader.readAsDataURL(file);
+      console.log('[OCR] FileReader: readAsDataURL started');
+    } catch (startError) {
+      console.error('[OCR] FileReader: failed to start reading', startError);
+      reject(new Error(`Failed to start reading file: ${startError.message}`));
+    }
   });
 }
 
