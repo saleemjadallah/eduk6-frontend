@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import TeacherLayout from '../../components/teacher/TeacherLayout';
 import { useTeacherAuth } from '../../context/TeacherAuthContext';
+import { teacherAPI } from '../../services/api/teacherAPI';
 import {
   Zap,
   TrendingUp,
@@ -32,37 +33,47 @@ const TeacherUsagePage = () => {
   const [usageData, setUsageData] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // Mock data - replace with actual API call
+  // Fetch usage data from API
   useEffect(() => {
-    setLoading(true);
-    // Simulate API call
-    setTimeout(() => {
-      setUsageData({
-        daily: [
-          { date: 'Mon', credits: 2500 },
-          { date: 'Tue', credits: 4200 },
-          { date: 'Wed', credits: 3100 },
-          { date: 'Thu', credits: 5800 },
-          { date: 'Fri', credits: 2900 },
-          { date: 'Sat', credits: 1200 },
-          { date: 'Sun', credits: 800 },
-        ],
-        byOperation: [
-          { name: 'Lesson Generation', credits: 45000, percentage: 45, icon: BookOpen },
-          { name: 'Quiz Generation', credits: 25000, percentage: 25, icon: FileQuestion },
-          { name: 'Flashcard Creation', credits: 18000, percentage: 18, icon: Layers },
-          { name: 'Study Guides', credits: 12000, percentage: 12, icon: FileText },
-        ],
-        recentActivity: [
-          { type: 'LESSON', title: 'Introduction to Photosynthesis', credits: 3200, time: '2 hours ago' },
-          { type: 'QUIZ', title: 'Algebra Chapter 5 Quiz', credits: 1800, time: '4 hours ago' },
-          { type: 'FLASHCARD_DECK', title: 'Spanish Vocabulary Unit 3', credits: 1200, time: 'Yesterday' },
-          { type: 'LESSON', title: 'World War II Timeline', credits: 4100, time: 'Yesterday' },
-          { type: 'QUIZ', title: 'Grammar Assessment', credits: 2100, time: '2 days ago' },
-        ],
-      });
-      setLoading(false);
-    }, 1000);
+    const fetchUsageData = async () => {
+      setLoading(true);
+      try {
+        const response = await teacherAPI.getUsageStats(period);
+        if (response.success && response.data) {
+          // Map the icons to operation types
+          const operationIcons = {
+            LESSON: BookOpen,
+            QUIZ: FileQuestion,
+            FLASHCARD_DECK: Layers,
+            STUDY_GUIDE: FileText,
+          };
+
+          // Transform byOperation data to include icons
+          const byOperation = response.data.byOperation?.map(op => ({
+            ...op,
+            icon: operationIcons[op.type] || FileText,
+          })) || [];
+
+          setUsageData({
+            daily: response.data.daily || [],
+            byOperation,
+            recentActivity: response.data.recentActivity || [],
+          });
+        }
+      } catch (err) {
+        console.error('Failed to fetch usage stats:', err);
+        // Set empty data on error
+        setUsageData({
+          daily: [],
+          byOperation: [],
+          recentActivity: [],
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchUsageData();
   }, [period]);
 
   // Calculate usage percentage
@@ -253,7 +264,11 @@ const TeacherUsagePage = () => {
           </div>
 
           {/* Mini chart */}
-          {usageData && (
+          {loading ? (
+            <div className="flex items-center justify-center h-24">
+              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-teacher-chalk" />
+            </div>
+          ) : usageData && usageData.daily.length > 0 ? (
             <div className="flex items-end justify-between gap-2 h-24">
               {usageData.daily.map((day, i) => (
                 <div key={i} className="flex-1 flex flex-col items-center gap-1">
@@ -267,6 +282,10 @@ const TeacherUsagePage = () => {
                   <span className="text-xs text-teacher-inkLight">{day.date}</span>
                 </div>
               ))}
+            </div>
+          ) : (
+            <div className="flex items-center justify-center h-24 text-teacher-inkLight text-sm">
+              No usage data for this period
             </div>
           )}
         </motion.div>
@@ -286,10 +305,14 @@ const TeacherUsagePage = () => {
             <h3 className="font-semibold text-teacher-ink">Usage by Type</h3>
           </div>
 
-          {usageData && (
+          {loading ? (
+            <div className="flex items-center justify-center py-8">
+              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-teacher-chalk" />
+            </div>
+          ) : usageData && usageData.byOperation.length > 0 ? (
             <div className="space-y-4">
               {usageData.byOperation.map((op, i) => {
-                const Icon = op.icon;
+                const Icon = op.icon || FileText;
                 return (
                   <div key={i}>
                     <div className="flex items-center justify-between mb-2">
@@ -320,6 +343,10 @@ const TeacherUsagePage = () => {
                 );
               })}
             </div>
+          ) : (
+            <div className="text-center py-8 text-teacher-inkLight text-sm">
+              No content generated yet. Create your first lesson to see usage breakdown.
+            </div>
           )}
         </motion.div>
 
@@ -340,7 +367,11 @@ const TeacherUsagePage = () => {
             </Link>
           </div>
 
-          {usageData && (
+          {loading ? (
+            <div className="flex items-center justify-center py-8">
+              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-teacher-chalk" />
+            </div>
+          ) : usageData && usageData.recentActivity.length > 0 ? (
             <div className="space-y-3">
               {usageData.recentActivity.map((activity, i) => {
                 const Icon = getTypeIcon(activity.type);
@@ -366,6 +397,10 @@ const TeacherUsagePage = () => {
                   </div>
                 );
               })}
+            </div>
+          ) : (
+            <div className="text-center py-8 text-teacher-inkLight text-sm">
+              No recent activity yet
             </div>
           )}
         </motion.div>
