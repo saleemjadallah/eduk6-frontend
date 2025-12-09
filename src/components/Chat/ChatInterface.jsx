@@ -77,7 +77,8 @@ const ChatInterface = ({
     };
 
     // Get messages and state from ChatContext if available
-    const messages = chatContext?.messages || demoMessages;
+    // In demo mode, always use demoMessages; otherwise use chatContext
+    const messages = demoMode ? demoMessages : (chatContext?.messages || []);
     const isTyping = chatContext?.isLoading && !chatContext?.isStreaming;
     const isStreaming = chatContext?.isStreaming || false;
     const safetyFlags = chatContext?.safetyFlags || [];
