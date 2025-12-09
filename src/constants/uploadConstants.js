@@ -64,6 +64,8 @@ export const GRADE_LEVELS = [
   { value: 'grade-4', label: 'Grade 4' },
   { value: 'grade-5', label: 'Grade 5' },
   { value: 'grade-6', label: 'Grade 6' },
+  { value: 'grade-7', label: 'Grade 7' },
+  { value: 'grade-8', label: 'Grade 8' },
 ];
 
 // Fun loading messages for kids

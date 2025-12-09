@@ -21,6 +21,8 @@ const GRADES = [
   { value: 4, label: 'Grade 4' },
   { value: 5, label: 'Grade 5' },
   { value: 6, label: 'Grade 6' },
+  { value: 7, label: 'Grade 7' },
+  { value: 8, label: 'Grade 8' },
 ];
 
 const LEARNING_STYLES = [
@@ -66,8 +68,8 @@ const CreateProfileStep = ({ onComplete }) => {
       newErrors.age = "Please enter your child's age";
     } else {
       const age = parseInt(profileData.age);
-      if (age < 4 || age > 12) {
-        newErrors.age = 'Age must be between 4 and 12';
+      if (age < 4 || age > 14) {
+        newErrors.age = 'Age must be between 4 and 14';
       }
     }
 
@@ -209,7 +211,7 @@ const CreateProfileStep = ({ onComplete }) => {
                 onChange={handleChange}
               >
                 <option value="">Select age</option>
-                {[4, 5, 6, 7, 8, 9, 10, 11, 12].map(age => (
+                {[4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14].map(age => (
                   <option key={age} value={age}>{age} years old</option>
                 ))}
               </select>

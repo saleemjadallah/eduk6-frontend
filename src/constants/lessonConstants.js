@@ -104,6 +104,8 @@ export const GRADE_LEVELS = [
   'Grade 4',
   'Grade 5',
   'Grade 6',
+  'Grade 7',
+  'Grade 8',
 ];
 
 // Common subjects (must match backend Prisma Subject enum)
