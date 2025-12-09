@@ -50,7 +50,7 @@ const ParentLayout = () => {
       <aside className="parent-sidebar">
         <div className="sidebar-header">
           <button className="sidebar-logo" onClick={handleLogoClick}>
-            <img src="/assets/orbit-learn-logo.png" alt="OrbitLearn" className="logo-image" style={{ borderRadius: '12px' }} />
+            <span className="logo-text">OrbitLearn</span>
           </button>
           <span className="parent-badge">Parent</span>
         </div>
@@ -77,6 +77,7 @@ const ParentLayout = () => {
         {/* Top bar */}
         <header className="parent-topbar">
           <div className="topbar-left">
+            <img src="/assets/orbit-learn-logo.png" alt="OrbitLearn" className="topbar-logo" />
             <h1 className="page-title">Parent Dashboard</h1>
           </div>
 

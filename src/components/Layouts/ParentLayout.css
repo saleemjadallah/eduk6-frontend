@@ -24,38 +24,20 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  min-height: 70px;
-  position: relative;
-  overflow: visible;
+  min-height: 60px;
 }
 
 .sidebar-logo {
-  position: absolute;
-  left: 16px;
-  top: 50%;
-  transform: translateY(-35%);
   background: none;
   border: none;
   cursor: pointer;
   padding: 0;
-  z-index: 10;
-}
-
-.sidebar-logo .logo-image {
-  height: 100px;
-  width: auto;
-  object-fit: contain;
-  filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.15));
-}
-
-.sidebar-logo .logo-icon {
-  font-size: 1.75rem;
 }
 
 .sidebar-logo .logo-text {
-  font-size: 1.125rem;
+  font-size: 1.25rem;
   font-weight: 700;
-  background: linear-gradient(135deg, #4169E1, #32CD32);
+  background: linear-gradient(135deg, #7C3AED, #2DD4BF);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -153,6 +135,12 @@
   display: flex;
   align-items: center;
   gap: 16px;
+}
+
+.topbar-logo {
+  height: 48px;
+  width: auto;
+  border-radius: 10px;
 }
 
 .page-title {
