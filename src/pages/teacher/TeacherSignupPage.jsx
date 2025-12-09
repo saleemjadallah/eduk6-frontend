@@ -93,7 +93,7 @@ const TeacherSignupPage = () => {
       <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 flex flex-col">
         <header className="p-6">
           <Link to="/" className="flex items-center w-fit">
-            <img src="/assets/Logo-nobg.png" alt="OrbitLearn" className="h-16 md:h-20 w-auto" />
+            <img src="/assets/orbit-learn-logo.png" alt="OrbitLearn" className="h-16 md:h-20 w-auto rounded-xl" />
           </Link>
         </header>
 
@@ -142,7 +142,7 @@ const TeacherSignupPage = () => {
       {/* Header */}
       <header className="p-6">
         <Link to="/" className="flex items-center w-fit">
-          <img src="/assets/Logo-nobg.png" alt="OrbitLearn" className="h-16 md:h-20 w-auto" />
+          <img src="/assets/orbit-learn-logo.png" alt="OrbitLearn" className="h-16 md:h-20 w-auto rounded-xl" />
         </Link>
       </header>
 

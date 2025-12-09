@@ -93,7 +93,7 @@ const ProtectedChildLayout = () => {
       <header className="child-header">
         <div className="child-header-left">
           <div className="app-logo">
-            <img src="/assets/Logo-nobg.png" alt="OrbitLearn" className="logo-image" />
+            <img src="/assets/orbit-learn-logo.png" alt="OrbitLearn" className="logo-image" style={{ borderRadius: '12px' }} />
           </div>
         </div>
 

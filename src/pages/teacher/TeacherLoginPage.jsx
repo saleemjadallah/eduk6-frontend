@@ -94,7 +94,7 @@ const TeacherLoginPage = () => {
       {/* Header */}
       <header className="p-6">
         <Link to="/" className="flex items-center w-fit">
-          <img src="/assets/Logo-nobg.png" alt="OrbitLearn" className="h-16 md:h-20 w-auto" />
+          <img src="/assets/orbit-learn-logo.png" alt="OrbitLearn" className="h-16 md:h-20 w-auto rounded-xl" />
         </Link>
       </header>
 
