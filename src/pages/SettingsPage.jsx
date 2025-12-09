@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { settingsAPI } from '../services/api/settingsAPI';
 import { useAuth } from '../context/AuthContext';
+import ResetKBQModal from '../components/Parent/ResetKBQModal';
 import './SettingsPage.css';
 
 // Timezone options (common ones)
@@ -58,6 +59,7 @@ const SettingsPage = () => {
   const [isSaving, setIsSaving] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
   const [formErrors, setFormErrors] = useState({});
+  const [showKBQModal, setShowKBQModal] = useState(false);
 
   // Auth context for updating user data
   let updateUser = null;
@@ -559,6 +561,31 @@ const SettingsPage = () => {
               </div>
             )}
 
+            {/* Security Questions */}
+            <div className="section-card">
+              <h2>Security Questions</h2>
+              <p className="section-desc">Manage your security questions for consent verification</p>
+
+              <div className="security-questions-info">
+                <div className="info-box">
+                  <span className="info-icon">🔐</span>
+                  <p>
+                    Security questions are used for COPPA parental consent verification.
+                    You can reset them if you've forgotten your answers.
+                  </p>
+                </div>
+              </div>
+
+              <div className="section-actions">
+                <button
+                  className="btn-secondary"
+                  onClick={() => setShowKBQModal(true)}
+                >
+                  Reset Security Questions
+                </button>
+              </div>
+            </div>
+
             {/* Session Management */}
             <div className="section-card">
               <h2>Session Management</h2>
@@ -647,6 +674,16 @@ const SettingsPage = () => {
           </div>
         )}
       </div>
+
+      {/* KBQ Reset Modal */}
+      {showKBQModal && (
+        <ResetKBQModal
+          onClose={() => setShowKBQModal(false)}
+          onSuccess={() => {
+            setSuccessMessage('Security questions updated successfully');
+          }}
+        />
+      )}
     </div>
   );
 };

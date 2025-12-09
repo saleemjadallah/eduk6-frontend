@@ -4,6 +4,7 @@ import { childStatsAPI } from '../services/api/childStatsAPI';
 import { parentDashboardAPI } from '../services/api/parentDashboardAPI';
 import { profileAPI } from '../services/api/profileAPI';
 import EditChildModal from '../components/Parent/EditChildModal';
+import ResetPinModal from '../components/Parent/ResetPinModal';
 import './ChildDetailsPage.css';
 
 const ChildDetailsPage = () => {
@@ -16,6 +17,7 @@ const ChildDetailsPage = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const [showEditModal, setShowEditModal] = useState(false);
+  const [showResetPinModal, setShowResetPinModal] = useState(false);
   const [activeTab, setActiveTab] = useState('overview');
 
   // Fetch all data for the child
@@ -428,6 +430,22 @@ const ChildDetailsPage = () => {
                   </button>
                 </div>
               </div>
+
+              <div className="settings-section">
+                <h4>Security</h4>
+                <div className="settings-actions">
+                  <button
+                    className="settings-btn"
+                    onClick={() => setShowResetPinModal(true)}
+                  >
+                    <span className="settings-btn-icon">🔐</span>
+                    <div className="settings-btn-content">
+                      <span className="settings-btn-title">Reset PIN</span>
+                      <span className="settings-btn-desc">Change or unlock the child's PIN</span>
+                    </div>
+                  </button>
+                </div>
+              </div>
             </div>
           )}
         </div>
@@ -440,6 +458,17 @@ const ChildDetailsPage = () => {
           onClose={() => setShowEditModal(false)}
           onSuccess={handleEditSuccess}
           onDelete={handleDelete}
+        />
+      )}
+
+      {/* Reset PIN Modal */}
+      {showResetPinModal && (
+        <ResetPinModal
+          child={child}
+          onClose={() => setShowResetPinModal(false)}
+          onSuccess={() => {
+            // Optionally refresh data
+          }}
         />
       )}
     </div>

@@ -228,6 +228,88 @@ export const authAPI = {
     tokenManager.clearTokens();
     return response;
   },
+
+  // ============================================
+  // PIN RECOVERY
+  // ============================================
+
+  /**
+   * Get child PIN lockout status
+   * @param {string} childId - Child ID
+   * @returns {Promise<Object>} PIN status (isLocked, attempts, remainingMinutes)
+   */
+  getChildPinStatus: async (childId) => {
+    return api.get(`/auth/children/${childId}/pin-status`);
+  },
+
+  /**
+   * Reset child PIN (requires parent password confirmation)
+   * @param {string} childId - Child ID
+   * @param {string} password - Parent password for verification
+   * @param {string} newPin - New 4-digit PIN
+   * @returns {Promise<Object>} Response with success status
+   */
+  resetChildPin: async (childId, password, newPin) => {
+    return api.post(`/auth/children/${childId}/reset-pin`, { password, newPin });
+  },
+
+  /**
+   * Unlock child PIN (clear lockout without changing PIN)
+   * @param {string} childId - Child ID
+   * @param {string} password - Parent password for verification
+   * @returns {Promise<Object>} Response with success status
+   */
+  unlockChildPin: async (childId, password) => {
+    return api.post(`/auth/children/${childId}/unlock-pin`, { password });
+  },
+
+  // ============================================
+  // KBQ (SECURITY QUESTIONS) RECOVERY
+  // ============================================
+
+  /**
+   * Check if parent has security questions set up
+   * @returns {Promise<Object>} Response with hasKBQ boolean
+   */
+  getKBQStatus: async () => {
+    return api.get('/auth/kbq/status');
+  },
+
+  /**
+   * Get all available security questions (for reset flow)
+   * @returns {Promise<Object>} Response with questions array
+   */
+  getAllKBQQuestions: async () => {
+    return api.get('/auth/kbq/all-questions');
+  },
+
+  /**
+   * Reset security questions (requires password verification)
+   * @param {string} password - Parent password for verification
+   * @param {Array} answers - Array of {questionId, answer} objects
+   * @returns {Promise<Object>} Response with success status
+   */
+  resetKBQ: async (password, answers) => {
+    return api.post('/auth/kbq/reset', { password, answers });
+  },
+
+  /**
+   * Initiate KBQ reset via credit card (when password unknown)
+   * @returns {Promise<Object>} Response with clientSecret and resetToken
+   */
+  initiateKBQResetViaCC: async () => {
+    return api.post('/auth/kbq/reset/initiate-cc', {});
+  },
+
+  /**
+   * Complete KBQ reset after credit card verification
+   * @param {string} paymentIntentId - Stripe payment intent ID
+   * @param {Array} answers - Array of {questionId, answer} objects
+   * @returns {Promise<Object>} Response with success status
+   */
+  completeKBQResetViaCC: async (paymentIntentId, answers) => {
+    return api.post('/auth/kbq/reset/complete-cc', { paymentIntentId, answers });
+  },
 };
 
 export default authAPI;
