@@ -2,7 +2,7 @@
 
 .onboarding-flow {
   min-height: 100vh;
-  background: linear-gradient(135deg, #fff8e1 0%, #e3f2fd 50%, #f3e5f5 100%);
+  background: linear-gradient(135deg, #EDE9FE 0%, #CCFBF1 50%, #F5F3FF 100%);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -88,7 +88,7 @@
 }
 
 .progress-step.active .step-circle {
-  background: #ffc107;
+  background: #7C3AED;
   color: white;
   transform: scale(1.1);
 }
@@ -144,7 +144,7 @@
 
 .privacy-text a,
 .coppa-text a {
-  color: #2196f3;
+  color: #7C3AED;
   text-decoration: none;
 }
 
@@ -197,8 +197,8 @@
 }
 
 .form-input:focus {
-  border-color: #ffc107;
-  box-shadow: 0 0 0 3px rgba(255, 193, 7, 0.15);
+  border-color: #7C3AED;
+  box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.15);
 }
 
 .form-input.error {
@@ -243,14 +243,14 @@
 }
 
 .btn-primary {
-  background: linear-gradient(135deg, #ffc107, #ff9800);
+  background: linear-gradient(135deg, #7C3AED, #6D28D9);
   color: white;
-  box-shadow: 0 4px 12px rgba(255, 152, 0, 0.3);
+  box-shadow: 0 4px 12px rgba(124, 58, 237, 0.3);
 }
 
 .btn-primary:hover:not(:disabled) {
   transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(255, 152, 0, 0.4);
+  box-shadow: 0 6px 20px rgba(124, 58, 237, 0.4);
 }
 
 .btn-secondary {
@@ -269,8 +269,8 @@
 }
 
 .btn-outline:hover:not(:disabled) {
-  border-color: #ffc107;
-  background: rgba(255, 193, 7, 0.05);
+  border-color: #7C3AED;
+  background: rgba(124, 58, 237, 0.05);
 }
 
 /* Error message */
@@ -336,7 +336,7 @@
 .link-btn {
   background: none;
   border: none;
-  color: #2196f3;
+  color: #7C3AED;
   font-size: 0.875rem;
   cursor: pointer;
   padding: 0;

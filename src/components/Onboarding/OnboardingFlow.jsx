@@ -192,7 +192,7 @@ const OnboardingFlow = ({ initialStep = STEPS.SIGNUP }) => {
         {/* Logo/Branding */}
         <div className="onboarding-header">
           <div className="onboarding-logo">
-            <img src="/assets/Logo-nobg.png" alt="OrbitLearn" className="logo-image" style={{ height: '80px', width: 'auto' }} />
+            <img src="/assets/orbit-learn-logo.png" alt="OrbitLearn" className="logo-image" style={{ height: '80px', width: 'auto', borderRadius: '16px' }} />
           </div>
         </div>
 

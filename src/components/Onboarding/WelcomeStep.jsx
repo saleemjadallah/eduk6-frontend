@@ -44,11 +44,17 @@ const WelcomeStep = ({ onComplete }) => {
         transition={{ duration: 0.5, type: 'spring' }}
         className="welcome-content"
       >
-        <div className="welcome-icon">
+        {/* Jeffrey Avatar */}
+        <div className="jeffrey-welcome">
+          <img
+            src="/assets/images/jeffrey-avatar.png"
+            alt="Jeffrey"
+            className="jeffrey-avatar-large"
+          />
           <span className="party-emoji">🎉</span>
         </div>
 
-        <h2>Welcome to Orbit Learn!</h2>
+        <h2>Welcome to OrbitLearn!</h2>
 
         <p className="welcome-text">
           You're all set! {profile?.displayName || 'Your child'} is ready to start
@@ -143,13 +149,27 @@ const WelcomeStep = ({ onComplete }) => {
           z-index: 1;
         }
 
-        .welcome-icon {
+        .jeffrey-welcome {
+          position: relative;
+          display: inline-block;
           margin-bottom: 16px;
         }
 
+        .jeffrey-avatar-large {
+          width: 100px;
+          height: 100px;
+          border-radius: 50%;
+          border: 4px solid #7C3AED;
+          box-shadow: 0 8px 24px rgba(124, 58, 237, 0.3);
+          object-fit: cover;
+        }
+
         .party-emoji {
-          font-size: 4rem;
+          font-size: 2rem;
           display: inline-block;
+          position: absolute;
+          top: -8px;
+          right: -8px;
           animation: bounce 1s ease infinite;
         }
 

@@ -112,11 +112,11 @@ const LoginPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white flex flex-col">
+    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-teal-50 flex flex-col">
       {/* Header */}
       <header className="p-6">
         <Link to="/" className="flex items-center w-fit">
-          <img src="/assets/Logo-nobg.png" alt="OrbitLearn" className="h-16 md:h-20 w-auto" />
+          <img src="/assets/orbit-learn-logo.png" alt="OrbitLearn" className="h-16 md:h-20 w-auto rounded-xl" />
         </Link>
       </header>
 
@@ -128,10 +128,19 @@ const LoginPage = () => {
           className="w-full max-w-md"
         >
           <div className="bg-white rounded-3xl border-4 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] p-8">
+            {/* Jeffrey Avatar */}
+            <div className="flex justify-center -mt-16 mb-4">
+              <img
+                src="/assets/images/jeffrey-avatar.png"
+                alt="Jeffrey"
+                className="w-24 h-24 rounded-full border-4 border-white shadow-lg object-cover"
+              />
+            </div>
+
             {/* Title */}
             <div className="text-center mb-8">
               <h1 className="text-3xl font-black font-comic mb-2">Welcome Back!</h1>
-              <p className="text-gray-600">Sign in to continue learning</p>
+              <p className="text-gray-600">Sign in to continue learning with Jeffrey</p>
             </div>
 
             {/* Error Message */}
