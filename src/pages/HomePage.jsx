@@ -59,7 +59,7 @@ const HomePage = () => {
           {/* Logo - Compact for iPad */}
           <Link to="/" className="flex items-center">
             <img
-              src="/assets/orbit-learn-logo-hires.png"
+              src="/assets/rebranding-jeffrey-2024/orbit-learn-logo-icon 2.png"
               alt="OrbitLearn"
               className="h-16 md:h-20 w-auto"
             />

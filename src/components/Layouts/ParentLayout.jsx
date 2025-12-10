@@ -77,7 +77,7 @@ const ParentLayout = () => {
         {/* Top bar */}
         <header className="parent-topbar">
           <div className="topbar-left">
-            <img src="/assets/orbit-learn-logo.png" alt="OrbitLearn" className="topbar-logo" />
+            <img src="/assets/rebranding-jeffrey-2024/orbit-learn-logo-icon 2.png" alt="OrbitLearn" className="topbar-logo" />
             <h1 className="page-title">Parent Dashboard</h1>
           </div>
 

@@ -108,7 +108,7 @@ const TeacherSidebar = ({ collapsed, onToggle, isMobile = false }) => {
         <div className="flex items-center justify-between">
           <Link to="/teacher/dashboard" onClick={isMobile ? onToggle : undefined} className="flex items-center gap-3">
             <img
-              src="/assets/orbit-learn-icon.png"
+              src="/assets/rebranding-jeffrey-2024/orbit-learn-logo-icon 2.png"
               alt="Orbit Learn"
               className="w-10 h-10 flex-shrink-0"
             />
