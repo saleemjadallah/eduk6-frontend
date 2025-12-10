@@ -177,9 +177,29 @@ const CardForm = ({ clientSecret, onVerified, onBack }) => {
         </p>
       </div>
 
-      <div className="amount-badge">
-        <span className="amount">$0.50</span>
-        <span className="amount-note">(will be refunded)</span>
+      <div className="amount-badge-container">
+        <div className="amount-badge">
+          <span className="amount">$0.50</span>
+          <span className="amount-note">(will be refunded)</span>
+        </div>
+        <div className="why-tooltip-wrapper">
+          <button type="button" className="why-icon" aria-label="Why this charge?">
+            <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <circle cx="9" cy="9" r="8" stroke="currentColor" strokeWidth="1.5"/>
+              <path d="M9 8V13" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+              <circle cx="9" cy="5.5" r="1" fill="currentColor"/>
+            </svg>
+          </button>
+          <div className="why-tooltip">
+            <strong>Why do we charge $0.50?</strong>
+            <p>
+              Under COPPA (Children's Online Privacy Protection Act), we must verify
+              that you are an adult before your child can use our platform. A small
+              credit card charge is one of the FTC-approved methods to confirm parental
+              identity. This amount is <strong>fully refunded</strong> within 5-7 business days.
+            </p>
+          </div>
+        </div>
       </div>
 
       {error && <div className="error-message">{error}</div>}
@@ -326,6 +346,14 @@ const CreditCardVerificationStep = ({ consentId, onVerified, onBack }) => {
           margin-bottom: 16px;
         }
 
+        .amount-badge-container {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 8px;
+          margin-bottom: 20px;
+        }
+
         .amount-badge {
           background: linear-gradient(135deg, #e3f2fd, #bbdefb);
           border-radius: 12px;
@@ -333,7 +361,6 @@ const CreditCardVerificationStep = ({ consentId, onVerified, onBack }) => {
           display: inline-flex;
           flex-direction: column;
           align-items: center;
-          margin-bottom: 20px;
         }
 
         .amount {
@@ -345,6 +372,99 @@ const CreditCardVerificationStep = ({ consentId, onVerified, onBack }) => {
         .amount-note {
           font-size: 0.75rem;
           color: #42a5f5;
+        }
+
+        .why-tooltip-wrapper {
+          position: relative;
+          display: inline-flex;
+        }
+
+        .why-icon {
+          background: none;
+          border: none;
+          padding: 4px;
+          cursor: pointer;
+          color: #64b5f6;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          border-radius: 50%;
+          transition: all 0.2s;
+        }
+
+        .why-icon:hover {
+          color: #1565c0;
+          background: #e3f2fd;
+        }
+
+        .why-tooltip {
+          position: absolute;
+          bottom: calc(100% + 10px);
+          left: 50%;
+          transform: translateX(-50%);
+          width: 280px;
+          background: #1a1a1a;
+          color: white;
+          padding: 14px 16px;
+          border-radius: 10px;
+          font-size: 0.8125rem;
+          text-align: left;
+          line-height: 1.5;
+          opacity: 0;
+          visibility: hidden;
+          transition: all 0.2s;
+          z-index: 100;
+          box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+        }
+
+        .why-tooltip::after {
+          content: '';
+          position: absolute;
+          top: 100%;
+          left: 50%;
+          transform: translateX(-50%);
+          border: 8px solid transparent;
+          border-top-color: #1a1a1a;
+        }
+
+        .why-tooltip strong {
+          display: block;
+          margin-bottom: 6px;
+          color: #ffc107;
+          font-size: 0.875rem;
+        }
+
+        .why-tooltip p {
+          margin: 0;
+          color: #e0e0e0;
+        }
+
+        .why-tooltip p strong {
+          display: inline;
+          color: #4caf50;
+          font-size: inherit;
+          margin: 0;
+        }
+
+        .why-tooltip-wrapper:hover .why-tooltip,
+        .why-icon:focus + .why-tooltip {
+          opacity: 1;
+          visibility: visible;
+        }
+
+        @media (max-width: 480px) {
+          .why-tooltip {
+            width: 240px;
+            left: auto;
+            right: -20px;
+            transform: none;
+          }
+
+          .why-tooltip::after {
+            left: auto;
+            right: 28px;
+            transform: none;
+          }
         }
 
         .stripe-card-wrapper {
