@@ -517,6 +517,46 @@ export const teacherAPI = {
   },
 
   /**
+   * Analyze a PDF file and extract educational content
+   * Uses Gemini's native PDF processing capabilities
+   * @param {File} file - The PDF file to analyze
+   * @returns {Promise<Object>} Analysis result with extracted text, title, subject, etc.
+   */
+  analyzePDF: async (file) => {
+    // Validate file type
+    if (file.type !== 'application/pdf') {
+      throw new Error('Only PDF files are supported');
+    }
+
+    // Validate file size (10MB max)
+    const maxSize = 10 * 1024 * 1024;
+    if (file.size > maxSize) {
+      throw new Error('PDF files must be under 10MB');
+    }
+
+    // Convert file to base64
+    const base64 = await new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        // Remove the data URL prefix (data:application/pdf;base64,)
+        const result = reader.result;
+        const base64Data = result.split(',')[1];
+        resolve(base64Data);
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+
+    return teacherRequest('/content/analyze-pdf', {
+      method: 'POST',
+      body: JSON.stringify({
+        pdfBase64: base64,
+        filename: file.name,
+      }),
+    });
+  },
+
+  /**
    * Generate an infographic from content
    * @param {string} contentId - The content ID
    * @param {Object} data - { topic, keyPoints, style?, gradeLevel?, subject? }

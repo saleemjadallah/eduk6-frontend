@@ -18,6 +18,11 @@ import {
   Layers,
   Image,
   Info,
+  Upload,
+  MessageSquare,
+  File,
+  X,
+  AlertCircle,
 } from 'lucide-react';
 
 // Jeffrey Avatar using actual asset
@@ -169,6 +174,13 @@ const CreateContentPage = () => {
   const [generatedContent, setGeneratedContent] = useState(null);
   const [conversationStage, setConversationStage] = useState('initial');
 
+  // PDF Upload state
+  const [inputMode, setInputMode] = useState('chat'); // 'chat' or 'pdf'
+  const [selectedFile, setSelectedFile] = useState(null);
+  const [uploadingPDF, setUploadingPDF] = useState(false);
+  const [pdfAnalysis, setPdfAnalysis] = useState(null);
+  const fileInputRef = useRef(null);
+
   // Auto-scroll chat
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -229,6 +241,94 @@ const CreateContentPage = () => {
   const handleSuggestedPrompt = (prompt) => {
     setInputValue(prompt);
     inputRef.current?.focus();
+  };
+
+  // PDF Upload handlers
+  const handleFileSelect = (e) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.type !== 'application/pdf') {
+        setError('Please select a PDF file');
+        return;
+      }
+      if (file.size > 10 * 1024 * 1024) {
+        setError('PDF files must be under 10MB');
+        return;
+      }
+      setSelectedFile(file);
+      setError(null);
+    }
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    const file = e.dataTransfer.files?.[0];
+    if (file) {
+      if (file.type !== 'application/pdf') {
+        setError('Please drop a PDF file');
+        return;
+      }
+      if (file.size > 10 * 1024 * 1024) {
+        setError('PDF files must be under 10MB');
+        return;
+      }
+      setSelectedFile(file);
+      setError(null);
+    }
+  };
+
+  const handleDragOver = (e) => {
+    e.preventDefault();
+  };
+
+  const handleRemoveFile = () => {
+    setSelectedFile(null);
+    setPdfAnalysis(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
+  const handleAnalyzePDF = async () => {
+    if (!selectedFile) return;
+
+    setUploadingPDF(true);
+    setError(null);
+
+    try {
+      const result = await teacherAPI.analyzePDF(selectedFile);
+
+      if (result.success) {
+        setPdfAnalysis(result.data);
+
+        // Pre-fill lesson details from PDF analysis
+        setLessonDetails(prev => ({
+          ...prev,
+          topic: result.data.suggestedTitle || prev.topic,
+          subject: result.data.detectedSubject || prev.subject,
+          gradeLevel: result.data.detectedGradeLevel || prev.gradeLevel,
+          additionalNotes: result.data.extractedText?.substring(0, 2000) || '',
+        }));
+
+        // Show the options panel
+        setShowOptions(true);
+        setConversationStage('gathering');
+
+        // Add a message to the chat
+        addMessage('jeffrey',
+          `I've analyzed your PDF "${selectedFile.name}"!\n\n` +
+          `**Topic:** ${result.data.suggestedTitle}\n` +
+          `**Subject:** ${result.data.detectedSubject || 'Not detected'}\n` +
+          `**Grade Level:** ${result.data.detectedGradeLevel || 'Not detected'}\n` +
+          `**Key Topics:** ${result.data.keyTopics?.slice(0, 5).join(', ') || 'N/A'}\n\n` +
+          `I've pre-filled the lesson details. Review the options below and click "Generate Lesson" when ready!`
+        );
+      }
+    } catch (err) {
+      setError(err.message || 'Failed to analyze PDF');
+    } finally {
+      setUploadingPDF(false);
+    }
   };
 
   const handleGenerateLesson = async () => {
@@ -376,6 +476,34 @@ const CreateContentPage = () => {
                 <Zap className="w-3 h-3" />
                 {formatCredits(quota?.tokensRemaining || 0)} credits
               </div>
+            </div>
+          </div>
+
+          {/* Input Mode Tabs */}
+          <div className="px-4 sm:px-6 py-2 border-b border-teacher-ink/5 bg-teacher-paper/50">
+            <div className="flex gap-2">
+              <button
+                onClick={() => setInputMode('chat')}
+                className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
+                  inputMode === 'chat'
+                    ? 'bg-teacher-chalk text-white'
+                    : 'text-teacher-inkLight hover:bg-teacher-ink/5'
+                }`}
+              >
+                <MessageSquare className="w-4 h-4" />
+                Describe Topic
+              </button>
+              <button
+                onClick={() => setInputMode('pdf')}
+                className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
+                  inputMode === 'pdf'
+                    ? 'bg-teacher-chalk text-white'
+                    : 'text-teacher-inkLight hover:bg-teacher-ink/5'
+                }`}
+              >
+                <Upload className="w-4 h-4" />
+                Upload PDF
+              </button>
             </div>
           </div>
 
@@ -629,48 +757,139 @@ const CreateContentPage = () => {
             )}
           </AnimatePresence>
 
-          {/* Chat Input */}
+          {/* Chat Input or PDF Upload */}
           <div className="border-t border-teacher-ink/5 p-3 sm:p-4 bg-white">
-            {/* Suggested prompts (only show initially) */}
-            {conversationStage === 'initial' && (
-              <div className="mb-3">
-                <p className="text-[10px] sm:text-xs text-teacher-inkLight mb-2">Try one of these:</p>
-                <div className="flex flex-wrap gap-2">
-                  {SUGGESTED_PROMPTS.map((prompt, i) => (
-                    <button
-                      key={i}
-                      onClick={() => handleSuggestedPrompt(prompt)}
-                      className="text-[10px] sm:text-xs px-2 sm:px-3 py-1 sm:py-1.5 bg-teacher-chalk/10 text-teacher-chalk rounded-full hover:bg-teacher-chalk/20 transition-colors"
-                    >
-                      {prompt}
-                    </button>
-                  ))}
+            {inputMode === 'chat' ? (
+              <>
+                {/* Suggested prompts (only show initially) */}
+                {conversationStage === 'initial' && (
+                  <div className="mb-3">
+                    <p className="text-[10px] sm:text-xs text-teacher-inkLight mb-2">Try one of these:</p>
+                    <div className="flex flex-wrap gap-2">
+                      {SUGGESTED_PROMPTS.map((prompt, i) => (
+                        <button
+                          key={i}
+                          onClick={() => handleSuggestedPrompt(prompt)}
+                          className="text-[10px] sm:text-xs px-2 sm:px-3 py-1 sm:py-1.5 bg-teacher-chalk/10 text-teacher-chalk rounded-full hover:bg-teacher-chalk/20 transition-colors"
+                        >
+                          {prompt}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                <div className="flex gap-2 sm:gap-3">
+                  <input
+                    ref={inputRef}
+                    type="text"
+                    value={inputValue}
+                    onChange={(e) => setInputValue(e.target.value)}
+                    onKeyPress={handleKeyPress}
+                    placeholder={conversationStage === 'initial'
+                      ? "Describe the lesson you want to create..."
+                      : "Add more details or requirements..."
+                    }
+                    disabled={generating || conversationStage === 'complete'}
+                    className="flex-1 px-3 sm:px-4 py-2.5 sm:py-3 border border-teacher-ink/10 rounded-xl text-sm focus:outline-none focus:border-teacher-chalk focus:ring-2 focus:ring-teacher-chalk/10 disabled:bg-teacher-paper disabled:cursor-not-allowed transition-all"
+                  />
+                  <button
+                    onClick={handleSendMessage}
+                    disabled={!inputValue.trim() || generating || conversationStage === 'complete'}
+                    className="px-3 sm:px-4 py-2.5 sm:py-3 bg-teacher-chalk text-white rounded-xl hover:bg-teacher-chalkLight disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  >
+                    <Send className="w-4 h-4 sm:w-5 sm:h-5" />
+                  </button>
                 </div>
+              </>
+            ) : (
+              /* PDF Upload Section */
+              <div className="space-y-3">
+                {!selectedFile ? (
+                  /* Dropzone */
+                  <div
+                    onDrop={handleDrop}
+                    onDragOver={handleDragOver}
+                    onClick={() => fileInputRef.current?.click()}
+                    className="border-2 border-dashed border-teacher-ink/20 rounded-xl p-6 text-center cursor-pointer hover:border-teacher-chalk hover:bg-teacher-chalk/5 transition-all"
+                  >
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept="application/pdf"
+                      onChange={handleFileSelect}
+                      className="hidden"
+                    />
+                    <div className="w-12 h-12 mx-auto mb-3 rounded-full bg-teacher-chalk/10 flex items-center justify-center">
+                      <Upload className="w-6 h-6 text-teacher-chalk" />
+                    </div>
+                    <p className="text-sm font-medium text-teacher-ink mb-1">
+                      Drop your PDF here or click to browse
+                    </p>
+                    <p className="text-xs text-teacher-inkLight">
+                      Supports PDF files up to 10MB
+                    </p>
+                  </div>
+                ) : (
+                  /* Selected File Display */
+                  <div className="flex items-center gap-3 p-3 bg-teacher-paper rounded-xl">
+                    <div className="w-10 h-10 rounded-lg bg-teacher-coral/10 flex items-center justify-center flex-shrink-0">
+                      <File className="w-5 h-5 text-teacher-coral" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-teacher-ink truncate">
+                        {selectedFile.name}
+                      </p>
+                      <p className="text-xs text-teacher-inkLight">
+                        {(selectedFile.size / (1024 * 1024)).toFixed(2)} MB
+                      </p>
+                    </div>
+                    <button
+                      onClick={handleRemoveFile}
+                      className="p-1.5 text-teacher-inkLight hover:text-teacher-coral hover:bg-teacher-coral/10 rounded-lg transition-colors"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+                )}
+
+                {/* Analyze Button */}
+                {selectedFile && !pdfAnalysis && (
+                  <button
+                    onClick={handleAnalyzePDF}
+                    disabled={uploadingPDF}
+                    className="w-full py-3 px-4 bg-gradient-to-r from-teacher-chalk to-teacher-chalkLight text-white font-semibold rounded-xl hover:shadow-teacher disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 transition-all"
+                  >
+                    {uploadingPDF ? (
+                      <>
+                        <Loader2 className="w-5 h-5 animate-spin" />
+                        Analyzing PDF...
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles className="w-5 h-5" />
+                        Analyze PDF
+                      </>
+                    )}
+                  </button>
+                )}
+
+                {/* PDF Analysis Complete */}
+                {pdfAnalysis && (
+                  <div className="flex items-center gap-2 p-3 bg-teacher-sage/10 rounded-xl text-teacher-sage text-sm">
+                    <Check className="w-4 h-4 flex-shrink-0" />
+                    <span>PDF analyzed! Review the options above and generate your lesson.</span>
+                  </div>
+                )}
+
+                {/* Info text */}
+                {!selectedFile && (
+                  <p className="text-xs text-center text-teacher-inkLight">
+                    Upload your existing lesson materials, worksheets, or textbook pages and I'll create a beautifully formatted lesson with quizzes and flashcards!
+                  </p>
+                )}
               </div>
             )}
-
-            <div className="flex gap-2 sm:gap-3">
-              <input
-                ref={inputRef}
-                type="text"
-                value={inputValue}
-                onChange={(e) => setInputValue(e.target.value)}
-                onKeyPress={handleKeyPress}
-                placeholder={conversationStage === 'initial'
-                  ? "Describe the lesson you want to create..."
-                  : "Add more details or requirements..."
-                }
-                disabled={generating || conversationStage === 'complete'}
-                className="flex-1 px-3 sm:px-4 py-2.5 sm:py-3 border border-teacher-ink/10 rounded-xl text-sm focus:outline-none focus:border-teacher-chalk focus:ring-2 focus:ring-teacher-chalk/10 disabled:bg-teacher-paper disabled:cursor-not-allowed transition-all"
-              />
-              <button
-                onClick={handleSendMessage}
-                disabled={!inputValue.trim() || generating || conversationStage === 'complete'}
-                className="px-3 sm:px-4 py-2.5 sm:py-3 bg-teacher-chalk text-white rounded-xl hover:bg-teacher-chalkLight disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-              >
-                <Send className="w-4 h-4 sm:w-5 sm:h-5" />
-              </button>
-            </div>
           </div>
         </div>
 
