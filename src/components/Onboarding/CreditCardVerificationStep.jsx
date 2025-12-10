@@ -1,94 +1,114 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { loadStripe } from '@stripe/stripe-js';
+import { Elements, CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
 import { useAuth } from '../../context/AuthContext';
 import { consentAPI } from '../../services/api/consentAPI';
 
-// TODO: In production, integrate with Stripe Elements
-// import { loadStripe } from '@stripe/stripe-js';
-// import { Elements, CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
+// Initialize Stripe with publishable key
+const stripePromise = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY
+  ? loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY)
+  : null;
 
-const CreditCardVerificationStep = ({ consentId, onVerified, onBack }) => {
+// Card element styling
+const CARD_ELEMENT_OPTIONS = {
+  style: {
+    base: {
+      fontSize: '16px',
+      color: '#424770',
+      fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+      fontSmoothing: 'antialiased',
+      '::placeholder': {
+        color: '#aab7c4',
+      },
+      iconColor: '#666ee8',
+    },
+    invalid: {
+      color: '#9e2146',
+      iconColor: '#fa755a',
+    },
+  },
+  hidePostalCode: true,
+};
+
+// Inner form component that uses Stripe hooks
+const CardForm = ({ clientSecret, onVerified, onBack }) => {
+  const stripe = useStripe();
+  const elements = useElements();
   const { updateConsentStatus } = useAuth();
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState('');
   const [step, setStep] = useState('form'); // 'form', 'processing', 'success'
+  const [cardholderName, setCardholderName] = useState('');
+  const [cardComplete, setCardComplete] = useState(false);
 
-  // Card form state (TODO: Replace with Stripe Elements in production)
-  const [cardData, setCardData] = useState({
-    number: '',
-    expiry: '',
-    cvc: '',
-    name: '',
-  });
-
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    let formattedValue = value;
-
-    if (name === 'number') {
-      // Format card number with spaces
-      formattedValue = value.replace(/\s/g, '').replace(/(\d{4})/g, '$1 ').trim().slice(0, 19);
-    } else if (name === 'expiry') {
-      // Format expiry as MM/YY
-      formattedValue = value.replace(/\D/g, '').replace(/(\d{2})(\d)/, '$1/$2').slice(0, 5);
-    } else if (name === 'cvc') {
-      formattedValue = value.replace(/\D/g, '').slice(0, 4);
+  const handleCardChange = (event) => {
+    setCardComplete(event.complete);
+    if (event.error) {
+      setError(event.error.message);
+    } else {
+      setError('');
     }
-
-    setCardData(prev => ({ ...prev, [name]: formattedValue }));
-  };
-
-  const validateCard = () => {
-    // Basic validation (in production, Stripe handles this)
-    if (cardData.number.replace(/\s/g, '').length < 15) {
-      setError('Please enter a valid card number');
-      return false;
-    }
-    if (cardData.expiry.length !== 5) {
-      setError('Please enter a valid expiry date');
-      return false;
-    }
-    if (cardData.cvc.length < 3) {
-      setError('Please enter a valid CVC');
-      return false;
-    }
-    if (cardData.name.length < 2) {
-      setError('Please enter the cardholder name');
-      return false;
-    }
-    return true;
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!validateCard()) return;
+    if (!stripe || !elements) {
+      setError('Payment system is not ready. Please wait a moment and try again.');
+      return;
+    }
+
+    if (!cardholderName.trim()) {
+      setError('Please enter the cardholder name');
+      return;
+    }
+
+    if (!cardComplete) {
+      setError('Please complete your card details');
+      return;
+    }
 
     setError('');
     setIsProcessing(true);
     setStep('processing');
 
     try {
-      // TODO: In production, use Stripe to process the payment
-      // const { paymentIntent, error } = await stripe.confirmCardPayment(clientSecret, {
-      //   payment_method: { card: elements.getElement(CardElement) }
-      // });
+      // Confirm the payment with Stripe
+      const { error: stripeError, paymentIntent } = await stripe.confirmCardPayment(
+        clientSecret,
+        {
+          payment_method: {
+            card: elements.getElement(CardElement),
+            billing_details: {
+              name: cardholderName,
+            },
+          },
+        }
+      );
 
-      // Verify with backend using the payment intent ID
-      // For now, we'll use a placeholder - in production this would come from Stripe
-      const result = await consentAPI.verifyCreditCard({
-        paymentIntentId: consentId, // consentId is actually the clientSecret from initiation
-      });
+      if (stripeError) {
+        throw new Error(stripeError.message);
+      }
 
-      if (result.success) {
-        setStep('success');
-        updateConsentStatus('verified');
+      if (paymentIntent.status === 'succeeded') {
+        // Verify with our backend
+        const result = await consentAPI.verifyCreditCard({
+          paymentIntentId: paymentIntent.id,
+        });
 
-        // Wait a moment before continuing
-        setTimeout(() => {
-          onVerified?.();
-        }, 2000);
+        if (result.success) {
+          setStep('success');
+          updateConsentStatus('verified');
+
+          // Wait a moment before continuing
+          setTimeout(() => {
+            onVerified?.();
+          }, 2000);
+        } else {
+          throw new Error(result.error || 'Verification failed');
+        }
       } else {
-        throw new Error(result.error || 'Verification failed');
+        throw new Error(`Payment status: ${paymentIntent.status}. Please try again.`);
       }
     } catch (err) {
       setError(err.message || 'Payment verification failed');
@@ -166,61 +186,26 @@ const CreditCardVerificationStep = ({ consentId, onVerified, onBack }) => {
 
       <form onSubmit={handleSubmit}>
         <div className="form-group">
-          <label className="form-label">Card Number</label>
-          <div className="card-input-wrapper">
-            <input
-              type="text"
-              name="number"
-              className="form-input card-input"
-              placeholder="4242 4242 4242 4242"
-              value={cardData.number}
-              onChange={handleInputChange}
-              autoComplete="cc-number"
-            />
-            <div className="card-icons">
-              <span className="card-icon visa">💳</span>
-            </div>
-          </div>
-        </div>
-
-        <div className="form-row">
-          <div className="form-group">
-            <label className="form-label">Expiry Date</label>
-            <input
-              type="text"
-              name="expiry"
-              className="form-input"
-              placeholder="MM/YY"
-              value={cardData.expiry}
-              onChange={handleInputChange}
-              autoComplete="cc-exp"
-            />
-          </div>
-          <div className="form-group">
-            <label className="form-label">CVC</label>
-            <input
-              type="text"
-              name="cvc"
-              className="form-input"
-              placeholder="123"
-              value={cardData.cvc}
-              onChange={handleInputChange}
-              autoComplete="cc-csc"
-            />
-          </div>
-        </div>
-
-        <div className="form-group">
           <label className="form-label">Cardholder Name</label>
           <input
             type="text"
-            name="name"
             className="form-input"
             placeholder="Name on card"
-            value={cardData.name}
-            onChange={handleInputChange}
+            value={cardholderName}
+            onChange={(e) => setCardholderName(e.target.value)}
             autoComplete="cc-name"
+            disabled={isProcessing}
           />
+        </div>
+
+        <div className="form-group">
+          <label className="form-label">Card Details</label>
+          <div className="stripe-card-wrapper">
+            <CardElement
+              options={CARD_ELEMENT_OPTIONS}
+              onChange={handleCardChange}
+            />
+          </div>
         </div>
 
         <div className="security-badges">
@@ -244,7 +229,11 @@ const CreditCardVerificationStep = ({ consentId, onVerified, onBack }) => {
           >
             Back
           </button>
-          <button type="submit" className="btn btn-primary" disabled={isProcessing}>
+          <button
+            type="submit"
+            className="btn btn-primary"
+            disabled={isProcessing || !stripe || !cardComplete}
+          >
             {isProcessing ? (
               <>
                 <span className="loading-spinner" />
@@ -265,7 +254,69 @@ const CreditCardVerificationStep = ({ consentId, onVerified, onBack }) => {
           automatically refunded within 5-7 business days.
         </p>
       </div>
+    </div>
+  );
+};
 
+// Wrapper component that provides Stripe context
+const CreditCardVerificationStep = ({ consentId, onVerified, onBack }) => {
+  const [clientSecret, setClientSecret] = useState(consentId);
+  const [initError, setInitError] = useState('');
+
+  // The consentId passed from OnboardingFlow is actually the clientSecret
+  useEffect(() => {
+    if (!consentId) {
+      setInitError('Payment session not initialized. Please go back and try again.');
+    } else {
+      setClientSecret(consentId);
+    }
+  }, [consentId]);
+
+  if (!stripePromise) {
+    return (
+      <div className="cc-step cc-error">
+        <div className="error-icon">⚠️</div>
+        <h2>Payment System Unavailable</h2>
+        <p>
+          Credit card verification is not available at this time. Please try the
+          Knowledge-Based Questions option instead.
+        </p>
+        <button className="btn btn-secondary" onClick={onBack}>
+          Choose Different Method
+        </button>
+      </div>
+    );
+  }
+
+  if (initError) {
+    return (
+      <div className="cc-step cc-error">
+        <div className="error-icon">⚠️</div>
+        <h2>Session Error</h2>
+        <p>{initError}</p>
+        <button className="btn btn-secondary" onClick={onBack}>
+          Go Back
+        </button>
+      </div>
+    );
+  }
+
+  if (!clientSecret) {
+    return (
+      <div className="cc-step cc-loading">
+        <div className="spinner-large" />
+        <p>Initializing payment...</p>
+      </div>
+    );
+  }
+
+  return (
+    <Elements stripe={stripePromise} options={{ clientSecret }}>
+      <CardForm
+        clientSecret={clientSecret}
+        onVerified={onVerified}
+        onBack={onBack}
+      />
       <style>{`
         .cc-step {
           text-align: center;
@@ -296,31 +347,17 @@ const CreditCardVerificationStep = ({ consentId, onVerified, onBack }) => {
           color: #42a5f5;
         }
 
-        .card-input-wrapper {
-          position: relative;
+        .stripe-card-wrapper {
+          background: white;
+          border: 2px solid #e0e0e0;
+          border-radius: 8px;
+          padding: 14px 12px;
+          transition: border-color 0.2s;
         }
 
-        .card-input {
-          padding-right: 50px;
-        }
-
-        .card-icons {
-          position: absolute;
-          right: 12px;
-          top: 50%;
-          transform: translateY(-50%);
-          display: flex;
-          gap: 4px;
-        }
-
-        .card-icon {
-          font-size: 1.25rem;
-        }
-
-        .form-row {
-          display: grid;
-          grid-template-columns: 1fr 1fr;
-          gap: 12px;
+        .stripe-card-wrapper:focus-within {
+          border-color: #ffc107;
+          box-shadow: 0 0 0 3px rgba(255, 193, 7, 0.1);
         }
 
         .security-badges {
@@ -368,7 +405,7 @@ const CreditCardVerificationStep = ({ consentId, onVerified, onBack }) => {
         }
 
         /* Processing state */
-        .cc-processing {
+        .cc-processing, .cc-loading {
           padding: 40px 20px;
         }
 
@@ -435,13 +472,33 @@ const CreditCardVerificationStep = ({ consentId, onVerified, onBack }) => {
           font-style: italic;
         }
 
+        /* Error state */
+        .cc-error {
+          padding: 40px 20px;
+        }
+
+        .error-icon {
+          font-size: 48px;
+          margin-bottom: 16px;
+        }
+
+        .cc-error h2 {
+          color: #e65100;
+          margin: 0 0 12px;
+        }
+
+        .cc-error p {
+          color: #666;
+          margin: 0 0 20px;
+        }
+
         @keyframes spin {
           to {
             transform: rotate(360deg);
           }
         }
       `}</style>
-    </div>
+    </Elements>
   );
 };
 
