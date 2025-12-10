@@ -4,12 +4,15 @@
  */
 
 import { makeAuthenticatedRequest as makeRequest } from './apiUtils.js';
-import { publicRequest } from './apiClient.js';
+
+// Get API base URL for standalone demo requests
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
 export const chatAPI = {
   /**
-   * Send a demo message to Jeffrey AI (no authentication required)
+   * Send a demo message to Jeffrey AI (completely standalone - no auth)
    * Used for landing page interactive demo - limited to 3 messages per session
+   * This uses a raw fetch to avoid any auth/token logic
    * @param {Object} data - Message data
    * @param {string} data.message - The user's message
    * @param {Array} [data.conversationHistory] - Previous messages for context
@@ -17,14 +20,24 @@ export const chatAPI = {
    * @returns {Promise<Object>} Response with AI reply
    */
   sendDemoMessage: async ({ message, conversationHistory, sessionId }) => {
-    return publicRequest('/chat/demo', {
+    // Standalone fetch - no auth, no token refresh, no complex logic
+    const response = await fetch(`${API_BASE_URL}/api/chat/demo`, {
       method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
       body: JSON.stringify({
         message,
         conversationHistory,
         sessionId,
       }),
     });
+
+    if (!response.ok) {
+      throw new Error(`Demo chat failed: ${response.status}`);
+    }
+
+    return response.json();
   },
 
   /**
