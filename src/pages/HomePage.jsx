@@ -68,7 +68,7 @@ const HomePage = () => {
           {/* Right side - Minimal CTAs */}
           <div className="flex items-center gap-2 md:gap-3">
             <Link
-              to="/teacher/login"
+              to="/teacher"
               className="hidden sm:inline-flex items-center justify-center px-3 md:px-4 py-2 md:py-2.5 font-bold text-gray-500 hover:text-[#2D5A4A] transition-colors rounded-xl hover:bg-[#2D5A4A]/5 text-sm"
             >
               For Teachers
