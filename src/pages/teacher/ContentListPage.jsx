@@ -218,6 +218,24 @@ const ContentListPage = () => {
     ? Object.values(stats.byType || {}).reduce((sum, count) => sum + count, 0)
     : 0;
 
+  // Dynamic page title based on content type filter
+  const getPageTitle = () => {
+    switch (filters.contentType) {
+      case 'LESSON':
+        return { title: 'My Lessons', subtitle: 'Create and manage your lesson plans' };
+      case 'QUIZ':
+        return { title: 'My Quizzes', subtitle: 'Create and manage your quizzes and assessments' };
+      case 'FLASHCARD_DECK':
+        return { title: 'My Flashcards', subtitle: 'Create and manage your flashcard decks' };
+      case 'STUDY_GUIDE':
+        return { title: 'My Study Guides', subtitle: 'Create and manage your study guides' };
+      default:
+        return { title: 'My Content', subtitle: 'Create and manage your lessons, quizzes, and study materials' };
+    }
+  };
+
+  const pageInfo = getPageTitle();
+
   // Header action button
   const headerActions = (
     <Link
@@ -232,8 +250,8 @@ const ContentListPage = () => {
 
   return (
     <TeacherLayout
-      title="My Content"
-      subtitle="Create and manage your lessons, quizzes, and study materials"
+      title={pageInfo.title}
+      subtitle={pageInfo.subtitle}
       headerActions={headerActions}
     >
       {/* Stats Cards */}

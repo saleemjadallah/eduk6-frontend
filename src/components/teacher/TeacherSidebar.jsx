@@ -50,9 +50,9 @@ const TeacherSidebar = ({ collapsed, onToggle, isMobile = false }) => {
     {
       section: 'Tools',
       items: [
-        { icon: FileText, label: 'Lessons', path: '/teacher/lessons' },
-        { icon: ClipboardCheck, label: 'Quizzes', path: '/teacher/quizzes' },
-        { icon: Layers, label: 'Flashcards', path: '/teacher/flashcards' },
+        { icon: FileText, label: 'Lessons', path: '/teacher/content?type=LESSON' },
+        { icon: ClipboardCheck, label: 'Quizzes', path: '/teacher/content?type=QUIZ' },
+        { icon: Layers, label: 'Flashcards', path: '/teacher/content?type=FLASHCARD_DECK' },
         {
           icon: GraduationCap,
           label: 'Grading',
@@ -161,7 +161,29 @@ const TeacherSidebar = ({ collapsed, onToggle, isMobile = false }) => {
 
             <ul className="space-y-1">
               {section.items.map((item) => {
-                const isActive = location.pathname === item.path;
+                // Handle paths with query params for active state detection
+                const [itemPath, itemQuery] = item.path.split('?');
+                const currentParams = new URLSearchParams(location.search);
+                const itemParams = new URLSearchParams(itemQuery || '');
+                const currentType = currentParams.get('type');
+                const itemType = itemParams.get('type');
+
+                // Determine active state
+                let isActive = false;
+                if (location.pathname === itemPath) {
+                  if (itemQuery) {
+                    // Item has query params (e.g., Lessons, Quizzes, Flashcards)
+                    // Active only if the type matches
+                    isActive = itemType === currentType;
+                  } else {
+                    // Item has no query params (e.g., My Content)
+                    // Active only if there's no type filter applied
+                    isActive = !currentType;
+                  }
+                } else if (!itemQuery) {
+                  // For items without query params, exact pathname match
+                  isActive = location.pathname === item.path;
+                }
                 const Icon = item.icon;
 
                 return (
