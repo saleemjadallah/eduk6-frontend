@@ -251,16 +251,25 @@ const CreateContentPage = () => {
     inputRef.current?.focus();
   };
 
-  // PDF Upload handlers
+  // Allowed document types
+  const ALLOWED_DOC_TYPES = [
+    'application/pdf',
+    'application/vnd.ms-powerpoint',
+    'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+  ];
+
+  const isAllowedDocType = (type) => ALLOWED_DOC_TYPES.includes(type);
+
+  // PDF/PPT Upload handlers
   const handleFileSelect = (e) => {
     const file = e.target.files?.[0];
     if (file) {
-      if (file.type !== 'application/pdf') {
-        setError('Please select a PDF file');
+      if (!isAllowedDocType(file.type)) {
+        setError('Please select a PDF or PowerPoint file');
         return;
       }
       if (file.size > 10 * 1024 * 1024) {
-        setError('PDF files must be under 10MB');
+        setError('Files must be under 10MB');
         return;
       }
       setSelectedFile(file);
@@ -272,12 +281,12 @@ const CreateContentPage = () => {
     e.preventDefault();
     const file = e.dataTransfer.files?.[0];
     if (file) {
-      if (file.type !== 'application/pdf') {
-        setError('Please drop a PDF file');
+      if (!isAllowedDocType(file.type)) {
+        setError('Please drop a PDF or PowerPoint file');
         return;
       }
       if (file.size > 10 * 1024 * 1024) {
-        setError('PDF files must be under 10MB');
+        setError('Files must be under 10MB');
         return;
       }
       setSelectedFile(file);
@@ -973,7 +982,7 @@ const CreateContentPage = () => {
                     <input
                       ref={fileInputRef}
                       type="file"
-                      accept="application/pdf"
+                      accept="application/pdf,application/vnd.ms-powerpoint,application/vnd.openxmlformats-officedocument.presentationml.presentation,.pdf,.ppt,.pptx"
                       onChange={handleFileSelect}
                       className="hidden"
                     />
@@ -981,10 +990,10 @@ const CreateContentPage = () => {
                       <Upload className="w-6 h-6 text-teacher-chalk" />
                     </div>
                     <p className="text-sm font-medium text-teacher-ink mb-1">
-                      Drop your PDF here or click to browse
+                      Drop your PDF or PPT here or click to browse
                     </p>
                     <p className="text-xs text-teacher-inkLight">
-                      Supports PDF files up to 10MB
+                      Supports PDF and PowerPoint files up to 10MB
                     </p>
                   </div>
                 ) : (

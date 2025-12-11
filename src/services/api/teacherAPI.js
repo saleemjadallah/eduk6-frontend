@@ -557,6 +557,69 @@ export const teacherAPI = {
   },
 
   /**
+   * Analyze a PowerPoint file and extract educational content
+   * Uses Gemini's native document processing capabilities
+   * @param {File} file - The PPT/PPTX file to analyze
+   * @returns {Promise<Object>} Analysis result with extracted text, title, subject, slideCount, etc.
+   */
+  analyzePPT: async (file) => {
+    // Validate file type
+    const allowedTypes = [
+      'application/vnd.ms-powerpoint',
+      'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+    ];
+    if (!allowedTypes.includes(file.type)) {
+      throw new Error('Only PowerPoint files (.ppt, .pptx) are supported');
+    }
+
+    // Validate file size (10MB max)
+    const maxSize = 10 * 1024 * 1024;
+    if (file.size > maxSize) {
+      throw new Error('PowerPoint files must be under 10MB');
+    }
+
+    // Convert file to base64
+    const base64 = await new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const result = reader.result;
+        const base64Data = result.split(',')[1];
+        resolve(base64Data);
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+
+    return teacherRequest('/content/analyze-ppt', {
+      method: 'POST',
+      body: JSON.stringify({
+        pptBase64: base64,
+        filename: file.name,
+        mimeType: file.type,
+      }),
+    });
+  },
+
+  /**
+   * Analyze a document file (PDF or PowerPoint) and extract educational content
+   * Automatically routes to the correct analysis endpoint based on file type
+   * @param {File} file - The file to analyze (PDF, PPT, or PPTX)
+   * @returns {Promise<Object>} Analysis result with extracted text, title, subject, etc.
+   */
+  analyzeDocument: async (file) => {
+    if (file.type === 'application/pdf') {
+      return teacherAPI.analyzePDF(file);
+    } else if (
+      file.type === 'application/vnd.ms-powerpoint' ||
+      file.type === 'application/vnd.openxmlformats-officedocument.presentationml.presentation'
+    ) {
+      return teacherAPI.analyzePPT(file);
+    } else {
+      throw new Error('Unsupported file type. Please upload a PDF or PowerPoint file.');
+    }
+  },
+
+  /**
    * Generate an infographic from content
    * @param {string} contentId - The content ID
    * @param {Object} data - { topic, keyPoints, style?, gradeLevel?, subject? }

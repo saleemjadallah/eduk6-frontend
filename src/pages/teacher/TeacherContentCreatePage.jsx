@@ -94,7 +94,7 @@ const TeacherContentCreatePage = () => {
     {
       id: 'upload',
       title: 'Upload File',
-      description: 'PDF, Word, or text files',
+      description: 'PDF, PPT, Word, or text files',
       icon: FileUp,
     },
     {
@@ -160,6 +160,8 @@ const TeacherContentCreatePage = () => {
     onDrop,
     accept: {
       'application/pdf': ['.pdf'],
+      'application/vnd.ms-powerpoint': ['.ppt'],
+      'application/vnd.openxmlformats-officedocument.presentationml.presentation': ['.pptx'],
       'application/msword': ['.doc'],
       'application/vnd.openxmlformats-officedocument.wordprocessingml.document': ['.docx'],
       'text/plain': ['.txt'],
@@ -382,7 +384,7 @@ const TeacherContentCreatePage = () => {
                             or click to browse
                           </p>
                           <p className="text-xs text-teacher-inkLight/70">
-                            Supports PDF, Word, and text files up to 10MB
+                            Supports PDF, PPT, Word, and text files up to 10MB
                           </p>
                         </div>
                       )}

@@ -6,6 +6,18 @@ export const SUPPORTED_FILES = {
     icon: 'FileText',
     label: 'PDF Document',
   },
+  'application/vnd.ms-powerpoint': {
+    extension: '.ppt',
+    maxSize: 10 * 1024 * 1024, // 10MB
+    icon: 'FileText',
+    label: 'PowerPoint Presentation',
+  },
+  'application/vnd.openxmlformats-officedocument.presentationml.presentation': {
+    extension: '.pptx',
+    maxSize: 10 * 1024 * 1024, // 10MB
+    icon: 'FileText',
+    label: 'PowerPoint Presentation',
+  },
   'image/png': {
     extension: '.png',
     maxSize: 5 * 1024 * 1024, // 5MB
@@ -35,6 +47,8 @@ export const SUPPORTED_FILES = {
 // Accept string for react-dropzone
 export const ACCEPTED_FILE_TYPES = {
   'application/pdf': ['.pdf'],
+  'application/vnd.ms-powerpoint': ['.ppt'],
+  'application/vnd.openxmlformats-officedocument.presentationml.presentation': ['.pptx'],
   'image/*': ['.png', '.jpg', '.jpeg', '.webp'],
   'text/plain': ['.txt'],
 };

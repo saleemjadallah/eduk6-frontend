@@ -14,6 +14,8 @@ const FileDropzone = ({ onFileSelect, selectedFile, onClear, disabled }) => {
         onDrop,
         accept: {
             'application/pdf': ['.pdf'],
+            'application/vnd.ms-powerpoint': ['.ppt'],
+            'application/vnd.openxmlformats-officedocument.presentationml.presentation': ['.pptx'],
             'image/*': ['.png', '.jpg', '.jpeg', '.gif', '.webp'],
             'text/plain': ['.txt'],
         },
@@ -108,7 +110,7 @@ const FileDropzone = ({ onFileSelect, selectedFile, onClear, disabled }) => {
                                 }
                             </p>
                             <p className="text-gray-500 text-sm">
-                                or click to browse • PDF, Images up to 10MB
+                                or click to browse • PDF, PPT, Images up to 10MB
                             </p>
                         </div>
                     </motion.div>
