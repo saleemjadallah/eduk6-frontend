@@ -686,36 +686,102 @@ export default function ContentEditorPage() {
           )}
 
           {/* Quiz Content */}
-          {content.quizContent && (
+          {content.quizContent && content.quizContent.questions?.length > 0 && (
             <div style={styles.section}>
-              <h3 style={styles.sectionTitle}>Quiz ({content.quizContent.questions?.length || 0} questions)</h3>
+              <div
+                style={{
+                  ...styles.sectionTitle,
+                  cursor: 'pointer',
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                }}
+                onClick={() => setExpandedSections(prev => ({
+                  ...prev,
+                  quiz: !prev.quiz
+                }))}
+              >
+                <span>Quiz ({content.quizContent.questions.length} questions)</span>
+                <span style={{
+                  ...styles.expandIcon,
+                  transform: expandedSections.quiz ? 'rotate(180deg)' : 'rotate(0deg)',
+                }}>
+                  ▼
+                </span>
+              </div>
               <div style={styles.contentPreview}>
-                {content.quizContent.questions?.slice(0, 3).map((q, i) => (
+                {/* Always show first 3 questions */}
+                {content.quizContent.questions.slice(0, 3).map((q, i) => (
                   <div key={i} style={styles.questionPreview}>
                     <span style={styles.questionNumber}>Q{i + 1}</span>
                     <span>{q.question}</span>
                   </div>
                 ))}
-                {content.quizContent.questions?.length > 3 && (
-                  <p style={styles.moreText}>+{content.quizContent.questions.length - 3} more questions</p>
+                {/* Show remaining questions when expanded */}
+                {expandedSections.quiz && content.quizContent.questions.length > 3 && (
+                  content.quizContent.questions.slice(3).map((q, i) => (
+                    <div key={i + 3} style={styles.questionPreview}>
+                      <span style={styles.questionNumber}>Q{i + 4}</span>
+                      <span>{q.question}</span>
+                    </div>
+                  ))
+                )}
+                {/* Show expand prompt when collapsed and more questions exist */}
+                {!expandedSections.quiz && content.quizContent.questions.length > 3 && (
+                  <p style={{...styles.moreText, cursor: 'pointer'}} onClick={() => setExpandedSections(prev => ({...prev, quiz: true}))}>
+                    +{content.quizContent.questions.length - 3} more questions (click to expand)
+                  </p>
                 )}
               </div>
             </div>
           )}
 
           {/* Flashcard Content */}
-          {content.flashcardContent && (
+          {content.flashcardContent && content.flashcardContent.cards?.length > 0 && (
             <div style={styles.section}>
-              <h3 style={styles.sectionTitle}>Flashcards ({content.flashcardContent.cards?.length || 0} cards)</h3>
+              <div
+                style={{
+                  ...styles.sectionTitle,
+                  cursor: 'pointer',
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                }}
+                onClick={() => setExpandedSections(prev => ({
+                  ...prev,
+                  flashcards: !prev.flashcards
+                }))}
+              >
+                <span>Flashcards ({content.flashcardContent.cards.length} cards)</span>
+                <span style={{
+                  ...styles.expandIcon,
+                  transform: expandedSections.flashcards ? 'rotate(180deg)' : 'rotate(0deg)',
+                }}>
+                  ▼
+                </span>
+              </div>
               <div style={styles.contentPreview}>
-                {content.flashcardContent.cards?.slice(0, 3).map((card, i) => (
+                {/* Always show first 3 cards */}
+                {content.flashcardContent.cards.slice(0, 3).map((card, i) => (
                   <div key={i} style={styles.flashcardPreview}>
                     <div style={styles.flashcardFront}>{card.front || card.term}</div>
                     <div style={styles.flashcardBack}>{card.back || card.definition}</div>
                   </div>
                 ))}
-                {content.flashcardContent.cards?.length > 3 && (
-                  <p style={styles.moreText}>+{content.flashcardContent.cards.length - 3} more cards</p>
+                {/* Show remaining cards when expanded */}
+                {expandedSections.flashcards && content.flashcardContent.cards.length > 3 && (
+                  content.flashcardContent.cards.slice(3).map((card, i) => (
+                    <div key={i + 3} style={styles.flashcardPreview}>
+                      <div style={styles.flashcardFront}>{card.front || card.term}</div>
+                      <div style={styles.flashcardBack}>{card.back || card.definition}</div>
+                    </div>
+                  ))
+                )}
+                {/* Show expand prompt when collapsed and more cards exist */}
+                {!expandedSections.flashcards && content.flashcardContent.cards.length > 3 && (
+                  <p style={{...styles.moreText, cursor: 'pointer'}} onClick={() => setExpandedSections(prev => ({...prev, flashcards: true}))}>
+                    +{content.flashcardContent.cards.length - 3} more cards (click to expand)
+                  </p>
                 )}
               </div>
             </div>
