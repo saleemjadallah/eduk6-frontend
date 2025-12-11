@@ -252,8 +252,8 @@ const CoppaCompliancePage = () => {
                   <h3 className="font-medium text-gray-900">By Email</h3>
                   <p className="text-gray-600 text-sm">
                     Send a request to{' '}
-                    <a href="mailto:privacy@orbitlearn.com" className="text-blue-600 hover:underline">
-                      privacy@orbitlearn.com
+                    <a href="mailto:support@orbitlearn.app" className="text-blue-600 hover:underline">
+                      support@orbitlearn.app
                     </a>
                     . Please include your account email and the child's name. We will verify your identity
                     before processing the request.
@@ -301,7 +301,7 @@ const CoppaCompliancePage = () => {
               <div className="bg-gray-50 rounded-xl p-6">
                 <p className="text-gray-700 font-medium">Orbit Learn, Inc.</p>
                 <p className="text-gray-600">Privacy Officer</p>
-                <p className="text-gray-600">Email: privacy@orbitlearn.com</p>
+                <p className="text-gray-600">Email: support@orbitlearn.app</p>
                 <p className="text-gray-600 mt-2">
                   <Link to="/contact" className="text-blue-600 hover:underline">
                     Contact Form

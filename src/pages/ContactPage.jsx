@@ -122,10 +122,10 @@ const ContactPage = () => {
                 <div>
                   <h3 className="font-medium text-gray-900">Email</h3>
                   <a
-                    href="mailto:support@orbitlearn.com"
+                    href="mailto:support@orbitlearn.app"
                     className="text-blue-600 hover:underline"
                   >
-                    support@orbitlearn.com
+                    support@orbitlearn.app
                   </a>
                 </div>
               </div>

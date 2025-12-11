@@ -142,8 +142,8 @@ const PrivacyPolicyPage = () => {
               </ul>
               <p className="text-gray-600 mt-4">
                 To exercise these rights, please contact us at{' '}
-                <a href="mailto:privacy@orbitlearn.com" className="text-blue-600 hover:underline">
-                  privacy@orbitlearn.com
+                <a href="mailto:support@orbitlearn.app" className="text-blue-600 hover:underline">
+                  support@orbitlearn.app
                 </a>
               </p>
             </section>
@@ -192,7 +192,7 @@ const PrivacyPolicyPage = () => {
               </p>
               <div className="bg-gray-50 rounded-xl p-6">
                 <p className="text-gray-700 font-medium">Orbit Learn, Inc.</p>
-                <p className="text-gray-600">Email: privacy@orbitlearn.com</p>
+                <p className="text-gray-600">Email: support@orbitlearn.app</p>
                 <p className="text-gray-600 mt-2">
                   <Link to="/contact" className="text-blue-600 hover:underline">
                     Contact Form

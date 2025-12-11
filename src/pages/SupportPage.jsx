@@ -366,7 +366,7 @@ export default function SupportPage() {
                   <span className="method-icon">📧</span>
                   <div className="method-info">
                     <h4>Email</h4>
-                    <p>support@orbitlearn.com</p>
+                    <p>support@orbitlearn.app</p>
                   </div>
                 </div>
                 <div className="method-card">

@@ -228,7 +228,7 @@ const TermsOfServicePage = () => {
               </p>
               <div className="bg-gray-50 rounded-xl p-6">
                 <p className="text-gray-700 font-medium">Orbit Learn, Inc.</p>
-                <p className="text-gray-600">Email: legal@orbitlearn.com</p>
+                <p className="text-gray-600">Email: support@orbitlearn.app</p>
                 <p className="text-gray-600 mt-2">
                   <Link to="/contact" className="text-blue-600 hover:underline">
                     Contact Form
