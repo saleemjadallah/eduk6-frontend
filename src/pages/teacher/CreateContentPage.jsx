@@ -174,6 +174,14 @@ const CreateContentPage = () => {
   const [generatedContent, setGeneratedContent] = useState(null);
   const [conversationStage, setConversationStage] = useState('initial');
 
+  // Progress state for streaming generation
+  const [generationProgress, setGenerationProgress] = useState({
+    step: 'starting',
+    message: '',
+    progress: 0,
+    completedSteps: [],
+  });
+
   // PDF Upload state
   const [inputMode, setInputMode] = useState('chat'); // 'chat' or 'pdf'
   const [selectedFile, setSelectedFile] = useState(null);
@@ -340,91 +348,141 @@ const CreateContentPage = () => {
     setGenerating(true);
     setError(null);
     setConversationStage('generating');
+    setGenerationProgress({
+      step: 'starting',
+      message: 'Getting ready...',
+      progress: 0,
+      completedSteps: [],
+    });
 
     const isFullLesson = lessonDetails.lessonType === 'full';
-    addMessage('jeffrey',
-      `Perfect! I'm now creating your ${isFullLesson ? 'full lesson' : 'lesson guide'} on "${lessonDetails.topic}"...\n\nBuilding lesson structure\nWriting content sections${isFullLesson ? '\nCreating detailed explanations\nDeveloping student materials' : ''}\n${lessonDetails.includeQuiz ? 'Generating quiz questions\n' : ''}${lessonDetails.includeFlashcards ? 'Creating flashcards\n' : ''}${lessonDetails.includeActivities ? 'Designing activities\n' : ''}${lessonDetails.includeInfographic ? 'Generating infographic\n' : ''}\n${isFullLesson ? 'This will take a bit longer for the comprehensive content...' : 'This may take a moment...'}`
-    );
+
+    // Use split generation for full lessons with quiz/flashcards
+    const useStreamingGeneration = isFullLesson && (lessonDetails.includeQuiz || lessonDetails.includeFlashcards);
 
     try {
-      const result = await teacherAPI.generateLesson({
-        topic: lessonDetails.topic,
-        subject: lessonDetails.subject || undefined,
-        gradeLevel: lessonDetails.gradeLevel || undefined,
-        curriculum: lessonDetails.curriculum || undefined,
-        duration: lessonDetails.duration,
-        lessonType: lessonDetails.lessonType,
-        includeActivities: lessonDetails.includeActivities,
-        includeAssessment: lessonDetails.includeQuiz,
-        additionalContext: lessonDetails.additionalNotes,
-      });
-
-      if (result.success) {
-        setGeneratedContent(result.data);
-
-        const saveResponse = await teacherAPI.createContent({
-          title: result.data.title || lessonDetails.topic,
-          description: result.data.summary || `Lesson about ${lessonDetails.topic}`,
-          subject: lessonDetails.subject || undefined,
-          gradeLevel: lessonDetails.gradeLevel || undefined,
-          contentType: 'LESSON',
-          lessonContent: result.data,
-        });
-
-        if (saveResponse.success) {
-          const contentId = saveResponse.data.id;
-
-          if (lessonDetails.includeFlashcards) {
-            try {
-              await teacherAPI.generateFlashcards(contentId, {
-                content: result.data.sections?.map(s => s.content).join('\n') || lessonDetails.topic,
-                title: `${result.data.title} Flashcards`,
-                cardCount: 15,
-                includeHints: true,
-                gradeLevel: lessonDetails.gradeLevel,
-              }, true);
-            } catch (e) {
-              console.warn('Flashcard generation failed:', e);
-            }
+      if (useStreamingGeneration) {
+        // Use the new streaming split generation
+        const result = await teacherAPI.generateFullLesson(
+          {
+            topic: lessonDetails.topic,
+            subject: lessonDetails.subject || undefined,
+            gradeLevel: lessonDetails.gradeLevel || undefined,
+            curriculum: lessonDetails.curriculum || undefined,
+            duration: lessonDetails.duration,
+            lessonType: 'full',
+            includeActivities: lessonDetails.includeActivities,
+            includeAssessment: true,
+            additionalContext: lessonDetails.additionalNotes,
+            includeQuiz: lessonDetails.includeQuiz,
+            includeFlashcards: lessonDetails.includeFlashcards,
+            includeInfographic: lessonDetails.includeInfographic,
+            quizQuestionCount: 10,
+            flashcardCount: 15,
+          },
+          (progress) => {
+            // Update progress state for UI
+            setGenerationProgress(progress);
           }
+        );
 
-          // Generate infographic if requested
-          let infographicGenerated = false;
-          if (lessonDetails.includeInfographic) {
-            try {
-              // Extract key points from the lesson for the infographic
-              const keyPoints = [
-                ...(result.data.objectives || []).slice(0, 3),
-                ...(result.data.sections || []).slice(0, 4).map(s => s.title),
-                ...(result.data.vocabulary || []).slice(0, 3).map(v => `${v.term}: ${v.definition}`),
-              ].filter(Boolean).slice(0, 8);
+        if (result.success && result.data) {
+          setGeneratedContent(result.data);
 
-              if (keyPoints.length >= 3) {
-                await teacherAPI.generateInfographic(contentId, {
-                  topic: result.data.title || lessonDetails.topic,
-                  keyPoints,
-                  style: 'colorful',
-                  gradeLevel: lessonDetails.gradeLevel,
-                  subject: lessonDetails.subject,
-                });
-                infographicGenerated = true;
-              }
-            } catch (e) {
-              console.warn('Infographic generation failed:', e);
-            }
+          // Save the content to the database
+          const saveResponse = await teacherAPI.createContent({
+            title: result.data.lesson?.title || lessonDetails.topic,
+            description: result.data.lesson?.summary || `Lesson about ${lessonDetails.topic}`,
+            subject: lessonDetails.subject || undefined,
+            gradeLevel: lessonDetails.gradeLevel || undefined,
+            contentType: 'LESSON',
+            lessonContent: result.data.lesson,
+            quizContent: result.data.quiz || undefined,
+            flashcardContent: result.data.flashcards || undefined,
+          });
+
+          if (saveResponse.success) {
+            const contentId = saveResponse.data.id;
+
+            setConversationStage('complete');
+            addMessage('jeffrey',
+              `Your lesson is ready!\n\nI've created:\n` +
+              `- Complete lesson plan with ${result.data.lesson?.sections?.length || 0} sections\n` +
+              `${result.data.lesson?.objectives?.length ? `- ${result.data.lesson.objectives.length} learning objectives\n` : ''}` +
+              `${result.data.lesson?.vocabulary?.length ? `- ${result.data.lesson.vocabulary.length} vocabulary terms\n` : ''}` +
+              `${result.data.quiz ? `- Quiz with ${result.data.quiz.questions?.length || 0} questions\n` : ''}` +
+              `${result.data.flashcards ? `- ${result.data.flashcards.cards?.length || 0} flashcards\n` : ''}` +
+              `${result.data.infographic ? '- Visual infographic\n' : ''}` +
+              `\nGenerated in ${Math.round((result.data.generationTime || 0) / 1000)} seconds!\nClick below to view and edit your lesson!`
+            );
+
+            setTimeout(() => {
+              navigate(`/teacher/content/${contentId}`);
+            }, 2000);
           }
-
-          setConversationStage('complete');
-          addMessage('jeffrey',
-            `Your lesson is ready!\n\nI've created:\n- Complete lesson plan with ${result.data.sections?.length || 0} sections\n${result.data.objectives?.length ? `- ${result.data.objectives.length} learning objectives\n` : ''}${result.data.vocabulary?.length ? `- ${result.data.vocabulary.length} vocabulary terms\n` : ''}${result.data.assessment?.questions?.length ? `- ${result.data.assessment.questions.length} assessment questions\n` : ''}${lessonDetails.includeFlashcards ? '- Study flashcards\n' : ''}${infographicGenerated ? '- Visual infographic\n' : ''}\nClick below to view and edit your lesson!`
-          );
-
-          setTimeout(() => {
-            navigate(`/teacher/content/${contentId}`);
-          }, 2000);
+        } else {
+          throw new Error(result.error || 'Generation failed');
         }
       } else {
-        throw new Error(result.error || 'Generation failed');
+        // Use original single generation for simple lessons
+        addMessage('jeffrey',
+          `Perfect! I'm now creating your ${isFullLesson ? 'full lesson' : 'lesson guide'} on "${lessonDetails.topic}"...\n\n` +
+          `This may take a moment...`
+        );
+
+        const result = await teacherAPI.generateLesson({
+          topic: lessonDetails.topic,
+          subject: lessonDetails.subject || undefined,
+          gradeLevel: lessonDetails.gradeLevel || undefined,
+          curriculum: lessonDetails.curriculum || undefined,
+          duration: lessonDetails.duration,
+          lessonType: lessonDetails.lessonType,
+          includeActivities: lessonDetails.includeActivities,
+          includeAssessment: lessonDetails.includeQuiz,
+          additionalContext: lessonDetails.additionalNotes,
+        });
+
+        if (result.success) {
+          setGeneratedContent(result.data);
+
+          const saveResponse = await teacherAPI.createContent({
+            title: result.data.title || lessonDetails.topic,
+            description: result.data.summary || `Lesson about ${lessonDetails.topic}`,
+            subject: lessonDetails.subject || undefined,
+            gradeLevel: lessonDetails.gradeLevel || undefined,
+            contentType: 'LESSON',
+            lessonContent: result.data,
+          });
+
+          if (saveResponse.success) {
+            const contentId = saveResponse.data.id;
+
+            if (lessonDetails.includeFlashcards) {
+              try {
+                await teacherAPI.generateFlashcards(contentId, {
+                  content: result.data.sections?.map(s => s.content).join('\n') || lessonDetails.topic,
+                  title: `${result.data.title} Flashcards`,
+                  cardCount: 15,
+                  includeHints: true,
+                  gradeLevel: lessonDetails.gradeLevel,
+                }, true);
+              } catch (e) {
+                console.warn('Flashcard generation failed:', e);
+              }
+            }
+
+            setConversationStage('complete');
+            addMessage('jeffrey',
+              `Your lesson is ready!\n\nI've created:\n- Complete lesson plan with ${result.data.sections?.length || 0} sections\n${result.data.objectives?.length ? `- ${result.data.objectives.length} learning objectives\n` : ''}${result.data.vocabulary?.length ? `- ${result.data.vocabulary.length} vocabulary terms\n` : ''}\nClick below to view and edit your lesson!`
+            );
+
+            setTimeout(() => {
+              navigate(`/teacher/content/${contentId}`);
+            }, 2000);
+          }
+        } else {
+          throw new Error(result.error || 'Generation failed');
+        }
       }
     } catch (err) {
       setError(err.message || 'Failed to generate lesson');
@@ -432,6 +490,12 @@ const CreateContentPage = () => {
         `Oops! Something went wrong: ${err.message}\n\nPlease try again or adjust your request.`
       );
       setConversationStage('gathering');
+      setGenerationProgress({
+        step: 'failed',
+        message: err.message,
+        progress: 0,
+        completedSteps: [],
+      });
     } finally {
       setGenerating(false);
     }
@@ -735,6 +799,93 @@ const CreateContentPage = () => {
                   </div>
                 </div>
 
+                {/* Generation Progress UI */}
+                {generating && generationProgress.step !== 'starting' && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="mb-4 p-4 bg-gradient-to-br from-teacher-chalk/5 to-teacher-gold/5 border border-teacher-chalk/20 rounded-xl"
+                  >
+                    {/* Jeffrey with speech bubble */}
+                    <div className="flex items-start gap-3 mb-4">
+                      <div className="relative">
+                        <div className="w-14 h-14 rounded-full overflow-hidden border-2 border-teacher-gold/30 bg-teacher-paper">
+                          <img
+                            src="/assets/images/jeffrey-avatar.png"
+                            alt="Jeffrey"
+                            className={`w-full h-full object-cover ${
+                              generationProgress.step === 'completed' ? 'animate-bounce' : 'animate-pulse'
+                            }`}
+                          />
+                        </div>
+                        {/* Status indicator */}
+                        <div className={`absolute -bottom-1 -right-1 w-5 h-5 rounded-full border-2 border-white flex items-center justify-center ${
+                          generationProgress.step === 'completed' ? 'bg-teacher-sage' :
+                          generationProgress.step === 'failed' ? 'bg-teacher-coral' :
+                          'bg-teacher-gold animate-pulse'
+                        }`}>
+                          {generationProgress.step === 'completed' ? (
+                            <Check className="w-3 h-3 text-white" />
+                          ) : generationProgress.step === 'failed' ? (
+                            <AlertCircle className="w-3 h-3 text-white" />
+                          ) : (
+                            <Sparkles className="w-3 h-3 text-white" />
+                          )}
+                        </div>
+                      </div>
+                      <div className="flex-1">
+                        <p className="text-sm font-medium text-teacher-ink mb-1">
+                          {generationProgress.message}
+                        </p>
+                        <p className="text-xs text-teacher-inkLight">
+                          {generationProgress.step === 'generating_lesson' && 'Building lesson structure and content...'}
+                          {generationProgress.step === 'generating_quiz' && 'Crafting engaging quiz questions...'}
+                          {generationProgress.step === 'generating_flashcards' && 'Creating study flashcards...'}
+                          {generationProgress.step === 'generating_infographic' && 'Designing visual elements...'}
+                          {generationProgress.step === 'completed' && 'All components ready!'}
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Progress bar */}
+                    <div className="relative">
+                      <div className="h-3 bg-teacher-ink/10 rounded-full overflow-hidden">
+                        <motion.div
+                          initial={{ width: 0 }}
+                          animate={{ width: `${generationProgress.progress}%` }}
+                          transition={{ duration: 0.5, ease: 'easeOut' }}
+                          className={`h-full rounded-full ${
+                            generationProgress.step === 'completed'
+                              ? 'bg-gradient-to-r from-teacher-sage to-teacher-sageLight'
+                              : 'bg-gradient-to-r from-teacher-chalk to-teacher-gold'
+                          }`}
+                        />
+                      </div>
+                      <span className="absolute right-0 -top-5 text-xs font-medium text-teacher-inkLight">
+                        {generationProgress.progress}%
+                      </span>
+                    </div>
+
+                    {/* Completed steps */}
+                    {generationProgress.completedSteps.length > 0 && (
+                      <div className="mt-3 flex flex-wrap gap-2">
+                        {generationProgress.completedSteps.map((step, i) => (
+                          <span
+                            key={i}
+                            className="inline-flex items-center gap-1 text-xs px-2 py-1 bg-teacher-sage/10 text-teacher-sage rounded-full"
+                          >
+                            <Check className="w-3 h-3" />
+                            {step === 'lesson' && 'Lesson'}
+                            {step === 'quiz' && 'Quiz'}
+                            {step === 'flashcards' && 'Flashcards'}
+                            {step === 'infographic' && 'Infographic'}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                  </motion.div>
+                )}
+
                 {/* Generate Button */}
                 <button
                   onClick={handleGenerateLesson}
@@ -744,7 +895,12 @@ const CreateContentPage = () => {
                   {generating ? (
                     <>
                       <Loader2 className="w-5 h-5 animate-spin" />
-                      {lessonDetails.lessonType === 'full' ? 'Creating full lesson...' : 'Creating lesson guide...'}
+                      {generationProgress.step === 'starting' ? 'Getting ready...' :
+                       generationProgress.step === 'generating_lesson' ? 'Creating lesson...' :
+                       generationProgress.step === 'generating_quiz' ? 'Creating quiz...' :
+                       generationProgress.step === 'generating_flashcards' ? 'Creating flashcards...' :
+                       generationProgress.step === 'generating_infographic' ? 'Creating infographic...' :
+                       'Finishing up...'}
                     </>
                   ) : (
                     <>

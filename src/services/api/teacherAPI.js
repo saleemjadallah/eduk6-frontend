@@ -568,6 +568,98 @@ export const teacherAPI = {
     });
   },
 
+  /**
+   * Generate a full lesson with quiz, flashcards, and optional infographic
+   * Uses Server-Sent Events (SSE) for real-time progress updates
+   * @param {Object} data - Lesson generation options
+   * @param {Function} onProgress - Callback for progress updates
+   * @returns {Promise<Object>} The generated lesson with all components
+   */
+  generateFullLesson: async (data, onProgress) => {
+    const token = teacherTokenManager.getAccessToken();
+
+    const response = await fetch(`${API_BASE_URL}/api/teacher/content/generate/full-lesson`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      credentials: 'include',
+      body: JSON.stringify(data),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.error || 'Failed to generate lesson');
+    }
+
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = '';
+    let finalResult = null;
+
+    while (true) {
+      const { value, done } = await reader.read();
+      if (done) break;
+
+      buffer += decoder.decode(value, { stream: true });
+
+      // Process complete SSE events from buffer
+      const lines = buffer.split('\n');
+      buffer = lines.pop() || ''; // Keep incomplete line in buffer
+
+      let eventType = '';
+      let eventData = '';
+
+      for (const line of lines) {
+        if (line.startsWith('event: ')) {
+          eventType = line.slice(7).trim();
+        } else if (line.startsWith('data: ')) {
+          eventData = line.slice(6);
+
+          if (eventType && eventData) {
+            try {
+              const parsed = JSON.parse(eventData);
+
+              if (eventType === 'progress' && onProgress) {
+                onProgress(parsed);
+              } else if (eventType === 'complete') {
+                finalResult = parsed;
+              } else if (eventType === 'error') {
+                throw new Error(parsed.error || 'Generation failed');
+              }
+            } catch (parseError) {
+              // Ignore parse errors for partial data
+              if (eventType === 'error') {
+                throw new Error('Generation failed');
+              }
+            }
+          }
+
+          eventType = '';
+          eventData = '';
+        }
+      }
+    }
+
+    if (!finalResult) {
+      throw new Error('No result received from generation');
+    }
+
+    return finalResult;
+  },
+
+  /**
+   * Generate a full lesson synchronously (no streaming)
+   * Use this if SSE is not supported
+   */
+  generateFullLessonSync: async (data) => {
+    return teacherRequest('/content/generate/full-lesson-sync', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  },
+
   // ============================================
   // EXPORT & GOOGLE DRIVE
   // ============================================
