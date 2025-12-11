@@ -27,6 +27,9 @@ import SettingsPage from './pages/SettingsPage';
 import PrivacyControlsPage from './pages/PrivacyControlsPage';
 import ProgressReportsPage from './pages/ProgressReportsPage';
 import SupportPage from './pages/SupportPage';
+import AboutPage from './pages/AboutPage';
+import ContactPage from './pages/ContactPage';
+import { PrivacyPolicyPage, TermsOfServicePage, CoppaCompliancePage } from './pages/legal';
 
 // Teacher Pages
 import {
@@ -122,6 +125,13 @@ const router = createBrowserRouter([
             // Public routes
             { path: 'login', element: <LoginPage /> },
             { path: 'onboarding', element: <OnboardingPage /> },
+
+            // Public informational pages
+            { path: 'about', element: <AboutPage /> },
+            { path: 'contact', element: <ContactPage /> },
+            { path: 'privacy-policy', element: <PrivacyPolicyPage /> },
+            { path: 'terms', element: <TermsOfServicePage /> },
+            { path: 'coppa', element: <CoppaCompliancePage /> },
 
             // Child routes - using ProtectedChildLayout (auth built into layout)
             {

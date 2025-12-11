@@ -2,7 +2,6 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { ArrowRight, Sparkles, CheckCircle, Clock, Shield, Zap } from 'lucide-react';
-import AIGeneratedImage from '../../Landing/AIGeneratedImage';
 
 const TeacherHeroSection = () => {
   const trustBadges = [
@@ -10,15 +9,6 @@ const TeacherHeroSection = () => {
     { icon: Shield, text: 'No credit card required', color: 'teacher-chalk' },
     { icon: Clock, text: 'Setup in 2 minutes', color: 'teacher-terracotta' },
   ];
-
-  const heroImagePrompt = `A warm, inviting illustration of a friendly professional teacher in a modern, cozy classroom.
-The teacher is sitting at a wooden desk with an open laptop showing a cheerful robot mascot assistant on the screen.
-The teacher looks happy, inspired, and relieved - as if a weight has been lifted off their shoulders.
-Around the desk are neatly organized colorful teaching materials: lesson plans, flashcards, and educational books.
-A classic green chalkboard with mathematical equations is visible in the soft-focus background.
-The lighting is golden hour warm, streaming through a window. The atmosphere feels productive yet peaceful.
-Style: Modern children's book illustration, warm color palette with greens, golds, and cream tones.
-The scene conveys: "Teaching just got easier and more joyful."`;
 
   return (
     <section className="relative pt-32 pb-16 lg:pb-20 overflow-hidden">
@@ -177,13 +167,10 @@ The scene conveys: "Teaching just got easier and more joyful."`;
             >
               {/* Main image container */}
               <div className="bg-teacher-chalk p-2 md:p-3 rounded-[1.5rem] md:rounded-[2rem] border-4 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] md:shadow-[12px_12px_0px_0px_rgba(0,0,0,1)]">
-                <AIGeneratedImage
-                  prompt={heroImagePrompt}
-                  style="educational"
+                <img
+                  src="/assets/images/landing/teacher-hero.png"
                   alt="Teacher using AI assistant"
-                  className="w-full"
-                  aspectRatio="landscape"
-                  fallbackSrc="/assets/images/landing/teacher-hero-fallback.png"
+                  className="w-full rounded-[1rem] md:rounded-[1.5rem] aspect-video object-cover"
                 />
               </div>
 

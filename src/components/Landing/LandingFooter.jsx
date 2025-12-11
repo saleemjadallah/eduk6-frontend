@@ -1,7 +1,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
-import { Mail, Twitter, Facebook, Instagram, Youtube, Heart } from 'lucide-react';
+import { Twitter, Facebook, Instagram, Heart } from 'lucide-react';
 
 const LandingFooter = () => {
   const footerLinks = {
@@ -11,22 +11,13 @@ const LandingFooter = () => {
       { name: 'For Parents', href: '#for-parents' },
       { name: 'How It Works', href: '#how-it-works' },
     ],
-    Resources: [
-      { name: 'Help Center', href: '/help' },
-      { name: 'Blog', href: '/blog' },
-      { name: 'Curriculum Guide', href: '/curriculum' },
-      { name: 'Parent Tips', href: '/tips' },
-    ],
     Company: [
       { name: 'About Us', href: '/about' },
-      { name: 'Careers', href: '/careers' },
       { name: 'Contact', href: '/contact' },
-      { name: 'Press Kit', href: '/press' },
     ],
     Legal: [
-      { name: 'Privacy Policy', href: '/privacy' },
+      { name: 'Privacy Policy', href: '/privacy-policy' },
       { name: 'Terms of Service', href: '/terms' },
-      { name: 'Cookie Policy', href: '/cookies' },
       { name: 'COPPA Compliance', href: '/coppa' },
     ],
   };
@@ -35,7 +26,6 @@ const LandingFooter = () => {
     { icon: Twitter, href: 'https://twitter.com/orbitlearn', label: 'Twitter' },
     { icon: Facebook, href: 'https://facebook.com/orbitlearn', label: 'Facebook' },
     { icon: Instagram, href: 'https://instagram.com/orbitlearn', label: 'Instagram' },
-    { icon: Youtube, href: 'https://youtube.com/orbitlearn', label: 'YouTube' },
   ];
 
   return (
@@ -99,35 +89,6 @@ const LandingFooter = () => {
               </ul>
             </div>
           ))}
-        </div>
-
-        {/* Newsletter signup */}
-        <div className="bg-gray-800 rounded-3xl p-6 md:p-8 mb-12">
-          <div className="flex flex-col md:flex-row items-center justify-between gap-6">
-            <div>
-              <h3 className="text-xl font-bold font-comic mb-2">
-                Stay in the Loop!
-              </h3>
-              <p className="text-gray-400">
-                Get tips, updates, and special offers delivered to your inbox.
-              </p>
-            </div>
-            <div className="flex gap-3 w-full md:w-auto">
-              <input
-                type="email"
-                placeholder="Enter your email"
-                className="flex-1 md:w-64 px-4 py-3 rounded-xl bg-gray-700 border-2 border-gray-600 focus:border-nanobanana-blue focus:outline-none text-white placeholder-gray-400"
-              />
-              <motion.button
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                className="px-6 py-3 bg-nanobanana-blue text-white font-bold rounded-xl hover:bg-blue-600 transition-colors flex items-center gap-2"
-              >
-                <Mail className="w-5 h-5" />
-                Subscribe
-              </motion.button>
-            </div>
-          </div>
         </div>
 
         {/* Divider */}
