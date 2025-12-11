@@ -709,7 +709,6 @@ export const teacherAPI = {
     if (options.includeAnswers !== undefined) params.append('includeAnswers', options.includeAnswers);
     if (options.includeTeacherNotes !== undefined) params.append('includeTeacherNotes', options.includeTeacherNotes);
     if (options.includeInfographic !== undefined) params.append('includeInfographic', options.includeInfographic);
-    if (options.aspectRatio) params.append('aspectRatio', options.aspectRatio);
 
     const token = teacherTokenManager.getAccessToken();
     const response = await fetch(`${API_BASE_URL}/api/teacher/export/${contentId}/pptx?${params}`, {

@@ -19,11 +19,10 @@ export default function ExportMenu({ contentId, contentTitle, contentType = 'LES
     includeTeacherNotes: true,
     paperSize: 'letter',
     colorScheme: 'color',
-    // PPTX options
+    // PPTX options (using Presenton API)
     theme: 'professional',
     slideStyle: 'focused',
     includeInfographic: true,
-    aspectRatio: '16:9',
   });
   const menuRef = useRef(null);
 
@@ -99,7 +98,6 @@ export default function ExportMenu({ contentId, contentTitle, contentType = 'LES
         includeAnswers: options.includeAnswers,
         includeTeacherNotes: options.includeTeacherNotes,
         includeInfographic: options.includeInfographic,
-        aspectRatio: options.aspectRatio,
       });
 
       // Create download link
@@ -301,18 +299,8 @@ export default function ExportMenu({ contentId, contentTitle, contentType = 'LES
                       value={options.slideStyle}
                       onChange={(e) => setOptions({ ...options, slideStyle: e.target.value })}
                     >
-                      <option value="focused">Focused (~15-25 slides)</option>
-                      <option value="dense">Dense (~8-12 slides)</option>
-                    </select>
-                  </div>
-                  <div className="export-option-select">
-                    <span>Aspect Ratio:</span>
-                    <select
-                      value={options.aspectRatio}
-                      onChange={(e) => setOptions({ ...options, aspectRatio: e.target.value })}
-                    >
-                      <option value="16:9">16:9 (Widescreen)</option>
-                      <option value="4:3">4:3 (Standard)</option>
+                      <option value="focused">Focused (More slides)</option>
+                      <option value="dense">Dense (Fewer slides)</option>
                     </select>
                   </div>
                   <label className="export-option">
@@ -321,7 +309,7 @@ export default function ExportMenu({ contentId, contentTitle, contentType = 'LES
                       checked={options.includeInfographic}
                       onChange={(e) => setOptions({ ...options, includeInfographic: e.target.checked })}
                     />
-                    <span>Include Infographic</span>
+                    <span>Include Visual Summary</span>
                   </label>
                 </div>
               )}
