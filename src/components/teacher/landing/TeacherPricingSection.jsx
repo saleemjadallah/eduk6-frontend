@@ -13,8 +13,8 @@ const TeacherPricingSection = () => {
       icon: Star,
       color: '#7BAE7F', // sage
       shadowColor: 'rgba(123,174,127,0.5)',
-      tokens: '100K',
-      tokensLabel: 'tokens/month',
+      credits: '100K',
+      creditsLabel: 'credits/month',
       features: [
         'All 4 creation tools',
         '~20-50 complete lessons',
@@ -37,8 +37,8 @@ const TeacherPricingSection = () => {
       icon: Zap,
       color: '#2D5A4A', // chalk
       shadowColor: 'rgba(45,90,74,0.5)',
-      tokens: '500K',
-      tokensLabel: 'tokens/month',
+      credits: '500K',
+      creditsLabel: 'credits/month',
       features: [
         'Everything in Free',
         '5x more content creation',
@@ -60,8 +60,8 @@ const TeacherPricingSection = () => {
       icon: Crown,
       color: '#D4A853', // gold
       shadowColor: 'rgba(212,168,83,0.5)',
-      tokens: '2M',
-      tokensLabel: 'tokens/month',
+      credits: '2M',
+      creditsLabel: 'credits/month',
       features: [
         'Everything in Basic',
         '20x content creation',
@@ -170,7 +170,7 @@ const TeacherPricingSection = () => {
                       <span className="text-teacher-inkLight font-medium text-sm md:text-base">{tier.period}</span>
                     </div>
 
-                    {/* Tokens */}
+                    {/* Credits */}
                     <div
                       className="inline-flex items-center gap-1.5 md:gap-2 px-2.5 md:px-3 py-1 md:py-1.5 rounded-full border-2 mb-3 md:mb-4"
                       style={{
@@ -180,9 +180,9 @@ const TeacherPricingSection = () => {
                     >
                       <Sparkles className="w-3 h-3 md:w-4 md:h-4" style={{ color: tier.color }} />
                       <span className="font-bold text-sm md:text-base" style={{ color: tier.color }}>
-                        {tier.tokens}
+                        {tier.credits}
                       </span>
-                      <span className="text-xs md:text-sm text-teacher-inkLight">{tier.tokensLabel}</span>
+                      <span className="text-xs md:text-sm text-teacher-inkLight">{tier.creditsLabel}</span>
                     </div>
 
                     <p className="text-xs md:text-sm text-teacher-inkLight">{tier.description}</p>
