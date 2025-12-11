@@ -1,3 +1,4 @@
+export { default as TeacherLandingPage } from './TeacherLandingPage';
 export { default as TeacherLoginPage } from './TeacherLoginPage';
 export { default as TeacherSignupPage } from './TeacherSignupPage';
 export { default as TeacherEmailVerificationPage } from './TeacherEmailVerificationPage';

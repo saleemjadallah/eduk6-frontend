@@ -30,6 +30,7 @@ import SupportPage from './pages/SupportPage';
 
 // Teacher Pages
 import {
+  TeacherLandingPage,
   TeacherLoginPage,
   TeacherSignupPage,
   TeacherEmailVerificationPage,
@@ -196,20 +197,15 @@ const router = createBrowserRouter([
         path: '/teacher',
         element: <TeacherRootLayout />,
         children: [
+            // Public landing page at /teacher (handles auth redirect internally)
+            { index: true, element: <TeacherLandingPage /> },
+
             // Public teacher routes
             { path: 'login', element: <TeacherLoginPage /> },
             { path: 'signup', element: <TeacherSignupPage /> },
             { path: 'verify-email', element: <TeacherEmailVerificationPage /> },
 
             // Protected teacher routes
-            {
-                index: true,
-                element: (
-                    <ProtectedTeacherRoute>
-                        <Navigate to="/teacher/dashboard" replace />
-                    </ProtectedTeacherRoute>
-                ),
-            },
             {
                 path: 'dashboard',
                 element: (
