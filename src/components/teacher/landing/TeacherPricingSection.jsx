@@ -13,14 +13,14 @@ const TeacherPricingSection = () => {
       icon: Star,
       color: '#7BAE7F', // sage
       shadowColor: 'rgba(123,174,127,0.5)',
-      credits: '100K',
+      credits: '100',
       creditsLabel: 'credits/month',
       features: [
         'All 4 creation tools',
-        '~20-50 complete lessons',
         'Export to PDF & DOCX',
         'Standards alignment',
         'Email support',
+        'Up to 200 credits rollover',
       ],
       limitations: [
         'Basic generation speed',
@@ -31,13 +31,14 @@ const TeacherPricingSection = () => {
     },
     {
       name: 'Basic',
-      price: '$19',
+      price: '$9.99',
       period: '/month',
+      annualPrice: '$95.90/year',
       description: 'For active individual teachers',
       icon: Zap,
       color: '#2D5A4A', // chalk
       shadowColor: 'rgba(45,90,74,0.5)',
-      credits: '500K',
+      credits: '500',
       creditsLabel: 'credits/month',
       features: [
         'Everything in Free',
@@ -45,22 +46,23 @@ const TeacherPricingSection = () => {
         'Priority generation speed',
         'Advanced customization',
         'Priority email support',
-        'Usage analytics',
+        'Up to 1,000 credits rollover',
       ],
       limitations: [],
-      cta: 'Get Basic',
+      cta: 'Start 7-Day Trial',
       ctaLink: '/teacher/signup?plan=basic',
       popular: true,
     },
     {
       name: 'Professional',
-      price: '$49',
+      price: '$24.99',
       period: '/month',
+      annualPrice: '$239.90/year',
       description: 'For power users & departments',
       icon: Crown,
       color: '#D4A853', // gold
       shadowColor: 'rgba(212,168,83,0.5)',
-      credits: '2M',
+      credits: '2,000',
       creditsLabel: 'credits/month',
       features: [
         'Everything in Basic',
@@ -69,10 +71,10 @@ const TeacherPricingSection = () => {
         'Early access to new features',
         'Grading Center beta access',
         'Premium phone support',
-        'Custom templates',
+        'Up to 4,000 credits rollover',
       ],
       limitations: [],
-      cta: 'Go Pro',
+      cta: 'Start 7-Day Trial',
       ctaLink: '/teacher/signup?plan=professional',
       popular: false,
     },
@@ -83,6 +85,7 @@ const TeacherPricingSection = () => {
     'No watermarks',
     'All content types',
     'Cancel anytime',
+    '7-day free trial on paid plans',
   ];
 
   return (
@@ -163,12 +166,17 @@ const TeacherPricingSection = () => {
                     </h3>
 
                     {/* Price */}
-                    <div className="flex items-baseline justify-center gap-1 mb-2">
+                    <div className="flex items-baseline justify-center gap-1 mb-1">
                       <span className="text-3xl md:text-4xl lg:text-5xl font-black text-teacher-ink">
                         {tier.price}
                       </span>
                       <span className="text-teacher-inkLight font-medium text-sm md:text-base">{tier.period}</span>
                     </div>
+                    {tier.annualPrice && (
+                      <p className="text-xs text-teacher-inkLight mb-2">
+                        or {tier.annualPrice} <span className="text-teacher-sage font-medium">(save 20%)</span>
+                      </p>
+                    )}
 
                     {/* Credits */}
                     <div
