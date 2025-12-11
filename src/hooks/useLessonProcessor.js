@@ -72,11 +72,12 @@ export function useLessonProcessor() {
 
                 updateProgress(70);
 
-                if (!pptResponse.data?.success) {
-                    throw new Error(pptResponse.data?.error || 'Failed to analyze PowerPoint file');
+                // api.post returns the JSON directly, not wrapped in .data
+                if (!pptResponse.success) {
+                    throw new Error(pptResponse.error || 'Failed to analyze PowerPoint file');
                 }
 
-                const pptAnalysis = pptResponse.data.data;
+                const pptAnalysis = pptResponse.data;
                 extractedText = pptAnalysis.extractedText || '';
                 extractionMetadata = {
                     ...extractionMetadata,
