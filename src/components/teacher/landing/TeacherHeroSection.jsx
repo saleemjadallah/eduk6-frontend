@@ -62,10 +62,10 @@ The scene conveys: "Teaching just got easier and more joyful."`;
         />
       </div>
 
-      <div className="relative z-10 max-w-7xl mx-auto px-6 md:px-8">
-        <div className="grid md:grid-cols-2 gap-8 md:gap-10 lg:gap-16 items-center">
+      <div className="relative z-10 max-w-[1400px] mx-auto px-6 md:px-12 lg:px-16">
+        <div className="grid lg:grid-cols-2 gap-8 lg:gap-12 xl:gap-20 items-center">
           {/* Left Content */}
-          <div className="max-w-xl md:max-w-none">
+          <div className="max-w-xl lg:max-w-2xl">
             {/* Badge */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
@@ -168,7 +168,7 @@ The scene conveys: "Teaching just got easier and more joyful."`;
             initial={{ opacity: 0, x: 50, rotate: 2 }}
             animate={{ opacity: 1, x: 0, rotate: 2 }}
             transition={{ duration: 0.6, delay: 0.3 }}
-            className="relative hidden md:block"
+            className="relative hidden lg:block"
           >
             <motion.div
               animate={{ y: [-8, 8, -8] }}
@@ -224,23 +224,24 @@ The scene conveys: "Teaching just got easier and more joyful."`;
           </motion.div>
         </div>
 
-        {/* Scroll indicator */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 1.2 }}
-          className="absolute bottom-8 left-1/2 -translate-x-1/2 hidden lg:flex flex-col items-center gap-2"
-        >
-          <span className="text-sm font-medium text-teacher-inkLight">Scroll to explore</span>
-          <motion.div
-            animate={{ y: [0, 8, 0] }}
-            transition={{ duration: 1.5, repeat: Infinity }}
-            className="w-6 h-10 rounded-full border-2 border-teacher-ink/20 flex items-start justify-center p-2"
-          >
-            <div className="w-1.5 h-3 rounded-full bg-teacher-chalk" />
-          </motion.div>
-        </motion.div>
       </div>
+
+      {/* Scroll indicator - positioned at bottom of section */}
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 1.2 }}
+        className="absolute bottom-6 left-1/2 -translate-x-1/2 hidden lg:flex flex-col items-center gap-2 z-20"
+      >
+        <span className="text-sm font-medium text-teacher-inkLight">Scroll to explore</span>
+        <motion.div
+          animate={{ y: [0, 8, 0] }}
+          transition={{ duration: 1.5, repeat: Infinity }}
+          className="w-6 h-10 rounded-full border-2 border-teacher-ink/20 flex items-start justify-center p-2 bg-white/50 backdrop-blur-sm"
+        >
+          <div className="w-1.5 h-3 rounded-full bg-teacher-chalk" />
+        </motion.div>
+      </motion.div>
     </section>
   );
 };

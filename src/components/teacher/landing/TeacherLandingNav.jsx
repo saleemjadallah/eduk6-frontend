@@ -37,7 +37,7 @@ const TeacherLandingNav = () => {
         animate={{ y: 0 }}
         transition={{ duration: 0.5, ease: 'easeOut' }}
         className={`fixed top-4 left-1/2 -translate-x-1/2 z-50 transition-all duration-300 ${
-          isScrolled ? 'w-[95%] max-w-5xl' : 'w-[90%] max-w-4xl'
+          isScrolled ? 'w-[95%] max-w-6xl' : 'w-[92%] max-w-5xl'
         }`}
       >
         <div
