@@ -93,7 +93,7 @@ const ConsentMethodStep = ({ onMethodSelected }) => {
           <div className="method-content">
             <h3>Credit Card Verification</h3>
             <p className="method-description">
-              We'll charge $0.50 to your card and immediately refund it. This verifies
+              We'll charge $1.00 to your card and immediately refund it. This verifies
               you have a valid payment method.
             </p>
             <ul className="method-benefits">

@@ -142,7 +142,7 @@ const CardForm = ({ clientSecret, onVerified, onBack }) => {
         </div>
         <h2>Verification Successful!</h2>
         <p className="success-text">
-          Your parental consent has been verified. The $0.50 charge will be
+          Your parental consent has been verified. The $1.00 charge will be
           refunded to your card within 5-7 business days.
         </p>
         <p className="redirect-text">Continuing to profile setup...</p>
@@ -173,13 +173,13 @@ const CardForm = ({ clientSecret, onVerified, onBack }) => {
       <div className="step-header">
         <h2>Credit Card Verification</h2>
         <p className="subtitle">
-          Enter your card details. We'll charge $0.50 and immediately refund it.
+          Enter your card details. We'll charge $1.00 and immediately refund it.
         </p>
       </div>
 
       <div className="amount-badge-container">
         <div className="amount-badge">
-          <span className="amount">$0.50</span>
+          <span className="amount">$1.00</span>
           <span className="amount-note">(will be refunded)</span>
         </div>
         <div className="why-tooltip-wrapper">
@@ -191,7 +191,7 @@ const CardForm = ({ clientSecret, onVerified, onBack }) => {
             </svg>
           </button>
           <div className="why-tooltip">
-            <strong>Why do we charge $0.50?</strong>
+            <strong>Why do we charge $1.00?</strong>
             <p>
               Under COPPA (Children's Online Privacy Protection Act), we must verify
               that you are an adult before your child can use our platform. A small
@@ -260,7 +260,7 @@ const CardForm = ({ clientSecret, onVerified, onBack }) => {
                 Processing...
               </>
             ) : (
-              'Verify & Pay $0.50'
+              'Verify & Pay $1.00'
             )}
           </button>
         </div>
@@ -270,7 +270,7 @@ const CardForm = ({ clientSecret, onVerified, onBack }) => {
         <p>
           <strong>100% Refund Guaranteed</strong>
           <br />
-          The $0.50 charge is only to verify your identity as an adult. It will be
+          The $1.00 charge is only to verify your identity as an adult. It will be
           automatically refunded within 5-7 business days.
         </p>
       </div>
