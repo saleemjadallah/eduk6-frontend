@@ -306,14 +306,15 @@ const CreateContentPage = () => {
     }
   };
 
-  const handleAnalyzePDF = async () => {
+  const handleAnalyzeDocument = async () => {
     if (!selectedFile) return;
 
     setUploadingPDF(true);
     setError(null);
 
     try {
-      const result = await teacherAPI.analyzePDF(selectedFile);
+      // Use analyzeDocument which routes to PDF or PPT handler automatically
+      const result = await teacherAPI.analyzeDocument(selectedFile);
 
       if (result.success) {
         setPdfAnalysis(result.data);
@@ -333,7 +334,7 @@ const CreateContentPage = () => {
 
         // Add a message to the chat
         addMessage('jeffrey',
-          `I've analyzed your PDF "${selectedFile.name}"!\n\n` +
+          `I've analyzed your document "${selectedFile.name}"!\n\n` +
           `**Topic:** ${result.data.suggestedTitle}\n` +
           `**Subject:** ${result.data.detectedSubject || 'Not detected'}\n` +
           `**Grade Level:** ${result.data.detectedGradeLevel || 'Not detected'}\n` +
@@ -342,7 +343,7 @@ const CreateContentPage = () => {
         );
       }
     } catch (err) {
-      setError(err.message || 'Failed to analyze PDF');
+      setError(err.message || 'Failed to analyze document');
     } finally {
       setUploadingPDF(false);
     }
@@ -576,7 +577,7 @@ const CreateContentPage = () => {
                 }`}
               >
                 <Upload className="w-4 h-4" />
-                Upload PDF
+                Upload File
               </button>
             </div>
           </div>
@@ -1022,19 +1023,19 @@ const CreateContentPage = () => {
                 {/* Analyze Button */}
                 {selectedFile && !pdfAnalysis && (
                   <button
-                    onClick={handleAnalyzePDF}
+                    onClick={handleAnalyzeDocument}
                     disabled={uploadingPDF}
                     className="w-full py-3 px-4 bg-gradient-to-r from-teacher-chalk to-teacher-chalkLight text-white font-semibold rounded-xl hover:shadow-teacher disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 transition-all"
                   >
                     {uploadingPDF ? (
                       <>
                         <Loader2 className="w-5 h-5 animate-spin" />
-                        Analyzing PDF...
+                        Analyzing document...
                       </>
                     ) : (
                       <>
                         <Sparkles className="w-5 h-5" />
-                        Analyze PDF
+                        Analyze Document
                       </>
                     )}
                   </button>

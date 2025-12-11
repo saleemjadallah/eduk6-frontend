@@ -114,7 +114,7 @@ export const PROCESSING_MESSAGES = {
 // Error messages (child-friendly)
 export const ERROR_MESSAGES = {
   FILE_TOO_LARGE: "Oops! This file is too big. Try a smaller one! 📦",
-  INVALID_TYPE: "Hmm, I can't read this type of file. Try a PDF or image! 📄",
+  INVALID_TYPE: "Hmm, I can't read this type of file. Try a PDF, PowerPoint, or image! 📄",
   UPLOAD_FAILED: "Something went wrong. Let's try again! 🔄",
   PROCESSING_FAILED: "Jeffrey got confused. Let's try a different file! 🤔",
   NETWORK_ERROR: "Can't reach the internet. Check your connection! 🌐",

@@ -341,6 +341,26 @@ export async function extractText(file, onProgress = () => {}) {
     };
   }
 
+  // PowerPoint files - these need to be sent to backend for conversion
+  if (
+    type === 'application/vnd.ms-powerpoint' ||
+    type === 'application/vnd.openxmlformats-officedocument.presentationml.presentation' ||
+    name.endsWith('.ppt') ||
+    name.endsWith('.pptx')
+  ) {
+    // PPT files need backend processing (CloudConvert + Gemini)
+    // Return metadata indicating this is a PPT file that needs server-side processing
+    return {
+      text: '',
+      metadata: {
+        sourceType: 'ppt',
+        requiresServerProcessing: true,
+        originalName: name,
+        mimeType: type,
+      },
+    };
+  }
+
   // Plain text files
   if (type === 'text/plain' || name.endsWith('.txt')) {
     return await extractTextFromTextFile(file, onProgress);
@@ -364,6 +384,8 @@ export function validateFile(file) {
   const maxSize = 10 * 1024 * 1024; // 10MB
   const allowedTypes = [
     'application/pdf',
+    'application/vnd.ms-powerpoint',
+    'application/vnd.openxmlformats-officedocument.presentationml.presentation',
     'image/png',
     'image/jpeg',
     'image/jpg',
@@ -390,6 +412,10 @@ export function validateFile(file) {
  */
 export function getFileTypeCategory(file) {
   if (file.type === 'application/pdf') return 'pdf';
+  if (
+    file.type === 'application/vnd.ms-powerpoint' ||
+    file.type === 'application/vnd.openxmlformats-officedocument.presentationml.presentation'
+  ) return 'ppt';
   if (file.type.startsWith('image/')) return 'image';
   if (file.type === 'text/plain') return 'text';
   return 'unknown';
