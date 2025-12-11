@@ -787,6 +787,46 @@ export default function ContentEditorPage() {
             </div>
           )}
 
+          {/* Infographic */}
+          {content.infographicUrl && (
+            <div style={styles.section}>
+              <div
+                style={{...styles.sectionHeader, cursor: 'pointer'}}
+                onClick={() => setExpandedSections(prev => ({...prev, infographic: !prev.infographic}))}
+              >
+                <span style={{...styles.sectionIcon, background: 'linear-gradient(135deg, #EC4899, #F472B6)'}}>
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2">
+                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                    <circle cx="8.5" cy="8.5" r="1.5"/>
+                    <polyline points="21,15 16,10 5,21"/>
+                  </svg>
+                </span>
+                <span>Infographic</span>
+                <span style={styles.expandIcon}>{expandedSections.infographic ? '−' : '+'}</span>
+              </div>
+              <AnimatePresence>
+                {expandedSections.infographic !== false && (
+                  <motion.div
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: 'auto', opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    style={{ overflow: 'hidden' }}
+                  >
+                    <div style={styles.infographicContainer}>
+                      <img
+                        src={content.infographicUrl}
+                        alt="Generated infographic"
+                        style={styles.infographicImage}
+                        onClick={() => window.open(content.infographicUrl, '_blank')}
+                      />
+                      <p style={styles.infographicHint}>Click image to view full size</p>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+          )}
+
           {/* Source Text */}
           {content.extractedText && (
             <div style={styles.section}>
@@ -1519,5 +1559,26 @@ const styles = {
     display: 'flex',
     justifyContent: 'flex-end',
     gap: '12px',
+  },
+  infographicContainer: {
+    marginTop: '12px',
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    gap: '8px',
+  },
+  infographicImage: {
+    maxWidth: '100%',
+    maxHeight: '500px',
+    borderRadius: '12px',
+    border: '1px solid #E5E7EB',
+    cursor: 'pointer',
+    transition: 'transform 0.2s, box-shadow 0.2s',
+    boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
+  },
+  infographicHint: {
+    fontSize: '12px',
+    color: '#9CA3AF',
+    margin: 0,
   },
 };

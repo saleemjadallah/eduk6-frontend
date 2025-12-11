@@ -399,6 +399,7 @@ const CreateContentPage = () => {
             lessonContent: result.data.lesson,
             quizContent: result.data.quiz || undefined,
             flashcardContent: result.data.flashcards || undefined,
+            infographicUrl: result.data.infographic?.imageUrl || undefined,
           });
 
           if (saveResponse.success) {
