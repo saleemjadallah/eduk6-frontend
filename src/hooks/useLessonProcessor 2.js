@@ -3,7 +3,7 @@ import { useLessonContext } from '../context/LessonContext';
 import { extractText, validateFile, getFileTypeCategory } from '../utils/fileProcessors';
 import { getYouTubeTranscript, getVideoMetadata, getYouTubeThumbnail } from '../utils/youtubeUtils';
 import { analyzeContent, processWithGemini } from '../services/geminiService';
-import { api } from '../services/api';
+import api from '../services/api';
 
 /**
  * Hook for processing uploaded content (files and YouTube videos)
