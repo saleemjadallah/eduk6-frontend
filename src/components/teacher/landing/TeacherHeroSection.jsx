@@ -21,7 +21,7 @@ Style: Modern children's book illustration, warm color palette with greens, gold
 The scene conveys: "Teaching just got easier and more joyful."`;
 
   return (
-    <section className="relative min-h-screen pt-32 pb-20 overflow-hidden">
+    <section className="relative pt-32 pb-16 lg:pb-20 overflow-hidden">
       {/* Background */}
       <div className="absolute inset-0 bg-teacher-cream">
         {/* Mesh gradient */}
@@ -225,23 +225,6 @@ The scene conveys: "Teaching just got easier and more joyful."`;
         </div>
 
       </div>
-
-      {/* Scroll indicator - positioned at bottom of section */}
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 1.2 }}
-        className="absolute bottom-6 left-1/2 -translate-x-1/2 hidden lg:flex flex-col items-center gap-2 z-20"
-      >
-        <span className="text-sm font-medium text-teacher-inkLight">Scroll to explore</span>
-        <motion.div
-          animate={{ y: [0, 8, 0] }}
-          transition={{ duration: 1.5, repeat: Infinity }}
-          className="w-6 h-10 rounded-full border-2 border-teacher-ink/20 flex items-start justify-center p-2 bg-white/50 backdrop-blur-sm"
-        >
-          <div className="w-1.5 h-3 rounded-full bg-teacher-chalk" />
-        </motion.div>
-      </motion.div>
     </section>
   );
 };
