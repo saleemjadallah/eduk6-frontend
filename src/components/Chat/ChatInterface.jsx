@@ -183,14 +183,21 @@ const ChatInterface = ({
                     sessionId: demoSessionId,
                 });
 
+                console.log('Demo chat response:', response);
+                const replyContent = response.data?.reply || response.reply;
+
+                if (!replyContent) {
+                    console.warn('No reply in response:', response);
+                }
+
                 setDemoMessages(prev => [...prev, {
                     id: Date.now() + 1,
                     role: 'assistant',
-                    content: response.data?.reply || response.reply || "That's a great question! I'd love to explore that with you.",
+                    content: replyContent || "That's a great question! I'd love to explore that with you.",
                     timestamp: new Date(),
                 }]);
             } catch (error) {
-                console.error('Demo chat error:', error);
+                console.error('Demo chat error:', error.message, error);
                 // Fallback response if API fails
                 setDemoMessages(prev => [...prev, {
                     id: Date.now() + 1,
