@@ -33,12 +33,10 @@ const TeacherLandingNav = () => {
   return (
     <>
       <motion.nav
-        initial={{ y: -100 }}
-        animate={{ y: 0 }}
+        initial={{ y: -20, opacity: 0, x: '-50%' }}
+        animate={{ y: 0, opacity: 1, x: '-50%' }}
         transition={{ duration: 0.5, ease: 'easeOut' }}
-        className={`fixed top-4 left-1/2 -translate-x-1/2 z-50 transition-all duration-300 ${
-          isScrolled ? 'w-[95%] max-w-6xl' : 'w-[92%] max-w-5xl'
-        }`}
+        className="fixed top-4 md:top-6 left-1/2 z-50 w-[calc(100%-2rem)] max-w-5xl"
       >
         <div
           className={`flex items-center justify-between px-4 md:px-6 py-3 rounded-2xl border-2 transition-all duration-300 ${
