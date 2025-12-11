@@ -70,7 +70,14 @@ const CardForm = ({ clientSecret, onVerified, onBack }) => {
 
     setError('');
     setIsProcessing(true);
-    setStep('processing');
+
+    // Get card element reference before changing step (element must be mounted)
+    const cardElement = elements.getElement(CardElement);
+    if (!cardElement) {
+      setError('Card form not ready. Please try again.');
+      setIsProcessing(false);
+      return;
+    }
 
     try {
       // Confirm the payment with Stripe
@@ -78,7 +85,7 @@ const CardForm = ({ clientSecret, onVerified, onBack }) => {
         clientSecret,
         {
           payment_method: {
-            card: elements.getElement(CardElement),
+            card: cardElement,
             billing_details: {
               name: cardholderName,
             },
@@ -91,6 +98,9 @@ const CardForm = ({ clientSecret, onVerified, onBack }) => {
       }
 
       if (paymentIntent.status === 'succeeded') {
+        // Show processing state while we verify with backend
+        setStep('processing');
+
         // Verify with our backend
         const result = await consentAPI.verifyCreditCard({
           paymentIntentId: paymentIntent.id,
@@ -113,9 +123,11 @@ const CardForm = ({ clientSecret, onVerified, onBack }) => {
     } catch (err) {
       setError(err.message || 'Payment verification failed');
       setStep('form');
-    } finally {
       setIsProcessing(false);
+      return;
     }
+
+    setIsProcessing(false);
   };
 
   if (step === 'success') {
