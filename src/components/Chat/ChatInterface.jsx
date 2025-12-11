@@ -33,24 +33,26 @@ const ChatInterface = ({
     const [demoLimitReached, setDemoLimitReached] = useState(false);
     const [demoSessionId] = useState(() => `demo_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`);
 
-    // Use context for enhanced features
-    const lessonContext = useLessonContext();
-    const { isReady, currentStageInfo, isProcessing } = lessonContext || {};
+    // Always call hooks (React rules), but ignore values in demo mode
+    const lessonContextRaw = useLessonContext();
+    const lessonActionsRaw = useLessonActions();
 
-    // Get chat context - may not be available in demo mode
-    let chatContext = null;
+    // Get chat context - may not be available
+    let chatContextRaw = null;
     try {
-        chatContext = useChatContext();
+        chatContextRaw = useChatContext();
     } catch (e) {
-        // ChatContext not available (demo mode or not wrapped in provider)
+        // ChatContext not available
     }
 
-    const {
-        getCurrentLessonTimeSpent,
-    } = useLessonActions();
+    // In demo mode, null out all context values to avoid any auth-related side effects
+    const lessonContext = demoMode ? null : lessonContextRaw;
+    const { isReady, currentStageInfo, isProcessing } = lessonContext || {};
+    const chatContext = demoMode ? null : chatContextRaw;
+    const { getCurrentLessonTimeSpent } = demoMode ? {} : lessonActionsRaw;
 
-    // Use prop lesson or get from context
-    const activeLesson = lesson || lessonContext?.currentLesson;
+    // Use prop lesson or get from context (skip in demo mode)
+    const activeLesson = demoMode ? null : (lesson || lessonContext?.currentLesson);
 
     // Demo mode state (local state for demo)
     const [demoMessages, setDemoMessages] = useState([]);
@@ -77,13 +79,13 @@ const ChatInterface = ({
     };
 
     // Get messages and state from ChatContext if available
-    // In demo mode, always use demoMessages; otherwise use chatContext
+    // In demo mode, use local state and ignore all context values
     const messages = demoMode ? demoMessages : (chatContext?.messages || []);
-    const isTyping = chatContext?.isLoading && !chatContext?.isStreaming;
-    const isStreaming = chatContext?.isStreaming || false;
-    const safetyFlags = chatContext?.safetyFlags || [];
-    const error = chatContext?.error;
-    const suggestedQuestions = chatContext?.suggestedQuestions || [];
+    const isTyping = demoMode ? false : (chatContext?.isLoading && !chatContext?.isStreaming);
+    const isStreaming = demoMode ? false : (chatContext?.isStreaming || false);
+    const safetyFlags = demoMode ? [] : (chatContext?.safetyFlags || []);
+    const error = demoMode ? null : chatContext?.error;
+    const suggestedQuestions = demoMode ? [] : (chatContext?.suggestedQuestions || []);
 
     // Sync with external input
     useEffect(() => {
