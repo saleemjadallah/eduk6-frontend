@@ -1,25 +1,34 @@
 /**
  * Export Menu Component
- * Provides options to export content as PDF or save to Google Drive
+ * Provides options to export content as PDF, PowerPoint, or save to Google Drive
  */
 
 import { useState, useRef, useEffect } from 'react';
 import { teacherAPI } from '../../services/api/teacherAPI';
 import './ExportMenu.css';
 
-export default function ExportMenu({ contentId, contentTitle, onExportStart, onExportEnd }) {
+export default function ExportMenu({ contentId, contentTitle, contentType = 'LESSON', onExportStart, onExportEnd }) {
   const [isOpen, setIsOpen] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
   const [exportType, setExportType] = useState(null);
   const [driveStatus, setDriveStatus] = useState({ connected: false, loading: true });
   const [showOptions, setShowOptions] = useState(false);
   const [options, setOptions] = useState({
+    // PDF options
     includeAnswers: true,
     includeTeacherNotes: true,
     paperSize: 'letter',
     colorScheme: 'color',
+    // PPTX options
+    theme: 'professional',
+    slideStyle: 'focused',
+    includeInfographic: true,
+    aspectRatio: '16:9',
   });
   const menuRef = useRef(null);
+
+  // Check if this is a lesson (only lessons can be exported to PPTX)
+  const isLesson = contentType === 'LESSON';
 
   // Check Google Drive connection status
   useEffect(() => {
@@ -71,6 +80,42 @@ export default function ExportMenu({ contentId, contentTitle, onExportStart, onE
     } catch (error) {
       console.error('Export error:', error);
       alert('Failed to export PDF. Please try again.');
+    } finally {
+      setIsExporting(false);
+      setExportType(null);
+      onExportEnd?.();
+    }
+  };
+
+  const handleExportPPTX = async () => {
+    setIsExporting(true);
+    setExportType('pptx');
+    onExportStart?.();
+
+    try {
+      const { blob, filename } = await teacherAPI.exportContentPPTX(contentId, {
+        theme: options.theme,
+        slideStyle: options.slideStyle,
+        includeAnswers: options.includeAnswers,
+        includeTeacherNotes: options.includeTeacherNotes,
+        includeInfographic: options.includeInfographic,
+        aspectRatio: options.aspectRatio,
+      });
+
+      // Create download link
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+
+      setIsOpen(false);
+    } catch (error) {
+      console.error('PPTX export error:', error);
+      alert('Failed to export PowerPoint. Please try again.');
     } finally {
       setIsExporting(false);
       setExportType(null);
@@ -193,6 +238,7 @@ export default function ExportMenu({ contentId, contentTitle, onExportStart, onE
 
           {showOptions && (
             <div className="export-options">
+              {/* Common options */}
               <label className="export-option">
                 <input
                   type="checkbox"
@@ -209,26 +255,76 @@ export default function ExportMenu({ contentId, contentTitle, onExportStart, onE
                 />
                 <span>Include Teacher Notes</span>
               </label>
-              <div className="export-option-select">
-                <span>Paper Size:</span>
-                <select
-                  value={options.paperSize}
-                  onChange={(e) => setOptions({ ...options, paperSize: e.target.value })}
-                >
-                  <option value="letter">Letter</option>
-                  <option value="a4">A4</option>
-                </select>
+
+              {/* PDF-specific options */}
+              <div className="export-options-section">
+                <span className="export-options-section-title">PDF Settings</span>
+                <div className="export-option-select">
+                  <span>Paper Size:</span>
+                  <select
+                    value={options.paperSize}
+                    onChange={(e) => setOptions({ ...options, paperSize: e.target.value })}
+                  >
+                    <option value="letter">Letter</option>
+                    <option value="a4">A4</option>
+                  </select>
+                </div>
+                <div className="export-option-select">
+                  <span>Color:</span>
+                  <select
+                    value={options.colorScheme}
+                    onChange={(e) => setOptions({ ...options, colorScheme: e.target.value })}
+                  >
+                    <option value="color">Color</option>
+                    <option value="grayscale">Grayscale</option>
+                  </select>
+                </div>
               </div>
-              <div className="export-option-select">
-                <span>Color:</span>
-                <select
-                  value={options.colorScheme}
-                  onChange={(e) => setOptions({ ...options, colorScheme: e.target.value })}
-                >
-                  <option value="color">Color</option>
-                  <option value="grayscale">Grayscale</option>
-                </select>
-              </div>
+
+              {/* PPTX-specific options - only show for lessons */}
+              {isLesson && (
+                <div className="export-options-section">
+                  <span className="export-options-section-title">PowerPoint Settings</span>
+                  <div className="export-option-select">
+                    <span>Theme:</span>
+                    <select
+                      value={options.theme}
+                      onChange={(e) => setOptions({ ...options, theme: e.target.value })}
+                    >
+                      <option value="professional">Professional</option>
+                      <option value="colorful">Colorful</option>
+                    </select>
+                  </div>
+                  <div className="export-option-select">
+                    <span>Slide Style:</span>
+                    <select
+                      value={options.slideStyle}
+                      onChange={(e) => setOptions({ ...options, slideStyle: e.target.value })}
+                    >
+                      <option value="focused">Focused (~15-25 slides)</option>
+                      <option value="dense">Dense (~8-12 slides)</option>
+                    </select>
+                  </div>
+                  <div className="export-option-select">
+                    <span>Aspect Ratio:</span>
+                    <select
+                      value={options.aspectRatio}
+                      onChange={(e) => setOptions({ ...options, aspectRatio: e.target.value })}
+                    >
+                      <option value="16:9">16:9 (Widescreen)</option>
+                      <option value="4:3">4:3 (Standard)</option>
+                    </select>
+                  </div>
+                  <label className="export-option">
+                    <input
+                      type="checkbox"
+                      checked={options.includeInfographic}
+                      onChange={(e) => setOptions({ ...options, includeInfographic: e.target.checked })}
+                    />
+                    <span>Include Infographic</span>
+                  </label>
+                </div>
+              )}
             </div>
           )}
 
@@ -251,6 +347,29 @@ export default function ExportMenu({ contentId, contentTitle, onExportStart, onE
               )}
               <span>Download PDF</span>
             </button>
+
+            {/* PowerPoint button - only for lessons */}
+            {isLesson && (
+              <button
+                className="export-action-button pptx"
+                onClick={handleExportPPTX}
+                disabled={isExporting}
+              >
+                {isExporting && exportType === 'pptx' ? (
+                  <span className="spinner" />
+                ) : (
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <rect x="3" y="3" width="18" height="14" rx="2" />
+                    <path d="M3 8h18" />
+                    <path d="M8 21h8" />
+                    <path d="M12 17v4" />
+                    <circle cx="9" cy="12" r="1.5" fill="currentColor" />
+                    <rect x="12" y="11" width="5" height="2" rx="0.5" fill="currentColor" />
+                  </svg>
+                )}
+                <span>Download PowerPoint</span>
+              </button>
+            )}
 
             <button
               className="export-action-button drive"

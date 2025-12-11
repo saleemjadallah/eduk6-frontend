@@ -2,7 +2,6 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { BookOpen, ClipboardCheck, Layers, Image, Target, ArrowRight, Clock, Sparkles } from 'lucide-react';
-import AIGeneratedImage from '../../Landing/AIGeneratedImage';
 
 const TeacherFeaturesSection = () => {
   const features = [
@@ -13,7 +12,7 @@ const TeacherFeaturesSection = () => {
       color: '#2D5A4A', // chalk
       shadowColor: 'rgba(45,90,74,0.4)',
       tags: ['AI-Powered', 'Customizable', 'Standards-Aligned'],
-      imagePrompt: 'A beautifully designed digital lesson plan document displayed on a modern tablet. The document has colorful section headers in green and gold, organized bullet points, learning objectives with checkmarks, and small educational illustrations. Clean, professional design with warm paper-like background texture.',
+      imageSrc: '/assets/images/landing/teacher-feature-lesson.png',
       status: 'active',
     },
     {
@@ -23,7 +22,7 @@ const TeacherFeaturesSection = () => {
       color: '#7BAE7F', // sage
       shadowColor: 'rgba(123,174,127,0.4)',
       tags: ['Auto-Grading', 'Multiple Formats', 'Answer Keys'],
-      imagePrompt: 'A colorful interactive quiz interface on a tablet screen showing multiple choice questions with labeled options A, B, C, D. Some questions have green checkmarks indicating correct answers. Modern, clean design with sage green accents. Friendly educational aesthetic.',
+      imageSrc: '/assets/images/landing/teacher-feature-quiz.png',
       status: 'active',
     },
     {
@@ -33,7 +32,7 @@ const TeacherFeaturesSection = () => {
       color: '#D4A853', // gold
       shadowColor: 'rgba(212,168,83,0.4)',
       tags: ['Study Decks', 'Spaced Repetition', 'Export Ready'],
-      imagePrompt: 'A fan of colorful educational flashcards spread out on a wooden desk surface. Each card has a different warm color (gold, orange, cream) with vocabulary words and definitions visible. Some cards show simple illustrations. Cozy, organized study aesthetic.',
+      imageSrc: '/assets/images/landing/teacher-feature-flashcards.png',
       status: 'active',
     },
     {
@@ -43,7 +42,7 @@ const TeacherFeaturesSection = () => {
       color: '#C75B39', // terracotta
       shadowColor: 'rgba(199,91,57,0.4)',
       tags: ['Visual Learning', 'Diagrams', 'Print Ready'],
-      imagePrompt: 'A beautiful educational infographic about the water cycle displayed on a screen. Features colorful illustrated clouds, rain, rivers, and arrows showing the cycle flow. Labels and explanations in clean typography. Professional yet engaging for students. Terracotta and blue color scheme.',
+      imageSrc: '/assets/images/landing/teacher-feature-infographic.png',
       status: 'active',
     },
   ];
@@ -117,12 +116,10 @@ const TeacherFeaturesSection = () => {
             >
               {/* Image Section */}
               <div className="relative h-36 md:h-48 overflow-hidden border-b-3 md:border-b-4 border-black">
-                <AIGeneratedImage
-                  prompt={feature.imagePrompt}
-                  style="educational"
+                <img
+                  src={feature.imageSrc}
                   alt={feature.title}
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                  aspectRatio="landscape"
                 />
                 {/* Overlay gradient */}
                 <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent" />

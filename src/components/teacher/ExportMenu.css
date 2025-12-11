@@ -130,6 +130,24 @@
   cursor: pointer;
 }
 
+.export-options-section {
+  margin-top: 8px;
+  padding-top: 10px;
+  border-top: 1px solid #E5E7EB;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.export-options-section-title {
+  font-size: 11px;
+  font-weight: 600;
+  color: #6B7280;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 2px;
+}
+
 .export-actions {
   padding: 12px;
   display: flex;
@@ -158,6 +176,15 @@
 
 .export-action-button.pdf:hover:not(:disabled) {
   background: linear-gradient(135deg, #DC2626 0%, #B91C1C 100%);
+}
+
+.export-action-button.pptx {
+  background: linear-gradient(135deg, #F97316 0%, #EA580C 100%);
+  color: white;
+}
+
+.export-action-button.pptx:hover:not(:disabled) {
+  background: linear-gradient(135deg, #EA580C 0%, #C2410C 100%);
 }
 
 .export-action-button.drive {

@@ -318,6 +318,7 @@ export default function ContentEditorPage() {
               <ExportMenu
                 contentId={id}
                 contentTitle={content.title}
+                contentType={content.contentType}
               />
               <button
                 onClick={() => setIsEditing(true)}

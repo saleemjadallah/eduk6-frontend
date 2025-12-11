@@ -697,6 +697,40 @@ export const teacherAPI = {
   },
 
   /**
+   * Export content to PowerPoint
+   * @param {string} contentId - The content ID
+   * @param {Object} options - { theme, slideStyle, includeAnswers, includeTeacherNotes, includeInfographic, aspectRatio }
+   * @returns {Promise<{blob: Blob, filename: string}>} PPTX blob for download
+   */
+  exportContentPPTX: async (contentId, options = {}) => {
+    const params = new URLSearchParams();
+    if (options.theme) params.append('theme', options.theme);
+    if (options.slideStyle) params.append('slideStyle', options.slideStyle);
+    if (options.includeAnswers !== undefined) params.append('includeAnswers', options.includeAnswers);
+    if (options.includeTeacherNotes !== undefined) params.append('includeTeacherNotes', options.includeTeacherNotes);
+    if (options.includeInfographic !== undefined) params.append('includeInfographic', options.includeInfographic);
+    if (options.aspectRatio) params.append('aspectRatio', options.aspectRatio);
+
+    const token = teacherTokenManager.getAccessToken();
+    const response = await fetch(`${API_BASE_URL}/api/teacher/export/${contentId}/pptx?${params}`, {
+      method: 'GET',
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      credentials: 'include',
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.error || 'Failed to export PowerPoint');
+    }
+
+    const blob = await response.blob();
+    const filename = response.headers.get('content-disposition')?.match(/filename="(.+)"/)?.[1] || 'export.pptx';
+    return { blob, filename };
+  },
+
+  /**
    * Export multiple content items as single PDF
    * @param {string[]} contentIds - Array of content IDs
    * @param {Object} options - Export options

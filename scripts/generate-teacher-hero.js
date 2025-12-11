@@ -12,14 +12,15 @@ const __dirname = path.dirname(__filename);
 
 const API_URL = 'https://api.orbitlearn.app';
 
-const heroImagePrompt = `A warm, inviting illustration of a friendly professional teacher in a modern, cozy classroom.
-The teacher is sitting at a wooden desk with an open laptop showing a cheerful robot mascot assistant on the screen.
-The teacher looks happy, inspired, and relieved - as if a weight has been lifted off their shoulders.
-Around the desk are neatly organized colorful teaching materials: lesson plans, flashcards, and educational books.
-A classic green chalkboard with mathematical equations is visible in the soft-focus background.
-The lighting is golden hour warm, streaming through a window. The atmosphere feels productive yet peaceful.
-Style: Modern children's book illustration, warm color palette with greens, golds, and cream tones.
-The scene conveys: "Teaching just got easier and more joyful."`;
+const heroImagePrompt = `A warm, inviting illustration of a professional teacher in a modern classroom setting.
+The teacher is sitting at a clean desk with an open laptop showing a friendly AI assistant interface on the screen.
+The teacher looks confident, inspired, and productive - ready to create engaging lessons.
+On the desk are neatly organized teaching materials: a tablet showing lesson plans, colorful notebooks, and a cup of coffee.
+A whiteboard with educational diagrams (math formulas, science concepts) is visible in the background.
+The lighting is warm and professional. The atmosphere conveys efficiency and modern education.
+Style: Modern professional illustration, warm color palette with greens, golds, and cream tones.
+Suitable for K-12 education - the scene should feel professional and applicable to teachers of all grade levels.
+The scene conveys: "Teaching just got easier and more efficient."`;
 
 async function generateAndSaveImage() {
   console.log('🎨 Generating teacher hero image via Gemini...\n');
