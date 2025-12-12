@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import { useAuth } from '../../context/AuthContext';
 import { ChildNavigation, ModeSwitcher } from '../Navigation';
 import { ProfileSwitcher } from '../Profile';
+import { SuggestionBox } from '../SuggestionBox';
 import './ChildLayout.css';
 
 // Cloud background using AI-generated images from Gemini
@@ -129,6 +130,9 @@ const ChildLayout = () => {
           <button className="help-button">Need help?</button>
         </div>
       )}
+
+      {/* Suggestion Box - for sharing ideas */}
+      <SuggestionBox variant="student" />
     </div>
   );
 };

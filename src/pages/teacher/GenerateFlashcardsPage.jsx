@@ -146,6 +146,7 @@ const GenerateFlashcardsPage = () => {
   const [existingLessons, setExistingLessons] = useState([]);
   const [selectedLesson, setSelectedLesson] = useState(null);
   const [loadingLessons, setLoadingLessons] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
 
   // Flashcard configuration
   const [flashcardConfig, setFlashcardConfig] = useState({
@@ -224,6 +225,49 @@ const GenerateFlashcardsPage = () => {
     setSelectedFile(null);
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
+    }
+  };
+
+  // Drag and drop handlers
+  const handleDragEnter = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    // Only set isDragging to false if we're leaving the drop zone entirely
+    if (e.currentTarget.contains(e.relatedTarget)) return;
+    setIsDragging(false);
+  };
+
+  const handleDragOver = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+
+    const files = e.dataTransfer?.files;
+    if (files && files.length > 0) {
+      const file = files[0];
+      if (file.type !== 'application/pdf' &&
+          file.type !== 'application/vnd.ms-powerpoint' &&
+          file.type !== 'application/vnd.openxmlformats-officedocument.presentationml.presentation') {
+        setError('Please drop a PDF or PowerPoint file');
+        return;
+      }
+      if (file.size > 10 * 1024 * 1024) {
+        setError('Files must be under 10MB');
+        return;
+      }
+      setSelectedFile(file);
+      setError(null);
     }
   };
 
@@ -464,7 +508,15 @@ const GenerateFlashcardsPage = () => {
                   {!selectedFile ? (
                     <div
                       onClick={() => fileInputRef.current?.click()}
-                      className="border-2 border-dashed border-teacher-ink/20 rounded-xl p-8 text-center cursor-pointer hover:border-teacher-plum hover:bg-teacher-plum/5 transition-all"
+                      onDragEnter={handleDragEnter}
+                      onDragOver={handleDragOver}
+                      onDragLeave={handleDragLeave}
+                      onDrop={handleDrop}
+                      className={`border-2 border-dashed rounded-xl p-8 text-center cursor-pointer transition-all ${
+                        isDragging
+                          ? 'border-teacher-plum bg-teacher-plum/10 scale-[1.02]'
+                          : 'border-teacher-ink/20 hover:border-teacher-plum hover:bg-teacher-plum/5'
+                      }`}
                     >
                       <input
                         ref={fileInputRef}
@@ -473,11 +525,13 @@ const GenerateFlashcardsPage = () => {
                         onChange={handleFileSelect}
                         className="hidden"
                       />
-                      <div className="w-12 h-12 mx-auto mb-3 rounded-full bg-teacher-plum/10 flex items-center justify-center">
-                        <Upload className="w-6 h-6 text-teacher-plum" />
+                      <div className={`w-12 h-12 mx-auto mb-3 rounded-full flex items-center justify-center transition-all ${
+                        isDragging ? 'bg-teacher-plum/20 scale-110' : 'bg-teacher-plum/10'
+                      }`}>
+                        <Upload className={`w-6 h-6 text-teacher-plum transition-transform ${isDragging ? 'scale-110' : ''}`} />
                       </div>
                       <p className="text-sm font-medium text-teacher-ink mb-1">
-                        Drop your file here or click to browse
+                        {isDragging ? 'Drop your file here!' : 'Drop your file here or click to browse'}
                       </p>
                       <p className="text-xs text-teacher-inkLight">
                         Supports PDF and PowerPoint (up to 10MB)

@@ -1,0 +1,28 @@
+{
+  "generatedAt": "2025-12-12T12:04:56.724Z",
+  "totalImages": 4,
+  "successful": 4,
+  "failed": 0,
+  "images": [
+    {
+      "id": "student_mailbox",
+      "name": "Student Suggestion Mailbox",
+      "imagePath": "/assets/suggestions/student_mailbox.png"
+    },
+    {
+      "id": "student_mailbox_flag",
+      "name": "Student Mailbox with Flag Up",
+      "imagePath": "/assets/suggestions/student_mailbox_flag.png"
+    },
+    {
+      "id": "teacher_mailbox",
+      "name": "Teacher Suggestion Box",
+      "imagePath": "/assets/suggestions/teacher_mailbox.png"
+    },
+    {
+      "id": "letter",
+      "name": "Flying Letter/Envelope",
+      "imagePath": "/assets/suggestions/letter.png"
+    }
+  ]
+}

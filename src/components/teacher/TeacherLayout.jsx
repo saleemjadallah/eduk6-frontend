@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import TeacherSidebar from './TeacherSidebar';
 import TeacherHeader from './TeacherHeader';
+import { SuggestionBox } from '../SuggestionBox';
 
 const TeacherLayout = ({ children, title, subtitle, headerActions }) => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -137,6 +138,9 @@ const TeacherLayout = ({ children, title, subtitle, headerActions }) => {
           </div>
         </main>
       </div>
+
+      {/* Suggestion Box - for sharing feedback */}
+      <SuggestionBox variant="teacher" />
     </div>
   );
 };

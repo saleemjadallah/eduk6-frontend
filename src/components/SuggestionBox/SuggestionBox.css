@@ -1,0 +1,781 @@
+/* =========================================
+   SUGGESTION BOX - SHARED STYLES
+   ========================================= */
+
+.suggestion-box-wrapper {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 1000;
+  pointer-events: none;
+}
+
+.suggestion-box-wrapper > * {
+  pointer-events: auto;
+}
+
+/* =========================================
+   STUDENT PORTAL - PLAYFUL NEOBRUTALIST
+   ========================================= */
+
+.suggestion-box--student {
+  width: 72px;
+  height: 72px;
+  cursor: pointer;
+  position: relative;
+  filter: drop-shadow(4px 4px 0px rgba(0, 0, 0, 0.9));
+  transition: filter 0.2s ease;
+}
+
+.suggestion-box--student:hover {
+  filter: drop-shadow(6px 6px 0px rgba(0, 0, 0, 0.9));
+}
+
+.suggestion-box--student img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+/* Student flag overlay */
+.suggestion-box--student .mailbox-flag {
+  position: absolute;
+  top: 8px;
+  right: -4px;
+  width: 24px;
+  height: 24px;
+  transform-origin: bottom center;
+}
+
+/* Student tooltip */
+.suggestion-box--student .tooltip {
+  position: absolute;
+  right: calc(100% + 12px);
+  top: 50%;
+  transform: translateY(-50%);
+  background: #FFD700;
+  color: #000;
+  padding: 8px 14px;
+  border-radius: 12px;
+  font-family: 'Comic Neue', cursive, sans-serif;
+  font-size: 14px;
+  font-weight: 700;
+  white-space: nowrap;
+  border: 3px solid #000;
+  box-shadow: 4px 4px 0px 0px rgba(0, 0, 0, 1);
+}
+
+.suggestion-box--student .tooltip::after {
+  content: '';
+  position: absolute;
+  right: -12px;
+  top: 50%;
+  transform: translateY(-50%);
+  border: 6px solid transparent;
+  border-left-color: #000;
+}
+
+/* =========================================
+   TEACHER PORTAL - VINTAGE CLASSROOM
+   ========================================= */
+
+.suggestion-box--teacher {
+  width: 60px;
+  height: 60px;
+  cursor: pointer;
+  position: relative;
+  border-radius: 8px;
+  transition: box-shadow 0.3s ease;
+}
+
+.suggestion-box--teacher::before {
+  content: '';
+  position: absolute;
+  inset: -4px;
+  background: linear-gradient(135deg, #D4A853 0%, #C75B39 100%);
+  border-radius: 12px;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  z-index: -1;
+}
+
+.suggestion-box--teacher:hover::before {
+  opacity: 0.3;
+}
+
+.suggestion-box--teacher img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  border-radius: 8px;
+  box-shadow:
+    0 4px 12px rgba(30, 42, 58, 0.15),
+    0 2px 4px rgba(30, 42, 58, 0.1);
+  transition: box-shadow 0.3s ease;
+}
+
+.suggestion-box--teacher:hover img {
+  box-shadow:
+    0 8px 24px rgba(30, 42, 58, 0.2),
+    0 4px 8px rgba(30, 42, 58, 0.15);
+}
+
+/* Teacher tooltip */
+.suggestion-box--teacher .tooltip {
+  position: absolute;
+  right: calc(100% + 12px);
+  top: 50%;
+  transform: translateY(-50%);
+  background: #2D5A4A;
+  color: #FDF8F3;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-family: 'Outfit', sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  white-space: nowrap;
+  box-shadow: 0 4px 12px rgba(45, 90, 74, 0.3);
+}
+
+.suggestion-box--teacher .tooltip::after {
+  content: '';
+  position: absolute;
+  right: -8px;
+  top: 50%;
+  transform: translateY(-50%);
+  border: 4px solid transparent;
+  border-left-color: #2D5A4A;
+}
+
+/* =========================================
+   MODAL - SHARED BASE
+   ========================================= */
+
+.suggestion-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.suggestion-modal-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(8px);
+}
+
+.suggestion-modal {
+  position: relative;
+  width: 100%;
+  max-width: 480px;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+/* =========================================
+   MODAL - STUDENT VERSION
+   ========================================= */
+
+.suggestion-modal--student {
+  background: linear-gradient(180deg, #FFFBEB 0%, #FEF3C7 100%);
+  border-radius: 24px;
+  border: 4px solid #000;
+  box-shadow: 8px 8px 0px 0px rgba(0, 0, 0, 1);
+  padding: 28px;
+}
+
+.suggestion-modal--student .modal-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.suggestion-modal--student .modal-icon {
+  width: 56px;
+  height: 56px;
+  flex-shrink: 0;
+}
+
+.suggestion-modal--student .modal-title {
+  font-family: 'Comic Neue', cursive, sans-serif;
+  font-size: 24px;
+  font-weight: 700;
+  color: #000;
+  margin: 0;
+}
+
+.suggestion-modal--student .modal-subtitle {
+  font-family: 'Comic Neue', cursive, sans-serif;
+  font-size: 14px;
+  color: #666;
+  margin: 4px 0 0 0;
+}
+
+.suggestion-modal--student .form-group {
+  margin-bottom: 20px;
+}
+
+.suggestion-modal--student .form-label {
+  display: block;
+  font-family: 'Comic Neue', cursive, sans-serif;
+  font-size: 16px;
+  font-weight: 700;
+  color: #000;
+  margin-bottom: 8px;
+}
+
+.suggestion-modal--student .form-textarea {
+  width: 100%;
+  min-height: 120px;
+  padding: 14px;
+  border: 3px solid #000;
+  border-radius: 16px;
+  background: #fff;
+  font-family: 'Comic Neue', cursive, sans-serif;
+  font-size: 16px;
+  resize: vertical;
+  transition: box-shadow 0.2s ease;
+}
+
+.suggestion-modal--student .form-textarea:focus {
+  outline: none;
+  box-shadow: 4px 4px 0px 0px rgba(65, 105, 225, 0.5);
+}
+
+.suggestion-modal--student .form-textarea::placeholder {
+  color: #999;
+}
+
+.suggestion-modal--student .form-input {
+  width: 100%;
+  padding: 12px 14px;
+  border: 3px solid #000;
+  border-radius: 12px;
+  background: #fff;
+  font-family: 'Comic Neue', cursive, sans-serif;
+  font-size: 16px;
+  transition: box-shadow 0.2s ease;
+}
+
+.suggestion-modal--student .form-input:focus {
+  outline: none;
+  box-shadow: 4px 4px 0px 0px rgba(65, 105, 225, 0.5);
+}
+
+.suggestion-modal--student .form-hint {
+  font-family: 'Comic Neue', cursive, sans-serif;
+  font-size: 12px;
+  color: #666;
+  margin-top: 6px;
+}
+
+.suggestion-modal--student .char-count {
+  text-align: right;
+  font-family: 'Comic Neue', cursive, sans-serif;
+  font-size: 12px;
+  color: #666;
+  margin-top: 4px;
+}
+
+.suggestion-modal--student .char-count.warning {
+  color: #DC2626;
+  font-weight: 700;
+}
+
+.suggestion-modal--student .modal-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 24px;
+}
+
+.suggestion-modal--student .btn-cancel {
+  flex: 1;
+  padding: 14px 20px;
+  border: 3px solid #000;
+  border-radius: 12px;
+  background: #fff;
+  font-family: 'Comic Neue', cursive, sans-serif;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.suggestion-modal--student .btn-cancel:hover {
+  background: #f0f0f0;
+}
+
+.suggestion-modal--student .btn-submit {
+  flex: 2;
+  padding: 14px 20px;
+  border: 3px solid #000;
+  border-radius: 12px;
+  background: linear-gradient(180deg, #4169E1 0%, #3558C8 100%);
+  color: #fff;
+  font-family: 'Comic Neue', cursive, sans-serif;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 4px 4px 0px 0px rgba(0, 0, 0, 1);
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.suggestion-modal--student .btn-submit:hover:not(:disabled) {
+  transform: translate(-2px, -2px);
+  box-shadow: 6px 6px 0px 0px rgba(0, 0, 0, 1);
+}
+
+.suggestion-modal--student .btn-submit:active:not(:disabled) {
+  transform: translate(2px, 2px);
+  box-shadow: 2px 2px 0px 0px rgba(0, 0, 0, 1);
+}
+
+.suggestion-modal--student .btn-submit:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.suggestion-modal--student .btn-close {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  width: 32px;
+  height: 32px;
+  border: 3px solid #000;
+  border-radius: 50%;
+  background: #fff;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  font-weight: 700;
+  transition: all 0.2s ease;
+}
+
+.suggestion-modal--student .btn-close:hover {
+  background: #FEE2E2;
+  transform: rotate(90deg);
+}
+
+/* =========================================
+   MODAL - TEACHER VERSION
+   ========================================= */
+
+.suggestion-modal--teacher {
+  background: linear-gradient(180deg, #FDF8F3 0%, #FAF5F0 100%);
+  border-radius: 16px;
+  box-shadow:
+    0 24px 48px rgba(30, 42, 58, 0.2),
+    0 8px 16px rgba(30, 42, 58, 0.1);
+  padding: 32px;
+}
+
+.suggestion-modal--teacher .modal-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 24px;
+  padding-bottom: 20px;
+  border-bottom: 2px solid rgba(45, 90, 74, 0.1);
+}
+
+.suggestion-modal--teacher .modal-icon {
+  width: 48px;
+  height: 48px;
+  flex-shrink: 0;
+}
+
+.suggestion-modal--teacher .modal-title {
+  font-family: 'Fraunces', serif;
+  font-size: 22px;
+  font-weight: 600;
+  color: #2D5A4A;
+  margin: 0;
+}
+
+.suggestion-modal--teacher .modal-subtitle {
+  font-family: 'Outfit', sans-serif;
+  font-size: 14px;
+  color: #6B7280;
+  margin: 4px 0 0 0;
+}
+
+.suggestion-modal--teacher .form-group {
+  margin-bottom: 20px;
+}
+
+.suggestion-modal--teacher .form-label {
+  display: block;
+  font-family: 'Outfit', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  color: #2D5A4A;
+  margin-bottom: 8px;
+}
+
+.suggestion-modal--teacher .form-textarea {
+  width: 100%;
+  min-height: 120px;
+  padding: 14px 16px;
+  border: 2px solid rgba(45, 90, 74, 0.2);
+  border-radius: 12px;
+  background: #fff;
+  font-family: 'Outfit', sans-serif;
+  font-size: 15px;
+  resize: vertical;
+  transition: all 0.2s ease;
+}
+
+.suggestion-modal--teacher .form-textarea:focus {
+  outline: none;
+  border-color: #2D5A4A;
+  box-shadow: 0 0 0 4px rgba(45, 90, 74, 0.1);
+}
+
+.suggestion-modal--teacher .form-textarea::placeholder {
+  color: #9CA3AF;
+}
+
+.suggestion-modal--teacher .form-input {
+  width: 100%;
+  padding: 12px 16px;
+  border: 2px solid rgba(45, 90, 74, 0.2);
+  border-radius: 10px;
+  background: #fff;
+  font-family: 'Outfit', sans-serif;
+  font-size: 15px;
+  transition: all 0.2s ease;
+}
+
+.suggestion-modal--teacher .form-input:focus {
+  outline: none;
+  border-color: #2D5A4A;
+  box-shadow: 0 0 0 4px rgba(45, 90, 74, 0.1);
+}
+
+.suggestion-modal--teacher .form-hint {
+  font-family: 'Outfit', sans-serif;
+  font-size: 13px;
+  color: #6B7280;
+  margin-top: 6px;
+}
+
+.suggestion-modal--teacher .char-count {
+  text-align: right;
+  font-family: 'Outfit', sans-serif;
+  font-size: 12px;
+  color: #9CA3AF;
+  margin-top: 4px;
+}
+
+.suggestion-modal--teacher .char-count.warning {
+  color: #C75B39;
+  font-weight: 600;
+}
+
+.suggestion-modal--teacher .modal-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 28px;
+}
+
+.suggestion-modal--teacher .btn-cancel {
+  flex: 1;
+  padding: 12px 20px;
+  border: 2px solid rgba(45, 90, 74, 0.2);
+  border-radius: 10px;
+  background: #fff;
+  font-family: 'Outfit', sans-serif;
+  font-size: 15px;
+  font-weight: 500;
+  color: #4B5563;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.suggestion-modal--teacher .btn-cancel:hover {
+  border-color: rgba(45, 90, 74, 0.4);
+  background: #f9f9f9;
+}
+
+.suggestion-modal--teacher .btn-submit {
+  flex: 2;
+  padding: 12px 24px;
+  border: none;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #2D5A4A 0%, #3D7A62 100%);
+  color: #fff;
+  font-family: 'Outfit', sans-serif;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  box-shadow: 0 4px 12px rgba(45, 90, 74, 0.3);
+}
+
+.suggestion-modal--teacher .btn-submit:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(45, 90, 74, 0.4);
+}
+
+.suggestion-modal--teacher .btn-submit:active:not(:disabled) {
+  transform: translateY(1px);
+  box-shadow: 0 2px 8px rgba(45, 90, 74, 0.3);
+}
+
+.suggestion-modal--teacher .btn-submit:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.suggestion-modal--teacher .btn-close {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #6B7280;
+  transition: all 0.2s ease;
+}
+
+.suggestion-modal--teacher .btn-close:hover {
+  background: rgba(199, 91, 57, 0.1);
+  color: #C75B39;
+}
+
+/* =========================================
+   SUCCESS STATE
+   ========================================= */
+
+.suggestion-success {
+  text-align: center;
+  padding: 20px 0;
+}
+
+.success-icon-wrapper {
+  width: 80px;
+  height: 80px;
+  margin: 0 auto 20px;
+  position: relative;
+}
+
+.success-circle {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+}
+
+.suggestion-modal--student .success-circle {
+  background: linear-gradient(135deg, #22C55E 0%, #16A34A 100%);
+  border: 4px solid #000;
+}
+
+.suggestion-modal--teacher .success-circle {
+  background: linear-gradient(135deg, #7BAE7F 0%, #5A9A5E 100%);
+}
+
+.success-checkmark {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 40px;
+  height: 40px;
+  stroke: #fff;
+  stroke-width: 3;
+  fill: none;
+}
+
+.success-title {
+  margin: 0 0 8px 0;
+}
+
+.suggestion-modal--student .success-title {
+  font-family: 'Comic Neue', cursive, sans-serif;
+  font-size: 24px;
+  font-weight: 700;
+  color: #000;
+}
+
+.suggestion-modal--teacher .success-title {
+  font-family: 'Fraunces', serif;
+  font-size: 22px;
+  font-weight: 600;
+  color: #2D5A4A;
+}
+
+.success-message {
+  margin: 0;
+}
+
+.suggestion-modal--student .success-message {
+  font-family: 'Comic Neue', cursive, sans-serif;
+  font-size: 16px;
+  color: #666;
+}
+
+.suggestion-modal--teacher .success-message {
+  font-family: 'Outfit', sans-serif;
+  font-size: 15px;
+  color: #6B7280;
+}
+
+/* Confetti particles */
+.confetti-container {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  pointer-events: none;
+}
+
+.confetti-particle {
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  border-radius: 2px;
+}
+
+/* =========================================
+   LETTER ANIMATION
+   ========================================= */
+
+.flying-letter {
+  position: fixed;
+  width: 60px;
+  height: 45px;
+  z-index: 10001;
+  pointer-events: none;
+}
+
+.flying-letter img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+/* =========================================
+   LOADING SPINNER
+   ========================================= */
+
+.spinner {
+  width: 20px;
+  height: 20px;
+  border: 3px solid rgba(255, 255, 255, 0.3);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* =========================================
+   RESPONSIVE ADJUSTMENTS
+   ========================================= */
+
+@media (max-width: 768px) {
+  .suggestion-box-wrapper {
+    bottom: 16px;
+    right: 16px;
+  }
+
+  .suggestion-box--student {
+    width: 60px;
+    height: 60px;
+  }
+
+  .suggestion-box--teacher {
+    width: 52px;
+    height: 52px;
+  }
+
+  .suggestion-box--student .tooltip,
+  .suggestion-box--teacher .tooltip {
+    display: none;
+  }
+
+  .suggestion-modal {
+    max-width: calc(100vw - 32px);
+    margin: 16px;
+  }
+
+  .suggestion-modal--student,
+  .suggestion-modal--teacher {
+    padding: 20px;
+  }
+
+  .suggestion-modal--student .modal-title {
+    font-size: 20px;
+  }
+
+  .suggestion-modal--teacher .modal-title {
+    font-size: 18px;
+  }
+
+  .suggestion-modal--student .modal-actions,
+  .suggestion-modal--teacher .modal-actions {
+    flex-direction: column-reverse;
+  }
+
+  .suggestion-modal--student .btn-submit,
+  .suggestion-modal--student .btn-cancel,
+  .suggestion-modal--teacher .btn-submit,
+  .suggestion-modal--teacher .btn-cancel {
+    flex: none;
+    width: 100%;
+  }
+}
+
+/* =========================================
+   ACCESSIBILITY
+   ========================================= */
+
+.suggestion-box--student:focus-visible,
+.suggestion-box--teacher:focus-visible {
+  outline: 3px solid #4169E1;
+  outline-offset: 4px;
+}
+
+.suggestion-modal--student .form-textarea:focus-visible,
+.suggestion-modal--student .form-input:focus-visible,
+.suggestion-modal--teacher .form-textarea:focus-visible,
+.suggestion-modal--teacher .form-input:focus-visible {
+  outline: 3px solid #4169E1;
+  outline-offset: 2px;
+}
+
+/* Reduce motion for users who prefer it */
+@media (prefers-reduced-motion: reduce) {
+  .suggestion-box--student,
+  .suggestion-box--teacher,
+  .suggestion-modal,
+  .flying-letter,
+  .spinner {
+    animation: none !important;
+    transition: opacity 0.2s ease !important;
+  }
+}
