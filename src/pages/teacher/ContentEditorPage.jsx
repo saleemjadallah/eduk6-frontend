@@ -234,7 +234,47 @@ export default function ContentEditorPage() {
       setError(null);
 
       let response;
-      const sourceContent = content.extractedText || content.lessonContent?.content || '';
+      // Extract content from various possible sources
+      let sourceContent = content.extractedText || '';
+
+      // If no extracted text, build from lesson content
+      if (!sourceContent && content.lessonContent) {
+        const lc = content.lessonContent;
+        const parts = [];
+
+        if (lc.title) parts.push(lc.title);
+        if (lc.summary) parts.push(lc.summary);
+
+        // Extract from sections
+        if (lc.sections && Array.isArray(lc.sections)) {
+          lc.sections.forEach(section => {
+            if (section.title) parts.push(section.title);
+            if (section.content) parts.push(section.content);
+          });
+        }
+
+        // Extract vocabulary
+        if (lc.vocabulary && Array.isArray(lc.vocabulary)) {
+          lc.vocabulary.forEach(v => {
+            if (v.term && v.definition) {
+              parts.push(`${v.term}: ${v.definition}`);
+            }
+          });
+        }
+
+        // Extract key concepts
+        if (lc.objectives && Array.isArray(lc.objectives)) {
+          parts.push(...lc.objectives);
+        }
+
+        sourceContent = parts.join('\n\n');
+      }
+
+      if (!sourceContent) {
+        setError('No content available to generate from. Please ensure the lesson has content.');
+        setGenerating(false);
+        return;
+      }
 
       if (type === 'quiz') {
         response = await teacherAPI.generateQuiz(id, {
