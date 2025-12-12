@@ -25,6 +25,14 @@
   position: relative;
   filter: drop-shadow(4px 4px 0px rgba(0, 0, 0, 0.9));
   transition: filter 0.2s ease;
+  /* Reset button defaults */
+  background: none;
+  border: none;
+  padding: 0;
+  margin: 0;
+  outline: none;
+  -webkit-appearance: none;
+  appearance: none;
 }
 
 .suggestion-box--student:hover {
@@ -86,6 +94,14 @@
   position: relative;
   border-radius: 8px;
   transition: box-shadow 0.3s ease;
+  /* Reset button defaults */
+  background: none;
+  border: none;
+  padding: 0;
+  margin: 0;
+  outline: none;
+  -webkit-appearance: none;
+  appearance: none;
 }
 
 .suggestion-box--teacher::before {
