@@ -711,22 +711,92 @@ export default function ContentEditorPage() {
                 </span>
               </div>
               <div style={styles.contentPreview}>
-                {/* Always show first 3 questions */}
-                {content.quizContent.questions.slice(0, 3).map((q, i) => (
-                  <div key={i} style={styles.questionPreview}>
-                    <span style={styles.questionNumber}>Q{i + 1}</span>
-                    <span>{q.question}</span>
+                {/* Render quiz questions with answers */}
+                {(expandedSections.quiz ? content.quizContent.questions : content.quizContent.questions.slice(0, 3)).map((q, i) => (
+                  <div key={i} style={styles.quizQuestionCard}>
+                    <div style={styles.quizQuestionHeader}>
+                      <span style={styles.questionNumber}>Q{i + 1}</span>
+                      {q.type && (
+                        <span style={styles.questionType}>
+                          {q.type === 'multiple_choice' ? 'Multiple Choice' :
+                           q.type === 'true_false' ? 'True/False' :
+                           q.type === 'fill_blank' ? 'Fill in Blank' :
+                           q.type === 'short_answer' ? 'Short Answer' : q.type}
+                        </span>
+                      )}
+                      {q.points && (
+                        <span style={styles.questionPoints}>{q.points} pt{q.points > 1 ? 's' : ''}</span>
+                      )}
+                    </div>
+                    <p style={styles.quizQuestionText}>{q.question}</p>
+
+                    {/* Multiple choice options */}
+                    {q.options && q.options.length > 0 && (
+                      <div style={styles.quizOptionsList}>
+                        {q.options.map((option, j) => {
+                          const isCorrect = option === q.correctAnswer || j === q.correctIndex;
+                          return (
+                            <div
+                              key={j}
+                              style={{
+                                ...styles.quizOption,
+                                backgroundColor: isCorrect ? '#D1FAE5' : '#F9FAFB',
+                                borderColor: isCorrect ? '#10B981' : '#E5E7EB',
+                              }}
+                            >
+                              <span style={{
+                                ...styles.quizOptionLetter,
+                                backgroundColor: isCorrect ? '#10B981' : '#E5E7EB',
+                                color: isCorrect ? 'white' : '#6B7280',
+                              }}>
+                                {String.fromCharCode(65 + j)}
+                              </span>
+                              <span style={{ color: isCorrect ? '#065F46' : '#374151' }}>{option}</span>
+                              {isCorrect && (
+                                <span style={styles.correctBadge}>✓ Correct</span>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+
+                    {/* True/False answer */}
+                    {q.type === 'true_false' && !q.options && q.correctAnswer !== undefined && (
+                      <div style={styles.quizAnswerBox}>
+                        <span style={styles.answerLabel}>Answer:</span>
+                        <span style={styles.correctAnswerText}>
+                          {String(q.correctAnswer).toLowerCase() === 'true' ? 'True' : 'False'}
+                        </span>
+                      </div>
+                    )}
+
+                    {/* Short answer / Fill in blank */}
+                    {(q.type === 'short_answer' || q.type === 'fill_blank') && q.correctAnswer && (
+                      <div style={styles.quizAnswerBox}>
+                        <span style={styles.answerLabel}>Answer:</span>
+                        <span style={styles.correctAnswerText}>{q.correctAnswer}</span>
+                      </div>
+                    )}
+
+                    {/* Fallback: Show correct answer if present but no options */}
+                    {!q.options && q.type !== 'true_false' && q.type !== 'short_answer' && q.type !== 'fill_blank' && q.correctAnswer && (
+                      <div style={styles.quizAnswerBox}>
+                        <span style={styles.answerLabel}>Answer:</span>
+                        <span style={styles.correctAnswerText}>{q.correctAnswer}</span>
+                      </div>
+                    )}
+
+                    {/* Explanation if available */}
+                    {q.explanation && (
+                      <div style={styles.quizExplanation}>
+                        <span style={styles.explanationLabel}>💡 Explanation:</span>
+                        <span>{q.explanation}</span>
+                      </div>
+                    )}
                   </div>
                 ))}
-                {/* Show remaining questions when expanded */}
-                {expandedSections.quiz && content.quizContent.questions.length > 3 && (
-                  content.quizContent.questions.slice(3).map((q, i) => (
-                    <div key={i + 3} style={styles.questionPreview}>
-                      <span style={styles.questionNumber}>Q{i + 4}</span>
-                      <span>{q.question}</span>
-                    </div>
-                  ))
-                )}
+
                 {/* Show expand prompt when collapsed and more questions exist */}
                 {!expandedSections.quiz && content.quizContent.questions.length > 3 && (
                   <p style={{...styles.moreText, cursor: 'pointer'}} onClick={() => setExpandedSections(prev => ({...prev, quiz: true}))}>
@@ -1581,5 +1651,111 @@ const styles = {
     fontSize: '12px',
     color: '#9CA3AF',
     margin: 0,
+  },
+  // Quiz question styles with answers
+  quizQuestionCard: {
+    backgroundColor: 'white',
+    borderRadius: '12px',
+    border: '1px solid #E5E7EB',
+    padding: '16px',
+    marginBottom: '12px',
+  },
+  quizQuestionHeader: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '10px',
+    marginBottom: '12px',
+  },
+  questionType: {
+    fontSize: '11px',
+    fontWeight: '500',
+    color: '#6B7280',
+    backgroundColor: '#F3F4F6',
+    padding: '3px 8px',
+    borderRadius: '4px',
+    textTransform: 'uppercase',
+    letterSpacing: '0.5px',
+  },
+  questionPoints: {
+    fontSize: '12px',
+    color: '#8B5CF6',
+    fontWeight: '500',
+    marginLeft: 'auto',
+  },
+  quizQuestionText: {
+    fontSize: '15px',
+    fontWeight: '500',
+    color: '#111827',
+    margin: '0 0 16px 0',
+    lineHeight: '1.5',
+  },
+  quizOptionsList: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '8px',
+  },
+  quizOption: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '12px',
+    padding: '10px 14px',
+    borderRadius: '8px',
+    border: '1px solid',
+    fontSize: '14px',
+  },
+  quizOptionLetter: {
+    width: '24px',
+    height: '24px',
+    borderRadius: '50%',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    fontSize: '12px',
+    fontWeight: '600',
+    flexShrink: 0,
+  },
+  correctBadge: {
+    marginLeft: 'auto',
+    fontSize: '12px',
+    fontWeight: '600',
+    color: '#059669',
+    backgroundColor: '#ECFDF5',
+    padding: '2px 8px',
+    borderRadius: '4px',
+  },
+  quizAnswerBox: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '10px',
+    padding: '12px 16px',
+    backgroundColor: '#D1FAE5',
+    borderRadius: '8px',
+    border: '1px solid #10B981',
+  },
+  answerLabel: {
+    fontSize: '13px',
+    fontWeight: '600',
+    color: '#065F46',
+  },
+  correctAnswerText: {
+    fontSize: '14px',
+    fontWeight: '500',
+    color: '#047857',
+  },
+  quizExplanation: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '4px',
+    marginTop: '12px',
+    padding: '12px',
+    backgroundColor: '#FEF3C7',
+    borderRadius: '8px',
+    fontSize: '13px',
+    color: '#92400E',
+    lineHeight: '1.5',
+  },
+  explanationLabel: {
+    fontWeight: '600',
+    color: '#B45309',
   },
 };
