@@ -100,7 +100,7 @@ const TeacherDashboardPage = () => {
       icon: FileQuestion,
       color: 'gold',
       bgGradient: 'from-teacher-gold to-teacher-goldLight',
-      href: '/teacher/content/create?type=QUIZ',
+      href: '/teacher/quiz',
     },
     {
       title: 'Flashcards',
@@ -108,7 +108,7 @@ const TeacherDashboardPage = () => {
       icon: Layers,
       color: 'plum',
       bgGradient: 'from-teacher-plum to-teacher-plumLight',
-      href: '/teacher/content/create?type=FLASHCARD_DECK',
+      href: '/teacher/flashcards',
     },
     {
       title: 'Grade Papers',
