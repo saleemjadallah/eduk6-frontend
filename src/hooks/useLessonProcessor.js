@@ -79,27 +79,26 @@ export function useLessonProcessor() {
 
                 const pptAnalysis = pptResponse.data;
                 extractedText = pptAnalysis.extractedText || '';
-                extractionMetadata = {
-                    ...extractionMetadata,
-                    slideCount: pptAnalysis.slideCount,
-                    suggestedTitle: pptAnalysis.suggestedTitle,
-                };
 
-                // Use the backend analysis results directly
+                // The backend already created the lesson, use the returned lesson data
+                const backendLesson = pptAnalysis.lesson;
+
                 setProcessingStage('generating');
                 updateProgress(85);
 
+                // Generate study guide from the extracted text
                 const studyGuide = await processWithGemini(extractedText, 'study_guide');
                 updateProgress(95);
 
                 setProcessingStage('complete');
                 updateProgress(100);
 
+                // Add to local context using the backend-created lesson ID
                 const lesson = addLesson({
-                    id: pptAnalysis.lessonId || undefined,
-                    title: title || pptAnalysis.suggestedTitle || 'PowerPoint Lesson',
-                    subject: subject || pptAnalysis.detectedSubject,
-                    gradeLevel: gradeLevel || pptAnalysis.detectedGradeLevel,
+                    id: pptAnalysis.lessonId, // Use the database ID from backend
+                    title: backendLesson?.title || title || pptAnalysis.suggestedTitle || 'PowerPoint Lesson',
+                    subject: backendLesson?.subject || subject || pptAnalysis.detectedSubject,
+                    gradeLevel: backendLesson?.gradeLevel || gradeLevel || pptAnalysis.detectedGradeLevel,
                     sourceType: 'ppt',
                     source: {
                         type: 'ppt',
@@ -109,24 +108,28 @@ export function useLessonProcessor() {
                         slideCount: pptAnalysis.slideCount,
                     },
                     rawText: extractedText,
-                    formattedContent: pptAnalysis.formattedContent || null,
+                    formattedContent: pptAnalysis.formattedContent || backendLesson?.formattedContent || null,
                     content: {
                         rawText: extractedText,
-                        formattedContent: pptAnalysis.formattedContent || null,
-                        summary: pptAnalysis.summary,
-                        keyPoints: pptAnalysis.keyTopics || [],
-                        chapters: pptAnalysis.chapters || [],
-                        vocabulary: pptAnalysis.vocabulary || [],
+                        formattedContent: pptAnalysis.formattedContent || backendLesson?.formattedContent || null,
+                        summary: pptAnalysis.summary || backendLesson?.summary,
+                        keyPoints: pptAnalysis.keyTopics || backendLesson?.keyConcepts || [],
+                        chapters: backendLesson?.chapters || [],
+                        vocabulary: pptAnalysis.vocabulary || backendLesson?.vocabulary || [],
                         studyGuide: studyGuide,
                         estimatedReadTime: Math.ceil(extractedText.length / 1000) || 5,
                     },
-                    summary: pptAnalysis.summary,
-                    chapters: pptAnalysis.chapters || [],
-                    keyConceptsForChat: pptAnalysis.keyTopics || [],
-                    vocabulary: pptAnalysis.vocabulary || [],
-                    suggestedQuestions: pptAnalysis.suggestedQuestions || [],
-                    relatedTopics: pptAnalysis.relatedTopics || [],
-                    extractionMetadata,
+                    summary: pptAnalysis.summary || backendLesson?.summary,
+                    chapters: backendLesson?.chapters || [],
+                    keyConceptsForChat: pptAnalysis.keyTopics || backendLesson?.keyConcepts || [],
+                    vocabulary: pptAnalysis.vocabulary || backendLesson?.vocabulary || [],
+                    suggestedQuestions: backendLesson?.suggestedQuestions || [],
+                    relatedTopics: [],
+                    extractionMetadata: {
+                        sourceType: 'ppt',
+                        slideCount: pptAnalysis.slideCount,
+                        suggestedTitle: pptAnalysis.suggestedTitle,
+                    },
                 });
 
                 await delay(500);
