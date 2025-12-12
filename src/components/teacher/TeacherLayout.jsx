@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import TeacherSidebar from './TeacherSidebar';
 import TeacherHeader from './TeacherHeader';
-import { SuggestionBox } from '../SuggestionBox';
+// SuggestionBox moved to dashboard page directly
 
 const TeacherLayout = ({ children, title, subtitle, headerActions }) => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -139,8 +139,6 @@ const TeacherLayout = ({ children, title, subtitle, headerActions }) => {
         </main>
       </div>
 
-      {/* Suggestion Box - for sharing feedback */}
-      <SuggestionBox variant="teacher" />
     </div>
   );
 };

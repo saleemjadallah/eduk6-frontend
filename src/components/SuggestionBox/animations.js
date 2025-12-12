@@ -13,6 +13,8 @@ export const studentMailbox = {
   idle: {
     y: [0, -8, 0],
     rotate: [-2, 2, -2],
+    scale: 1,
+    opacity: 1,
     transition: {
       duration: 3,
       repeat: Infinity,
@@ -20,11 +22,11 @@ export const studentMailbox = {
     },
   },
 
-  // Initial state (for AnimatePresence)
+  // Initial state - start visible!
   initial: {
-    scale: 0,
-    opacity: 0,
-    rotate: -180,
+    scale: 0.8,
+    opacity: 1,
+    rotate: 0,
   },
 
   // Animate in on mount
@@ -36,7 +38,6 @@ export const studentMailbox = {
       type: 'spring',
       stiffness: 260,
       damping: 20,
-      delay: 0.5,
     },
   },
 
@@ -97,6 +98,8 @@ export const teacherMailbox = {
   // Gentle idle float
   idle: {
     y: [0, -4, 0],
+    scale: 1,
+    opacity: 1,
     transition: {
       duration: 4,
       repeat: Infinity,
@@ -104,11 +107,11 @@ export const teacherMailbox = {
     },
   },
 
-  // Initial state
+  // Initial state - start visible!
   initial: {
-    scale: 0.8,
-    opacity: 0,
-    y: 20,
+    scale: 0.9,
+    opacity: 1,
+    y: 0,
   },
 
   // Animate in on mount
@@ -120,7 +123,6 @@ export const teacherMailbox = {
       type: 'spring',
       stiffness: 200,
       damping: 25,
-      delay: 0.5,
     },
   },
 

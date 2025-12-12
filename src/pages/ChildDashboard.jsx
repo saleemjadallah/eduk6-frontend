@@ -10,6 +10,7 @@ import { api } from '../services/api/apiClient';
 import { subscriptionAPI } from '../services/api/subscriptionAPI';
 import UploadModal from '../components/Upload/UploadModal';
 import LessonLimitModal from '../components/Parent/LessonLimitModal';
+import { SuggestionBox } from '../components/SuggestionBox';
 
 const ChildDashboard = () => {
     const navigate = useNavigate();
@@ -346,6 +347,9 @@ const ChildDashboard = () => {
                 lessonsLimit={usageData?.lessonsLimit ?? 10}
                 percentUsed={usageData?.percentUsed ?? 0}
             />
+
+            {/* Suggestion Box */}
+            <SuggestionBox variant="student" />
         </div>
     );
 };

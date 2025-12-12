@@ -4,7 +4,7 @@ import { motion } from 'framer-motion';
 import { useAuth } from '../../context/AuthContext';
 import { ChildNavigation, ModeSwitcher } from '../Navigation';
 import { ProfileSwitcher } from '../Profile';
-import { SuggestionBox } from '../SuggestionBox';
+// SuggestionBox moved to dashboard page directly
 import './ChildLayout.css';
 
 // Cloud background using AI-generated images from Gemini
@@ -131,8 +131,6 @@ const ChildLayout = () => {
         </div>
       )}
 
-      {/* Suggestion Box - for sharing ideas */}
-      <SuggestionBox variant="student" />
     </div>
   );
 };
