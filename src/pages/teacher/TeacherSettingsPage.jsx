@@ -34,15 +34,11 @@ const SUBJECTS = [
   { value: 'MATH', label: 'Mathematics' },
   { value: 'SCIENCE', label: 'Science' },
   { value: 'ENGLISH', label: 'English Language Arts' },
+  { value: 'ARABIC', label: 'Arabic' },
+  { value: 'ISLAMIC_STUDIES', label: 'Islamic Studies' },
   { value: 'SOCIAL_STUDIES', label: 'Social Studies' },
-  { value: 'HISTORY', label: 'History' },
-  { value: 'GEOGRAPHY', label: 'Geography' },
   { value: 'ART', label: 'Art' },
   { value: 'MUSIC', label: 'Music' },
-  { value: 'PHYSICAL_EDUCATION', label: 'Physical Education' },
-  { value: 'COMPUTER_SCIENCE', label: 'Computer Science' },
-  { value: 'FOREIGN_LANGUAGE', label: 'Foreign Language' },
-  { value: 'MULTIPLE', label: 'Multiple Subjects' },
   { value: 'OTHER', label: 'Other' },
 ];
 
@@ -66,7 +62,7 @@ const TeacherSettingsPage = () => {
     firstName: '',
     lastName: '',
     schoolName: '',
-    subject: '',
+    primarySubject: '',
     gradeRange: '',
   });
   const [profileLoading, setProfileLoading] = useState(false);
@@ -85,12 +81,12 @@ const TeacherSettingsPage = () => {
   const [passwordSuccess, setPasswordSuccess] = useState(false);
   const [passwordError, setPasswordError] = useState(null);
 
-  // Notification preferences
+  // Notification preferences (matches backend field names)
   const [notifications, setNotifications] = useState({
-    emailUpdates: true,
-    productNews: true,
-    usageAlerts: true,
-    weeklyDigest: false,
+    notifyProductUpdates: true,
+    notifyTipsAndTutorials: true,
+    notifyUsageAlerts: true,
+    notifyWeeklyDigest: false,
   });
   const [notifLoading, setNotifLoading] = useState(false);
   const [notifSuccess, setNotifSuccess] = useState(false);
@@ -108,8 +104,15 @@ const TeacherSettingsPage = () => {
         firstName: teacher.firstName || '',
         lastName: teacher.lastName || '',
         schoolName: teacher.schoolName || '',
-        subject: teacher.subject || '',
+        primarySubject: teacher.primarySubject || '',
         gradeRange: teacher.gradeRange || '',
+      });
+      // Initialize notification preferences from teacher data
+      setNotifications({
+        notifyProductUpdates: teacher.notifyProductUpdates ?? true,
+        notifyTipsAndTutorials: teacher.notifyTipsAndTutorials ?? true,
+        notifyUsageAlerts: teacher.notifyUsageAlerts ?? true,
+        notifyWeeklyDigest: teacher.notifyWeeklyDigest ?? false,
       });
     }
   }, [teacher]);
@@ -175,15 +178,23 @@ const TeacherSettingsPage = () => {
 
   // Handle notification preferences
   const handleNotificationToggle = async (key) => {
-    setNotifications(prev => ({ ...prev, [key]: !prev[key] }));
+    const newValue = !notifications[key];
+    setNotifications(prev => ({ ...prev, [key]: newValue }));
     setNotifLoading(true);
 
-    // In a real app, save to backend here
-    setTimeout(() => {
+    try {
+      const result = await updateProfile({ [key]: newValue });
+      if (result.success) {
+        setNotifSuccess(true);
+        setTimeout(() => setNotifSuccess(false), 2000);
+      }
+    } catch (err) {
+      // Revert on error
+      setNotifications(prev => ({ ...prev, [key]: !newValue }));
+      console.error('Failed to update notification preference:', err);
+    } finally {
       setNotifLoading(false);
-      setNotifSuccess(true);
-      setTimeout(() => setNotifSuccess(false), 2000);
-    }, 500);
+    }
   };
 
   // Handle account deletion
@@ -347,8 +358,8 @@ const TeacherSettingsPage = () => {
                         Primary Subject
                       </label>
                       <select
-                        value={profileForm.subject}
-                        onChange={(e) => setProfileForm(prev => ({ ...prev, subject: e.target.value }))}
+                        value={profileForm.primarySubject}
+                        onChange={(e) => setProfileForm(prev => ({ ...prev, primarySubject: e.target.value }))}
                         className="w-full px-4 py-2.5 border border-teacher-ink/10 rounded-xl text-sm bg-white focus:outline-none focus:border-teacher-chalk focus:ring-2 focus:ring-teacher-chalk/10 transition-all"
                       >
                         {SUBJECTS.map(({ value, label }) => (
@@ -567,22 +578,22 @@ const TeacherSettingsPage = () => {
                 <div className="space-y-4">
                   {[
                     {
-                      key: 'emailUpdates',
+                      key: 'notifyProductUpdates',
                       title: 'Product Updates',
                       description: 'New features and improvements to Orbit Learn',
                     },
                     {
-                      key: 'productNews',
+                      key: 'notifyTipsAndTutorials',
                       title: 'Tips & Tutorials',
                       description: 'Get the most out of your AI teaching assistant',
                     },
                     {
-                      key: 'usageAlerts',
+                      key: 'notifyUsageAlerts',
                       title: 'Usage Alerts',
                       description: 'Get notified when you\'re running low on credits',
                     },
                     {
-                      key: 'weeklyDigest',
+                      key: 'notifyWeeklyDigest',
                       title: 'Weekly Digest',
                       description: 'Summary of your content creation activity',
                     },
