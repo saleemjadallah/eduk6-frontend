@@ -63,10 +63,17 @@ const TeacherDashboardPage = () => {
     return num.toString();
   };
 
-  // Calculate usage percentage
-  const usagePercent = quota
-    ? Math.min(100, (Number(quota.tokensUsed || 0) / Number(quota.monthlyQuota || 100000)) * 100)
-    : 0;
+  // Calculate usage percentage - quota data comes from getQuotaInfo API
+  // Structure: { quota: { used, monthlyLimit, percentUsed }, credits: { used, total } }
+  const usagePercent = quota?.quota?.percentUsed
+    ?? (quota?.credits
+      ? Math.min(100, (quota.credits.used / quota.credits.total) * 100)
+      : 0);
+
+  // Get credit values for display
+  const creditsUsed = quota?.credits?.used ?? 0;
+  const creditsTotal = quota?.credits?.total ?? 100;
+  const quotaResetDate = quota?.quota?.resetDate;
 
   // Calculate total content
   const totalContent = contentStats
@@ -185,9 +192,9 @@ const TeacherDashboardPage = () => {
             <div className="min-w-0 flex-1">
               <p className="text-xs sm:text-sm font-medium text-teacher-inkLight">AI Credits</p>
               <p className="text-xl sm:text-3xl font-display font-bold text-teacher-ink mt-1">
-                {formatCredits(quota?.tokensUsed || 0)}
+                {creditsUsed}
                 <span className="text-sm sm:text-lg text-teacher-inkLight font-normal">
-                  {' '}/ {formatCredits(quota?.monthlyQuota || 100000)}
+                  {' '}/ {creditsTotal}
                 </span>
               </p>
             </div>
@@ -204,8 +211,8 @@ const TeacherDashboardPage = () => {
             />
           </div>
           <p className="text-[10px] sm:text-xs text-teacher-inkLight">
-            {quota?.quotaResetDate
-              ? `Resets ${new Date(quota.quotaResetDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`
+            {quotaResetDate
+              ? `Resets ${new Date(quotaResetDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`
               : 'Monthly quota'}
           </p>
         </motion.div>

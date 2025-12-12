@@ -33,10 +33,12 @@ const TeacherSidebar = ({ collapsed, onToggle, isMobile = false }) => {
     navigate('/teacher/login');
   };
 
-  // Calculate quota percentage
-  const quotaPercent = quota
-    ? Math.min(100, (Number(quota.tokensUsed || 0) / Number(quota.monthlyQuota || 100000)) * 100)
-    : 0;
+  // Calculate quota percentage - quota data comes from getQuotaInfo API
+  // Structure: { quota: { used, monthlyLimit, percentUsed }, credits: { used, total } }
+  const quotaPercent = quota?.quota?.percentUsed
+    ?? (quota?.credits
+      ? Math.min(100, (quota.credits.used / quota.credits.total) * 100)
+      : 0);
 
   const navItems = [
     {
