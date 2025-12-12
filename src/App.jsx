@@ -47,6 +47,8 @@ import {
   TeacherGradingPage,
   GenerateQuizPage,
   GenerateFlashcardsPage,
+  TeacherSettingsPage,
+  TeacherHelpPage,
 } from './pages/teacher';
 
 // Components
@@ -305,9 +307,25 @@ const router = createBrowserRouter([
                 ),
             },
 
-            // Future teacher routes
-            // { path: 'rubrics', element: <ProtectedTeacherRoute><RubricsPage /></ProtectedTeacherRoute> },
-            // { path: 'settings', element: <ProtectedTeacherRoute><TeacherSettingsPage /></ProtectedTeacherRoute> },
+            // Settings
+            {
+                path: 'settings',
+                element: (
+                    <ProtectedTeacherRoute>
+                        <TeacherSettingsPage />
+                    </ProtectedTeacherRoute>
+                ),
+            },
+
+            // Help & Support
+            {
+                path: 'help',
+                element: (
+                    <ProtectedTeacherRoute>
+                        <TeacherHelpPage />
+                    </ProtectedTeacherRoute>
+                ),
+            },
 
             // Catch-all for teacher routes
             { path: '*', element: <Navigate to="/teacher/dashboard" replace /> },

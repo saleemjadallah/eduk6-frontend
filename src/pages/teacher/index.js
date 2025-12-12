@@ -12,3 +12,5 @@ export { default as TeacherBillingPage } from './TeacherBillingPage';
 export { default as TeacherGradingPage } from './TeacherGradingPage';
 export { default as GenerateQuizPage } from './GenerateQuizPage';
 export { default as GenerateFlashcardsPage } from './GenerateFlashcardsPage';
+export { default as TeacherSettingsPage } from './TeacherSettingsPage';
+export { default as TeacherHelpPage } from './TeacherHelpPage';
