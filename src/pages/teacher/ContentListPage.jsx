@@ -218,32 +218,57 @@ const ContentListPage = () => {
     ? Object.values(stats.byType || {}).reduce((sum, count) => sum + count, 0)
     : 0;
 
-  // Dynamic page title based on content type filter
-  const getPageTitle = () => {
+  // Dynamic page title and create URL based on content type filter
+  const getPageInfo = () => {
     switch (filters.contentType) {
       case 'LESSON':
-        return { title: 'My Lessons', subtitle: 'Create and manage your lesson plans' };
+        return {
+          title: 'My Lessons',
+          subtitle: 'Create and manage your lesson plans',
+          createUrl: '/teacher/content/create',
+          createLabel: 'Create Lesson',
+        };
       case 'QUIZ':
-        return { title: 'My Quizzes', subtitle: 'Create and manage your quizzes and assessments' };
+        return {
+          title: 'My Quizzes',
+          subtitle: 'Create and manage your quizzes and assessments',
+          createUrl: '/teacher/quiz',
+          createLabel: 'Generate Quiz',
+        };
       case 'FLASHCARD_DECK':
-        return { title: 'My Flashcards', subtitle: 'Create and manage your flashcard decks' };
+        return {
+          title: 'My Flashcards',
+          subtitle: 'Create and manage your flashcard decks',
+          createUrl: '/teacher/flashcards',
+          createLabel: 'Generate Flashcards',
+        };
       case 'STUDY_GUIDE':
-        return { title: 'My Study Guides', subtitle: 'Create and manage your study guides' };
+        return {
+          title: 'My Study Guides',
+          subtitle: 'Create and manage your study guides',
+          createUrl: '/teacher/content/create',
+          createLabel: 'Create Study Guide',
+        };
       default:
-        return { title: 'My Content', subtitle: 'Create and manage your lessons, quizzes, and study materials' };
+        return {
+          title: 'My Content',
+          subtitle: 'Create and manage your lessons, quizzes, and study materials',
+          createUrl: '/teacher/content/create',
+          createLabel: 'Create Content',
+        };
     }
   };
 
-  const pageInfo = getPageTitle();
+  const pageInfo = getPageInfo();
 
-  // Header action button
+  // Header action button - context-aware based on content type filter
   const headerActions = (
     <Link
-      to="/teacher/content/create"
+      to={pageInfo.createUrl}
       className="teacher-btn-primary flex items-center gap-2"
     >
       <Plus className="w-4 h-4" />
-      <span className="hidden sm:inline">Create Content</span>
+      <span className="hidden sm:inline">{pageInfo.createLabel}</span>
       <span className="sm:hidden">Create</span>
     </Link>
   );
@@ -401,11 +426,11 @@ const ContentListPage = () => {
             Create your first piece of content to get started. I can help you build lessons, quizzes, flashcards, and more!
           </p>
           <Link
-            to="/teacher/content/create"
+            to={pageInfo.createUrl}
             className="teacher-btn-primary inline-flex items-center gap-2"
           >
             <Sparkles className="w-4 h-4" />
-            Create Your First Content
+            {pageInfo.createLabel}
           </Link>
         </motion.div>
       ) : (

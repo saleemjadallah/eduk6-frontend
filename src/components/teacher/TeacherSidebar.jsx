@@ -44,18 +44,17 @@ const TeacherSidebar = ({ collapsed, onToggle, isMobile = false }) => {
       items: [
         { icon: LayoutDashboard, label: 'Dashboard', path: '/teacher/dashboard' },
         { icon: BookOpen, label: 'My Content', path: '/teacher/content' },
-        { icon: PenTool, label: 'Create', path: '/teacher/content/create' },
       ],
     },
     {
-      section: 'Tools',
+      section: 'Create',
       items: [
-        { icon: FileText, label: 'Lessons', path: '/teacher/content?type=LESSON' },
-        { icon: ClipboardCheck, label: 'Quizzes', path: '/teacher/content?type=QUIZ' },
-        { icon: Layers, label: 'Flashcards', path: '/teacher/content?type=FLASHCARD_DECK' },
+        { icon: PenTool, label: 'Create Lesson', path: '/teacher/content/create' },
+        { icon: ClipboardCheck, label: 'Generate Quiz', path: '/teacher/quiz' },
+        { icon: Layers, label: 'Generate Flashcards', path: '/teacher/flashcards' },
         {
           icon: GraduationCap,
-          label: 'Grading',
+          label: 'Grade Papers',
           path: '/teacher/grading',
           badge: 'Soon',
           disabled: true,
