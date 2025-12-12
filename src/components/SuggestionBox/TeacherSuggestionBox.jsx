@@ -38,8 +38,8 @@ const TeacherSuggestionBox = () => {
         setTimeout(() => {
           setShowTooltip(false);
           localStorage.setItem('teacher-suggestion-tooltip-seen', 'true');
-        }, 4000);
-      }, 3000);
+        }, 5000);
+      }, 1500);
       return () => clearTimeout(timer);
     }
   }, []);

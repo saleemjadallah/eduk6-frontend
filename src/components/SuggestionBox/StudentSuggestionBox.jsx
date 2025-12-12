@@ -30,7 +30,7 @@ const StudentSuggestionBox = () => {
     });
   }, [controls]);
 
-  // Show tooltip on first visit
+  // Show tooltip on first visit (or every visit for now to help discovery)
   useEffect(() => {
     const hasSeenTooltip = localStorage.getItem('suggestion-box-tooltip-seen');
     if (!hasSeenTooltip) {
@@ -39,8 +39,8 @@ const StudentSuggestionBox = () => {
         setTimeout(() => {
           setShowTooltip(false);
           localStorage.setItem('suggestion-box-tooltip-seen', 'true');
-        }, 4000);
-      }, 2000);
+        }, 5000);
+      }, 1500);
       return () => clearTimeout(timer);
     }
   }, []);
