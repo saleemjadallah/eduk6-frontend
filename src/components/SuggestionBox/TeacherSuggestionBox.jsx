@@ -41,6 +41,18 @@ const TeacherSuggestionBox = () => {
     }
   }, []);
 
+  // Show tooltip on hover
+  const [isHovered, setIsHovered] = useState(false);
+
+  useEffect(() => {
+    if (isHovered && !isModalOpen) {
+      const timer = setTimeout(() => setShowTooltip(true), 300);
+      return () => clearTimeout(timer);
+    } else if (!isHovered) {
+      setShowTooltip(false);
+    }
+  }, [isHovered, isModalOpen]);
+
   const handleOpenModal = useCallback(() => {
     setIsModalOpen(true);
     setIsSuccess(false);
@@ -136,6 +148,8 @@ const TeacherSuggestionBox = () => {
         ref={mailboxRef}
         className="suggestion-box--teacher"
         onClick={handleOpenModal}
+        onHoverStart={() => setIsHovered(true)}
+        onHoverEnd={() => setIsHovered(false)}
         variants={teacherMailbox}
         initial="initial"
         animate={controls}

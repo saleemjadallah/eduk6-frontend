@@ -27,7 +27,7 @@ const StudentSuggestionBox = () => {
     controls.start('idle');
   }, [controls]);
 
-  // Show tooltip on first visit (or every visit for now to help discovery)
+  // Show tooltip on hover or on first visit
   useEffect(() => {
     const hasSeenTooltip = localStorage.getItem('suggestion-box-tooltip-seen');
     if (!hasSeenTooltip) {
@@ -41,6 +41,16 @@ const StudentSuggestionBox = () => {
       return () => clearTimeout(timer);
     }
   }, []);
+
+  // Show tooltip on hover
+  useEffect(() => {
+    if (isHovered && !isModalOpen) {
+      const timer = setTimeout(() => setShowTooltip(true), 300);
+      return () => clearTimeout(timer);
+    } else if (!isHovered) {
+      setShowTooltip(false);
+    }
+  }, [isHovered, isModalOpen]);
 
   const handleOpenModal = useCallback(() => {
     setIsModalOpen(true);
