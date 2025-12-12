@@ -384,6 +384,7 @@ const GenerateFlashcardsPage = () => {
         contentType: 'FLASHCARD_DECK',
         flashcardContent: generatedFlashcards,
         gradeLevel: flashcardConfig.gradeLevel || undefined,
+        status: 'PUBLISHED', // Mark as PUBLISHED since the flashcards are complete and ready to use
       });
 
       if (result.success) {

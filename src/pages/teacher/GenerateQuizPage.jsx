@@ -337,6 +337,7 @@ const GenerateQuizPage = () => {
         contentType: 'QUIZ',
         quizContent: generatedQuiz,
         gradeLevel: quizConfig.gradeLevel || undefined,
+        status: 'PUBLISHED', // Mark as PUBLISHED since the quiz is complete and ready to use
       });
 
       if (result.success) {
