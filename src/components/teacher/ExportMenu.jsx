@@ -19,6 +19,7 @@ export default function ExportMenu({ contentId, contentTitle, contentType = 'LES
     includeTeacherNotes: true,
     paperSize: 'letter',
     colorScheme: 'color',
+    separateAnswerKey: true, // For quizzes: show questions first, then answer key on separate page
     // PPTX options (using Presenton API)
     theme: 'professional',
     slideStyle: 'focused',
@@ -277,6 +278,17 @@ export default function ExportMenu({ contentId, contentTitle, contentType = 'LES
                     <option value="grayscale">Grayscale</option>
                   </select>
                 </div>
+                {/* Quiz-specific: separate answer key option */}
+                {contentType === 'QUIZ' && options.includeAnswers && (
+                  <label className="export-option">
+                    <input
+                      type="checkbox"
+                      checked={options.separateAnswerKey}
+                      onChange={(e) => setOptions({ ...options, separateAnswerKey: e.target.checked })}
+                    />
+                    <span>Separate Answer Key Page</span>
+                  </label>
+                )}
               </div>
 
               {/* PPTX-specific options - only show for lessons */}
