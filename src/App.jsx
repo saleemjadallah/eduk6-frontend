@@ -20,6 +20,7 @@ import OnboardingPage from './pages/OnboardingPage';
 import ParentDashboard from './pages/ParentDashboard';
 import MyChildrenPage from './pages/MyChildrenPage';
 import ChildDetailsPage from './pages/ChildDetailsPage';
+import BillingPage from './pages/BillingPage';
 import LoginPage from './pages/LoginPage';
 import ParentNotebookView from './pages/ParentNotebookView';
 import SafetyLogsPage from './pages/SafetyLogsPage';
@@ -183,7 +184,7 @@ const router = createBrowserRouter([
                     { path: 'safety', element: <SafetyLogsPage /> },
                     { path: 'settings', element: <SettingsPage /> },
                     { path: 'privacy', element: <PrivacyControlsPage /> },
-                    { path: 'billing', element: <PlaceholderPage title="Subscription" /> },
+                    { path: 'billing', element: <BillingPage /> },
                     { path: 'support', element: <SupportPage /> },
                 ],
             },
