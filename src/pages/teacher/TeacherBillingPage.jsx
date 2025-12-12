@@ -636,7 +636,7 @@ const TeacherBillingPage = () => {
         <h3 className="font-display text-lg font-semibold text-teacher-ink mb-4">
           Frequently Asked Questions
         </h3>
-        <div className="space-y-4">
+        <div className="space-y-6">
           <div>
             <h4 className="font-medium text-teacher-ink mb-1">What are credits?</h4>
             <p className="text-sm text-teacher-inkLight">
@@ -644,6 +644,64 @@ const TeacherBillingPage = () => {
               Different content types use different amounts of credits based on complexity.
             </p>
           </div>
+
+          <div>
+            <h4 className="font-medium text-teacher-ink mb-2">What can I create with my credits?</h4>
+            <div className="space-y-4">
+              {/* Free Tier */}
+              <div className="p-4 bg-teacher-ink/5 rounded-xl">
+                <div className="flex items-center gap-2 mb-2">
+                  <Coffee className="w-4 h-4 text-teacher-inkLight" />
+                  <span className="font-medium text-teacher-ink text-sm">Free (100 credits/month)</span>
+                </div>
+                <p className="text-sm text-teacher-inkLight">
+                  ~20 quiz generations, OR ~10 full lessons, OR ~25 paper gradings, OR ~100 chat messages
+                </p>
+              </div>
+
+              {/* Basic Tier */}
+              <div className="p-4 bg-teacher-sage/10 rounded-xl">
+                <div className="flex items-center gap-2 mb-2">
+                  <Zap className="w-4 h-4 text-teacher-sage" />
+                  <span className="font-medium text-teacher-ink text-sm">Basic (500 credits/month)</span>
+                </div>
+                <p className="text-sm text-teacher-inkLight mb-2">
+                  A typical active teacher might use per month:
+                </p>
+                <ul className="text-sm text-teacher-inkLight space-y-1 ml-4">
+                  <li>10 content analyses (50 credits)</li>
+                  <li>15 quizzes (45 credits)</li>
+                  <li>10 flashcard decks (25 credits)</li>
+                  <li>5 full lessons (60 credits)</li>
+                  <li>50 paper gradings (200 credits)</li>
+                  <li>100 chat messages (100 credits)</li>
+                </ul>
+                <p className="text-xs text-teacher-sage mt-2 font-medium">Total: ~480 credits/month</p>
+              </div>
+
+              {/* Pro Tier */}
+              <div className="p-4 bg-teacher-gold/10 rounded-xl">
+                <div className="flex items-center gap-2 mb-2">
+                  <Crown className="w-4 h-4 text-teacher-gold" />
+                  <span className="font-medium text-teacher-ink text-sm">Professional (2,000 credits/month)</span>
+                </div>
+                <p className="text-sm text-teacher-inkLight mb-2">
+                  Power user or teachers with multiple classes:
+                </p>
+                <ul className="text-sm text-teacher-inkLight space-y-1 ml-4">
+                  <li>30 content analyses (150 credits)</li>
+                  <li>50 quizzes (150 credits)</li>
+                  <li>30 flashcard decks (75 credits)</li>
+                  <li>20 full lessons (240 credits)</li>
+                  <li>200 paper gradings (800 credits)</li>
+                  <li>10 infographics (150 credits)</li>
+                  <li>300 chat messages (300 credits)</li>
+                </ul>
+                <p className="text-xs text-teacher-gold mt-2 font-medium">Total: ~1,865 credits/month</p>
+              </div>
+            </div>
+          </div>
+
           <div>
             <h4 className="font-medium text-teacher-ink mb-1">How does credit rollover work?</h4>
             <p className="text-sm text-teacher-inkLight">
