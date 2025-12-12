@@ -1,0 +1,225 @@
+/* =============================================================================
+   USAGE WARNING BANNER STYLES
+   ============================================================================= */
+
+.usage-warning-banner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 16px 20px;
+  border-radius: 16px;
+  margin-bottom: 24px;
+  position: relative;
+  overflow: hidden;
+  animation: slideIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Severity Levels */
+.usage-warning-banner.warning {
+  background: linear-gradient(135deg, #fff8e1 0%, #ffecb3 100%);
+  border: 2px solid #ffc107;
+}
+
+.usage-warning-banner.urgent {
+  background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%);
+  border: 2px solid #ff9800;
+}
+
+.usage-warning-banner.critical {
+  background: linear-gradient(135deg, #ffebee 0%, #ffcdd2 100%);
+  border: 2px solid #f44336;
+}
+
+/* Banner Content */
+.banner-content {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1;
+  min-width: 200px;
+}
+
+.banner-icon {
+  font-size: 1.75rem;
+  flex-shrink: 0;
+}
+
+.banner-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.banner-title {
+  font-size: 0.9375rem;
+  font-weight: 700;
+  color: #333;
+}
+
+.banner-description {
+  font-size: 0.8125rem;
+  color: #666;
+}
+
+/* Warning state colors */
+.usage-warning-banner.warning .banner-title {
+  color: #f57c00;
+}
+
+/* Urgent state colors */
+.usage-warning-banner.urgent .banner-title {
+  color: #e65100;
+}
+
+/* Critical state colors */
+.usage-warning-banner.critical .banner-title {
+  color: #c62828;
+}
+
+/* Banner Actions */
+.banner-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;
+}
+
+.banner-cta {
+  padding: 10px 20px;
+  border-radius: 10px;
+  font-size: 0.875rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: 2px solid #333;
+  box-shadow: 3px 3px 0 #333;
+}
+
+.usage-warning-banner.warning .banner-cta {
+  background: linear-gradient(135deg, #ffc107 0%, #ffca28 100%);
+  color: #333;
+}
+
+.usage-warning-banner.urgent .banner-cta {
+  background: linear-gradient(135deg, #ff9800 0%, #ffa726 100%);
+  color: #333;
+}
+
+.usage-warning-banner.critical .banner-cta {
+  background: linear-gradient(135deg, #2196f3 0%, #42a5f5 100%);
+  color: white;
+}
+
+.banner-cta:hover {
+  transform: translate(-2px, -2px);
+  box-shadow: 5px 5px 0 #333;
+}
+
+.banner-cta:active {
+  transform: translate(1px, 1px);
+  box-shadow: 2px 2px 0 #333;
+}
+
+.banner-dismiss {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(0, 0, 0, 0.1);
+  color: #666;
+  font-size: 1.25rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  line-height: 1;
+  padding: 0;
+}
+
+.banner-dismiss:hover {
+  background: rgba(0, 0, 0, 0.2);
+  color: #333;
+}
+
+/* Progress Bar */
+.banner-progress {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: rgba(0, 0, 0, 0.1);
+}
+
+.banner-progress-fill {
+  height: 100%;
+  transition: width 0.5s ease-out;
+}
+
+.usage-warning-banner.warning .banner-progress-fill {
+  background: linear-gradient(90deg, #ffc107, #ff9800);
+}
+
+.usage-warning-banner.urgent .banner-progress-fill {
+  background: linear-gradient(90deg, #ff9800, #f44336);
+}
+
+.usage-warning-banner.critical .banner-progress-fill {
+  background: linear-gradient(90deg, #f44336, #c62828);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .usage-warning-banner {
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 16px;
+  }
+
+  .banner-content {
+    width: 100%;
+  }
+
+  .banner-actions {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .banner-cta {
+    flex: 1;
+    text-align: center;
+  }
+}
+
+@media (max-width: 480px) {
+  .banner-icon {
+    font-size: 1.5rem;
+  }
+
+  .banner-title {
+    font-size: 0.875rem;
+  }
+
+  .banner-description {
+    font-size: 0.75rem;
+  }
+
+  .banner-cta {
+    padding: 8px 16px;
+    font-size: 0.8125rem;
+  }
+}

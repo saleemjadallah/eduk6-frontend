@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { parentDashboardAPI } from '../services/api/parentDashboardAPI';
+import { subscriptionAPI } from '../services/api/subscriptionAPI';
+import UsageWarningBanner from '../components/Parent/UsageWarningBanner';
 import './ParentDashboard.css';
 
 // Avatar mapping - matches CreateProfileStep
@@ -35,6 +37,8 @@ const ParentDashboard = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const [dashboardData, setDashboardData] = useState(null);
+  const [usageData, setUsageData] = useState(null);
+  const [bannerDismissed, setBannerDismissed] = useState(false);
 
   // Try to get auth context
   let currentUser = null;
@@ -45,17 +49,28 @@ const ParentDashboard = () => {
     // AuthProvider not available
   }
 
-  // Fetch dashboard data
+  // Fetch dashboard data and usage info
   useEffect(() => {
-    const fetchDashboardData = async () => {
+    const fetchData = async () => {
       try {
         setIsLoading(true);
         setError(null);
-        const response = await parentDashboardAPI.getDashboard();
-        if (response.success) {
-          setDashboardData(response.data);
+
+        // Fetch dashboard data and subscription/usage in parallel
+        const [dashboardRes, subscriptionRes] = await Promise.all([
+          parentDashboardAPI.getDashboard(),
+          subscriptionAPI.getSubscription().catch(() => null), // Don't fail if subscription fetch fails
+        ]);
+
+        if (dashboardRes.success) {
+          setDashboardData(dashboardRes.data);
         } else {
           setError('Failed to load dashboard data');
+        }
+
+        // Set usage data if available
+        if (subscriptionRes?.success && subscriptionRes.data?.usage) {
+          setUsageData(subscriptionRes.data.usage);
         }
       } catch (err) {
         console.error('Dashboard fetch error:', err);
@@ -65,7 +80,7 @@ const ParentDashboard = () => {
       }
     };
 
-    fetchDashboardData();
+    fetchData();
   }, []);
 
   // Loading state
@@ -123,6 +138,14 @@ const ParentDashboard = () => {
           <span>+</span> Add Child
         </button>
       </section>
+
+      {/* Usage warning banner - shows when approaching or at limit */}
+      {!bannerDismissed && usageData && (
+        <UsageWarningBanner
+          usage={usageData}
+          onDismiss={() => setBannerDismissed(true)}
+        />
+      )}
 
       {/* Stats overview */}
       <section className="dashboard-stats">

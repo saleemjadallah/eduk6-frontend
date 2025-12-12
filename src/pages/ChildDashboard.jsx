@@ -7,11 +7,15 @@ import { useAuth } from '../context/AuthContext';
 import { useGamificationContext } from '../context/GamificationContext';
 import { useChildStats } from '../hooks/useChildStats';
 import { api } from '../services/api/apiClient';
+import { subscriptionAPI } from '../services/api/subscriptionAPI';
 import UploadModal from '../components/Upload/UploadModal';
+import LessonLimitModal from '../components/Parent/LessonLimitModal';
 
 const ChildDashboard = () => {
     const navigate = useNavigate();
     const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
+    const [isLimitModalOpen, setIsLimitModalOpen] = useState(false);
+    const [usageData, setUsageData] = useState(null);
     const [deletingLessonId, setDeletingLessonId] = useState(null);
 
     // Get lessons directly from context - database is the source of truth
@@ -57,14 +61,59 @@ const ChildDashboard = () => {
         }
     }, [currentProfile?.id, refreshStats, refreshLessons]);
 
+    // Fetch usage data for lesson limits
+    useEffect(() => {
+        const fetchUsageData = async () => {
+            try {
+                const response = await subscriptionAPI.getSubscription();
+                if (response.success && response.data?.usage) {
+                    setUsageData(response.data.usage);
+                }
+            } catch (error) {
+                // Usage data not available, user might be on unlimited plan
+                console.log('Usage data not available:', error);
+            }
+        };
+        fetchUsageData();
+    }, []);
+
     const handleStartNewLesson = () => {
         clearCurrentLesson();
+
+        // Check if user is approaching or at lesson limit
+        if (usageData && !usageData.isUnlimited) {
+            const { lessonsRemaining, percentUsed } = usageData;
+
+            // Show warning if at 70% or more usage
+            if (percentUsed >= 70) {
+                setIsLimitModalOpen(true);
+                return;
+            }
+        }
+
+        // No limit concerns, open upload modal directly
         setIsUploadModalOpen(true);
     };
 
-    const handleUploadSuccess = (lessonId) => {
+    const handleLimitModalContinue = () => {
+        setIsLimitModalOpen(false);
+        setIsUploadModalOpen(true);
+    };
+
+    const handleUploadSuccess = async (lessonId) => {
         // Refresh lessons from database to ensure we have the latest
         refreshLessons();
+
+        // Refresh usage data since a lesson was created
+        try {
+            const response = await subscriptionAPI.getSubscription();
+            if (response.success && response.data?.usage) {
+                setUsageData(response.data.usage);
+            }
+        } catch (error) {
+            // Non-critical error
+        }
+
         // Navigate directly to the lesson
         navigate(`/learn/study/${lessonId}`);
     };
@@ -286,6 +335,16 @@ const ChildDashboard = () => {
                 isOpen={isUploadModalOpen}
                 onClose={() => setIsUploadModalOpen(false)}
                 onSuccess={handleUploadSuccess}
+            />
+
+            {/* Lesson Limit Warning Modal */}
+            <LessonLimitModal
+                isOpen={isLimitModalOpen}
+                onClose={() => setIsLimitModalOpen(false)}
+                onContinue={handleLimitModalContinue}
+                lessonsRemaining={usageData?.lessonsRemaining ?? 0}
+                lessonsLimit={usageData?.lessonsLimit ?? 10}
+                percentUsed={usageData?.percentUsed ?? 0}
             />
         </div>
     );
