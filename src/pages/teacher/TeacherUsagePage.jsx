@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import TeacherLayout from '../../components/teacher/TeacherLayout';
 import { useTeacherAuth } from '../../context/TeacherAuthContext';
@@ -25,9 +25,11 @@ import {
   BarChart3,
   PieChart,
   Activity,
+  CreditCard,
 } from 'lucide-react';
 
 const TeacherUsagePage = () => {
+  const navigate = useNavigate();
   const { teacher, quota } = useTeacherAuth();
   const [period, setPeriod] = useState('month');
   const [usageData, setUsageData] = useState(null);
@@ -76,16 +78,23 @@ const TeacherUsagePage = () => {
     fetchUsageData();
   }, [period]);
 
-  // Calculate usage percentage
-  const usagePercent = quota
-    ? Math.min(100, (Number(quota.tokensUsed || 0) / Number(quota.monthlyQuota || 100000)) * 100)
+  // Get credit info from quota response (uses new credit system)
+  const credits = quota?.credits || { subscription: 100, total: 100, used: 0, remaining: 100 };
+
+  // Calculate usage percentage based on subscription credits
+  const usagePercent = credits.subscription > 0
+    ? Math.min(100, (credits.used / credits.subscription) * 100)
     : 0;
 
+  // Format credits for display (credits are already human-readable: 100, 500, 2000)
   const formatCredits = (num) => {
-    if (!num) return '0';
-    if (num >= 1000000) return `${(num / 1000000).toFixed(1)}M`;
-    if (num >= 1000) return `${(num / 1000).toFixed(1)}K`;
-    return num.toString();
+    if (!num && num !== 0) return '0';
+    // For large token values (legacy), convert to credits
+    if (num >= 10000) {
+      const creditValue = Math.round(num / 1000);
+      return creditValue.toLocaleString();
+    }
+    return num.toLocaleString();
   };
 
   const getTierDetails = (tier) => {
@@ -96,8 +105,10 @@ const TeacherUsagePage = () => {
           icon: Crown,
           color: 'teacher-gold',
           bgGradient: 'from-teacher-gold/20 to-teacher-goldLight/20',
-          credits: 2000000,
-          features: ['Unlimited content types', 'Priority processing', 'Advanced analytics', 'API access'],
+          credits: 2000,
+          rolloverCap: 4000,
+          price: '$24.99/mo',
+          features: ['2,000 credits/month', 'All content types', 'Priority processing', 'AI-powered grading', 'Rollover up to 4,000'],
         };
       case 'BASIC':
         return {
@@ -105,8 +116,10 @@ const TeacherUsagePage = () => {
           icon: Zap,
           color: 'teacher-sage',
           bgGradient: 'from-teacher-sage/20 to-teacher-sageLight/20',
-          credits: 500000,
-          features: ['All content types', 'Standard processing', 'Basic analytics'],
+          credits: 500,
+          rolloverCap: 1000,
+          price: '$9.99/mo',
+          features: ['500 credits/month', 'All content types', 'Standard processing', 'Rollover up to 1,000'],
         };
       default:
         return {
@@ -114,8 +127,10 @@ const TeacherUsagePage = () => {
           icon: Coffee,
           color: 'teacher-inkLight',
           bgGradient: 'from-teacher-ink/5 to-teacher-ink/10',
-          credits: 100000,
-          features: ['Basic content types', 'Limited generations', 'Community support'],
+          credits: 100,
+          rolloverCap: 200,
+          price: 'Free',
+          features: ['100 credits/month', 'Basic content generation', 'Quiz & flashcard creation', 'Rollover up to 200'],
         };
     }
   };
@@ -185,7 +200,10 @@ const TeacherUsagePage = () => {
           </ul>
 
           {teacher?.subscriptionTier !== 'PROFESSIONAL' && (
-            <button className="w-full teacher-btn-gold text-sm">
+            <button
+              onClick={() => navigate('/teacher/billing')}
+              className="w-full teacher-btn-gold text-sm"
+            >
               Upgrade Plan
               <ArrowUpRight className="w-4 h-4 ml-2 inline" />
             </button>
@@ -229,10 +247,10 @@ const TeacherUsagePage = () => {
           <div className="mb-6">
             <div className="flex items-end gap-3 mb-3">
               <span className="font-display text-4xl font-bold text-teacher-ink">
-                {formatCredits(quota?.tokensUsed || 0)}
+                {formatCredits(credits.used)}
               </span>
               <span className="text-lg text-teacher-inkLight mb-1">
-                / {formatCredits(quota?.monthlyQuota || 100000)}
+                / {formatCredits(credits.subscription)} credits
               </span>
               <span className={`
                 ml-auto px-2 py-1 rounded-lg text-sm font-medium
@@ -246,6 +264,15 @@ const TeacherUsagePage = () => {
                 {Math.round(usagePercent)}% used
               </span>
             </div>
+
+            {/* Show rollover/bonus if any */}
+            {(credits.rollover > 0 || credits.bonus > 0) && (
+              <div className="text-sm text-teacher-inkLight mb-2">
+                {credits.rollover > 0 && <span className="mr-3">+{credits.rollover} rollover</span>}
+                {credits.bonus > 0 && <span>+{credits.bonus} bonus</span>}
+                <span className="ml-2 text-teacher-ink font-medium">= {formatCredits(credits.total)} total available</span>
+              </div>
+            )}
 
             <div className="h-4 bg-teacher-ink/5 rounded-full overflow-hidden">
               <motion.div
@@ -424,16 +451,23 @@ const TeacherUsagePage = () => {
                 Unlock more with Professional
               </h3>
               <p className="text-teacher-inkLight mb-4 max-w-xl">
-                Get 2M credits per month, priority processing, advanced analytics, and API access.
+                Get 2,000 credits per month, priority processing, AI-powered grading, and rollover up to 4,000 credits.
                 Perfect for teachers who create content regularly.
               </p>
               <div className="flex flex-wrap justify-center lg:justify-start gap-4">
-                <button className="teacher-btn-gold inline-flex items-center gap-2">
+                <button
+                  onClick={() => navigate('/teacher/billing')}
+                  className="teacher-btn-gold inline-flex items-center gap-2"
+                >
                   <Sparkles className="w-4 h-4" />
-                  Upgrade to Professional
+                  Upgrade to Professional - $24.99/mo
                 </button>
-                <button className="teacher-btn-secondary inline-flex items-center gap-2">
-                  Compare Plans
+                <button
+                  onClick={() => navigate('/teacher/billing')}
+                  className="teacher-btn-secondary inline-flex items-center gap-2"
+                >
+                  <CreditCard className="w-4 h-4" />
+                  View Plans & Billing
                   <ChevronRight className="w-4 h-4" />
                 </button>
               </div>

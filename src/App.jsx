@@ -43,7 +43,10 @@ import {
   CreateContentPage,
   ContentEditorPage,
   TeacherUsagePage,
+  TeacherBillingPage,
   TeacherGradingPage,
+  GenerateQuizPage,
+  GenerateFlashcardsPage,
 } from './pages/teacher';
 
 // Components
@@ -252,12 +255,42 @@ const router = createBrowserRouter([
                 ),
             },
 
-            // Usage & Billing
+            // Quiz Generation
+            {
+                path: 'quiz',
+                element: (
+                    <ProtectedTeacherRoute>
+                        <GenerateQuizPage />
+                    </ProtectedTeacherRoute>
+                ),
+            },
+
+            // Flashcard Generation
+            {
+                path: 'flashcards',
+                element: (
+                    <ProtectedTeacherRoute>
+                        <GenerateFlashcardsPage />
+                    </ProtectedTeacherRoute>
+                ),
+            },
+
+            // Usage Stats
             {
                 path: 'usage',
                 element: (
                     <ProtectedTeacherRoute>
                         <TeacherUsagePage />
+                    </ProtectedTeacherRoute>
+                ),
+            },
+
+            // Billing & Subscription
+            {
+                path: 'billing',
+                element: (
+                    <ProtectedTeacherRoute>
+                        <TeacherBillingPage />
                     </ProtectedTeacherRoute>
                 ),
             },

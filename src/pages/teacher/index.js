@@ -8,4 +8,7 @@ export { default as CreateContentPage } from './CreateContentPage';
 export { default as ContentEditorPage } from './ContentEditorPage';
 export { default as TeacherContentCreatePage } from './TeacherContentCreatePage';
 export { default as TeacherUsagePage } from './TeacherUsagePage';
+export { default as TeacherBillingPage } from './TeacherBillingPage';
 export { default as TeacherGradingPage } from './TeacherGradingPage';
+export { default as GenerateQuizPage } from './GenerateQuizPage';
+export { default as GenerateFlashcardsPage } from './GenerateFlashcardsPage';

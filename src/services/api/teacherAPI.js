@@ -381,6 +381,82 @@ export const teacherAPI = {
   },
 
   // ============================================
+  // SUBSCRIPTION MANAGEMENT
+  // ============================================
+
+  /**
+   * Get available subscription plans (public)
+   */
+  getPlans: async () => {
+    return teacherRequest('/subscription/plans', { method: 'GET' });
+  },
+
+  /**
+   * Get available credit packs (public)
+   */
+  getCreditPacks: async () => {
+    return teacherRequest('/subscription/credit-packs', { method: 'GET' });
+  },
+
+  /**
+   * Get current subscription status
+   */
+  getSubscription: async () => {
+    return teacherRequest('/subscription', { method: 'GET' });
+  },
+
+  /**
+   * Create checkout session for subscription upgrade
+   */
+  createCheckoutSession: async (tier, isAnnual, successUrl, cancelUrl) => {
+    return teacherRequest('/subscription/checkout', {
+      method: 'POST',
+      body: JSON.stringify({ tier, isAnnual, successUrl, cancelUrl }),
+    });
+  },
+
+  /**
+   * Create checkout session for credit pack purchase
+   */
+  createCreditPackCheckout: async (packId, successUrl, cancelUrl) => {
+    return teacherRequest('/subscription/credit-pack/checkout', {
+      method: 'POST',
+      body: JSON.stringify({ packId, successUrl, cancelUrl }),
+    });
+  },
+
+  /**
+   * Create customer portal session for managing billing
+   */
+  createPortalSession: async (returnUrl) => {
+    return teacherRequest('/subscription/portal', {
+      method: 'POST',
+      body: JSON.stringify({ returnUrl }),
+    });
+  },
+
+  /**
+   * Cancel subscription at period end
+   */
+  cancelSubscription: async () => {
+    return teacherRequest('/subscription/cancel', { method: 'POST' });
+  },
+
+  /**
+   * Resume cancelled subscription
+   */
+  resumeSubscription: async () => {
+    return teacherRequest('/subscription/resume', { method: 'POST' });
+  },
+
+  /**
+   * Check Stripe configuration status
+   */
+  getConfigStatus: async () => {
+    return teacherRequest('/subscription/config-status', { method: 'GET' });
+  },
+
+  // ============================================
   // CONTENT MANAGEMENT
   // ============================================
 
