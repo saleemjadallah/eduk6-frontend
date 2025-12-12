@@ -87,6 +87,17 @@ export function ChatProvider({ children, userProfile: propUserProfile }) {
                         currentLesson.content?.rawText ||
                         '';
 
+    // Debug: Log warning if lesson exists but content is empty
+    // This helps identify data flow issues
+    if (!fullContent && currentLesson.id) {
+      console.warn('[ChatContext] Lesson loaded but extractedText is empty. Jeffrey may not be able to answer lesson-specific questions.', {
+        lessonId: currentLesson.id,
+        title: currentLesson.title,
+        hasExtractedText: !!currentLesson.extractedText,
+        hasRawText: !!currentLesson.rawText,
+      });
+    }
+
     return {
       lessonId: currentLesson.id,
       title: currentLesson.title,
