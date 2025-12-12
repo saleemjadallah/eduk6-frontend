@@ -9,69 +9,47 @@
 // =========================================
 
 export const studentMailbox = {
-  // Idle breathing animation
+  // Idle breathing animation - smooth loop
   idle: {
-    y: [0, -8, 0],
-    rotate: [-2, 2, -2],
-    scale: 1,
-    opacity: 1,
+    y: [0, -6, 0],
+    rotate: [-1, 1, -1],
     transition: {
-      duration: 3,
+      duration: 4,
       repeat: Infinity,
       ease: 'easeInOut',
+      repeatType: 'loop',
     },
   },
 
-  // Initial state - start visible!
+  // Initial state - start fully visible
   initial: {
-    scale: 0.8,
-    opacity: 1,
-    rotate: 0,
-  },
-
-  // Animate in on mount
-  animate: {
     scale: 1,
     opacity: 1,
+    y: 0,
     rotate: 0,
-    transition: {
-      type: 'spring',
-      stiffness: 260,
-      damping: 20,
-    },
   },
 
-  // Exit animation
-  exit: {
-    scale: 0,
-    opacity: 0,
-    transition: { duration: 0.3 },
-  },
-
-  // Hover state - excited wiggle
+  // Hover state - gentle scale up
   hover: {
-    scale: 1.1,
-    rotate: [0, -5, 5, -5, 5, 0],
+    scale: 1.08,
     transition: {
-      scale: { duration: 0.2 },
-      rotate: { duration: 0.5, times: [0, 0.2, 0.4, 0.6, 0.8, 1] },
+      duration: 0.2,
+      ease: 'easeOut',
     },
   },
 
   // Tap/click state - squish
   tap: {
-    scale: 0.9,
-    rotate: 0,
+    scale: 0.95,
     transition: { duration: 0.1 },
   },
 
   // Receiving letter - gulp animation
   receive: {
-    scale: [1, 1.2, 0.9, 1.05, 1],
-    rotate: [0, -5, 5, -2, 0],
+    scale: [1, 1.15, 0.95, 1.02, 1],
     transition: {
-      duration: 0.6,
-      times: [0, 0.2, 0.4, 0.7, 1],
+      duration: 0.5,
+      times: [0, 0.2, 0.5, 0.8, 1],
       ease: 'easeOut',
     },
   },
@@ -95,46 +73,25 @@ export const studentFlag = {
 // =========================================
 
 export const teacherMailbox = {
-  // Gentle idle float
+  // Gentle idle float - smooth loop
   idle: {
     y: [0, -4, 0],
-    scale: 1,
-    opacity: 1,
     transition: {
-      duration: 4,
+      duration: 5,
       repeat: Infinity,
       ease: 'easeInOut',
+      repeatType: 'loop',
     },
   },
 
-  // Initial state - start visible!
+  // Initial state - start fully visible
   initial: {
-    scale: 0.9,
-    opacity: 1,
-    y: 0,
-  },
-
-  // Animate in on mount
-  animate: {
     scale: 1,
     opacity: 1,
     y: 0,
-    transition: {
-      type: 'spring',
-      stiffness: 200,
-      damping: 25,
-    },
   },
 
-  // Exit animation
-  exit: {
-    scale: 0.8,
-    opacity: 0,
-    y: 20,
-    transition: { duration: 0.3 },
-  },
-
-  // Hover state - subtle lift and glow
+  // Hover state - subtle lift
   hover: {
     scale: 1.05,
     y: -2,
@@ -149,9 +106,9 @@ export const teacherMailbox = {
 
   // Receiving - subtle pulse
   receive: {
-    scale: [1, 1.08, 0.98, 1],
+    scale: [1, 1.06, 0.98, 1],
     transition: {
-      duration: 0.5,
+      duration: 0.4,
       times: [0, 0.3, 0.6, 1],
       ease: 'easeOut',
     },

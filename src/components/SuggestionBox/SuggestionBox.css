@@ -33,6 +33,10 @@
   outline: none;
   -webkit-appearance: none;
   appearance: none;
+  /* Performance optimizations */
+  will-change: transform;
+  transform: translateZ(0);
+  backface-visibility: hidden;
 }
 
 .suggestion-box--student:hover {
@@ -102,6 +106,10 @@
   outline: none;
   -webkit-appearance: none;
   appearance: none;
+  /* Performance optimizations */
+  will-change: transform;
+  transform: translateZ(0);
+  backface-visibility: hidden;
 }
 
 .suggestion-box--teacher::before {

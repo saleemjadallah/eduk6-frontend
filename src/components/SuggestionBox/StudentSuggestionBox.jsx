@@ -22,12 +22,9 @@ const StudentSuggestionBox = () => {
   const mailboxRef = useRef(null);
   const controls = useAnimation();
 
-  // Animate in on mount, then start idle animation
+  // Start idle animation on mount
   useEffect(() => {
-    // First animate to visible state, then start idle breathing
-    controls.start('animate').then(() => {
-      controls.start('idle');
-    });
+    controls.start('idle');
   }, [controls]);
 
   // Show tooltip on first visit (or every visit for now to help discovery)
