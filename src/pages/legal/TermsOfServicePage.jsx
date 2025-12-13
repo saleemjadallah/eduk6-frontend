@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
 
 const TermsOfServicePage = () => {
-  const lastUpdated = 'December 2025';
+  const lastUpdated = 'December 13, 2025';
 
   return (
     <div className="min-h-screen bg-gray-50">

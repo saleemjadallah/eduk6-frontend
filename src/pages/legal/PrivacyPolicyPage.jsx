@@ -114,10 +114,10 @@ const PrivacyPolicyPage = () => {
                       <tr><td className="py-2 font-medium text-gray-700 pr-4">Company Name</td><td className="py-2 text-gray-600">Jasmine Entertainment Fze</td></tr>
                       <tr><td className="py-2 font-medium text-gray-700 pr-4">Service Name</td><td className="py-2 text-gray-600">OrbitLearn</td></tr>
                       <tr><td className="py-2 font-medium text-gray-700 pr-4">Address</td><td className="py-2 text-gray-600">Publishing City, Sharjah, UAE</td></tr>
-                      <tr><td className="py-2 font-medium text-gray-700 pr-4">General Support</td><td className="py-2 text-gray-600"><a href="mailto:support@orbitlearn.com" className="text-indigo-600 hover:underline">support@orbitlearn.com</a></td></tr>
-                      <tr><td className="py-2 font-medium text-gray-700 pr-4">Privacy Inquiries</td><td className="py-2 text-gray-600"><a href="mailto:privacy@orbitlearn.com" className="text-indigo-600 hover:underline">privacy@orbitlearn.com</a></td></tr>
-                      <tr><td className="py-2 font-medium text-gray-700 pr-4">Data Protection Officer</td><td className="py-2 text-gray-600"><a href="mailto:dpo@orbitlearn.com" className="text-indigo-600 hover:underline">dpo@orbitlearn.com</a></td></tr>
-                      <tr><td className="py-2 font-medium text-gray-700 pr-4">Child Safety</td><td className="py-2 text-gray-600"><a href="mailto:safety@orbitlearn.com" className="text-indigo-600 hover:underline">safety@orbitlearn.com</a></td></tr>
+                      <tr><td className="py-2 font-medium text-gray-700 pr-4">General Support</td><td className="py-2 text-gray-600"><a href="mailto:support@orbitlearn.app" className="text-indigo-600 hover:underline">support@orbitlearn.app</a></td></tr>
+                      <tr><td className="py-2 font-medium text-gray-700 pr-4">Privacy Inquiries</td><td className="py-2 text-gray-600"><a href="mailto:privacy@orbitlearn.app" className="text-indigo-600 hover:underline">privacy@orbitlearn.app</a></td></tr>
+                      <tr><td className="py-2 font-medium text-gray-700 pr-4">Data Protection Officer</td><td className="py-2 text-gray-600"><a href="mailto:dpo@orbitlearn.app" className="text-indigo-600 hover:underline">dpo@orbitlearn.app</a></td></tr>
+                      <tr><td className="py-2 font-medium text-gray-700 pr-4">Child Safety</td><td className="py-2 text-gray-600"><a href="mailto:safety@orbitlearn.app" className="text-indigo-600 hover:underline">safety@orbitlearn.app</a></td></tr>
                       <tr><td className="py-2 font-medium text-gray-700 pr-4">Phone</td><td className="py-2 text-gray-600">+971507493651</td></tr>
                     </tbody>
                   </table>
@@ -324,7 +324,7 @@ const PrivacyPolicyPage = () => {
                   </div>
                   <p className="text-gray-600">
                     <strong>To Delete:</strong> Parent Dashboard or email{' '}
-                    <a href="mailto:privacy@orbitlearn.com" className="text-indigo-600 hover:underline">privacy@orbitlearn.com</a>
+                    <a href="mailto:privacy@orbitlearn.app" className="text-indigo-600 hover:underline">privacy@orbitlearn.app</a>
                   </p>
                 </div>
               </SectionHeader>
@@ -375,7 +375,7 @@ const PrivacyPolicyPage = () => {
                   </div>
                   <p className="text-gray-600">
                     <strong>To Exercise:</strong>{' '}
-                    <a href="mailto:privacy@orbitlearn.com" className="text-indigo-600 hover:underline">privacy@orbitlearn.com</a>{' '}
+                    <a href="mailto:privacy@orbitlearn.app" className="text-indigo-600 hover:underline">privacy@orbitlearn.app</a>{' '}
                     or Parent Dashboard
                   </p>
                 </div>
@@ -503,8 +503,8 @@ const PrivacyPolicyPage = () => {
               <div className="mt-6 bg-indigo-50 rounded-lg p-4">
                 <h4 className="font-semibold text-indigo-800 mb-2">How to Exercise Rights:</h4>
                 <p className="text-indigo-700">
-                  <strong>Parent Dashboard:</strong> orbitlearn.com/parent/privacy<br />
-                  <strong>Email:</strong> <a href="mailto:privacy@orbitlearn.com" className="underline">privacy@orbitlearn.com</a><br />
+                  <strong>Parent Dashboard:</strong> orbitlearn.app/parent/privacy<br />
+                  <strong>Email:</strong> <a href="mailto:privacy@orbitlearn.app" className="underline">privacy@orbitlearn.app</a><br />
                   <strong>Phone:</strong> +971507493651<br />
                   <strong>Response Time:</strong> 24-48 hours
                 </p>
@@ -551,7 +551,7 @@ const PrivacyPolicyPage = () => {
 
                 <p className="text-gray-600">
                   <strong>Contact:</strong>{' '}
-                  <a href="mailto:teachers@orbitlearn.com" className="text-indigo-600 hover:underline">teachers@orbitlearn.com</a>
+                  <a href="mailto:teachers@orbitlearn.app" className="text-indigo-600 hover:underline">teachers@orbitlearn.app</a>
                 </p>
               </div>
             </section>
@@ -589,7 +589,7 @@ const PrivacyPolicyPage = () => {
 
                 <p className="text-gray-600">
                   <strong>Data Processing Agreement available for schools:</strong>{' '}
-                  <a href="mailto:schools@orbitlearn.com" className="text-indigo-600 hover:underline">schools@orbitlearn.com</a>
+                  <a href="mailto:schools@orbitlearn.app" className="text-indigo-600 hover:underline">schools@orbitlearn.app</a>
                 </p>
               </div>
             </section>
@@ -664,12 +664,12 @@ const PrivacyPolicyPage = () => {
                     Email Contacts
                   </h3>
                   <ul className="space-y-2 text-sm">
-                    <li><strong>General Privacy:</strong> <a href="mailto:privacy@orbitlearn.com" className="text-indigo-600 hover:underline">privacy@orbitlearn.com</a></li>
-                    <li><strong>Children's Privacy:</strong> <a href="mailto:coppa@orbitlearn.com" className="text-indigo-600 hover:underline">coppa@orbitlearn.com</a></li>
-                    <li><strong>Child Safety:</strong> <a href="mailto:safety@orbitlearn.com" className="text-indigo-600 hover:underline">safety@orbitlearn.com</a> (24/7)</li>
-                    <li><strong>Teacher Privacy:</strong> <a href="mailto:teachers@orbitlearn.com" className="text-indigo-600 hover:underline">teachers@orbitlearn.com</a></li>
-                    <li><strong>School/FERPA:</strong> <a href="mailto:ferpa@orbitlearn.com" className="text-indigo-600 hover:underline">ferpa@orbitlearn.com</a></li>
-                    <li><strong>Data Protection Officer:</strong> <a href="mailto:dpo@orbitlearn.com" className="text-indigo-600 hover:underline">dpo@orbitlearn.com</a></li>
+                    <li><strong>General Privacy:</strong> <a href="mailto:privacy@orbitlearn.app" className="text-indigo-600 hover:underline">privacy@orbitlearn.app</a></li>
+                    <li><strong>Children's Privacy:</strong> <a href="mailto:coppa@orbitlearn.app" className="text-indigo-600 hover:underline">coppa@orbitlearn.app</a></li>
+                    <li><strong>Child Safety:</strong> <a href="mailto:safety@orbitlearn.app" className="text-indigo-600 hover:underline">safety@orbitlearn.app</a> (24/7)</li>
+                    <li><strong>Teacher Privacy:</strong> <a href="mailto:teachers@orbitlearn.app" className="text-indigo-600 hover:underline">teachers@orbitlearn.app</a></li>
+                    <li><strong>School/FERPA:</strong> <a href="mailto:ferpa@orbitlearn.app" className="text-indigo-600 hover:underline">ferpa@orbitlearn.app</a></li>
+                    <li><strong>Data Protection Officer:</strong> <a href="mailto:dpo@orbitlearn.app" className="text-indigo-600 hover:underline">dpo@orbitlearn.app</a></li>
                   </ul>
                 </div>
 
@@ -695,7 +695,7 @@ const PrivacyPolicyPage = () => {
           {/* Footer Note */}
           <div className="mt-12 pt-8 border-t border-gray-200 text-center text-sm text-gray-500">
             <p>This Privacy Policy was last updated on {lastUpdated} and is effective as of {lastUpdated}.</p>
-            <p className="mt-2"><strong>Jasmine Entertainment Fze | OrbitLearn | support@orbitlearn.com</strong></p>
+            <p className="mt-2"><strong>Jasmine Entertainment Fze | OrbitLearn | support@orbitlearn.app</strong></p>
           </div>
         </article>
       </main>
