@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import TeacherSidebar from './TeacherSidebar';
 import TeacherHeader from './TeacherHeader';
+import DashboardFooter from '../common/DashboardFooter';
 // SuggestionBox moved to dashboard page directly
 
 const TeacherLayout = ({ children, title, subtitle, headerActions }) => {
@@ -137,6 +138,11 @@ const TeacherLayout = ({ children, title, subtitle, headerActions }) => {
             </motion.div>
           </div>
         </main>
+
+        {/* Footer */}
+        <div className="relative z-10">
+          <DashboardFooter variant="minimal" />
+        </div>
       </div>
 
     </div>

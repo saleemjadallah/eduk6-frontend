@@ -3,6 +3,7 @@ import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { useMode } from '../../context/ModeContext';
 import { ParentNavigation, ModeSwitcher } from '../Navigation';
+import DashboardFooter from '../common/DashboardFooter';
 import './ParentLayout.css';
 
 const ParentLayout = () => {
@@ -102,6 +103,9 @@ const ParentLayout = () => {
         <main className="parent-main">
           <Outlet key={location.pathname} />
         </main>
+
+        {/* Footer */}
+        <DashboardFooter variant="minimal" />
       </div>
     </div>
   );

@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import { useAuth } from '../../context/AuthContext';
 import { ChildNavigation, ModeSwitcher } from '../Navigation';
 import { ProfileSwitcher } from '../Profile';
+import DashboardFooter from '../common/DashboardFooter';
 // SuggestionBox moved to dashboard page directly
 import './ChildLayout.css';
 
@@ -131,6 +132,8 @@ const ChildLayout = () => {
         </div>
       )}
 
+      {/* Footer - child-friendly variant */}
+      <DashboardFooter variant="child" />
     </div>
   );
 };

@@ -290,9 +290,9 @@ const TeacherSignupPage = () => {
             </p>
             <p>
               By creating an account, you agree to our{' '}
-              <a href="/terms" className="text-indigo-600 hover:underline">Terms of Service</a>
-              {' '}and{' '}
-              <a href="/privacy" className="text-indigo-600 hover:underline">Privacy Policy</a>.
+              <a href="/terms" className="text-indigo-600 hover:underline">Terms of Service</a>,{' '}
+              <a href="/privacy-policy" className="text-indigo-600 hover:underline">Privacy Policy</a>, and{' '}
+              <a href="/coppa" className="text-indigo-600 hover:underline">COPPA Compliance</a>.
             </p>
           </div>
         </motion.div>

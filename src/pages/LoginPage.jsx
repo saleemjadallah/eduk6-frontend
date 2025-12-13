@@ -232,7 +232,7 @@ const LoginPage = () => {
               By creating an account, you agree to our{' '}
               <a href="/terms" className="text-nanobanana-blue hover:underline">Terms of Service</a>
               {' '}and{' '}
-              <a href="/privacy" className="text-nanobanana-blue hover:underline">Privacy Policy</a>.
+              <a href="/privacy-policy" className="text-nanobanana-blue hover:underline">Privacy Policy</a>.
             </p>
             <p className="mt-2">
               We take your child's privacy seriously.{' '}
