@@ -251,15 +251,15 @@ const ChildDashboard = () => {
             {!isLoading && recentLessons && recentLessons.length > 0 && (
                 <div className="mb-8">
                     <h2 className="text-xl font-bold mb-4">Continue Learning</h2>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <div className="flex gap-4 overflow-x-auto pb-2 -mx-4 px-4 no-scrollbar">
                         <AnimatePresence>
-                            {recentLessons.slice(0, 3).map((lesson) => (
+                            {recentLessons.map((lesson) => (
                                 <motion.div
                                     key={lesson.id}
                                     layout
                                     initial={{ opacity: 1, scale: 1 }}
                                     exit={{ opacity: 0, scale: 0.8, transition: { duration: 0.2 } }}
-                                    className="relative group"
+                                    className="relative group flex-shrink-0 w-[300px] md:w-[350px]"
                                 >
                                     <Link to={`/learn/study/${lesson.id}`} className="block">
                                         <motion.div
