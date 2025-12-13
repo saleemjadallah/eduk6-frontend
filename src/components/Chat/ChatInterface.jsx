@@ -662,10 +662,17 @@ const ChatInterface = ({
                         animate={{ opacity: 1, y: 0 }}
                         className="flex justify-start"
                     >
-                        <div className="max-w-[80%] p-3 rounded-2xl border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] bg-gray-100 text-black rounded-bl-none">
-                            <p className="font-medium text-sm whitespace-pre-wrap">
-                                {chatContext.welcomeMessage}
-                            </p>
+                        <div className="flex items-end gap-2">
+                            <img
+                                src="/assets/images/jeffrey-avatar.png"
+                                alt="Jeffrey"
+                                className="w-8 h-8 rounded-full border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] flex-shrink-0"
+                            />
+                            <div className="max-w-[80%] p-3 rounded-2xl border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] bg-gray-100 text-black rounded-bl-none">
+                                <p className="font-medium text-sm whitespace-pre-wrap">
+                                    {chatContext.welcomeMessage}
+                                </p>
+                            </div>
                         </div>
                     </motion.div>
                 )}
@@ -679,140 +686,185 @@ const ChatInterface = ({
                     >
                         {/* Regular text message */}
                         {msg.messageType === 'text' && (
-                            <div
-                                className={`max-w-[80%] p-3 rounded-2xl border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] ${
-                                    msg.type === 'user'
-                                        ? 'bg-nanobanana-blue text-white rounded-br-none'
-                                        : msg.isError
-                                            ? 'bg-red-50 text-red-800 rounded-bl-none border-red-300'
-                                            : 'bg-gray-100 text-black rounded-bl-none'
-                                }`}
-                            >
-                                <p className="font-medium text-sm whitespace-pre-wrap">
-                                    {msg.text}
-                                    {msg.isStreaming && (
-                                        <span className="inline-block w-1.5 h-4 ml-1 bg-current animate-pulse" />
-                                    )}
-                                </p>
-                                {msg.safetyFlags && msg.safetyFlags.length > 0 && (
-                                    <div className="mt-2 pt-2 border-t border-gray-300 flex items-center gap-1 text-xs text-gray-500">
-                                        <span>Content reviewed for safety</span>
-                                    </div>
+                            <div className={`flex items-end gap-2 ${msg.type === 'user' ? 'flex-row-reverse' : 'flex-row'}`}>
+                                {/* Jeffrey avatar for bot messages */}
+                                {msg.type === 'bot' && (
+                                    <img
+                                        src="/assets/images/jeffrey-avatar.png"
+                                        alt="Jeffrey"
+                                        className="w-8 h-8 rounded-full border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] flex-shrink-0"
+                                    />
                                 )}
+                                <div
+                                    className={`max-w-[80%] p-3 rounded-2xl border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] ${
+                                        msg.type === 'user'
+                                            ? 'bg-nanobanana-blue text-white rounded-br-none'
+                                            : msg.isError
+                                                ? 'bg-red-50 text-red-800 rounded-bl-none border-red-300'
+                                                : 'bg-gray-100 text-black rounded-bl-none'
+                                    }`}
+                                >
+                                    <p className="font-medium text-sm whitespace-pre-wrap">
+                                        {msg.text}
+                                        {msg.isStreaming && (
+                                            <span className="inline-block w-1.5 h-4 ml-1 bg-current animate-pulse" />
+                                        )}
+                                    </p>
+                                    {msg.safetyFlags && msg.safetyFlags.length > 0 && (
+                                        <div className="mt-2 pt-2 border-t border-gray-300 flex items-center gap-1 text-xs text-gray-500">
+                                            <span>Content reviewed for safety</span>
+                                        </div>
+                                    )}
+                                </div>
                             </div>
                         )}
 
                         {/* Flashcards message */}
                         {msg.messageType === 'flashcards' && msg.flashcards && (
-                            <div className="w-full max-w-md p-3 bg-gray-100 rounded-2xl border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] rounded-bl-none">
-                                <div className="flex items-center justify-between mb-3">
-                                    <div className="flex items-center gap-2 text-sm font-bold text-gray-600">
-                                        <FileText className="w-4 h-4" />
-                                        <span>Flashcards for you!</span>
+                            <div className="flex items-start gap-2">
+                                <img
+                                    src="/assets/images/jeffrey-avatar.png"
+                                    alt="Jeffrey"
+                                    className="w-8 h-8 rounded-full border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] flex-shrink-0"
+                                />
+                                <div className="w-full max-w-md p-3 bg-gray-100 rounded-2xl border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] rounded-bl-none">
+                                    <div className="flex items-center justify-between mb-3">
+                                        <div className="flex items-center gap-2 text-sm font-bold text-gray-600">
+                                            <FileText className="w-4 h-4" />
+                                            <span>Flashcards for you!</span>
+                                        </div>
+                                        <button
+                                            onClick={() => handleExpandView('flashcards', msg.flashcards)}
+                                            className="p-1.5 bg-white border-2 border-black rounded-lg hover:bg-nanobanana-yellow transition-colors shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] active:translate-y-[1px] active:shadow-none"
+                                            title="Expand view"
+                                        >
+                                            <ZoomIn className="w-4 h-4" />
+                                        </button>
                                     </div>
-                                    <button
-                                        onClick={() => handleExpandView('flashcards', msg.flashcards)}
-                                        className="p-1.5 bg-white border-2 border-black rounded-lg hover:bg-nanobanana-yellow transition-colors shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] active:translate-y-[1px] active:shadow-none"
-                                        title="Expand view"
-                                    >
-                                        <ZoomIn className="w-4 h-4" />
-                                    </button>
+                                    <FlashcardInline flashcards={msg.flashcards} />
                                 </div>
-                                <FlashcardInline flashcards={msg.flashcards} />
                             </div>
                         )}
 
                         {/* Summary message */}
                         {msg.messageType === 'summary' && msg.summary && (
-                            <div className="w-full max-w-lg p-3 bg-gray-100 rounded-2xl border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] rounded-bl-none">
-                                <div className="flex items-center justify-between mb-3">
-                                    <div className="flex items-center gap-2 text-sm font-bold text-gray-600">
-                                        <BookOpen className="w-4 h-4" />
-                                        <span>Here's your lesson summary!</span>
+                            <div className="flex items-start gap-2">
+                                <img
+                                    src="/assets/images/jeffrey-avatar.png"
+                                    alt="Jeffrey"
+                                    className="w-8 h-8 rounded-full border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] flex-shrink-0"
+                                />
+                                <div className="w-full max-w-lg p-3 bg-gray-100 rounded-2xl border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] rounded-bl-none">
+                                    <div className="flex items-center justify-between mb-3">
+                                        <div className="flex items-center gap-2 text-sm font-bold text-gray-600">
+                                            <BookOpen className="w-4 h-4" />
+                                            <span>Here's your lesson summary!</span>
+                                        </div>
+                                        <button
+                                            onClick={() => handleExpandView('summary', msg.summary)}
+                                            className="p-1.5 bg-white border-2 border-black rounded-lg hover:bg-nanobanana-yellow transition-colors shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] active:translate-y-[1px] active:shadow-none"
+                                            title="Expand view"
+                                        >
+                                            <ZoomIn className="w-4 h-4" />
+                                        </button>
                                     </div>
-                                    <button
-                                        onClick={() => handleExpandView('summary', msg.summary)}
-                                        className="p-1.5 bg-white border-2 border-black rounded-lg hover:bg-nanobanana-yellow transition-colors shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] active:translate-y-[1px] active:shadow-none"
-                                        title="Expand view"
-                                    >
-                                        <ZoomIn className="w-4 h-4" />
-                                    </button>
+                                    <SummaryInline summary={msg.summary} />
                                 </div>
-                                <SummaryInline summary={msg.summary} />
                             </div>
                         )}
 
                         {/* Infographic message */}
                         {msg.messageType === 'infographic' && msg.imageData && (
-                            <div className="w-full max-w-md p-3 bg-gray-100 rounded-2xl border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] rounded-bl-none">
-                                <div className="flex items-center justify-between mb-3">
-                                    <div className="flex items-center gap-2 text-sm font-bold text-gray-600">
-                                        <Image className="w-4 h-4" />
-                                        <span>Here's your infographic!</span>
-                                    </div>
-                                    <button
-                                        onClick={() => handleExpandView('infographic', { imageData: msg.imageData, mimeType: msg.mimeType, text: msg.text })}
-                                        className="p-1.5 bg-white border-2 border-black rounded-lg hover:bg-nanobanana-yellow transition-colors shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] active:translate-y-[1px] active:shadow-none"
-                                        title="Expand view"
-                                    >
-                                        <ZoomIn className="w-4 h-4" />
-                                    </button>
-                                </div>
+                            <div className="flex items-start gap-2">
                                 <img
-                                    src={`data:${msg.mimeType || 'image/png'};base64,${msg.imageData}`}
-                                    alt="Lesson infographic"
-                                    className="w-full rounded-xl border-2 border-black"
+                                    src="/assets/images/jeffrey-avatar.png"
+                                    alt="Jeffrey"
+                                    className="w-8 h-8 rounded-full border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] flex-shrink-0"
                                 />
-                                {msg.text && (
-                                    <p className="mt-2 text-sm text-gray-600">{msg.text}</p>
-                                )}
+                                <div className="w-full max-w-md p-3 bg-gray-100 rounded-2xl border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] rounded-bl-none">
+                                    <div className="flex items-center justify-between mb-3">
+                                        <div className="flex items-center gap-2 text-sm font-bold text-gray-600">
+                                            <Image className="w-4 h-4" />
+                                            <span>Here's your infographic!</span>
+                                        </div>
+                                        <button
+                                            onClick={() => handleExpandView('infographic', { imageData: msg.imageData, mimeType: msg.mimeType, text: msg.text })}
+                                            className="p-1.5 bg-white border-2 border-black rounded-lg hover:bg-nanobanana-yellow transition-colors shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] active:translate-y-[1px] active:shadow-none"
+                                            title="Expand view"
+                                        >
+                                            <ZoomIn className="w-4 h-4" />
+                                        </button>
+                                    </div>
+                                    <img
+                                        src={`data:${msg.mimeType || 'image/png'};base64,${msg.imageData}`}
+                                        alt="Lesson infographic"
+                                        className="w-full rounded-xl border-2 border-black"
+                                    />
+                                    {msg.text && (
+                                        <p className="mt-2 text-sm text-gray-600">{msg.text}</p>
+                                    )}
+                                </div>
                             </div>
                         )}
 
                         {/* Image message (from chat drawing requests) */}
                         {msg.messageType === 'image' && msg.imageData && (
-                            <div className="w-full max-w-md p-3 bg-gradient-to-br from-purple-50 to-pink-50 rounded-2xl border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] rounded-bl-none">
-                                <div className="flex items-center justify-between mb-3">
-                                    <div className="flex items-center gap-2 text-sm font-bold text-purple-600">
-                                        <Sparkles className="w-4 h-4" />
-                                        <span>Jeffrey drew this for you!</span>
-                                    </div>
-                                    <button
-                                        onClick={() => handleExpandView('image', { imageData: msg.imageData, mimeType: msg.mimeType, text: msg.text })}
-                                        className="p-1.5 bg-white border-2 border-black rounded-lg hover:bg-nanobanana-yellow transition-colors shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] active:translate-y-[1px] active:shadow-none"
-                                        title="Expand view"
-                                    >
-                                        <ZoomIn className="w-4 h-4" />
-                                    </button>
-                                </div>
+                            <div className="flex items-start gap-2">
                                 <img
-                                    src={`data:${msg.mimeType || 'image/png'};base64,${msg.imageData}`}
-                                    alt="Jeffrey's drawing"
-                                    className="w-full rounded-xl border-2 border-black"
+                                    src="/assets/images/jeffrey-avatar.png"
+                                    alt="Jeffrey"
+                                    className="w-8 h-8 rounded-full border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] flex-shrink-0"
                                 />
-                                {msg.text && (
-                                    <p className="mt-3 text-sm text-gray-700 font-medium">{msg.text}</p>
-                                )}
+                                <div className="w-full max-w-md p-3 bg-gradient-to-br from-purple-50 to-pink-50 rounded-2xl border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] rounded-bl-none">
+                                    <div className="flex items-center justify-between mb-3">
+                                        <div className="flex items-center gap-2 text-sm font-bold text-purple-600">
+                                            <Sparkles className="w-4 h-4" />
+                                            <span>Jeffrey drew this for you!</span>
+                                        </div>
+                                        <button
+                                            onClick={() => handleExpandView('image', { imageData: msg.imageData, mimeType: msg.mimeType, text: msg.text })}
+                                            className="p-1.5 bg-white border-2 border-black rounded-lg hover:bg-nanobanana-yellow transition-colors shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] active:translate-y-[1px] active:shadow-none"
+                                            title="Expand view"
+                                        >
+                                            <ZoomIn className="w-4 h-4" />
+                                        </button>
+                                    </div>
+                                    <img
+                                        src={`data:${msg.mimeType || 'image/png'};base64,${msg.imageData}`}
+                                        alt="Jeffrey's drawing"
+                                        className="w-full rounded-xl border-2 border-black"
+                                    />
+                                    {msg.text && (
+                                        <p className="mt-3 text-sm text-gray-700 font-medium">{msg.text}</p>
+                                    )}
+                                </div>
                             </div>
                         )}
 
                         {/* Quiz message */}
                         {msg.messageType === 'quiz' && msg.quiz && (
-                            <div className="w-full max-w-lg p-3 bg-gray-100 rounded-2xl border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] rounded-bl-none">
-                                <div className="flex items-center justify-between mb-3">
-                                    <div className="flex items-center gap-2 text-sm font-bold text-gray-600">
-                                        <HelpCircle className="w-4 h-4" />
-                                        <span>Let's test your knowledge!</span>
+                            <div className="flex items-start gap-2">
+                                <img
+                                    src="/assets/images/jeffrey-avatar.png"
+                                    alt="Jeffrey"
+                                    className="w-8 h-8 rounded-full border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] flex-shrink-0"
+                                />
+                                <div className="w-full max-w-lg p-3 bg-gray-100 rounded-2xl border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] rounded-bl-none">
+                                    <div className="flex items-center justify-between mb-3">
+                                        <div className="flex items-center gap-2 text-sm font-bold text-gray-600">
+                                            <HelpCircle className="w-4 h-4" />
+                                            <span>Let's test your knowledge!</span>
+                                        </div>
+                                        <button
+                                            onClick={() => handleExpandView('quiz', msg.quiz)}
+                                            className="p-1.5 bg-white border-2 border-black rounded-lg hover:bg-nanobanana-yellow transition-colors shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] active:translate-y-[1px] active:shadow-none"
+                                            title="Expand view"
+                                        >
+                                            <ZoomIn className="w-4 h-4" />
+                                        </button>
                                     </div>
-                                    <button
-                                        onClick={() => handleExpandView('quiz', msg.quiz)}
-                                        className="p-1.5 bg-white border-2 border-black rounded-lg hover:bg-nanobanana-yellow transition-colors shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] active:translate-y-[1px] active:shadow-none"
-                                        title="Expand view"
-                                    >
-                                        <ZoomIn className="w-4 h-4" />
-                                    </button>
+                                    <QuizInline quiz={msg.quiz} />
                                 </div>
-                                <QuizInline quiz={msg.quiz} />
                             </div>
                         )}
                     </motion.div>
