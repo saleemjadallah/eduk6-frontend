@@ -1,8 +1,7 @@
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, FileText, Youtube, Camera, Sparkles, AlertCircle } from 'lucide-react';
+import { X, FileText, Camera, Sparkles, AlertCircle } from 'lucide-react';
 import FileDropzone from './FileDropzone';
-import YouTubeInput from './YouTubeInput';
 import CameraCapture from './CameraCapture';
 import ProcessingAnimation from './ProcessingAnimation';
 import SubjectSelector from './SubjectSelector';
@@ -12,14 +11,12 @@ import { useLessonProcessor } from '../../hooks/useLessonProcessor';
 
 const tabs = [
     { id: 'file', label: 'Upload File', icon: FileText },
-    { id: 'youtube', label: 'YouTube', icon: Youtube },
     { id: 'camera', label: 'Camera', icon: Camera },
 ];
 
 const UploadModal = ({ isOpen, onClose, onSuccess }) => {
     const [activeTab, setActiveTab] = useState('file');
     const [selectedFile, setSelectedFile] = useState(null);
-    const [selectedVideo, setSelectedVideo] = useState(null);
     const [capturedImage, setCapturedImage] = useState(null);
     const [capturedImagePreview, setCapturedImagePreview] = useState(null);
     const [lessonTitle, setLessonTitle] = useState('');
@@ -30,7 +27,7 @@ const UploadModal = ({ isOpen, onClose, onSuccess }) => {
     const hasNavigatedRef = useRef(false);
 
     const { isProcessing, processingStage, processingProgress, error: contextError, setCurrentLesson } = useLessonContext();
-    const { processFile, processYouTube } = useLessonProcessor();
+    const { processFile } = useLessonProcessor();
 
     // Clear local error when tab changes
     useEffect(() => {
@@ -52,21 +49,10 @@ const UploadModal = ({ isOpen, onClose, onSuccess }) => {
         setLessonTitle(nameWithoutExtension);
     }, []);
 
-    const handleVideoSelect = useCallback((video) => {
-        setSelectedVideo(video);
-        setLocalError(null);
-        setLessonTitle(video.title);
-    }, []);
-
     const handleClearFile = useCallback(() => {
         setSelectedFile(null);
-        if (!selectedVideo) setLessonTitle('');
-    }, [selectedVideo]);
-
-    const handleClearVideo = useCallback(() => {
-        setSelectedVideo(null);
-        if (!selectedFile && !capturedImage) setLessonTitle('');
-    }, [selectedFile, capturedImage]);
+        if (!capturedImage) setLessonTitle('');
+    }, [capturedImage]);
 
     const handleImageCapture = useCallback((file, previewUrl) => {
         setCapturedImage(file);
@@ -85,8 +71,8 @@ const UploadModal = ({ isOpen, onClose, onSuccess }) => {
     const handleClearImage = useCallback(() => {
         setCapturedImage(null);
         setCapturedImagePreview(null);
-        if (!selectedFile && !selectedVideo) setLessonTitle('');
-    }, [selectedFile, selectedVideo]);
+        if (!selectedFile) setLessonTitle('');
+    }, [selectedFile]);
 
     const handleSubmit = async () => {
         if (!lessonTitle.trim()) {
@@ -101,8 +87,6 @@ const UploadModal = ({ isOpen, onClose, onSuccess }) => {
             let lesson;
             if (selectedFile) {
                 lesson = await processFile(selectedFile, lessonTitle, subject, gradeLevel);
-            } else if (selectedVideo) {
-                lesson = await processYouTube(selectedVideo, lessonTitle, subject, gradeLevel);
             } else if (capturedImage) {
                 // Process camera-captured image same as file upload
                 lesson = await processFile(capturedImage, lessonTitle, subject, gradeLevel);
@@ -146,7 +130,6 @@ const UploadModal = ({ isOpen, onClose, onSuccess }) => {
 
     const handleReset = () => {
         setSelectedFile(null);
-        setSelectedVideo(null);
         setCapturedImage(null);
         setCapturedImagePreview(null);
         setLessonTitle('');
@@ -158,7 +141,7 @@ const UploadModal = ({ isOpen, onClose, onSuccess }) => {
         hasNavigatedRef.current = false;
     };
 
-    const canSubmit = (selectedFile || selectedVideo || capturedImage) && lessonTitle.trim() && !isProcessing;
+    const canSubmit = (selectedFile || capturedImage) && lessonTitle.trim() && !isProcessing;
 
     // Backdrop click handler
     const handleBackdropClick = (e) => {
@@ -269,20 +252,6 @@ const UploadModal = ({ isOpen, onClose, onSuccess }) => {
                                                         onFileSelect={handleFileSelect}
                                                         selectedFile={selectedFile}
                                                         onClear={handleClearFile}
-                                                    />
-                                                </motion.div>
-                                            )}
-                                            {activeTab === 'youtube' && (
-                                                <motion.div
-                                                    key="youtube-tab"
-                                                    initial={{ opacity: 0, x: -20 }}
-                                                    animate={{ opacity: 1, x: 0 }}
-                                                    exit={{ opacity: 0, x: 20 }}
-                                                >
-                                                    <YouTubeInput
-                                                        onVideoSelect={handleVideoSelect}
-                                                        selectedVideo={selectedVideo}
-                                                        onClear={handleClearVideo}
                                                     />
                                                 </motion.div>
                                             )}

@@ -1,12 +1,186 @@
 import React, { useState, useEffect } from 'react';
+import { loadStripe } from '@stripe/stripe-js';
+import { Elements, CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
 import { authAPI } from '../../services/api/authAPI';
+
+// Initialize Stripe with publishable key
+const stripePromise = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY
+  ? loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY)
+  : null;
 
 const STEPS = {
   OPTIONS: 'options',
   PASSWORD_VERIFY: 'password_verify',
+  CC_INITIATE: 'cc_initiate',
+  CC_VERIFY: 'cc_verify',
   SELECT_QUESTIONS: 'select_questions',
   ANSWER_QUESTIONS: 'answer_questions',
   SUCCESS: 'success',
+};
+
+// Card element styling
+const CARD_ELEMENT_OPTIONS = {
+  style: {
+    base: {
+      fontSize: '16px',
+      color: '#424770',
+      fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+      fontSmoothing: 'antialiased',
+      '::placeholder': {
+        color: '#aab7c4',
+      },
+      iconColor: '#7c3aed',
+    },
+    invalid: {
+      color: '#9e2146',
+      iconColor: '#fa755a',
+    },
+  },
+  hidePostalCode: true,
+};
+
+// Credit Card Form Component (uses Stripe hooks)
+const CreditCardForm = ({ clientSecret, onSuccess, onBack, setError }) => {
+  const stripe = useStripe();
+  const elements = useElements();
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [cardholderName, setCardholderName] = useState('');
+  const [cardComplete, setCardComplete] = useState(false);
+  const [localError, setLocalError] = useState('');
+
+  const handleCardChange = (event) => {
+    setCardComplete(event.complete);
+    if (event.error) {
+      setLocalError(event.error.message);
+    } else {
+      setLocalError('');
+    }
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+
+    if (!stripe || !elements) {
+      setLocalError('Payment system is not ready. Please wait a moment and try again.');
+      return;
+    }
+
+    if (!cardholderName.trim()) {
+      setLocalError('Please enter the cardholder name');
+      return;
+    }
+
+    if (!cardComplete) {
+      setLocalError('Please complete your card details');
+      return;
+    }
+
+    setLocalError('');
+    setIsProcessing(true);
+
+    const cardElement = elements.getElement(CardElement);
+    if (!cardElement) {
+      setLocalError('Card form not ready. Please try again.');
+      setIsProcessing(false);
+      return;
+    }
+
+    try {
+      const { error: stripeError, paymentIntent } = await stripe.confirmCardPayment(
+        clientSecret,
+        {
+          payment_method: {
+            card: cardElement,
+            billing_details: {
+              name: cardholderName,
+            },
+          },
+        }
+      );
+
+      if (stripeError) {
+        throw new Error(stripeError.message);
+      }
+
+      if (paymentIntent.status === 'succeeded') {
+        onSuccess(paymentIntent.id);
+      } else {
+        throw new Error(`Payment status: ${paymentIntent.status}. Please try again.`);
+      }
+    } catch (err) {
+      setLocalError(err.message || 'Payment verification failed');
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  return (
+    <div className="cc-form-container">
+      {localError && (
+        <div className="alert alert-error">
+          <span className="alert-icon">❌</span>
+          {localError}
+        </div>
+      )}
+
+      <form onSubmit={handleSubmit}>
+        <div className="form-group">
+          <label>Cardholder Name</label>
+          <input
+            type="text"
+            value={cardholderName}
+            onChange={(e) => setCardholderName(e.target.value)}
+            placeholder="Name on card"
+            autoComplete="cc-name"
+            disabled={isProcessing}
+          />
+        </div>
+
+        <div className="form-group">
+          <label>Card Details</label>
+          <div className="stripe-card-wrapper">
+            <CardElement
+              options={CARD_ELEMENT_OPTIONS}
+              onChange={handleCardChange}
+            />
+          </div>
+        </div>
+
+        <div className="security-badges">
+          <span className="badge">🔒 SSL Encrypted</span>
+          <span className="badge">✓ PCI Compliant</span>
+          <span className="badge">💳 Powered by Stripe</span>
+        </div>
+
+        <div className="modal-actions">
+          <button
+            type="button"
+            className="btn btn-secondary"
+            onClick={onBack}
+            disabled={isProcessing}
+          >
+            Back
+          </button>
+          <button
+            type="submit"
+            className="btn btn-primary"
+            disabled={isProcessing || !stripe || !cardComplete}
+          >
+            {isProcessing ? 'Processing...' : 'Verify & Pay $0.50'}
+          </button>
+        </div>
+      </form>
+
+      <div className="refund-notice">
+        <p>
+          <strong>100% Refund Guaranteed</strong>
+          <br />
+          The $0.50 charge is only to verify your identity. It will be automatically
+          refunded within 5-7 business days.
+        </p>
+      </div>
+    </div>
+  );
 };
 
 const ResetKBQModal = ({ onClose, onSuccess }) => {
@@ -18,6 +192,11 @@ const ResetKBQModal = ({ onClose, onSuccess }) => {
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [hasKBQ, setHasKBQ] = useState(null);
+
+  // Credit card verification state
+  const [clientSecret, setClientSecret] = useState(null);
+  const [paymentIntentId, setPaymentIntentId] = useState(null);
+  const [useCCVerification, setUseCCVerification] = useState(false);
 
   // Fetch KBQ status and all questions on mount
   useEffect(() => {
@@ -52,6 +231,34 @@ const ResetKBQModal = ({ onClose, onSuccess }) => {
     }
 
     // Password will be verified when submitting the new questions
+    setUseCCVerification(false);
+    setStep(STEPS.SELECT_QUESTIONS);
+  };
+
+  const handleForgotPassword = async () => {
+    setError('');
+    setIsLoading(true);
+    setStep(STEPS.CC_INITIATE);
+
+    try {
+      const response = await authAPI.initiateKBQResetViaCC();
+      if (response.success && response.data?.clientSecret) {
+        setClientSecret(response.data.clientSecret);
+        setUseCCVerification(true);
+        setStep(STEPS.CC_VERIFY);
+      } else {
+        throw new Error(response.error || 'Failed to initiate credit card verification');
+      }
+    } catch (err) {
+      setError(err.message || 'Failed to start credit card verification. Please try again.');
+      setStep(STEPS.PASSWORD_VERIFY);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleCCSuccess = (intentId) => {
+    setPaymentIntentId(intentId);
     setStep(STEPS.SELECT_QUESTIONS);
   };
 
@@ -92,16 +299,96 @@ const ResetKBQModal = ({ onClose, onSuccess }) => {
 
     setIsLoading(true);
     try {
-      const response = await authAPI.resetKBQ(password, answersArray);
+      let response;
+      if (useCCVerification && paymentIntentId) {
+        // Use credit card verification path
+        response = await authAPI.completeKBQResetViaCC(paymentIntentId, answersArray);
+      } else {
+        // Use password verification path
+        response = await authAPI.resetKBQ(password, answersArray);
+      }
+
       if (response.success) {
         setStep(STEPS.SUCCESS);
         onSuccess?.();
       }
     } catch (err) {
-      setError(err.message || 'Failed to reset security questions. Please check your password.');
+      if (useCCVerification) {
+        setError(err.message || 'Failed to reset security questions. Please try again.');
+      } else {
+        setError(err.message || 'Failed to reset security questions. Please check your password.');
+      }
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const renderCCVerifyStep = () => {
+    if (!stripePromise) {
+      return (
+        <div className="modal-content">
+          <div className="modal-header">
+            <span className="modal-icon">⚠️</span>
+            <h2>Payment System Unavailable</h2>
+            <p className="modal-subtitle">
+              Credit card verification is not available at this time.
+            </p>
+          </div>
+          <div className="modal-actions">
+            <button
+              className="btn btn-secondary"
+              onClick={() => {
+                setStep(STEPS.PASSWORD_VERIFY);
+                setUseCCVerification(false);
+              }}
+            >
+              Go Back
+            </button>
+          </div>
+        </div>
+      );
+    }
+
+    if (!clientSecret) {
+      return (
+        <div className="modal-content">
+          <div className="loading-state">
+            <div className="spinner-large" />
+            <p>Initializing payment...</p>
+          </div>
+        </div>
+      );
+    }
+
+    return (
+      <div className="modal-content">
+        <div className="modal-header">
+          <span className="modal-icon">💳</span>
+          <h2>Verify Your Identity</h2>
+          <p className="modal-subtitle">
+            Enter your card details. We'll charge $0.50 and immediately refund it.
+          </p>
+        </div>
+
+        <div className="amount-badge">
+          <span className="amount">$0.50</span>
+          <span className="amount-note">(will be refunded)</span>
+        </div>
+
+        <Elements stripe={stripePromise} options={{ clientSecret }}>
+          <CreditCardForm
+            clientSecret={clientSecret}
+            onSuccess={handleCCSuccess}
+            onBack={() => {
+              setStep(STEPS.PASSWORD_VERIFY);
+              setUseCCVerification(false);
+              setClientSecret(null);
+            }}
+            setError={setError}
+          />
+        </Elements>
+      </div>
+    );
   };
 
   return (
@@ -188,6 +475,17 @@ const ResetKBQModal = ({ onClose, onSuccess }) => {
                 />
               </div>
 
+              <div className="forgot-password-link">
+                <button
+                  type="button"
+                  className="link-button"
+                  onClick={handleForgotPassword}
+                  disabled={isLoading}
+                >
+                  {isLoading ? 'Please wait...' : 'Forgot your password?'}
+                </button>
+              </div>
+
               <div className="modal-actions">
                 <button
                   type="button"
@@ -212,6 +510,17 @@ const ResetKBQModal = ({ onClose, onSuccess }) => {
           </div>
         )}
 
+        {step === STEPS.CC_INITIATE && (
+          <div className="modal-content">
+            <div className="loading-state">
+              <div className="spinner-large" />
+              <p>Setting up credit card verification...</p>
+            </div>
+          </div>
+        )}
+
+        {step === STEPS.CC_VERIFY && renderCCVerifyStep()}
+
         {step === STEPS.SELECT_QUESTIONS && (
           <div className="modal-content">
             <div className="modal-header">
@@ -221,6 +530,12 @@ const ResetKBQModal = ({ onClose, onSuccess }) => {
                 Choose 3 questions that only you can answer
               </p>
             </div>
+
+            {useCCVerification && (
+              <div className="success-badge">
+                <span>✓</span> Identity verified via credit card
+              </div>
+            )}
 
             {error && (
               <div className="alert alert-error">
@@ -254,12 +569,17 @@ const ResetKBQModal = ({ onClose, onSuccess }) => {
                 type="button"
                 className="btn btn-secondary"
                 onClick={() => {
-                  setStep(STEPS.PASSWORD_VERIFY);
-                  setSelectedQuestions([]);
-                  setError('');
+                  if (useCCVerification) {
+                    // Can't go back after CC verification - close modal
+                    onClose();
+                  } else {
+                    setStep(STEPS.PASSWORD_VERIFY);
+                    setSelectedQuestions([]);
+                    setError('');
+                  }
                 }}
               >
-                Back
+                {useCCVerification ? 'Cancel' : 'Back'}
               </button>
               <button
                 type="button"
@@ -576,6 +896,147 @@ const ResetKBQModal = ({ onClose, onSuccess }) => {
             margin-top: 6px;
           }
 
+          .forgot-password-link {
+            text-align: center;
+            margin-bottom: 20px;
+          }
+
+          .link-button {
+            background: none;
+            border: none;
+            color: #7c3aed;
+            font-size: 0.9375rem;
+            cursor: pointer;
+            text-decoration: underline;
+            padding: 4px 8px;
+          }
+
+          .link-button:hover {
+            color: #5b21b6;
+          }
+
+          .link-button:disabled {
+            color: #a5a5a5;
+            cursor: not-allowed;
+          }
+
+          .loading-state {
+            text-align: center;
+            padding: 40px 20px;
+          }
+
+          .spinner-large {
+            width: 60px;
+            height: 60px;
+            border: 4px solid #e0e0e0;
+            border-top-color: #7c3aed;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+          }
+
+          @keyframes spin {
+            to {
+              transform: rotate(360deg);
+            }
+          }
+
+          .amount-badge {
+            background: linear-gradient(135deg, #f5f3ff, #ede9fe);
+            border-radius: 12px;
+            padding: 12px 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-bottom: 20px;
+          }
+
+          .amount {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #7c3aed;
+          }
+
+          .amount-note {
+            font-size: 0.75rem;
+            color: #8b5cf6;
+          }
+
+          .stripe-card-wrapper {
+            background: white;
+            border: 2px solid #e5e7eb;
+            border-radius: 10px;
+            padding: 14px 12px;
+            transition: border-color 0.2s;
+          }
+
+          .stripe-card-wrapper:focus-within {
+            border-color: #7c3aed;
+            box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.1);
+          }
+
+          .security-badges {
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin: 16px 0;
+          }
+
+          .security-badges .badge {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 0.75rem;
+            color: #666;
+            background: #f5f5f5;
+            padding: 4px 10px;
+            border-radius: 20px;
+          }
+
+          .refund-notice {
+            background: #fef3c7;
+            border-radius: 12px;
+            padding: 16px;
+            margin-top: 20px;
+            font-size: 0.8125rem;
+            color: #92400e;
+            text-align: left;
+          }
+
+          .refund-notice strong {
+            color: #78350f;
+          }
+
+          .refund-notice p {
+            margin: 0;
+          }
+
+          .success-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: #dcfce7;
+            color: #166534;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 0.875rem;
+            font-weight: 500;
+            margin-bottom: 20px;
+          }
+
+          .success-badge span {
+            width: 20px;
+            height: 20px;
+            background: #22c55e;
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+          }
+
           .questions-list {
             display: flex;
             flex-direction: column;
@@ -739,6 +1200,10 @@ const ResetKBQModal = ({ onClose, onSuccess }) => {
           .success-content p {
             color: #666;
             margin: 0 0 24px;
+          }
+
+          .cc-form-container {
+            margin-top: 20px;
           }
         `}</style>
       </div>
