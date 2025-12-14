@@ -118,15 +118,16 @@ const TeacherDashboardPage = () => {
       bgGradient: 'from-teacher-plum to-teacher-plumLight',
       href: '/teacher/flashcards',
     },
-    {
-      title: 'Grade Papers',
-      description: 'AI-assisted grading with rubrics',
-      icon: GraduationCap,
-      color: 'terracotta',
-      bgGradient: 'from-teacher-terracotta to-teacher-terracottaLight',
-      href: '/teacher/grading',
-      comingSoon: true,
-    },
+    // Grading feature hidden until implementation is complete
+    // {
+    //   title: 'Grade Papers',
+    //   description: 'AI-assisted grading with rubrics',
+    //   icon: GraduationCap,
+    //   color: 'terracotta',
+    //   bgGradient: 'from-teacher-terracotta to-teacher-terracottaLight',
+    //   href: '/teacher/grading',
+    //   comingSoon: true,
+    // },
   ];
 
   // Content type configs
@@ -275,28 +276,28 @@ const TeacherDashboardPage = () => {
           </div>
         </motion.div>
 
-        {/* Papers Graded Card (Coming Soon) */}
+        {/* Flashcards Card */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.25 }}
-          className="teacher-stat-card terracotta relative overflow-hidden"
         >
-          <div className="absolute top-2 sm:top-3 right-2 sm:right-3">
-            <span className="px-1.5 sm:px-2 py-0.5 text-[8px] sm:text-[10px] font-bold uppercase rounded-full bg-teacher-terracotta/10 text-teacher-terracotta">
-              Soon
-            </span>
-          </div>
-          <div className="flex items-start justify-between mb-3 sm:mb-4">
-            <div className="min-w-0 flex-1">
-              <p className="text-xs sm:text-sm font-medium text-teacher-inkLight">Papers Graded</p>
-              <p className="text-xl sm:text-3xl font-display font-bold text-teacher-ink/30 mt-1">0</p>
+          <Link to="/teacher/content?type=FLASHCARD_DECK" className="block h-full">
+            <div className="teacher-stat-card plum group cursor-pointer h-full">
+              <div className="flex items-start justify-between mb-3 sm:mb-4">
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs sm:text-sm font-medium text-teacher-inkLight">Flashcard Decks</p>
+                  <p className="text-xl sm:text-3xl font-display font-bold text-teacher-ink mt-1">
+                    {loadingStats ? '...' : contentStats?.byType?.FLASHCARD_DECK || 0}
+                  </p>
+                </div>
+                <div className="p-1.5 sm:p-2 rounded-lg bg-teacher-plum/10 group-hover:bg-teacher-plum/20 transition-colors flex-shrink-0">
+                  <Layers className="w-4 h-4 sm:w-5 sm:h-5 text-teacher-plum" />
+                </div>
+              </div>
+              <p className="text-[10px] sm:text-xs text-teacher-inkLight">Ready for students</p>
             </div>
-            <div className="p-1.5 sm:p-2 rounded-lg bg-teacher-terracotta/10 flex-shrink-0">
-              <GraduationCap className="w-4 h-4 sm:w-5 sm:h-5 text-teacher-terracotta/50" />
-            </div>
-          </div>
-          <p className="text-[10px] sm:text-xs text-teacher-inkLight">AI-powered grading</p>
+          </Link>
         </motion.div>
       </div>
 
@@ -481,7 +482,7 @@ const TeacherDashboardPage = () => {
                 { text: 'Upload your first lesson PDF', done: totalContent > 0 },
                 { text: 'Generate an AI quiz', done: contentStats?.byType?.QUIZ > 0 },
                 { text: 'Create flashcard deck', done: contentStats?.byType?.FLASHCARD_DECK > 0 },
-                { text: 'Explore grading tools', done: false },
+                { text: 'Create a study guide', done: contentStats?.byType?.STUDY_GUIDE > 0 },
               ].map((task, i) => (
                 <div key={i} className="flex items-center gap-2 sm:gap-3">
                   <div className={`

@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useDropzone } from 'react-dropzone';
 import TeacherLayout from '../../components/teacher/TeacherLayout';
 import { useTeacherAuth } from '../../context/TeacherAuthContext';
+import { teacherAPI } from '../../services/api/teacherAPI';
 import {
   BookOpen,
   FileQuestion,
@@ -47,6 +48,8 @@ const TeacherContentCreatePage = () => {
   const [subject, setSubject] = useState('');
   const [gradeLevel, setGradeLevel] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
+  const [generationProgress, setGenerationProgress] = useState(null);
+  const [generationError, setGenerationError] = useState(null);
   const [step, setStep] = useState(1);
 
   // Content types
@@ -176,14 +179,163 @@ const TeacherContentCreatePage = () => {
     return type?.estimatedCredits || '1-5K';
   };
 
+  // Map frontend subject to backend Subject enum
+  const mapSubjectToEnum = (subjectName) => {
+    const subjectMap = {
+      'Mathematics': 'MATH',
+      'Science': 'SCIENCE',
+      'English Language Arts': 'ENGLISH',
+      'Social Studies': 'SOCIAL_STUDIES',
+      'History': 'HISTORY',
+      'Geography': 'GEOGRAPHY',
+      'Biology': 'SCIENCE',
+      'Chemistry': 'SCIENCE',
+      'Physics': 'SCIENCE',
+      'Computer Science': 'COMPUTER_SCIENCE',
+      'Art': 'ART',
+      'Music': 'MUSIC',
+      'Physical Education': 'PHYSICAL_EDUCATION',
+      'Foreign Language': 'FOREIGN_LANGUAGE',
+      'Other': 'OTHER',
+    };
+    return subjectMap[subjectName] || 'OTHER';
+  };
+
   // Handle generate
   const handleGenerate = async () => {
     setIsGenerating(true);
-    // TODO: Implement actual API call
-    setTimeout(() => {
+    setGenerationError(null);
+    setGenerationProgress(null);
+
+    try {
+      let sourceText = textContent;
+      let extractedData = null;
+
+      // Step 1: If file uploaded, analyze it to extract text
+      if (file && inputMethod === 'upload') {
+        setGenerationProgress({ step: 'analyzing', message: 'Analyzing your document...' });
+
+        try {
+          const result = await teacherAPI.analyzeDocument(file);
+          if (result.success && result.data) {
+            sourceText = result.data.extractedText || '';
+            extractedData = result.data;
+
+            // Auto-fill title if not set and we have a suggested title
+            if (!title && extractedData.suggestedTitle) {
+              setTitle(extractedData.suggestedTitle);
+            }
+          }
+        } catch (analyzeError) {
+          throw new Error(`Failed to analyze document: ${analyzeError.message}`);
+        }
+      }
+
+      // Validate we have content to work with
+      if (!sourceText || sourceText.trim().length < 50) {
+        throw new Error('Please provide more content (at least 50 characters) for AI generation.');
+      }
+
+      // Step 2: Generate based on selected type
+      if (selectedType === 'LESSON') {
+        // Use generateFullLesson with SSE for progress updates
+        setGenerationProgress({ step: 'generating', message: 'Generating lesson content...' });
+
+        await teacherAPI.generateFullLesson(
+          {
+            topic: title,
+            subject: subject ? mapSubjectToEnum(subject) : undefined,
+            gradeLevel: gradeLevel || undefined,
+            additionalContext: sourceText,
+            includeQuiz: true,
+            includeFlashcards: true,
+            includeInfographic: false,
+          },
+          (progress) => {
+            // Handle SSE progress updates
+            setGenerationProgress({
+              step: progress.step || 'generating',
+              message: progress.message || 'Working on your lesson...',
+              percentage: progress.percentage,
+            });
+          }
+        );
+      } else {
+        // For QUIZ, FLASHCARD_DECK, STUDY_GUIDE
+        // First create a content record with the extracted text
+        setGenerationProgress({ step: 'creating', message: 'Creating content record...' });
+
+        const contentResult = await teacherAPI.createContent({
+          title: title,
+          description: extractedData?.summary || '',
+          subject: subject ? mapSubjectToEnum(subject) : undefined,
+          gradeLevel: gradeLevel || undefined,
+          contentType: selectedType,
+          sourceType: file ? 'UPLOAD' : 'TEXT',
+          originalFileName: file?.name,
+          extractedText: sourceText,
+          status: 'DRAFT',
+        });
+
+        if (!contentResult.success || !contentResult.data?.id) {
+          throw new Error('Failed to create content record');
+        }
+
+        const contentId = contentResult.data.id;
+
+        // Now generate the specific content type
+        setGenerationProgress({
+          step: 'generating',
+          message: `Generating ${selectedType.toLowerCase().replace('_', ' ')}...`
+        });
+
+        if (selectedType === 'QUIZ') {
+          await teacherAPI.generateQuiz(
+            contentId,
+            {
+              content: sourceText,
+              title: title,
+              questionCount: 10,
+              difficulty: 'mixed',
+              gradeLevel: gradeLevel || undefined,
+            },
+            true // save=true
+          );
+        } else if (selectedType === 'FLASHCARD_DECK') {
+          await teacherAPI.generateFlashcards(
+            contentId,
+            {
+              content: sourceText,
+              title: title,
+              cardCount: 15,
+              includeHints: true,
+              gradeLevel: gradeLevel || undefined,
+            },
+            true // save=true
+          );
+        } else if (selectedType === 'STUDY_GUIDE') {
+          await teacherAPI.generateStudyGuide(contentId, {
+            content: sourceText,
+            title: title,
+            format: 'detailed',
+            includeKeyTerms: true,
+            includeReviewQuestions: true,
+            gradeLevel: gradeLevel || undefined,
+          });
+        }
+      }
+
+      // Success! Navigate to content list
+      setGenerationProgress({ step: 'complete', message: 'Content created successfully!' });
+
+      // Brief delay to show success message
+      setTimeout(() => {
+        navigate('/teacher/content');
+      }, 1000);
+    } catch (error) {
+      setGenerationError(error.message || 'Failed to generate content. Please try again.');
       setIsGenerating(false);
-      navigate('/teacher/content');
-    }, 3000);
+    }
   };
 
   // Check if can proceed to next step
@@ -644,6 +796,32 @@ const TeacherContentCreatePage = () => {
         )}
       </div>
 
+      {/* Error Alert */}
+      <AnimatePresence>
+        {generationError && !isGenerating && (
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            className="fixed top-4 left-1/2 -translate-x-1/2 z-50 max-w-md w-full mx-4"
+          >
+            <div className="bg-red-50 border border-red-200 rounded-xl p-4 shadow-lg flex items-start gap-3">
+              <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
+              <div className="flex-1">
+                <p className="text-red-800 font-medium">Generation Failed</p>
+                <p className="text-red-600 text-sm mt-1">{generationError}</p>
+              </div>
+              <button
+                onClick={() => setGenerationError(null)}
+                className="text-red-400 hover:text-red-600"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Generating Modal */}
       <AnimatePresence>
         {isGenerating && (
@@ -659,23 +837,44 @@ const TeacherContentCreatePage = () => {
               exit={{ scale: 0.9, opacity: 0 }}
               className="bg-white rounded-3xl p-8 max-w-md w-full mx-4 text-center shadow-teacher-lg"
             >
-              <div className="w-20 h-20 mx-auto mb-6 rounded-2xl bg-gradient-to-br from-teacher-gold to-teacher-goldLight flex items-center justify-center animate-pulse">
-                <Wand2 className="w-10 h-10 text-white" />
-              </div>
-              <h3 className="font-display text-2xl font-semibold text-teacher-ink mb-2">
-                Creating your {contentTypes.find((t) => t.id === selectedType)?.title.toLowerCase()}...
-              </h3>
-              <p className="text-teacher-inkLight mb-6">
-                Our AI is working its magic. This usually takes 15-30 seconds.
-              </p>
-              <div className="h-2 bg-teacher-ink/10 rounded-full overflow-hidden">
-                <motion.div
-                  initial={{ width: '0%' }}
-                  animate={{ width: '100%' }}
-                  transition={{ duration: 30, ease: 'linear' }}
-                  className="h-full bg-gradient-to-r from-teacher-chalk via-teacher-gold to-teacher-sage"
-                />
-              </div>
+              {generationProgress?.step === 'complete' ? (
+                <>
+                  <div className="w-20 h-20 mx-auto mb-6 rounded-2xl bg-gradient-to-br from-teacher-sage to-teacher-sageLight flex items-center justify-center">
+                    <CheckCircle2 className="w-10 h-10 text-white" />
+                  </div>
+                  <h3 className="font-display text-2xl font-semibold text-teacher-ink mb-2">
+                    Success!
+                  </h3>
+                  <p className="text-teacher-inkLight mb-6">
+                    {generationProgress.message}
+                  </p>
+                </>
+              ) : (
+                <>
+                  <div className="w-20 h-20 mx-auto mb-6 rounded-2xl bg-gradient-to-br from-teacher-gold to-teacher-goldLight flex items-center justify-center animate-pulse">
+                    <Wand2 className="w-10 h-10 text-white" />
+                  </div>
+                  <h3 className="font-display text-2xl font-semibold text-teacher-ink mb-2">
+                    Creating your {contentTypes.find((t) => t.id === selectedType)?.title.toLowerCase()}...
+                  </h3>
+                  <p className="text-teacher-inkLight mb-6">
+                    {generationProgress?.message || 'Our AI is working its magic. This usually takes 15-30 seconds.'}
+                  </p>
+                  <div className="h-2 bg-teacher-ink/10 rounded-full overflow-hidden">
+                    <motion.div
+                      initial={{ width: '0%' }}
+                      animate={{ width: generationProgress?.percentage ? `${generationProgress.percentage}%` : '100%' }}
+                      transition={generationProgress?.percentage ? { duration: 0.5 } : { duration: 30, ease: 'linear' }}
+                      className="h-full bg-gradient-to-r from-teacher-chalk via-teacher-gold to-teacher-sage"
+                    />
+                  </div>
+                  {generationProgress?.step && (
+                    <p className="text-xs text-teacher-inkLight/60 mt-3 capitalize">
+                      Step: {generationProgress.step.replace('_', ' ')}
+                    </p>
+                  )}
+                </>
+              )}
             </motion.div>
           </motion.div>
         )}

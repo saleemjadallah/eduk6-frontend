@@ -183,12 +183,7 @@ const ChatInterface = ({
                     sessionId: demoSessionId,
                 });
 
-                console.log('Demo chat response:', response);
                 const replyContent = response.data?.reply || response.reply;
-
-                if (!replyContent) {
-                    console.warn('No reply in response:', response);
-                }
 
                 setDemoMessages(prev => [...prev, {
                     id: Date.now() + 1,
@@ -490,7 +485,6 @@ const ChatInterface = ({
 
         try {
             const content = activeLesson.rawText || activeLesson.content?.rawText || activeLesson.summary || '';
-            console.log('[Quiz] Generating quiz for content length:', content.length);
 
             const response = await chatAPI.generateQuiz({
                 content,
@@ -500,9 +494,7 @@ const ChatInterface = ({
                 ageGroup,
             });
 
-            console.log('[Quiz] API Response:', response);
             const quiz = response.data;
-            console.log('[Quiz] Quiz data:', quiz);
 
             if (!quiz || !quiz.questions || quiz.questions.length === 0) {
                 throw new Error('Invalid quiz data received');
@@ -526,19 +518,15 @@ const ChatInterface = ({
                 quiz: quiz,
             };
 
-            console.log('[Quiz] Adding messages, demoMode:', demoMode, 'chatContext:', !!chatContext);
-
             if (demoMode) {
                 setDemoMessages(prev => [...prev, userMsg, quizMsg]);
             } else if (chatContext?.addMessages) {
                 chatContext.addMessages([userMsg, quizMsg]);
             } else {
                 // Fallback: use local state if chatContext not available
-                console.warn('[Quiz] No chatContext, using fallback');
                 setDemoMessages(prev => [...prev, userMsg, quizMsg]);
             }
         } catch (error) {
-            console.error('Quiz generation error:', error);
             const errorMsg = {
                 id: Date.now(),
                 role: 'assistant',

@@ -54,13 +54,14 @@ const TeacherSidebar = ({ collapsed, onToggle, isMobile = false }) => {
         { icon: PenTool, label: 'Create Lesson', path: '/teacher/content/create' },
         { icon: ClipboardCheck, label: 'Generate Quiz', path: '/teacher/quiz' },
         { icon: Layers, label: 'Generate Flashcards', path: '/teacher/flashcards' },
-        {
-          icon: GraduationCap,
-          label: 'Grade Papers',
-          path: '/teacher/grading',
-          badge: 'Soon',
-          disabled: true,
-        },
+        // Grading feature hidden until implementation is complete
+        // {
+        //   icon: GraduationCap,
+        //   label: 'Grade Papers',
+        //   path: '/teacher/grading',
+        //   badge: 'Soon',
+        //   disabled: true,
+        // },
       ],
     },
     {

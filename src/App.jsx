@@ -30,6 +30,7 @@ import ProgressReportsPage from './pages/ProgressReportsPage';
 import SupportPage from './pages/SupportPage';
 import AboutPage from './pages/AboutPage';
 import ContactPage from './pages/ContactPage';
+import NotFoundPage from './pages/NotFoundPage';
 import { PrivacyPolicyPage, TermsOfServicePage, CoppaCompliancePage } from './pages/legal';
 
 // Teacher Pages
@@ -204,8 +205,8 @@ const router = createBrowserRouter([
                 ),
             },
 
-            // Catch-all redirect (excluding teacher routes)
-            { path: '*', element: <Navigate to="/learn" replace /> },
+            // 404 Page for unmatched routes
+            { path: '*', element: <NotFoundPage /> },
         ],
     },
     // Teacher routes - separate context from parent/child
@@ -297,14 +298,10 @@ const router = createBrowserRouter([
                 ),
             },
 
-            // Grading Center (coming soon)
+            // Grading Center - redirects to dashboard until feature is complete
             {
                 path: 'grading',
-                element: (
-                    <ProtectedTeacherRoute>
-                        <TeacherGradingPage />
-                    </ProtectedTeacherRoute>
-                ),
+                element: <Navigate to="/teacher/dashboard" replace />,
             },
 
             // Settings
@@ -327,8 +324,8 @@ const router = createBrowserRouter([
                 ),
             },
 
-            // Catch-all for teacher routes
-            { path: '*', element: <Navigate to="/teacher/dashboard" replace /> },
+            // 404 Page for unmatched teacher routes
+            { path: '*', element: <NotFoundPage /> },
         ],
     },
 ]);

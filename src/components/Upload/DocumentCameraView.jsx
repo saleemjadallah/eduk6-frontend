@@ -34,7 +34,6 @@ const DocumentCameraView = ({ isOpen, onCapture, onClose }) => {
     }, [isOpen]);
 
     const startCamera = async () => {
-        console.log('[DocumentCamera] startCamera called, platform:', Capacitor.getPlatform());
         try {
             setError(null);
 
@@ -67,18 +66,9 @@ const DocumentCameraView = ({ isOpen, onCapture, onClose }) => {
                 y: 0,
             };
 
-            console.log('[DocumentCamera] Starting CameraPreview with config:', cameraConfig);
-
             await CameraPreview.start(cameraConfig);
-
-            console.log('[DocumentCamera] CameraPreview started successfully');
             setIsStarted(true);
         } catch (err) {
-            console.error('[DocumentCamera] Failed to start camera:', {
-                message: err.message,
-                code: err.code,
-                stack: err.stack,
-            });
             setError(err.message || 'Failed to start camera');
             // Restore backgrounds on error
             restoreBackgrounds();
@@ -116,34 +106,19 @@ const DocumentCameraView = ({ isOpen, onCapture, onClose }) => {
     const handleCapture = async () => {
         if (isCapturing) return;
 
-        console.log('[DocumentCamera] handleCapture called');
         setIsCapturing(true);
         try {
-            console.log('[DocumentCamera] Calling CameraPreview.capture with quality: 90');
             const result = await CameraPreview.capture({
                 quality: 90,
-            });
-
-            console.log('[DocumentCamera] CameraPreview.capture returned:', {
-                hasValue: !!result.value,
-                valueLength: result.value?.length || 0,
-                valuePreview: result.value?.substring(0, 50) + '...',
             });
 
             if (result.value) {
                 const base64 = result.value;
                 setCapturedImage(base64);
-                console.log('[DocumentCamera] Image captured, base64 length:', base64.length);
             } else {
-                console.error('[DocumentCamera] No value in capture result');
                 setError('No image data received from camera');
             }
         } catch (err) {
-            console.error('[DocumentCamera] Capture failed:', {
-                message: err.message,
-                code: err.code,
-                stack: err.stack,
-            });
             setError(err.message || 'Failed to capture photo');
         } finally {
             setIsCapturing(false);
@@ -151,16 +126,10 @@ const DocumentCameraView = ({ isOpen, onCapture, onClose }) => {
     };
 
     const handleConfirm = useCallback(() => {
-        console.log('[DocumentCamera] handleConfirm called, capturedImage length:', capturedImage?.length || 0);
         if (capturedImage) {
             try {
                 // Convert base64 to File
                 const file = base64ToFile(capturedImage, `document_${Date.now()}.jpg`);
-                console.log('[DocumentCamera] File created:', {
-                    name: file.name,
-                    size: file.size,
-                    type: file.type,
-                });
                 onCapture({
                     file,
                     base64: capturedImage,
@@ -168,10 +137,6 @@ const DocumentCameraView = ({ isOpen, onCapture, onClose }) => {
                 });
                 stopCamera();
             } catch (err) {
-                console.error('[DocumentCamera] handleConfirm error:', {
-                    message: err.message,
-                    stack: err.stack,
-                });
                 setError(`Failed to process image: ${err.message}`);
             }
         }
@@ -551,14 +516,8 @@ const WebCameraFallback = ({ onCapture, onClose }) => {
 
 /**
  * Convert base64 string to File object
- * Enhanced with detailed logging for iPad debugging
  */
 function base64ToFile(base64String, filename) {
-    console.log('[DocumentCamera] base64ToFile called:', {
-        filename,
-        base64Length: base64String?.length || 0,
-    });
-
     const mimeType = 'image/jpeg';
 
     try {
@@ -571,13 +530,11 @@ function base64ToFile(base64String, filename) {
         let cleanBase64 = base64String;
         if (base64String.includes(',')) {
             cleanBase64 = base64String.split(',')[1];
-            console.log('[DocumentCamera] Stripped data URL prefix');
         }
 
         // Validate and clean base64 characters
         const base64Regex = /^[A-Za-z0-9+/]*={0,2}$/;
         if (!base64Regex.test(cleanBase64)) {
-            console.warn('[DocumentCamera] Invalid base64 characters detected, cleaning...');
             cleanBase64 = cleanBase64.replace(/[^A-Za-z0-9+/=]/g, '');
         }
 
@@ -586,11 +543,7 @@ function base64ToFile(base64String, filename) {
             cleanBase64 += '=';
         }
 
-        console.log('[DocumentCamera] Clean base64 length:', cleanBase64.length);
-
         const binaryString = atob(cleanBase64);
-        console.log('[DocumentCamera] atob successful, binary length:', binaryString.length);
-
         const bytes = new Uint8Array(binaryString.length);
         for (let i = 0; i < binaryString.length; i++) {
             bytes[i] = binaryString.charCodeAt(i);
@@ -599,19 +552,8 @@ function base64ToFile(base64String, filename) {
         const blob = new Blob([bytes], { type: mimeType });
         const file = new File([blob], filename, { type: mimeType });
 
-        console.log('[DocumentCamera] File created:', {
-            name: file.name,
-            size: file.size,
-            type: file.type,
-        });
-
         return file;
     } catch (error) {
-        console.error('[DocumentCamera] base64ToFile error:', {
-            message: error.message,
-            stack: error.stack,
-            base64Length: base64String?.length || 0,
-        });
         throw error;
     }
 }
