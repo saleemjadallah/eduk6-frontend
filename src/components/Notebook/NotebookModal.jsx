@@ -317,12 +317,12 @@ const NotebookModal = () => {
                     ) : (
                       /* Editor form */
                       <div
-                        className="relative bg-gradient-to-br from-white via-white to-amber-50 rounded-3xl border-4 border-black overflow-hidden"
+                        className="relative bg-gradient-to-br from-white via-white to-amber-50 rounded-3xl border-4 border-black overflow-hidden max-h-[calc(100vh-120px)] flex flex-col"
                         style={{ boxShadow: '8px 8px 0px rgba(0,0,0,1)' }}
                       >
                         {/* Decorative header bar */}
                         <div
-                          className="relative px-6 py-4 border-b-4 border-black"
+                          className="relative px-6 py-4 border-b-4 border-black flex-shrink-0"
                           style={{
                             background: `linear-gradient(135deg, ${coverSettings.color}88 0%, ${coverSettings.color}44 100%)`,
                           }}
@@ -363,7 +363,7 @@ const NotebookModal = () => {
                         </div>
 
                         {/* Content area */}
-                        <div className="p-6">
+                        <div className="p-6 overflow-y-auto flex-1">
                           {/* Cover customizer toggle */}
                           <motion.button
                             type="button"
