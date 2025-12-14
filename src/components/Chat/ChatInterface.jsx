@@ -15,6 +15,35 @@ import { chatAPI } from '../../services/api/chatAPI';
 
 // Maximum messages allowed in demo mode before prompting sign-up
 const DEMO_MESSAGE_LIMIT = 3;
+const DEMO_STORAGE_KEY = 'orbit_demo_chat_count';
+
+// Helper to get/set demo count from localStorage
+const getDemoCountFromStorage = () => {
+    try {
+        const stored = localStorage.getItem(DEMO_STORAGE_KEY);
+        if (stored) {
+            const data = JSON.parse(stored);
+            // Reset if older than 24 hours
+            if (Date.now() - data.timestamp < 24 * 60 * 60 * 1000) {
+                return data.count;
+            }
+        }
+    } catch (e) {
+        // Ignore storage errors
+    }
+    return 0;
+};
+
+const setDemoCountInStorage = (count) => {
+    try {
+        localStorage.setItem(DEMO_STORAGE_KEY, JSON.stringify({
+            count,
+            timestamp: Date.now(),
+        }));
+    } catch (e) {
+        // Ignore storage errors
+    }
+};
 
 const ChatInterface = ({
     demoMode = false,
@@ -28,10 +57,9 @@ const ChatInterface = ({
     const inputRef = useRef(null);
     const navigate = useNavigate();
 
-    // Demo mode - track user message count and limit reached state
-    const [demoUserMessageCount, setDemoUserMessageCount] = useState(0);
-    const [demoLimitReached, setDemoLimitReached] = useState(false);
-    const [demoSessionId] = useState(() => `demo_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`);
+    // Demo mode - track user message count from localStorage
+    const [demoUserMessageCount, setDemoUserMessageCount] = useState(() => getDemoCountFromStorage());
+    const [demoLimitReached, setDemoLimitReached] = useState(() => getDemoCountFromStorage() >= DEMO_MESSAGE_LIMIT);
 
     // Always call hooks (React rules), but ignore values in demo mode
     const lessonContextRaw = useLessonContext();
@@ -137,7 +165,7 @@ const ChatInterface = ({
         if (chatContext?.sendMessage) {
             await chatContext.sendMessage(messageContent);
         } else if (demoMode) {
-            // Demo mode - add user message locally
+            // Demo mode - fully client-side, no API dependency
             const userMessage = {
                 id: Date.now(),
                 role: 'user',
@@ -146,9 +174,10 @@ const ChatInterface = ({
             };
             setDemoMessages(prev => [...prev, userMessage]);
 
-            // Increment user message count
+            // Increment user message count and persist to localStorage
             const newCount = demoUserMessageCount + 1;
             setDemoUserMessageCount(newCount);
+            setDemoCountInStorage(newCount);
 
             // Check if limit reached after this message
             if (newCount >= DEMO_MESSAGE_LIMIT) {
@@ -168,41 +197,22 @@ const ChatInterface = ({
                 return;
             }
 
-            // Make real API call for demo
+            // Use client-side responses for reliable demo experience
             setDemoTyping(true);
-            try {
-                // Build conversation history for context
-                const conversationHistory = demoMessages
-                    .filter(m => m.role === 'user' || m.role === 'assistant')
-                    .slice(-6) // Last 6 messages for context
-                    .map(m => ({ role: m.role, content: m.content }));
 
-                const response = await chatAPI.sendDemoMessage({
-                    message: messageContent,
-                    conversationHistory,
-                    sessionId: demoSessionId,
-                });
+            // Simulate natural typing delay (500-1500ms based on response length)
+            const response = getDemoResponse(messageContent);
+            const typingDelay = Math.min(500 + response.length * 5, 1500);
 
-                const replyContent = response.data?.reply || response.reply;
-
+            setTimeout(() => {
                 setDemoMessages(prev => [...prev, {
                     id: Date.now() + 1,
                     role: 'assistant',
-                    content: replyContent || "That's a great question! I'd love to explore that with you.",
+                    content: response,
                     timestamp: new Date(),
                 }]);
-            } catch (error) {
-                console.error('Demo chat error:', error.message, error);
-                // Fallback response if API fails
-                setDemoMessages(prev => [...prev, {
-                    id: Date.now() + 1,
-                    role: 'assistant',
-                    content: getDemoFallbackResponse(messageContent),
-                    timestamp: new Date(),
-                }]);
-            } finally {
                 setDemoTyping(false);
-            }
+            }, typingDelay);
         }
 
         // Notify parent of interaction (for gamification)
@@ -218,27 +228,107 @@ const ChatInterface = ({
         }
     };
 
-    // Fallback responses when API fails in demo mode
-    const getDemoFallbackResponse = (question) => {
-        const lowercaseQ = question.toLowerCase();
+    // Client-side demo responses - comprehensive educational responses
+    const getDemoResponse = (question) => {
+        const q = question.toLowerCase().trim();
 
-        if (lowercaseQ.includes('hello') || lowercaseQ.includes('hi ') || lowercaseQ === 'hi') {
-            return "Hello! 👋 I'm so happy to meet you! What would you like to learn about today?";
-        }
-        if (lowercaseQ.includes('sun') || lowercaseQ.includes('star')) {
-            return "The Sun is amazing! It's a giant ball of hot gas that gives us light and warmth. Did you know it's so big that about 1.3 million Earths could fit inside it? ☀️";
-        }
-        if (lowercaseQ.includes('dinosaur')) {
-            return "Dinosaurs are so cool! They lived millions of years ago and came in all sizes - from tiny ones the size of chickens to massive ones like T-Rex! 🦕";
-        }
-        if (lowercaseQ.includes('space') || lowercaseQ.includes('planet')) {
-            return "Space is incredible! Our solar system has 8 planets, and Earth is the only one we know has life. There are billions of stars in our galaxy! 🚀";
-        }
-        if (lowercaseQ.includes('animal') || lowercaseQ.includes('dog') || lowercaseQ.includes('cat')) {
-            return "Animals are fascinating! Each species has unique adaptations that help them survive. What's your favorite animal? I'd love to tell you fun facts about it! 🐾";
+        // Greetings
+        if (/^(hi|hello|hey|howdy|hiya|greetings)/i.test(q) || q === 'hi' || q === 'hello') {
+            return "Hello! 👋 I'm so happy to meet you! What would you like to learn about today? I can help with math, science, history, or anything you're curious about!";
         }
 
-        return "That's a fantastic question! I love curious minds. Want to explore this topic together? Sign up to continue our learning adventure! 🌟";
+        // Plants and growth
+        if (q.includes('plant') && (q.includes('grow') || q.includes('how'))) {
+            return "Plants are amazing! They grow by using sunlight, water, and air. Their leaves catch sunshine and turn it into food through a process called photosynthesis. The roots drink up water from the soil. It's like magic happening right in your backyard! 🌱";
+        }
+        if (q.includes('flower') || q.includes('tree')) {
+            return "Trees and flowers are incredible! They start as tiny seeds, then use sunlight and water to grow bigger and bigger. Some trees can live for hundreds of years! Flowers make seeds so new plants can grow. 🌸🌳";
+        }
+
+        // Space and astronomy
+        if (q.includes('black hole')) {
+            return "Black holes are super fascinating! They're places in space where gravity is so strong that nothing can escape - not even light! That's why they look black. Scientists think there might be millions of them in our galaxy. 🌌";
+        }
+        if (q.includes('sun') || q.includes('star')) {
+            return "The Sun is amazing! It's a giant ball of hot, glowing gas that gives us light and warmth. Did you know it's so big that about 1.3 million Earths could fit inside it? And it's actually a star - the closest one to us! ☀️";
+        }
+        if (q.includes('moon')) {
+            return "The Moon is Earth's best friend in space! It's about 238,900 miles away and takes about 27 days to go around Earth. That's why we see different shapes - full moon, half moon, and crescent! 🌙";
+        }
+        if (q.includes('space') || q.includes('planet') || q.includes('solar system')) {
+            return "Space is incredible! Our solar system has 8 planets orbiting the Sun. Earth is the third planet and the only one we know has life. Jupiter is the biggest - you could fit 1,300 Earths inside it! 🚀";
+        }
+        if (q.includes('mars')) {
+            return "Mars is called the Red Planet because of the rusty iron in its soil! It has the biggest volcano in our solar system - Olympus Mons. Scientists are exploring it with robots called rovers. 🔴";
+        }
+
+        // Dinosaurs
+        if (q.includes('dinosaur') || q.includes('t-rex') || q.includes('trex')) {
+            return "Dinosaurs are so cool! They ruled Earth for over 160 million years! T-Rex was one of the biggest meat-eaters, but some dinosaurs were gentle plant-eaters. Scientists learn about them by studying fossils! 🦕";
+        }
+
+        // Animals
+        if (q.includes('whale') || q.includes('ocean') || q.includes('shark')) {
+            return "Ocean animals are amazing! Blue whales are the biggest animals EVER - even bigger than dinosaurs! Sharks have been around for over 400 million years, and there are so many colorful fish in coral reefs! 🐋";
+        }
+        if (q.includes('lion') || q.includes('tiger') || q.includes('elephant')) {
+            return "These are some of the most incredible animals! Lions are called the 'King of the Jungle' and live in family groups. Elephants are the largest land animals and are super smart! 🦁🐘";
+        }
+        if (q.includes('dog') || q.includes('cat') || q.includes('pet')) {
+            return "Dogs and cats make wonderful friends! Dogs are known for their loyalty and have been human companions for over 15,000 years. Cats are curious and playful. Both can learn tricks! 🐕🐱";
+        }
+        if (q.includes('bird') || q.includes('fly')) {
+            return "Birds are the only animals with feathers! Some can fly thousands of miles during migration. The peregrine falcon is the fastest animal on Earth - it can dive at over 200 mph! 🦅";
+        }
+        if (q.includes('insect') || q.includes('bug') || q.includes('butterfly') || q.includes('bee')) {
+            return "Insects are everywhere! Butterflies start as caterpillars, bees make honey and help flowers grow, and ants can carry 50 times their own weight! There are more insects on Earth than any other animal! 🦋🐝";
+        }
+        if (q.includes('animal')) {
+            return "Animals are fascinating! There are millions of different species - from tiny ants to enormous elephants. Each one has special features that help it survive. What's your favorite animal? 🐾";
+        }
+
+        // Math
+        if (q.includes('math') || q.includes('add') || q.includes('subtract') || q.includes('multiply') || q.includes('divide')) {
+            return "Math is like a superpower! Addition puts numbers together, subtraction takes them apart. Multiplication is super-fast adding, and division is sharing equally. You use math every day without even knowing it! ➕✖️";
+        }
+        if (q.includes('fraction')) {
+            return "Fractions show parts of a whole! Like when you share a pizza 🍕 - if you cut it into 4 slices and eat 1, you ate 1/4 (one-fourth). The top number counts pieces you have, the bottom shows total pieces!";
+        }
+
+        // Science
+        if (q.includes('water') || q.includes('rain') || q.includes('cloud')) {
+            return "The water cycle is amazing! Water from oceans and lakes turns into vapor (that's evaporation), rises up to form clouds, then falls back down as rain or snow. The same water has been cycling for millions of years! 💧☁️";
+        }
+        if (q.includes('volcano')) {
+            return "Volcanoes are like Earth's pressure release valves! Deep underground, it's so hot that rocks melt into lava. When pressure builds up, the volcano erupts! Some volcanoes are quiet, others are super explosive! 🌋";
+        }
+        if (q.includes('rainbow')) {
+            return "Rainbows happen when sunlight shines through raindrops! The water splits white light into all its colors - red, orange, yellow, green, blue, indigo, and violet. Remember: ROY G BIV! 🌈";
+        }
+        if (q.includes('electric') || q.includes('lightning')) {
+            return "Electricity is the flow of tiny particles called electrons! Lightning is natural electricity - clouds build up electrical charge until ZAP! It releases in a giant spark that's hotter than the sun's surface! ⚡";
+        }
+
+        // History
+        if (q.includes('egypt') || q.includes('pyramid')) {
+            return "Ancient Egypt is fascinating! The pyramids were built over 4,500 years ago as tombs for pharaohs. The Great Pyramid was the tallest building in the world for almost 4,000 years! They also invented paper! 🏛️";
+        }
+        if (q.includes('history') || q.includes('ancient')) {
+            return "History is like a time machine! We learn about people who lived long ago - how they built amazing things, made discoveries, and solved problems. Every day, we're making history too! 📚";
+        }
+
+        // Body and health
+        if (q.includes('body') || q.includes('heart') || q.includes('brain')) {
+            return "Your body is incredible! Your heart beats about 100,000 times a day, pumping blood everywhere. Your brain has 86 billion neurons and controls everything you do - even while you're sleeping! 🧠❤️";
+        }
+
+        // Weather
+        if (q.includes('weather') || q.includes('tornado') || q.includes('hurricane')) {
+            return "Weather is the condition of the air around us! Tornadoes are spinning columns of air, hurricanes are giant storms that form over warm ocean water. Meteorologists study weather to help keep us safe! 🌪️";
+        }
+
+        // Generic educational response with encouragement
+        return "That's a great question! I'd love to help you learn about that. Sign up to chat with me more! 🌟";
     };
 
     const handleSuggestedQuestion = (question) => {
