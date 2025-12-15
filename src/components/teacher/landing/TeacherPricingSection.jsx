@@ -1,13 +1,41 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
-import { Star, Zap, Crown, Check, Sparkles, ArrowRight } from 'lucide-react';
+import { Star, Zap, Crown, Check, Sparkles, ArrowRight, Globe } from 'lucide-react';
+import { useCurrency } from '../../../hooks/useCurrency';
 
 const TeacherPricingSection = () => {
-  const tiers = [
+  // Currency detection hook
+  const {
+    currencyCode,
+    currencySymbol,
+    countryName,
+    formatLocalPrice,
+    isLoading: currencyLoading,
+    isDetected,
+  } = useCurrency();
+
+  // Check if we're showing non-USD currency
+  const showingLocalCurrency = isDetected && currencyCode !== 'USD';
+
+  // Base pricing in USD
+  const basePricing = {
+    free: { monthly: 0, annual: 0 },
+    basic: { monthly: 9.99, annual: 95.90 },
+    professional: { monthly: 24.99, annual: 239.90 },
+  };
+
+  // Format price with currency conversion
+  const formatPrice = (amountUSD) => {
+    if (amountUSD === 0) return `${currencySymbol}0`;
+    return formatLocalPrice(amountUSD);
+  };
+
+  const tiers = useMemo(() => [
     {
       name: 'Free',
-      price: '$0',
+      priceUSD: basePricing.free.monthly,
+      annualPriceUSD: basePricing.free.annual,
       period: '/month',
       description: 'Perfect for trying out the platform',
       icon: Star,
@@ -31,9 +59,9 @@ const TeacherPricingSection = () => {
     },
     {
       name: 'Basic',
-      price: '$9.99',
+      priceUSD: basePricing.basic.monthly,
+      annualPriceUSD: basePricing.basic.annual,
       period: '/month',
-      annualPrice: '$95.90/year',
       description: 'For active individual teachers',
       icon: Zap,
       color: '#2D5A4A', // chalk
@@ -55,9 +83,9 @@ const TeacherPricingSection = () => {
     },
     {
       name: 'Professional',
-      price: '$24.99',
+      priceUSD: basePricing.professional.monthly,
+      annualPriceUSD: basePricing.professional.annual,
       period: '/month',
-      annualPrice: '$239.90/year',
       description: 'For power users & departments',
       icon: Crown,
       color: '#D4A853', // gold
@@ -78,7 +106,7 @@ const TeacherPricingSection = () => {
       ctaLink: '/teacher/signup?plan=professional',
       popular: false,
     },
-  ];
+  ], []);
 
   const allPlansInclude = [
     'Unlimited exports',
@@ -115,6 +143,21 @@ const TeacherPricingSection = () => {
           <p className="text-base md:text-lg lg:text-xl text-teacher-inkLight max-w-2xl mx-auto">
             No hidden fees, no credit card required. Try all features free, then choose the plan that fits.
           </p>
+
+          {/* Currency indicator */}
+          {showingLocalCurrency && !currencyLoading && (
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="mt-4 inline-flex items-center gap-2 text-sm text-teacher-inkLight bg-teacher-cream px-4 py-2 rounded-full border border-teacher-ink/10"
+            >
+              <Globe className="w-4 h-4" />
+              <span>
+                Prices shown in {currencyCode} for {countryName}
+              </span>
+              <span className="text-xs text-teacher-inkLight/60">(billed in USD)</span>
+            </motion.div>
+          )}
         </motion.div>
 
         {/* Pricing Cards */}
@@ -167,14 +210,23 @@ const TeacherPricingSection = () => {
 
                     {/* Price */}
                     <div className="flex items-baseline justify-center gap-1 mb-1">
-                      <span className="text-3xl md:text-4xl lg:text-5xl font-black text-teacher-ink">
-                        {tier.price}
+                      <span className={`text-3xl md:text-4xl lg:text-5xl font-black text-teacher-ink ${currencyLoading ? 'animate-pulse' : ''}`}>
+                        {formatPrice(tier.priceUSD)}
                       </span>
                       <span className="text-teacher-inkLight font-medium text-sm md:text-base">{tier.period}</span>
                     </div>
-                    {tier.annualPrice && (
+
+                    {/* USD equivalent for non-USD currencies */}
+                    {showingLocalCurrency && tier.priceUSD > 0 && (
+                      <p className="text-xs text-teacher-inkLight/60 mb-1">
+                        (${tier.priceUSD.toFixed(2)} USD)
+                      </p>
+                    )}
+
+                    {/* Annual pricing */}
+                    {tier.annualPriceUSD > 0 && (
                       <p className="text-xs text-teacher-inkLight mb-2">
-                        or {tier.annualPrice} <span className="text-teacher-sage font-medium">(save 20%)</span>
+                        or {formatLocalPrice(tier.annualPriceUSD)}/year <span className="text-teacher-sage font-medium">(save 20%)</span>
                       </p>
                     )}
 

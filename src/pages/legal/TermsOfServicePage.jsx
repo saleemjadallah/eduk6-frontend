@@ -418,15 +418,15 @@ const TermsOfServicePage = () => {
                     </tr>
                     <tr className="bg-gray-50">
                       <td className="px-4 py-3 font-medium">FAMILY</td>
-                      <td className="px-4 py-3">$4.99</td>
-                      <td className="px-4 py-3">$47.90 <span className="text-green-600 text-xs">(20% off)</span></td>
+                      <td className="px-4 py-3">$7.99</td>
+                      <td className="px-4 py-3">$57.99 <span className="text-green-600 text-xs">(40% off)</span></td>
                       <td className="px-4 py-3">2</td>
                       <td className="px-4 py-3">Unlimited</td>
                     </tr>
                     <tr className="bg-white">
                       <td className="px-4 py-3 font-medium">FAMILY PLUS</td>
-                      <td className="px-4 py-3">$9.99</td>
-                      <td className="px-4 py-3">$95.90 <span className="text-green-600 text-xs">(20% off)</span></td>
+                      <td className="px-4 py-3">$14.99</td>
+                      <td className="px-4 py-3">$107.99 <span className="text-green-600 text-xs">(40% off)</span></td>
                       <td className="px-4 py-3">4</td>
                       <td className="px-4 py-3">Unlimited</td>
                     </tr>

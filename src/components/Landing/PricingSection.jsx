@@ -1,17 +1,40 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
-import { Check, Star, Zap, Crown, ChevronDown, ChevronUp } from 'lucide-react';
+import { Check, Star, Zap, Crown, ChevronDown, ChevronUp, Globe } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { useCurrency } from '../../hooks/useCurrency';
 
 const PricingSection = () => {
   const navigate = useNavigate();
   const [showFAQ, setShowFAQ] = useState({});
 
-  // Pricing tiers
-  const tiers = [
+  // Currency detection hook
+  const {
+    currencyInfo,
+    currencyCode,
+    currencySymbol,
+    countryName,
+    formatLocalPrice,
+    isLoading: currencyLoading,
+    isDetected,
+  } = useCurrency();
+
+  // Check if we're showing non-USD currency
+  const showingLocalCurrency = isDetected && currencyCode !== 'USD';
+
+  // Base pricing in USD (source of truth)
+  const basePricing = {
+    free: { monthly: 0, annual: 0 },
+    family: { monthly: 7.99, annual: 57.99 },
+    familyPlus: { monthly: 14.99, annual: 107.99 },
+  };
+
+  // Pricing tiers with dynamic currency conversion
+  const tiers = useMemo(() => [
     {
       name: 'Free',
-      price: '$0',
+      priceUSD: basePricing.free.monthly,
+      annualPriceUSD: basePricing.free.annual,
       period: '/month',
       description: 'Get started with basic features',
       icon: Star,
@@ -32,8 +55,10 @@ const PricingSection = () => {
     },
     {
       name: 'Family',
-      price: '$4.99',
+      priceUSD: basePricing.family.monthly,
+      annualPriceUSD: basePricing.family.annual,
       period: '/month',
+      annualSavings: 'Save 40%',
       description: 'Everything your child needs to excel',
       icon: Zap,
       color: '#4169E1',
@@ -53,8 +78,10 @@ const PricingSection = () => {
     },
     {
       name: 'Family Plus',
-      price: '$9.99',
+      priceUSD: basePricing.familyPlus.monthly,
+      annualPriceUSD: basePricing.familyPlus.annual,
       period: '/month',
+      annualSavings: 'Save 40%',
       description: 'Perfect for larger families',
       icon: Crown,
       color: '#FFD700',
@@ -71,7 +98,19 @@ const PricingSection = () => {
       cta: 'Start Free Trial',
       popular: false,
     },
-  ];
+  ], []);
+
+  // Format price with currency conversion
+  const formatPrice = (amountUSD) => {
+    if (amountUSD === 0) return `${currencySymbol}0`;
+    return formatLocalPrice(amountUSD);
+  };
+
+  // Format annual price
+  const formatAnnualPrice = (amountUSD) => {
+    if (amountUSD === 0) return null;
+    return `${formatLocalPrice(amountUSD)}/year`;
+  };
 
   const faqs = [
     {
@@ -123,6 +162,21 @@ const PricingSection = () => {
           <p className="text-xl text-gray-600 max-w-2xl mx-auto font-medium">
             Start free and upgrade when you're ready. No hidden fees, ever.
           </p>
+
+          {/* Currency indicator */}
+          {showingLocalCurrency && !currencyLoading && (
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="mt-4 inline-flex items-center gap-2 text-sm text-gray-500 bg-gray-100 px-4 py-2 rounded-full"
+            >
+              <Globe className="w-4 h-4" />
+              <span>
+                Prices shown in {currencyCode} for {countryName}
+              </span>
+              <span className="text-xs text-gray-400">(billed in USD)</span>
+            </motion.div>
+          )}
         </motion.div>
 
         {/* Pricing cards */}
@@ -163,10 +217,34 @@ const PricingSection = () => {
                     <tier.icon className={`w-8 h-8 ${tier.color === '#FFD700' ? 'text-black' : 'text-white'}`} />
                   </div>
                   <h3 className="text-2xl font-bold font-comic mb-2">{tier.name}</h3>
+
+                  {/* Price display */}
                   <div className="flex items-baseline justify-center gap-1">
-                    <span className="text-4xl md:text-5xl font-black">{tier.price}</span>
+                    <span className={`text-4xl md:text-5xl font-black ${currencyLoading ? 'animate-pulse' : ''}`}>
+                      {formatPrice(tier.priceUSD)}
+                    </span>
                     <span className="text-gray-500 font-medium">{tier.period}</span>
                   </div>
+
+                  {/* USD equivalent for non-USD currencies */}
+                  {showingLocalCurrency && tier.priceUSD > 0 && (
+                    <div className="text-xs text-gray-400 mt-1">
+                      (${tier.priceUSD.toFixed(2)} USD)
+                    </div>
+                  )}
+
+                  {/* Annual pricing */}
+                  {tier.annualPriceUSD > 0 && (
+                    <div className="mt-1">
+                      <span className="text-sm text-gray-500">
+                        or {formatAnnualPrice(tier.annualPriceUSD)}
+                      </span>
+                      <span className="ml-2 text-xs font-bold text-green-600 bg-green-100 px-2 py-0.5 rounded-full">
+                        {tier.annualSavings}
+                      </span>
+                    </div>
+                  )}
+
                   <p className="text-gray-600 text-sm mt-2">{tier.description}</p>
                 </div>
 
