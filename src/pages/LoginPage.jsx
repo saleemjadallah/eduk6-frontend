@@ -3,11 +3,13 @@ import { useNavigate, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
 import ForgotPasswordModal from '../components/Onboarding/ForgotPasswordModal';
+import GoogleSignInButton from '../components/Onboarding/GoogleSignInButton';
 
 const LoginPage = () => {
   const navigate = useNavigate();
   const {
     signIn,
+    googleSignIn,
     isLoading,
     isAuthenticated,
     hasConsent,
@@ -25,6 +27,7 @@ const LoginPage = () => {
   const [errors, setErrors] = useState({});
   const [apiError, setApiError] = useState('');
   const [showForgotPassword, setShowForgotPassword] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
 
   // Track if we just signed in to handle post-login redirect
   const justSignedIn = useRef(false);
@@ -111,6 +114,31 @@ const LoginPage = () => {
     }
   };
 
+  const handleGoogleSuccess = async (idToken) => {
+    setGoogleLoading(true);
+    setApiError('');
+
+    try {
+      justSignedIn.current = true;
+      const result = await googleSignIn(idToken);
+
+      // For new Google users, redirect to onboarding consent step
+      if (result.isNewUser) {
+        window.location.href = '/onboarding?step=consent_method';
+      }
+      // For existing users, useEffect will handle redirect based on their state
+    } catch (err) {
+      justSignedIn.current = false;
+      setApiError(err.message || 'Google sign in failed');
+    } finally {
+      setGoogleLoading(false);
+    }
+  };
+
+  const handleGoogleError = (error) => {
+    setApiError(error || 'Google sign in failed');
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-teal-50 flex flex-col">
       {/* Header */}
@@ -182,7 +210,7 @@ const LoginPage = () => {
 
               <button
                 type="submit"
-                disabled={isLoading}
+                disabled={isLoading || googleLoading}
                 className="w-full bg-nanobanana-yellow text-black font-bold py-4 rounded-xl border-4 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:translate-y-[-2px] hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] active:translate-y-[2px] active:shadow-none transition-all disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isLoading ? (
@@ -204,6 +232,25 @@ const LoginPage = () => {
               <div className="flex-1 border-t-2 border-gray-200"></div>
               <span className="px-4 text-gray-400 text-sm">or</span>
               <div className="flex-1 border-t-2 border-gray-200"></div>
+            </div>
+
+            {/* Google Sign-In */}
+            <div className="mb-6 relative">
+              <GoogleSignInButton
+                onSuccess={handleGoogleSuccess}
+                onError={handleGoogleError}
+                disabled={isLoading || googleLoading}
+                text="signin_with"
+              />
+              {googleLoading && (
+                <div className="absolute inset-0 flex items-center justify-center gap-2 bg-white/90 rounded-xl">
+                  <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                  </svg>
+                  <span className="text-sm text-gray-600">Signing in with Google...</span>
+                </div>
+              )}
             </div>
 
             {/* Sign Up Link */}

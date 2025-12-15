@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import ForgotPasswordModal from './ForgotPasswordModal';
+import GoogleSignInButton from './GoogleSignInButton';
 
 const SignUpStep = ({ isSignIn = false, onComplete, onSwitchToSignIn, onSwitchToSignUp }) => {
-  const { signUp, signIn, isLoading } = useAuth();
+  const { signUp, signIn, googleSignIn, isLoading } = useAuth();
   const [showForgotPassword, setShowForgotPassword] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
 
   const [formData, setFormData] = useState({
     email: '',
@@ -87,6 +89,26 @@ const SignUpStep = ({ isSignIn = false, onComplete, onSwitchToSignIn, onSwitchTo
     } catch (err) {
       setApiError(err.message || `Failed to ${isSignIn ? 'sign in' : 'sign up'}`);
     }
+  };
+
+  const handleGoogleSuccess = async (idToken) => {
+    setGoogleLoading(true);
+    setApiError('');
+
+    try {
+      const result = await googleSignIn(idToken);
+      // Pass isNewUser flag so OnboardingFlow can handle appropriately
+      // New users skip email verification (Google already verified) and go to consent
+      onComplete?.({ isGoogleAuth: true, isNewUser: result.isNewUser });
+    } catch (err) {
+      setApiError(err.message || 'Google sign in failed');
+    } finally {
+      setGoogleLoading(false);
+    }
+  };
+
+  const handleGoogleError = (error) => {
+    setApiError(error || 'Google sign in failed');
   };
 
   return (
@@ -181,7 +203,7 @@ const SignUpStep = ({ isSignIn = false, onComplete, onSwitchToSignIn, onSwitchTo
           </div>
         )}
 
-        <button type="submit" className="btn btn-primary" disabled={isLoading}>
+        <button type="submit" className="btn btn-primary" disabled={isLoading || googleLoading}>
           {isLoading ? (
             <>
               <span className="loading-spinner" />
@@ -195,6 +217,21 @@ const SignUpStep = ({ isSignIn = false, onComplete, onSwitchToSignIn, onSwitchTo
 
       <div className="divider">
         <span>or</span>
+      </div>
+
+      <div className="google-signin-wrapper">
+        <GoogleSignInButton
+          onSuccess={handleGoogleSuccess}
+          onError={handleGoogleError}
+          disabled={isLoading || googleLoading}
+          text={isSignIn ? 'signin_with' : 'continue_with'}
+        />
+        {googleLoading && (
+          <div className="google-loading-overlay">
+            <span className="loading-spinner" />
+            <span>Signing in with Google...</span>
+          </div>
+        )}
       </div>
 
       <div className="auth-switch">
@@ -252,6 +289,27 @@ const SignUpStep = ({ isSignIn = false, onComplete, onSwitchToSignIn, onSwitchTo
         .forgot-password {
           text-align: center;
           margin-top: 12px;
+        }
+
+        .google-signin-wrapper {
+          position: relative;
+          margin-bottom: 16px;
+        }
+
+        .google-loading-overlay {
+          position: absolute;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 8px;
+          background: rgba(255, 255, 255, 0.9);
+          border-radius: 4px;
+          font-size: 14px;
+          color: #666;
         }
 
         @media (max-width: 480px) {

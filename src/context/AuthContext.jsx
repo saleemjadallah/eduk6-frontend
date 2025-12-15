@@ -189,6 +189,53 @@ export function AuthProvider({ children }) {
     }
   }, [safeSetItem]);
 
+  // Google Sign-In function
+  const googleSignIn = useCallback(async (idToken) => {
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      const response = await authAPI.googleSignIn(idToken);
+
+      if (!response.success) {
+        throw new Error(response.error || 'Google sign in failed');
+      }
+
+      // Normalize API response
+      const data = response.data || response;
+      const parent = data.parent || data.user;
+      const childList = data.children || [];
+      const isNewUser = data.isNewUser || false;
+
+      if (!parent) {
+        throw new Error('Invalid login response: missing user data');
+      }
+
+      // Set user data
+      setUser(parent);
+      setChildProfiles(childList);
+
+      // Set first child as current profile and initialize storage
+      if (childList.length > 0) {
+        setCurrentProfile(childList[0]);
+        safeSetItem('current_profile_id', childList[0].id);
+        storageManager.initialize(parent.id, childList[0].id);
+      } else {
+        storageManager.initialize(parent.id, null);
+      }
+
+      // Ensure auth state is marked ready after explicit sign-in
+      setIsInitialized(true);
+
+      return { success: true, user: parent, children: childList, isNewUser };
+    } catch (err) {
+      setError(err.message);
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  }, [safeSetItem]);
+
   // Sign out function - clears ALL user data
   const signOut = useCallback(async () => {
     try {
@@ -403,6 +450,7 @@ export function AuthProvider({ children }) {
     // Auth actions
     signUp,
     signIn,
+    googleSignIn,
     signOut,
     verifyEmail,
     refreshAuth,
@@ -437,6 +485,7 @@ export function AuthProvider({ children }) {
     canAddChild,
     signUp,
     signIn,
+    googleSignIn,
     signOut,
     verifyEmail,
     refreshAuth,

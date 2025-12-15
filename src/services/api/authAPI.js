@@ -60,6 +60,31 @@ export const authAPI = {
   },
 
   /**
+   * Sign in with Google
+   * @param {string} idToken - Google ID token from OAuth flow
+   * @returns {Promise<Object>} Response with token, user data, and isNewUser flag
+   */
+  googleSignIn: async (idToken) => {
+    const response = await publicRequest('/auth/google', {
+      method: 'POST',
+      body: JSON.stringify({ idToken }),
+    });
+
+    // Store tokens via token manager
+    if (response.success) {
+      const data = response.data || response;
+      if (data.token) {
+        tokenManager.setTokens({
+          token: data.token,
+          refreshToken: data.refreshToken,
+        });
+      }
+    }
+
+    return response;
+  },
+
+  /**
    * Sign out the current user
    * @returns {Promise<Object>} Response with success status
    */

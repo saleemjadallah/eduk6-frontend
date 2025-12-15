@@ -108,16 +108,37 @@ const OnboardingFlow = ({ initialStep = STEPS.SIGNUP }) => {
     setCurrentStep(step);
   };
 
-  const handleSignUpComplete = (email) => {
-    // Store the email for the verification step
-    if (email) {
-      setPendingVerificationEmail(email);
+  const handleSignUpComplete = (result) => {
+    // Handle Google Sign-In (result is an object with isGoogleAuth flag)
+    if (result && typeof result === 'object' && result.isGoogleAuth) {
+      // Google users have verified email - skip email verification
+      // For new Google users, go to consent; for existing users, useEffect handles redirect
+      if (result.isNewUser) {
+        // New Google user - go directly to consent (email already verified by Google)
+        goToStep(STEPS.CONSENT_METHOD);
+      }
+      // For returning Google users, the useEffect will handle based on their state
+      return;
+    }
+
+    // Regular email sign-up - store the email for the verification step
+    if (result) {
+      setPendingVerificationEmail(result);
     }
     goToStep(STEPS.EMAIL_VERIFICATION);
   };
 
-  const handleSignInComplete = () => {
-    // After sign in, the useEffect will handle redirecting based on user state
+  const handleSignInComplete = (result) => {
+    // Handle Google Sign-In from sign-in form
+    if (result && typeof result === 'object' && result.isGoogleAuth) {
+      // For returning Google users, useEffect handles redirect based on state
+      // For new users who signed up via Google from sign-in form, go to consent
+      if (result.isNewUser) {
+        goToStep(STEPS.CONSENT_METHOD);
+      }
+      return;
+    }
+    // After regular sign in, the useEffect will handle redirecting based on user state
   };
 
   const handleSwitchToSignIn = () => {
