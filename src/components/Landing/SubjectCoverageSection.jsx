@@ -72,7 +72,7 @@ const SubjectCoverageSection = () => {
             Every <span className="text-nanobanana-blue">Subject</span> Covered
           </h2>
           <p className="text-xl text-gray-600 max-w-2xl mx-auto font-medium">
-            Works with any K-6 curriculum and learning material
+            Works with any K-8 curriculum and learning material
           </p>
         </motion.div>
 

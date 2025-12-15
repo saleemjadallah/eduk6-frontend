@@ -29,7 +29,7 @@ const HeroSection = () => {
             >
               <span className="inline-flex items-center gap-2 bg-nanobanana-yellow/20 text-nanobanana-blue px-4 py-2 rounded-full font-bold text-sm border-2 border-nanobanana-yellow">
                 <Sparkles className="w-4 h-4" />
-                AI-Powered Learning for K-6
+                AI-Powered Learning for K-8
               </span>
             </motion.div>
 

@@ -43,7 +43,7 @@ const LandingFooter = () => {
               />
             </Link>
             <p className="text-gray-400 mb-6 max-w-xs">
-              Making learning fun and accessible for every K-6 student with the power of AI.
+              Making learning fun and accessible for every K-8 student with the power of AI.
             </p>
             <div className="flex items-center gap-4">
               {socialLinks.map((social) => (

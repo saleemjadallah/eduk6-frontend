@@ -63,7 +63,7 @@ const AboutPage = () => {
             </h1>
             <p className="text-xl text-white/90 max-w-3xl mx-auto">
               Orbit Learn transforms any educational content into personalized, engaging learning experiences
-              that help K-6 students thrive. Powered by AI, designed for kids, trusted by parents.
+              that help K-8 students thrive. Powered by AI, designed for kids, trusted by parents.
             </p>
           </motion.div>
         </div>
