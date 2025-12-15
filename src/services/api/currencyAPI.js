@@ -22,44 +22,84 @@ let cachedCurrencyInfo = null;
 let cacheTimestamp = null;
 const CACHE_DURATION_MS = 30 * 60 * 1000; // 30 minutes
 
+// Currency symbols mapping
+const CURRENCY_SYMBOLS = {
+  USD: '$', EUR: '€', GBP: '£', JPY: '¥', CNY: '¥', INR: '₹',
+  AUD: 'A$', CAD: 'C$', CHF: 'CHF', HKD: 'HK$', SGD: 'S$',
+  AED: 'د.إ', SAR: '﷼', BRL: 'R$', MXN: '$', ZAR: 'R',
+  KRW: '₩', THB: '฿', MYR: 'RM', IDR: 'Rp', PHP: '₱',
+  VND: '₫', TRY: '₺', RUB: '₽', PLN: 'zł', SEK: 'kr',
+  NOK: 'kr', DKK: 'kr', NZD: 'NZ$', ILS: '₪', EGP: 'E£',
+  PKR: '₨', BDT: '৳', NGN: '₦', KES: 'KSh', GHS: 'GH₵',
+};
+
 /**
- * Direct GeoPlugin API call (client-side)
- * This gets the actual client IP since it's called from the browser
+ * Direct IP geolocation API call (client-side)
+ * Uses ipapi.co which has CORS support and includes currency info
+ * Free tier: 1000 requests/day
  */
 async function detectCurrencyDirect() {
   try {
-    // Free tier doesn't need a key - just use the base URL
-    const response = await fetch('https://ssl.geoplugin.net/json.gp', {
+    // ipapi.co provides free CORS-enabled currency detection
+    const response = await fetch('https://ipapi.co/json/', {
       method: 'GET',
+      headers: { 'Accept': 'application/json' },
     });
 
     if (!response.ok) {
-      throw new Error('GeoPlugin API error');
+      throw new Error(`ipapi.co error: ${response.status}`);
     }
 
     const data = await response.json();
 
-    // Check for valid response
-    if (data.geoplugin_status !== 200 && data.geoplugin_status !== 206) {
-      throw new Error('GeoPlugin returned non-success status');
+    // Check for error response
+    if (data.error) {
+      throw new Error(data.reason || 'ipapi.co error');
     }
 
-    // Parse response into our format
+    const currencyCode = data.currency || 'USD';
+
     return {
-      currencyCode: data.geoplugin_currencyCode || 'USD',
-      currencySymbol: data.geoplugin_currencySymbol_UTF8 || data.geoplugin_currencySymbol || '$',
-      exchangeRate: parseFloat(data.geoplugin_currencyConverter) || 1,
-      countryCode: data.geoplugin_countryCode || 'US',
-      countryName: data.geoplugin_countryName || 'United States',
-      city: data.geoplugin_city || '',
-      region: data.geoplugin_regionName || data.geoplugin_region || '',
-      timezone: data.geoplugin_timezone || 'UTC',
-      isEU: data.geoplugin_inEU === 1,
-      euVATrate: data.geoplugin_euVATrate ? parseFloat(data.geoplugin_euVATrate) : null,
+      currencyCode: currencyCode,
+      currencySymbol: CURRENCY_SYMBOLS[currencyCode] || currencyCode,
+      exchangeRate: 1, // ipapi.co doesn't provide exchange rates, we'll fetch separately
+      countryCode: data.country_code || 'US',
+      countryName: data.country_name || 'United States',
+      city: data.city || '',
+      region: data.region || '',
+      timezone: data.timezone || 'UTC',
+      isEU: data.in_eu || false,
+      euVATrate: null,
+      needsExchangeRate: true, // Flag to fetch exchange rate separately
     };
   } catch (error) {
-    console.warn('Direct GeoPlugin call failed:', error.message);
+    console.warn('Direct IP detection failed:', error.message);
     return null;
+  }
+}
+
+/**
+ * Fetch exchange rate for a currency pair
+ * Uses exchangerate-api.com free tier
+ */
+async function fetchExchangeRate(fromCurrency, toCurrency) {
+  if (fromCurrency === toCurrency) return 1;
+
+  try {
+    // Free exchange rate API (no key required for basic use)
+    const response = await fetch(
+      `https://api.exchangerate-api.com/v4/latest/${fromCurrency}`
+    );
+
+    if (!response.ok) {
+      throw new Error('Exchange rate API error');
+    }
+
+    const data = await response.json();
+    return data.rates[toCurrency] || 1;
+  } catch (error) {
+    console.warn('Exchange rate fetch failed:', error.message);
+    return 1;
   }
 }
 
@@ -93,8 +133,9 @@ function cacheResult(data) {
  *
  * Detection flow:
  * 1. Check cache first
- * 2. Try direct GeoPlugin call (most reliable for client IP)
- * 3. Fall back to backend API if direct call fails
+ * 2. Try direct ipapi.co call (CORS-enabled, gets real client IP)
+ * 3. Fetch exchange rate from exchangerate-api.com
+ * 4. Fall back to backend API if direct call fails
  *
  * @param {boolean} forceRefresh - Skip cache and fetch fresh data
  * @returns {Promise<Object>} Currency info including code, symbol, exchange rate
@@ -124,15 +165,21 @@ export async function detectCurrency(forceRefresh = false) {
     }
   }
 
-  // Method 1: Try direct GeoPlugin call (most reliable for client IP)
+  // Method 1: Try direct IP geolocation call (most reliable for client IP)
   try {
     const directResult = await detectCurrencyDirect();
     if (directResult && directResult.currencyCode) {
+      // Fetch exchange rate if needed (ipapi.co doesn't provide rates)
+      if (directResult.needsExchangeRate && directResult.currencyCode !== 'USD') {
+        const rate = await fetchExchangeRate('USD', directResult.currencyCode);
+        directResult.exchangeRate = rate;
+        delete directResult.needsExchangeRate;
+      }
       cacheResult(directResult);
       return { success: true, data: directResult, method: 'direct' };
     }
   } catch (error) {
-    console.warn('Direct GeoPlugin detection failed, trying backend:', error.message);
+    console.warn('Direct IP detection failed, trying backend:', error.message);
   }
 
   // Method 2: Fall back to backend API
