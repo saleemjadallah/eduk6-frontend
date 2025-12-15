@@ -1,72 +1,35 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { motion, useInView } from 'framer-motion';
-import { Users, MessageCircle, Star } from 'lucide-react';
-
-const AnimatedCounter = ({ end, duration = 2, suffix = '' }) => {
-  const [count, setCount] = useState(0);
-  const ref = useRef(null);
-  const isInView = useInView(ref, { once: true });
-
-  useEffect(() => {
-    if (!isInView) return;
-
-    let startTime;
-    const animate = (timestamp) => {
-      if (!startTime) startTime = timestamp;
-      const progress = Math.min((timestamp - startTime) / (duration * 1000), 1);
-
-      // Easing function for smooth animation
-      const easeOutQuart = 1 - Math.pow(1 - progress, 4);
-      setCount(Math.floor(easeOutQuart * end));
-
-      if (progress < 1) {
-        requestAnimationFrame(animate);
-      }
-    };
-
-    requestAnimationFrame(animate);
-  }, [isInView, end, duration]);
-
-  return (
-    <span ref={ref}>
-      {count.toLocaleString()}{suffix}
-    </span>
-  );
-};
+import React from 'react';
+import { motion } from 'framer-motion';
 
 const SocialProofBar = () => {
-  const stats = [
+  const valueProps = [
     {
-      icon: Users,
-      value: 10000,
-      suffix: '+',
-      label: 'Happy Families',
-      color: 'nanobanana-blue',
+      image: '/assets/images/landing/value-props/ai-tutor.jpg',
+      title: 'No More Homework Struggles',
+      description: 'AI tutor available 24/7',
+      bgColor: '#4169E1',
     },
     {
-      icon: MessageCircle,
-      value: 1000000,
-      suffix: '+',
-      label: 'Questions Answered',
-      color: 'nanobanana-green',
+      image: '/assets/images/landing/value-props/save-time.jpg',
+      title: 'Save Hours Weekly',
+      description: 'Instant quizzes, flashcards & study guides',
+      bgColor: '#32CD32',
     },
     {
-      icon: Star,
-      value: 4.9,
-      suffix: '',
-      label: 'Star Rating',
-      color: 'nanobanana-yellow',
-      isDecimal: true,
+      image: '/assets/images/landing/value-props/parent-tracking.jpg',
+      title: 'Parents Stay in the Loop',
+      description: 'Track progress without hovering',
+      bgColor: '#FFD700',
     },
   ];
 
   return (
-    <section className="py-8 bg-gradient-to-r from-gray-50 to-gray-100 border-y-4 border-black">
+    <section className="py-10 bg-gradient-to-r from-gray-50 to-gray-100 border-y-4 border-black">
       <div className="max-w-6xl mx-auto px-6">
-        <div className="flex flex-wrap justify-center md:justify-between items-center gap-8">
-          {stats.map((stat, index) => (
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8">
+          {valueProps.map((prop, index) => (
             <motion.div
-              key={stat.label}
+              key={prop.title}
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
@@ -74,31 +37,22 @@ const SocialProofBar = () => {
               className="flex items-center gap-4"
             >
               <motion.div
-                whileHover={{ scale: 1.1, rotate: 5 }}
-                className={`w-14 h-14 bg-${stat.color} rounded-2xl border-4 border-black flex items-center justify-center shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]`}
-                style={{
-                  backgroundColor: stat.color === 'nanobanana-blue' ? '#4169E1' :
-                    stat.color === 'nanobanana-green' ? '#32CD32' : '#FFD700'
-                }}
+                whileHover={{ scale: 1.05, rotate: 3 }}
+                className="w-16 h-16 md:w-20 md:h-20 rounded-2xl border-4 border-black overflow-hidden shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] flex-shrink-0"
               >
-                <stat.icon className={`w-7 h-7 ${stat.color === 'nanobanana-yellow' ? 'text-black' : 'text-white'}`} />
+                <img
+                  src={prop.image}
+                  alt={prop.title}
+                  className="w-full h-full object-cover"
+                />
               </motion.div>
               <div>
-                <div className="text-3xl md:text-4xl font-black font-comic">
-                  {stat.isDecimal ? (
-                    <span>{stat.value}</span>
-                  ) : (
-                    <AnimatedCounter end={stat.value} suffix={stat.suffix} />
-                  )}
-                  {stat.isDecimal && (
-                    <span className="text-nanobanana-yellow ml-1">
-                      {[...Array(5)].map((_, i) => (
-                        <Star key={i} className="w-4 h-4 inline fill-current" />
-                      ))}
-                    </span>
-                  )}
-                </div>
-                <div className="text-gray-600 font-bold text-sm">{stat.label}</div>
+                <h3 className="text-lg md:text-xl font-black font-comic text-gray-900 leading-tight">
+                  {prop.title}
+                </h3>
+                <p className="text-gray-600 font-medium text-sm md:text-base">
+                  {prop.description}
+                </p>
               </div>
             </motion.div>
           ))}
