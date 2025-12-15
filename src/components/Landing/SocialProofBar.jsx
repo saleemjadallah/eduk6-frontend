@@ -38,7 +38,7 @@ const SocialProofBar = () => {
             >
               <motion.div
                 whileHover={{ scale: 1.05, rotate: 3 }}
-                className="w-16 h-16 md:w-20 md:h-20 rounded-2xl border-4 border-black overflow-hidden shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] flex-shrink-0"
+                className="w-20 h-20 md:w-28 md:h-28 rounded-2xl border-4 border-black overflow-hidden shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] flex-shrink-0"
               >
                 <img
                   src={prop.image}
