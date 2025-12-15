@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -15,14 +15,43 @@ import {
   Heart,
   Bookmark,
   PenTool,
+  Palette,
+  ChevronDown,
+  ChevronUp,
+  BookOpen,
 } from 'lucide-react';
 import { useNotebookContext } from '../context/NotebookContext';
 import { useAuth } from '../context/AuthContext';
-import { NoteEditor } from '../components/Notebook';
-import { SUBJECT_CONFIG, NOTEBOOK_MESSAGES } from '../constants/notebookConstants';
+import { NoteEditor, NotebookCover, CoverCustomizer } from '../components/Notebook';
+import { SUBJECT_CONFIG, NOTEBOOK_MESSAGES, DEFAULT_COVER, COVER_COLORS } from '../constants/notebookConstants';
 
 // Decorative stickers for the notebook
 const DECORATIVE_STICKERS = ['⭐', '🌟', '💫', '✨', '🎨', '📚', '🔬', '🎵', '🌈', '🚀'];
+
+// Local storage key for cover settings
+const COVER_SETTINGS_KEY = 'notebook_cover_settings';
+
+// Get cover settings from localStorage
+const getCoverSettings = (childId) => {
+  try {
+    const stored = localStorage.getItem(`${COVER_SETTINGS_KEY}_${childId}`);
+    if (stored) {
+      return JSON.parse(stored);
+    }
+  } catch (e) {
+    console.error('Failed to parse cover settings:', e);
+  }
+  return DEFAULT_COVER;
+};
+
+// Save cover settings to localStorage
+const saveCoverSettings = (childId, settings) => {
+  try {
+    localStorage.setItem(`${COVER_SETTINGS_KEY}_${childId}`, JSON.stringify(settings));
+  } catch (e) {
+    console.error('Failed to save cover settings:', e);
+  }
+};
 
 // Paper texture pattern
 const PaperTexture = () => (
@@ -313,9 +342,23 @@ const NotebookView = () => {
   const [editContent, setEditContent] = useState('');
   const [deleteConfirm, setDeleteConfirm] = useState(null);
 
+  // Notebook cover state
+  const [isNotebookOpen, setIsNotebookOpen] = useState(false);
+  const [showCoverCustomizer, setShowCoverCustomizer] = useState(false);
+  const [coverSettings, setCoverSettings] = useState(DEFAULT_COVER);
+
   const childName = currentProfile?.displayName || 'My';
   const ageGroup = currentProfile?.ageGroup || 'OLDER';
   const avatarUrl = currentProfile?.avatarUrl;
+  const childId = currentProfile?.id;
+
+  // Load cover settings from localStorage
+  useEffect(() => {
+    if (childId) {
+      const saved = getCoverSettings(childId);
+      setCoverSettings(saved);
+    }
+  }, [childId]);
 
   // Fetch notes on mount
   useEffect(() => {
@@ -380,6 +423,21 @@ const NotebookView = () => {
     await toggleNotePin(noteId);
   };
 
+  // Handle cover click
+  const handleCoverClick = () => {
+    if (!isNotebookOpen) {
+      setIsNotebookOpen(true);
+    }
+  };
+
+  // Handle cover settings change
+  const handleCoverSettingsChange = useCallback((newSettings) => {
+    setCoverSettings(newSettings);
+    if (childId) {
+      saveCoverSettings(childId, newSettings);
+    }
+  }, [childId]);
+
   // Get avatar emoji
   const getAvatarEmoji = () => {
     if (avatarUrl && avatarUrl.startsWith('avatar_')) {
@@ -423,7 +481,7 @@ const NotebookView = () => {
       </div>
 
       <div className="relative z-10 max-w-7xl mx-auto p-4 md:p-6 lg:p-8">
-        {/* Header */}
+        {/* Header - always visible */}
         <motion.div
           className="flex items-center justify-between mb-8"
           initial={{ opacity: 0, y: -20 }}
@@ -474,257 +532,370 @@ const NotebookView = () => {
             </div>
           </div>
 
-          {/* Search */}
-          <motion.div
-            className="relative hidden md:block"
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.2 }}
-          >
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
-            <input
-              type="text"
-              placeholder="Search your notes..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-12 pr-5 py-3 w-72 rounded-2xl border-3 border-black bg-white/90 backdrop-blur focus:outline-none focus:ring-4 focus:ring-amber-300 transition-shadow"
-              style={{ boxShadow: '4px 4px 0px rgba(0,0,0,1)' }}
-            />
-          </motion.div>
+          {/* Search - only show when notebook is open */}
+          {isNotebookOpen && (
+            <motion.div
+              className="relative hidden md:block"
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.2 }}
+            >
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
+              <input
+                type="text"
+                placeholder="Search your notes..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-12 pr-5 py-3 w-72 rounded-2xl border-3 border-black bg-white/90 backdrop-blur focus:outline-none focus:ring-4 focus:ring-amber-300 transition-shadow"
+                style={{ boxShadow: '4px 4px 0px rgba(0,0,0,1)' }}
+              />
+            </motion.div>
+          )}
         </motion.div>
 
-        {/* Main notebook container */}
-        <motion.div
-          className="relative bg-white/95 backdrop-blur rounded-3xl border-4 border-black overflow-hidden"
-          style={{
-            boxShadow: '8px 8px 0px rgba(0,0,0,1), 0 20px 60px rgba(0,0,0,0.15)',
-            minHeight: '70vh',
-          }}
-          initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3, type: 'spring', stiffness: 100 }}
-        >
-          <PaperTexture />
-          <SpiralBinding />
-
-          {/* Subject tabs */}
-          <div className="relative ml-12 pl-4 pt-4 flex gap-1 overflow-x-auto pb-0 border-b-4 border-black bg-gradient-to-b from-gray-100 to-transparent">
-            {subjects.map((subject, index) => (
-              <SubjectTab
-                key={subject}
-                subject={subject}
-                isActive={activeSubject === subject}
-                onClick={() => setActiveSubject(subject)}
-                index={index}
-                totalTabs={subjects.length}
-              />
-            ))}
-          </div>
-
-          {/* Content area */}
-          <div className="ml-12 p-6 md:p-8">
-            {isLoading ? (
-              <div className="flex flex-col items-center justify-center py-20">
-                <motion.div
-                  className="text-6xl mb-4"
-                  animate={{
-                    rotate: [0, 360],
-                    scale: [1, 1.1, 1],
-                  }}
-                  transition={{ duration: 2, repeat: Infinity, ease: 'linear' }}
+        {/* Notebook Cover & Content */}
+        <AnimatePresence mode="wait">
+          {!isNotebookOpen ? (
+            /* Closed Notebook Cover View */
+            <motion.div
+              key="closed-cover"
+              className="flex flex-col items-center justify-center py-8"
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.9, x: -100 }}
+              transition={{ type: 'spring', stiffness: 200 }}
+            >
+              {/* Cover Customizer Toggle */}
+              <motion.div
+                className="mb-6"
+                initial={{ opacity: 0, y: -20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.3 }}
+              >
+                <motion.button
+                  type="button"
+                  className="flex items-center gap-2 px-5 py-2.5 bg-white border-3 border-black rounded-full hover:bg-gray-50 transition-colors"
+                  style={{ boxShadow: '3px 3px 0px rgba(0,0,0,1)' }}
+                  onClick={() => setShowCoverCustomizer(!showCoverCustomizer)}
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
                 >
-                  📓
-                </motion.div>
-                <p className="text-gray-600 font-medium">Loading your notes...</p>
-              </div>
-            ) : filteredNotes.length === 0 ? (
-              <EmptyState searchQuery={searchQuery} activeSubject={activeSubject} />
-            ) : (
-              <div className="flex gap-8">
-                {/* Notes grid */}
-                <div className="flex-1">
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                    <AnimatePresence mode="popLayout">
-                      {filteredNotes.map((note, index) => (
-                        <NoteCard
-                          key={note.id}
-                          note={note}
-                          isSelected={selectedNote?.id === note.id}
-                          onClick={() => handleNoteClick(note)}
-                          index={index}
-                        />
-                      ))}
-                    </AnimatePresence>
-                  </div>
+                  <Palette size={20} className="text-purple-600" />
+                  <span className="font-bold">Customize Cover</span>
+                  {showCoverCustomizer ? (
+                    <ChevronUp size={18} />
+                  ) : (
+                    <ChevronDown size={18} />
+                  )}
+                </motion.button>
+              </motion.div>
+
+              {/* Cover Customizer Panel */}
+              <AnimatePresence>
+                {showCoverCustomizer && (
+                  <motion.div
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: 'auto', opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    className="overflow-hidden mb-8 w-full max-w-md"
+                  >
+                    <div className="p-4 bg-white rounded-2xl border-3 border-black" style={{ boxShadow: '4px 4px 0px rgba(0,0,0,1)' }}>
+                      <CoverCustomizer
+                        color={coverSettings.color}
+                        pattern={coverSettings.pattern}
+                        stickers={coverSettings.stickers}
+                        onColorChange={(color) => handleCoverSettingsChange({ ...coverSettings, color })}
+                        onPatternChange={(pattern) => handleCoverSettingsChange({ ...coverSettings, pattern })}
+                        onStickersChange={(stickers) => handleCoverSettingsChange({ ...coverSettings, stickers })}
+                      />
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
+              {/* The Notebook Cover */}
+              <motion.div
+                initial={{ opacity: 0, y: 30 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.2, type: 'spring' }}
+              >
+                <NotebookCover
+                  isOpen={false}
+                  childName={childName}
+                  avatarUrl={avatarUrl}
+                  coverColor={coverSettings.color}
+                  coverPattern={coverSettings.pattern}
+                  coverStickers={coverSettings.stickers}
+                  onClick={handleCoverClick}
+                />
+              </motion.div>
+
+              {/* Hint text */}
+              <motion.p
+                className="mt-8 text-gray-500 text-center"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 1 }}
+              >
+                Click on the notebook to open it and see your notes! 📖
+              </motion.p>
+            </motion.div>
+          ) : (
+            /* Open Notebook - Notes View */
+            <motion.div
+              key="open-notebook"
+              initial={{ opacity: 0, x: 100 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: 100 }}
+              transition={{ type: 'spring', stiffness: 150 }}
+            >
+              {/* Close button to return to cover */}
+              <motion.button
+                className="mb-4 flex items-center gap-2 px-4 py-2 bg-white border-2 border-black rounded-full hover:bg-gray-50 transition-colors"
+                style={{ boxShadow: '2px 2px 0px rgba(0,0,0,1)' }}
+                onClick={() => setIsNotebookOpen(false)}
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+              >
+                <BookOpen size={18} />
+                <span className="font-medium text-sm">Close Notebook</span>
+              </motion.button>
+
+              {/* Main notebook container */}
+              <motion.div
+                className="relative bg-white/95 backdrop-blur rounded-3xl border-4 border-black overflow-hidden"
+                style={{
+                  boxShadow: '8px 8px 0px rgba(0,0,0,1), 0 20px 60px rgba(0,0,0,0.15)',
+                  minHeight: '70vh',
+                }}
+                initial={{ opacity: 0, y: 30 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.1, type: 'spring', stiffness: 100 }}
+              >
+                <PaperTexture />
+                <SpiralBinding />
+
+                {/* Subject tabs */}
+                <div className="relative ml-12 pl-4 pt-4 flex gap-1 overflow-x-auto pb-0 border-b-4 border-black bg-gradient-to-b from-gray-100 to-transparent">
+                  {subjects.map((subject, index) => (
+                    <SubjectTab
+                      key={subject}
+                      subject={subject}
+                      isActive={activeSubject === subject}
+                      onClick={() => setActiveSubject(subject)}
+                      index={index}
+                      totalTabs={subjects.length}
+                    />
+                  ))}
                 </div>
 
-                {/* Detail panel */}
-                <AnimatePresence>
-                  {selectedNote && (
-                    <motion.div
-                      className="hidden xl:block w-96 flex-shrink-0"
-                      initial={{ opacity: 0, x: 50, scale: 0.95 }}
-                      animate={{ opacity: 1, x: 0, scale: 1 }}
-                      exit={{ opacity: 0, x: 50, scale: 0.95 }}
-                    >
-                      <div
-                        className="sticky top-6 bg-gradient-to-br from-white to-amber-50 rounded-2xl border-4 border-black overflow-hidden"
-                        style={{ boxShadow: '6px 6px 0px rgba(0,0,0,1)' }}
+                {/* Content area */}
+                <div className="ml-12 p-6 md:p-8">
+                  {isLoading ? (
+                    <div className="flex flex-col items-center justify-center py-20">
+                      <motion.div
+                        className="text-6xl mb-4"
+                        animate={{
+                          rotate: [0, 360],
+                          scale: [1, 1.1, 1],
+                        }}
+                        transition={{ duration: 2, repeat: Infinity, ease: 'linear' }}
                       >
-                        {/* Header */}
-                        <div className="p-4 border-b-3 border-black bg-gradient-to-r from-amber-100 to-orange-100 flex items-center justify-between">
-                          <div className="flex items-center gap-2">
-                            <PenTool size={20} className="text-amber-600" />
-                            <h3 className="font-bold text-gray-800">Note Details</h3>
-                          </div>
-                          <button
-                            className="p-2 hover:bg-white/50 rounded-xl transition-colors"
-                            onClick={() => setSelectedNote(null)}
-                          >
-                            <X size={18} />
-                          </button>
-                        </div>
-
-                        {/* Content */}
-                        <div className="p-5 max-h-[60vh] overflow-y-auto">
-                          {isEditing ? (
-                            <div className="space-y-4">
-                              <NoteEditor
-                                initialTitle={editTitle}
-                                initialContent={editContent}
-                                ageGroup={ageGroup}
-                                onTitleChange={setEditTitle}
-                                onContentChange={setEditContent}
-                                autoFocus
+                        📓
+                      </motion.div>
+                      <p className="text-gray-600 font-medium">Loading your notes...</p>
+                    </div>
+                  ) : filteredNotes.length === 0 ? (
+                    <EmptyState searchQuery={searchQuery} activeSubject={activeSubject} />
+                  ) : (
+                    <div className="flex gap-8">
+                      {/* Notes grid */}
+                      <div className="flex-1">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                          <AnimatePresence mode="popLayout">
+                            {filteredNotes.map((note, index) => (
+                              <NoteCard
+                                key={note.id}
+                                note={note}
+                                isSelected={selectedNote?.id === note.id}
+                                onClick={() => handleNoteClick(note)}
+                                index={index}
                               />
-                              <div className="flex gap-2">
-                                <motion.button
-                                  className="flex-1 py-2.5 px-4 bg-gradient-to-r from-emerald-400 to-green-500 text-white font-bold rounded-xl border-3 border-black"
-                                  style={{ boxShadow: '3px 3px 0px rgba(0,0,0,1)' }}
-                                  whileHover={{ scale: 1.02 }}
-                                  whileTap={{ scale: 0.98 }}
-                                  onClick={handleSaveEdit}
-                                >
-                                  Save Changes
-                                </motion.button>
-                                <motion.button
-                                  className="py-2.5 px-4 bg-gray-100 font-bold rounded-xl border-3 border-black"
-                                  style={{ boxShadow: '3px 3px 0px rgba(0,0,0,1)' }}
-                                  whileHover={{ scale: 1.02 }}
-                                  whileTap={{ scale: 0.98 }}
-                                  onClick={() => setIsEditing(false)}
-                                >
-                                  Cancel
-                                </motion.button>
-                              </div>
-                            </div>
-                          ) : (
-                            <>
-                              {/* Subject badge */}
-                              <div
-                                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-bold mb-4"
-                                style={{ backgroundColor: (SUBJECT_CONFIG[selectedNote.subject] || SUBJECT_CONFIG.OTHER).color }}
-                              >
-                                <span>{(SUBJECT_CONFIG[selectedNote.subject] || SUBJECT_CONFIG.OTHER).emoji}</span>
-                                <span>{(SUBJECT_CONFIG[selectedNote.subject] || SUBJECT_CONFIG.OTHER).label}</span>
-                              </div>
-
-                              {/* Title */}
-                              <h2
-                                className="text-xl font-bold mb-4 text-gray-800"
-                                style={{ fontFamily: '"Comic Neue", cursive' }}
-                              >
-                                {selectedNote.title}
-                              </h2>
-
-                              {/* Content */}
-                              <div
-                                className="prose prose-sm max-w-none mb-5 p-4 bg-yellow-50/50 rounded-xl border-2 border-amber-200"
-                                style={{ fontFamily: '"Comic Neue", cursive' }}
-                                dangerouslySetInnerHTML={{ __html: selectedNote.content }}
-                              />
-
-                              {/* Original text */}
-                              {selectedNote.originalText && (
-                                <div className="mb-5 p-3 bg-blue-50 rounded-xl border-2 border-blue-200">
-                                  <p className="text-xs text-gray-500 mb-1 flex items-center gap-1">
-                                    <Bookmark size={12} />
-                                    Original highlight:
-                                  </p>
-                                  <p className="text-sm italic text-gray-600">"{selectedNote.originalText}"</p>
-                                </div>
-                              )}
-
-                              {/* Lesson info */}
-                              {selectedNote.lesson && (
-                                <div className="mb-5 p-3 bg-purple-50 rounded-xl border-2 border-purple-200">
-                                  <p className="text-xs text-gray-500 mb-1">From lesson:</p>
-                                  <p className="font-medium flex items-center gap-2 text-gray-700">
-                                    <Book size={16} className="text-purple-500" />
-                                    {selectedNote.lesson.title}
-                                  </p>
-                                </div>
-                              )}
-
-                              {/* Date */}
-                              <p className="text-sm text-gray-500 mb-5 flex items-center gap-2">
-                                <Calendar size={14} />
-                                {new Date(selectedNote.createdAt).toLocaleDateString('en-US', {
-                                  weekday: 'long',
-                                  year: 'numeric',
-                                  month: 'long',
-                                  day: 'numeric',
-                                })}
-                              </p>
-
-                              {/* Actions */}
-                              <div className="flex gap-2 flex-wrap">
-                                <motion.button
-                                  className="flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-blue-400 to-indigo-500 text-white font-bold rounded-xl border-2 border-black text-sm"
-                                  style={{ boxShadow: '3px 3px 0px rgba(0,0,0,1)' }}
-                                  whileHover={{ scale: 1.05 }}
-                                  whileTap={{ scale: 0.95 }}
-                                  onClick={handleStartEdit}
-                                >
-                                  <Edit3 size={16} />
-                                  Edit
-                                </motion.button>
-                                <motion.button
-                                  className={`flex items-center gap-2 px-4 py-2.5 font-bold rounded-xl border-2 border-black text-sm ${
-                                    selectedNote.isPinned
-                                      ? 'bg-gradient-to-r from-amber-300 to-yellow-400'
-                                      : 'bg-white'
-                                  }`}
-                                  style={{ boxShadow: '3px 3px 0px rgba(0,0,0,1)' }}
-                                  whileHover={{ scale: 1.05 }}
-                                  whileTap={{ scale: 0.95 }}
-                                  onClick={() => handleTogglePin(selectedNote.id)}
-                                >
-                                  <Pin size={16} />
-                                  {selectedNote.isPinned ? 'Pinned!' : 'Pin'}
-                                </motion.button>
-                                <motion.button
-                                  className="flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-red-400 to-rose-500 text-white font-bold rounded-xl border-2 border-black text-sm"
-                                  style={{ boxShadow: '3px 3px 0px rgba(0,0,0,1)' }}
-                                  whileHover={{ scale: 1.05 }}
-                                  whileTap={{ scale: 0.95 }}
-                                  onClick={() => setDeleteConfirm(selectedNote.id)}
-                                >
-                                  <Trash2 size={16} />
-                                  Delete
-                                </motion.button>
-                              </div>
-                            </>
-                          )}
+                            ))}
+                          </AnimatePresence>
                         </div>
                       </div>
-                    </motion.div>
+
+                      {/* Detail panel */}
+                      <AnimatePresence>
+                        {selectedNote && (
+                          <motion.div
+                            className="hidden xl:block w-96 flex-shrink-0"
+                            initial={{ opacity: 0, x: 50, scale: 0.95 }}
+                            animate={{ opacity: 1, x: 0, scale: 1 }}
+                            exit={{ opacity: 0, x: 50, scale: 0.95 }}
+                          >
+                            <div
+                              className="sticky top-6 bg-gradient-to-br from-white to-amber-50 rounded-2xl border-4 border-black overflow-hidden"
+                              style={{ boxShadow: '6px 6px 0px rgba(0,0,0,1)' }}
+                            >
+                              {/* Header */}
+                              <div className="p-4 border-b-3 border-black bg-gradient-to-r from-amber-100 to-orange-100 flex items-center justify-between">
+                                <div className="flex items-center gap-2">
+                                  <PenTool size={20} className="text-amber-600" />
+                                  <h3 className="font-bold text-gray-800">Note Details</h3>
+                                </div>
+                                <button
+                                  className="p-2 hover:bg-white/50 rounded-xl transition-colors"
+                                  onClick={() => setSelectedNote(null)}
+                                >
+                                  <X size={18} />
+                                </button>
+                              </div>
+
+                              {/* Content */}
+                              <div className="p-5 max-h-[60vh] overflow-y-auto">
+                                {isEditing ? (
+                                  <div className="space-y-4">
+                                    <NoteEditor
+                                      initialTitle={editTitle}
+                                      initialContent={editContent}
+                                      ageGroup={ageGroup}
+                                      onTitleChange={setEditTitle}
+                                      onContentChange={setEditContent}
+                                      autoFocus
+                                    />
+                                    <div className="flex gap-2">
+                                      <motion.button
+                                        className="flex-1 py-2.5 px-4 bg-gradient-to-r from-emerald-400 to-green-500 text-white font-bold rounded-xl border-3 border-black"
+                                        style={{ boxShadow: '3px 3px 0px rgba(0,0,0,1)' }}
+                                        whileHover={{ scale: 1.02 }}
+                                        whileTap={{ scale: 0.98 }}
+                                        onClick={handleSaveEdit}
+                                      >
+                                        Save Changes
+                                      </motion.button>
+                                      <motion.button
+                                        className="py-2.5 px-4 bg-gray-100 font-bold rounded-xl border-3 border-black"
+                                        style={{ boxShadow: '3px 3px 0px rgba(0,0,0,1)' }}
+                                        whileHover={{ scale: 1.02 }}
+                                        whileTap={{ scale: 0.98 }}
+                                        onClick={() => setIsEditing(false)}
+                                      >
+                                        Cancel
+                                      </motion.button>
+                                    </div>
+                                  </div>
+                                ) : (
+                                  <>
+                                    {/* Subject badge */}
+                                    <div
+                                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-bold mb-4"
+                                      style={{ backgroundColor: (SUBJECT_CONFIG[selectedNote.subject] || SUBJECT_CONFIG.OTHER).color }}
+                                    >
+                                      <span>{(SUBJECT_CONFIG[selectedNote.subject] || SUBJECT_CONFIG.OTHER).emoji}</span>
+                                      <span>{(SUBJECT_CONFIG[selectedNote.subject] || SUBJECT_CONFIG.OTHER).label}</span>
+                                    </div>
+
+                                    {/* Title */}
+                                    <h2
+                                      className="text-xl font-bold mb-4 text-gray-800"
+                                      style={{ fontFamily: '"Comic Neue", cursive' }}
+                                    >
+                                      {selectedNote.title}
+                                    </h2>
+
+                                    {/* Content */}
+                                    <div
+                                      className="prose prose-sm max-w-none mb-5 p-4 bg-yellow-50/50 rounded-xl border-2 border-amber-200"
+                                      style={{ fontFamily: '"Comic Neue", cursive' }}
+                                      dangerouslySetInnerHTML={{ __html: selectedNote.content }}
+                                    />
+
+                                    {/* Original text */}
+                                    {selectedNote.originalText && (
+                                      <div className="mb-5 p-3 bg-blue-50 rounded-xl border-2 border-blue-200">
+                                        <p className="text-xs text-gray-500 mb-1 flex items-center gap-1">
+                                          <Bookmark size={12} />
+                                          Original highlight:
+                                        </p>
+                                        <p className="text-sm italic text-gray-600">"{selectedNote.originalText}"</p>
+                                      </div>
+                                    )}
+
+                                    {/* Lesson info */}
+                                    {selectedNote.lesson && (
+                                      <div className="mb-5 p-3 bg-purple-50 rounded-xl border-2 border-purple-200">
+                                        <p className="text-xs text-gray-500 mb-1">From lesson:</p>
+                                        <p className="font-medium flex items-center gap-2 text-gray-700">
+                                          <Book size={16} className="text-purple-500" />
+                                          {selectedNote.lesson.title}
+                                        </p>
+                                      </div>
+                                    )}
+
+                                    {/* Date */}
+                                    <p className="text-sm text-gray-500 mb-5 flex items-center gap-2">
+                                      <Calendar size={14} />
+                                      {new Date(selectedNote.createdAt).toLocaleDateString('en-US', {
+                                        weekday: 'long',
+                                        year: 'numeric',
+                                        month: 'long',
+                                        day: 'numeric',
+                                      })}
+                                    </p>
+
+                                    {/* Actions */}
+                                    <div className="flex gap-2 flex-wrap">
+                                      <motion.button
+                                        className="flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-blue-400 to-indigo-500 text-white font-bold rounded-xl border-2 border-black text-sm"
+                                        style={{ boxShadow: '3px 3px 0px rgba(0,0,0,1)' }}
+                                        whileHover={{ scale: 1.05 }}
+                                        whileTap={{ scale: 0.95 }}
+                                        onClick={handleStartEdit}
+                                      >
+                                        <Edit3 size={16} />
+                                        Edit
+                                      </motion.button>
+                                      <motion.button
+                                        className={`flex items-center gap-2 px-4 py-2.5 font-bold rounded-xl border-2 border-black text-sm ${
+                                          selectedNote.isPinned
+                                            ? 'bg-gradient-to-r from-amber-300 to-yellow-400'
+                                            : 'bg-white'
+                                        }`}
+                                        style={{ boxShadow: '3px 3px 0px rgba(0,0,0,1)' }}
+                                        whileHover={{ scale: 1.05 }}
+                                        whileTap={{ scale: 0.95 }}
+                                        onClick={() => handleTogglePin(selectedNote.id)}
+                                      >
+                                        <Pin size={16} />
+                                        {selectedNote.isPinned ? 'Pinned!' : 'Pin'}
+                                      </motion.button>
+                                      <motion.button
+                                        className="flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-red-400 to-rose-500 text-white font-bold rounded-xl border-2 border-black text-sm"
+                                        style={{ boxShadow: '3px 3px 0px rgba(0,0,0,1)' }}
+                                        whileHover={{ scale: 1.05 }}
+                                        whileTap={{ scale: 0.95 }}
+                                        onClick={() => setDeleteConfirm(selectedNote.id)}
+                                      >
+                                        <Trash2 size={16} />
+                                        Delete
+                                      </motion.button>
+                                    </div>
+                                  </>
+                                )}
+                              </div>
+                            </div>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </div>
                   )}
-                </AnimatePresence>
-              </div>
-            )}
-          </div>
-        </motion.div>
+                </div>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
 
       {/* Delete confirmation modal */}
