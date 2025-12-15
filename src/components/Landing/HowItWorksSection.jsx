@@ -8,7 +8,7 @@ const HowItWorksSection = () => {
       number: 1,
       icon: Upload,
       title: 'Upload Any Lesson',
-      description: 'Snap a photo, upload a PDF, or paste a YouTube link. We handle it all!',
+      description: 'Snap a photo or upload a PDF. We handle it all!',
       color: '#FF69B4',
       image: '/assets/images/landing/how-it-works-upload.png',
     },
