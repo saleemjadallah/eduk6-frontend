@@ -2,6 +2,13 @@ import React, { useEffect, useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { motion } from 'framer-motion';
 
+// Helper to format grade level for display
+const formatGrade = (grade) => {
+  if (grade === undefined || grade === null) return 'Grade ?';
+  if (grade === 0) return 'Pre-K';
+  return `Grade ${grade}`;
+};
+
 const WelcomeStep = ({ onComplete }) => {
   const { currentProfile, children } = useAuth();
   const [showConfetti, setShowConfetti] = useState(true);
@@ -63,20 +70,20 @@ const WelcomeStep = ({ onComplete }) => {
 
         <div className="profile-card">
           <div className="profile-avatar-large">
-            {profile?.avatarId?.includes('avatar_1') && '🐱'}
-            {profile?.avatarId?.includes('avatar_2') && '🐶'}
-            {profile?.avatarId?.includes('avatar_3') && '🦉'}
-            {profile?.avatarId?.includes('avatar_4') && '🦁'}
-            {profile?.avatarId?.includes('avatar_5') && '🐼'}
-            {profile?.avatarId?.includes('avatar_6') && '🐰'}
-            {profile?.avatarId?.includes('avatar_7') && '🐧'}
-            {profile?.avatarId?.includes('avatar_8') && '🐘'}
-            {!profile?.avatarId && '🐱'}
+            {(profile?.avatarUrl || profile?.avatarId)?.includes('avatar_1') && '🐱'}
+            {(profile?.avatarUrl || profile?.avatarId)?.includes('avatar_2') && '🐶'}
+            {(profile?.avatarUrl || profile?.avatarId)?.includes('avatar_3') && '🦉'}
+            {(profile?.avatarUrl || profile?.avatarId)?.includes('avatar_4') && '🦁'}
+            {(profile?.avatarUrl || profile?.avatarId)?.includes('avatar_5') && '🐼'}
+            {(profile?.avatarUrl || profile?.avatarId)?.includes('avatar_6') && '🐰'}
+            {(profile?.avatarUrl || profile?.avatarId)?.includes('avatar_7') && '🐧'}
+            {(profile?.avatarUrl || profile?.avatarId)?.includes('avatar_8') && '🐘'}
+            {!(profile?.avatarUrl || profile?.avatarId) && '🐱'}
           </div>
           <div className="profile-details">
             <span className="profile-name">{profile?.displayName || 'Young Learner'}</span>
             <span className="profile-info">
-              Age {profile?.age || '?'} • Grade {profile?.grade || '?'}
+              {profile?.ageGroup === 'YOUNG' ? 'Ages 4-7' : profile?.ageGroup === 'OLDER' ? 'Ages 8-12' : ''} • {formatGrade(profile?.gradeLevel ?? profile?.grade)}
             </span>
           </div>
         </div>
