@@ -47,15 +47,16 @@ const TeacherFeaturesSection = () => {
     },
   ];
 
-  const comingSoon = {
-    icon: Target,
-    title: 'Grading Center',
-    description: 'AI-powered paper grading with rubric-based feedback. Upload student work, get detailed assessments, and generate personalized feedback in seconds.',
-    color: '#7B5EA7', // plum
-    shadowColor: 'rgba(123,94,167,0.4)',
-    tags: ['Rubric-Based', 'Batch Grading', 'Feedback Generation'],
-    status: 'coming_soon',
-  };
+  // Grading Center - Coming later
+  // const comingSoon = {
+  //   icon: Target,
+  //   title: 'Grading Center',
+  //   description: 'AI-powered paper grading with rubric-based feedback. Upload student work, get detailed assessments, and generate personalized feedback in seconds.',
+  //   color: '#7B5EA7', // plum
+  //   shadowColor: 'rgba(123,94,167,0.4)',
+  //   tags: ['Rubric-Based', 'Batch Grading', 'Feedback Generation'],
+  //   status: 'coming_soon',
+  // };
 
   return (
     <section id="features" className="py-24 bg-teacher-paper relative overflow-hidden">
@@ -97,7 +98,7 @@ const TeacherFeaturesSection = () => {
           </h2>
 
           <p className="text-base md:text-lg lg:text-xl text-teacher-inkLight max-w-2xl mx-auto">
-            Five AI-powered tools to transform hours of prep work into minutes.
+            Four AI-powered tools to transform hours of prep work into minutes.
           </p>
         </motion.div>
 
@@ -162,7 +163,7 @@ const TeacherFeaturesSection = () => {
           ))}
         </div>
 
-        {/* Coming Soon - Full Width */}
+        {/* Grading Center - Coming later
         <motion.div
           initial={{ opacity: 0, y: 30 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -171,14 +172,12 @@ const TeacherFeaturesSection = () => {
           className="bg-white rounded-2xl md:rounded-3xl border-3 md:border-4 border-black overflow-hidden relative"
           style={{ boxShadow: `6px 6px 0px 0px ${comingSoon.shadowColor}` }}
         >
-          {/* Coming Soon Banner */}
           <div className="absolute top-0 right-0 bg-teacher-plum text-white px-4 md:px-6 py-1.5 md:py-2 rounded-bl-xl md:rounded-bl-2xl border-l-3 md:border-l-4 border-b-3 md:border-b-4 border-black font-bold text-xs md:text-sm flex items-center gap-1.5 md:gap-2">
             <Clock className="w-3 h-3 md:w-4 md:h-4" />
             Coming Soon
           </div>
 
           <div className="grid md:grid-cols-2 gap-6 md:gap-8 p-5 md:p-8">
-            {/* Left - Content */}
             <div className="flex flex-col justify-center">
               <div
                 className="w-12 h-12 md:w-16 md:h-16 rounded-xl md:rounded-2xl border-3 md:border-4 border-black flex items-center justify-center mb-4 md:mb-6 shadow-[3px_3px_0px_0px_rgba(0,0,0,1)] md:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]"
@@ -195,7 +194,6 @@ const TeacherFeaturesSection = () => {
                 {comingSoon.description}
               </p>
 
-              {/* Tags */}
               <div className="flex flex-wrap gap-1.5 md:gap-2 mb-4 md:mb-6">
                 {comingSoon.tags.map((tag) => (
                   <span
@@ -211,7 +209,6 @@ const TeacherFeaturesSection = () => {
                 ))}
               </div>
 
-              {/* Waitlist CTA */}
               <Link
                 to="/teacher/signup"
                 className="inline-flex items-center gap-2 text-sm md:text-base text-teacher-plum font-bold hover:gap-3 transition-all group"
@@ -221,10 +218,8 @@ const TeacherFeaturesSection = () => {
               </Link>
             </div>
 
-            {/* Right - Placeholder Visual */}
             <div className="relative hidden md:block">
               <div className="bg-gradient-to-br from-teacher-plum/10 via-teacher-plum/5 to-transparent rounded-xl md:rounded-2xl border-2 border-teacher-plum/20 p-6 md:p-8 h-full min-h-[200px] md:min-h-[250px] flex flex-col items-center justify-center">
-                {/* Decorative mockup */}
                 <div className="grid grid-cols-3 gap-2 md:gap-3 mb-4 md:mb-6">
                   {[...Array(6)].map((_, i) => (
                     <motion.div
@@ -243,7 +238,6 @@ const TeacherFeaturesSection = () => {
                   </p>
                 </div>
 
-                {/* Floating elements */}
                 <motion.div
                   animate={{ y: [-5, 5, -5], rotate: [-3, 3, -3] }}
                   transition={{ duration: 4, repeat: Infinity }}
@@ -263,6 +257,7 @@ const TeacherFeaturesSection = () => {
             </div>
           </div>
         </motion.div>
+        */}
       </div>
     </section>
   );
