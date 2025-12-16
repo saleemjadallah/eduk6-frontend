@@ -11,6 +11,7 @@ import {
   TeacherTestimonialsSection,
   TeacherFAQSection,
   TeacherFinalCTASection,
+  TeacherExitIntentPopup,
 } from '../../components/teacher/landing';
 import LandingFooter from '../../components/Landing/LandingFooter';
 
@@ -73,6 +74,9 @@ const TeacherLandingPage = () => {
 
       {/* Footer */}
       <LandingFooter />
+
+      {/* Exit Intent Popup - Teacher Toolkit Lead Capture */}
+      <TeacherExitIntentPopup />
     </div>
   );
 };
