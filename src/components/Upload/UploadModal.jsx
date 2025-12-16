@@ -26,7 +26,7 @@ const UploadModal = ({ isOpen, onClose, onSuccess }) => {
     const [completedLesson, setCompletedLesson] = useState(null);
     const hasNavigatedRef = useRef(false);
 
-    const { isProcessing, processingStage, processingProgress, error: contextError, setCurrentLesson } = useLessonContext();
+    const { isProcessing, processingStage, processingProgress, error: contextError, setCurrentLesson, clearError, resetProcessing } = useLessonContext();
     const { processFile } = useLessonProcessor();
 
     // Clear local error when tab changes
@@ -34,10 +34,13 @@ const UploadModal = ({ isOpen, onClose, onSuccess }) => {
         setLocalError(null);
     }, [activeTab]);
 
-    // Handle context errors
+    // Handle context errors - sync with local error state
     useEffect(() => {
         if (contextError) {
             setLocalError(contextError.message || 'Something went wrong');
+        } else {
+            // Clear local error when context error is cleared
+            setLocalError(null);
         }
     }, [contextError]);
 
@@ -80,8 +83,11 @@ const UploadModal = ({ isOpen, onClose, onSuccess }) => {
             return;
         }
 
+        // Clear all previous error states before starting new upload
         setLocalError(null);
         setCompletedLesson(null);
+        clearError(); // Clear context error from previous failed attempts
+        hasNavigatedRef.current = false; // Reset navigation flag
 
         try {
             let lesson;

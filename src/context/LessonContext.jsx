@@ -113,6 +113,7 @@ function lessonReducer(state, action) {
         isProcessing: false,
         processingProgress: 0,
         processingStage: 'idle',
+        error: null, // Clear error when resetting processing state
       };
 
     // --- Lesson CRUD ---
