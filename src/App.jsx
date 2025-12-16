@@ -5,6 +5,7 @@ import { FlashcardProvider } from './context/FlashcardContext';
 import { ChatProvider } from './context/ChatContext';
 import { AuthProvider } from './context/AuthContext';
 import { TeacherAuthProvider } from './context/TeacherAuthContext';
+import { AdminAuthProvider } from './context/AdminAuthContext';
 import { ModeProvider } from './context/ModeContext';
 import { SelectionProvider } from './context/SelectionContext';
 import { NotebookProvider } from './context/NotebookContext';
@@ -52,12 +53,17 @@ import {
   TeacherHelpPage,
 } from './pages/teacher';
 
+// Admin Pages
+import { AdminLoginPage, AnalyticsDashboard } from './pages/admin';
+
 // Components
 import { RewardPopup } from './components/Gamification';
 import ProtectedRoute from './components/Routing/ProtectedRoute';
 import ProtectedTeacherRoute from './components/Routing/ProtectedTeacherRoute';
+import { ProtectedAdminRoute, PublicAdminRoute } from './components/Routing/ProtectedAdminRoute';
 import ModeRoute from './components/Routing/ModeRoute';
 import { ParentLayout } from './components/Layouts';
+import { AdminLayout } from './components/admin';
 import ProtectedChildLayout from './components/Layouts/ProtectedChildLayout';
 import ParentPinVerification from './components/Parent/ParentPinVerification';
 import { NotebookModal } from './components/Notebook';
@@ -94,6 +100,16 @@ function TeacherRootLayout() {
             <ScrollRestoration getKey={(location) => location.pathname} />
             <Outlet />
         </TeacherAuthProvider>
+    );
+}
+
+// Admin root layout - separate auth context for admin analytics
+function AdminRootLayout() {
+    return (
+        <AdminAuthProvider>
+            <ScrollRestoration getKey={(location) => location.pathname} />
+            <Outlet />
+        </AdminAuthProvider>
     );
 }
 
@@ -325,6 +341,101 @@ const router = createBrowserRouter([
             },
 
             // 404 Page for unmatched teacher routes
+            { path: '*', element: <NotFoundPage /> },
+        ],
+    },
+    // Admin routes - separate analytics dashboard for VC presentations
+    {
+        path: '/admin',
+        element: <AdminRootLayout />,
+        children: [
+            // Public admin routes
+            {
+                path: 'login',
+                element: (
+                    <PublicAdminRoute>
+                        <AdminLoginPage />
+                    </PublicAdminRoute>
+                ),
+            },
+
+            // Protected admin routes - wrapped in AdminLayout
+            // All analytics sub-routes render the same dashboard (single-page dashboard)
+            {
+                path: 'analytics',
+                element: (
+                    <ProtectedAdminRoute>
+                        <AdminLayout>
+                            <AnalyticsDashboard />
+                        </AdminLayout>
+                    </ProtectedAdminRoute>
+                ),
+            },
+            {
+                path: 'analytics/users',
+                element: (
+                    <ProtectedAdminRoute>
+                        <AdminLayout>
+                            <AnalyticsDashboard />
+                        </AdminLayout>
+                    </ProtectedAdminRoute>
+                ),
+            },
+            {
+                path: 'analytics/cohorts',
+                element: (
+                    <ProtectedAdminRoute>
+                        <AdminLayout>
+                            <AnalyticsDashboard />
+                        </AdminLayout>
+                    </ProtectedAdminRoute>
+                ),
+            },
+            {
+                path: 'analytics/revenue',
+                element: (
+                    <ProtectedAdminRoute>
+                        <AdminLayout>
+                            <AnalyticsDashboard />
+                        </AdminLayout>
+                    </ProtectedAdminRoute>
+                ),
+            },
+            {
+                path: 'analytics/segments',
+                element: (
+                    <ProtectedAdminRoute>
+                        <AdminLayout>
+                            <AnalyticsDashboard />
+                        </AdminLayout>
+                    </ProtectedAdminRoute>
+                ),
+            },
+            {
+                path: 'settings',
+                element: (
+                    <ProtectedAdminRoute>
+                        <AdminLayout>
+                            <AnalyticsDashboard />
+                        </AdminLayout>
+                    </ProtectedAdminRoute>
+                ),
+            },
+            {
+                path: 'settings/admins',
+                element: (
+                    <ProtectedAdminRoute requireSuperAdmin>
+                        <AdminLayout>
+                            <AnalyticsDashboard />
+                        </AdminLayout>
+                    </ProtectedAdminRoute>
+                ),
+            },
+
+            // Default redirect to analytics
+            { index: true, element: <Navigate to="/admin/analytics" replace /> },
+
+            // 404 Page for unmatched admin routes
             { path: '*', element: <NotFoundPage /> },
         ],
     },
