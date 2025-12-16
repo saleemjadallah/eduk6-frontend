@@ -16,6 +16,7 @@ import {
   FinalCTASection,
   TeacherCTASection,
   LandingFooter,
+  ExitIntentPopup,
 } from '../components/Landing';
 
 const HomePage = () => {
@@ -132,6 +133,9 @@ const HomePage = () => {
 
       {/* Footer */}
       <LandingFooter />
+
+      {/* Exit Intent Popup - Curriculum Guide Lead Capture */}
+      <ExitIntentPopup />
     </div>
   );
 };
