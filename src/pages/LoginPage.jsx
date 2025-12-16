@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
 import ForgotPasswordModal from '../components/Onboarding/ForgotPasswordModal';
 import GoogleSignInButton from '../components/Onboarding/GoogleSignInButton';
+import { ExitIntentPopup } from '../components/Landing';
 
 const LoginPage = () => {
   const navigate = useNavigate();
@@ -294,6 +295,9 @@ const LoginPage = () => {
         isOpen={showForgotPassword}
         onClose={() => setShowForgotPassword(false)}
       />
+
+      {/* Exit Intent Popup */}
+      <ExitIntentPopup />
     </div>
   );
 };

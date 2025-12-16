@@ -9,6 +9,7 @@ import CreditCardVerificationStep from './CreditCardVerificationStep';
 import KBQVerificationStep from './KBQVerificationStep';
 import CreateProfileStep from './CreateProfileStep';
 import WelcomeStep from './WelcomeStep';
+import { ExitIntentPopup } from '../Landing';
 import './OnboardingFlow.css';
 
 const STEPS = {
@@ -328,6 +329,9 @@ const OnboardingFlow = ({ initialStep = STEPS.SIGNUP }) => {
           </p>
         </div>
       </div>
+
+      {/* Exit Intent Popup */}
+      <ExitIntentPopup />
     </div>
   );
 };

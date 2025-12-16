@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useTeacherAuth } from '../../context/TeacherAuthContext';
+import { TeacherExitIntentPopup } from '../../components/teacher/landing';
 
 const TeacherSignupPage = () => {
   const navigate = useNavigate();
@@ -297,6 +298,9 @@ const TeacherSignupPage = () => {
           </div>
         </motion.div>
       </main>
+
+      {/* Exit Intent Popup */}
+      <TeacherExitIntentPopup />
     </div>
   );
 };

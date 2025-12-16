@@ -3,6 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useTeacherAuth } from '../../context/TeacherAuthContext';
 import TeacherForgotPasswordModal from '../../components/teacher/TeacherForgotPasswordModal';
+import { TeacherExitIntentPopup } from '../../components/teacher/landing';
 
 const TeacherLoginPage = () => {
   const navigate = useNavigate();
@@ -225,6 +226,9 @@ const TeacherLoginPage = () => {
           onClose={() => setShowForgotPassword(false)}
         />
       )}
+
+      {/* Exit Intent Popup */}
+      <TeacherExitIntentPopup />
     </div>
   );
 };
