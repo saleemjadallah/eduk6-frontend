@@ -49,11 +49,11 @@ const TeacherLandingNav = () => {
           <Link to="/teacher" className="flex items-center gap-2">
             <img
               src="/assets/rebranding-jeffrey-2024/orbit-learn-logo-icon 2.png"
-              alt="OrbitLearn"
+              alt="Orbit Learn"
               className="h-10 w-auto rounded-lg"
             />
             <div className="hidden sm:block">
-              <span className="font-display font-bold text-teacher-ink text-lg">OrbitLearn</span>
+              <span className="font-display font-bold text-teacher-ink text-lg">Orbit Learn</span>
               <span className="ml-1.5 text-xs font-bold text-teacher-chalk bg-teacher-chalk/10 px-2 py-0.5 rounded-full">
                 Teachers
               </span>

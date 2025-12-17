@@ -158,7 +158,7 @@ const AdminSidebar = () => {
         </div>
         {!isCollapsed && (
           <div className="logo-text">
-            <span className="logo-title">OrbitLearn</span>
+            <span className="logo-title">Orbit Learn</span>
             <span className="logo-subtitle">Analytics</span>
           </div>
         )}

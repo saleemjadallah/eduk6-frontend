@@ -61,7 +61,7 @@ const WelcomeStep = ({ onComplete }) => {
           <span className="party-emoji">🎉</span>
         </div>
 
-        <h2>Welcome to OrbitLearn!</h2>
+        <h2>Welcome to Orbit Learn!</h2>
 
         <p className="welcome-text">
           You're all set! {profile?.displayName || 'Your child'} is ready to start

@@ -50,7 +50,7 @@ const AdminLoginPage = () => {
               </linearGradient>
             </defs>
           </svg>
-          <h1 className="login-title">OrbitLearn Analytics</h1>
+          <h1 className="login-title">Orbit Learn Analytics</h1>
           <p className="login-subtitle">Admin Dashboard</p>
         </div>
 

@@ -101,10 +101,10 @@ const TermsOfServicePage = () => {
           {/* Introduction */}
           <div className="bg-indigo-50 rounded-xl p-6 mb-8">
             <p className="text-gray-700 mb-4">
-              <strong>OrbitLearn</strong> is owned and operated by <strong>Jasmine Entertainment Fze</strong> ("Company," "we," "us," or "our"), a company registered in Sharjah, UAE.
+              <strong>Orbit Learn</strong> is owned and operated by <strong>Jasmine Entertainment Fze</strong> ("Company," "we," "us," or "our"), a company registered in Sharjah, UAE.
             </p>
             <p className="text-gray-700">
-              These Terms and Conditions ("Terms") govern your access to and use of the OrbitLearn website, mobile application, and services (collectively, the "Service"). By accessing or using the Service, you agree to be bound by these Terms.
+              These Terms and Conditions ("Terms") govern your access to and use of the Orbit Learn website, mobile application, and services (collectively, the "Service"). By accessing or using the Service, you agree to be bound by these Terms.
             </p>
           </div>
 
@@ -164,7 +164,7 @@ const TermsOfServicePage = () => {
                   <tbody className="divide-y divide-gray-200">
                     <tr className="bg-gray-50">
                       <td className="px-4 py-3 font-medium text-gray-700">Service Name</td>
-                      <td className="px-4 py-3 text-gray-600">OrbitLearn</td>
+                      <td className="px-4 py-3 text-gray-600">Orbit Learn</td>
                     </tr>
                     <tr>
                       <td className="px-4 py-3 font-medium text-gray-700">Legal Entity</td>
@@ -194,7 +194,7 @@ const TermsOfServicePage = () => {
             {/* Section 3: Description of Service */}
             <SectionHeader id="description" icon={BookOpen} title="3. Description of Service">
               <p className="text-gray-600 mb-4">
-                OrbitLearn is an AI-powered educational learning platform designed for children ages 4-12 (Kindergarten through Grade 6) and their families. The Service provides:
+                Orbit Learn is an AI-powered educational learning platform designed for children ages 4-12 (Kindergarten through Grade 6) and their families. The Service provides:
               </p>
 
               <h3 className="text-md font-semibold text-gray-800 mb-3">Family/Student Portal</h3>
@@ -607,7 +607,7 @@ const TermsOfServicePage = () => {
             {/* Section 9: Educational Use and FERPA */}
             <SectionHeader id="ferpa" icon={Scale} title="9. Educational Use and FERPA Compliance">
               <h3 className="text-md font-semibold text-gray-800 mb-3">9.1 Family Educational Rights and Privacy Act (FERPA)</h3>
-              <p className="text-gray-600 mb-4">For schools and teachers using OrbitLearn:</p>
+              <p className="text-gray-600 mb-4">For schools and teachers using Orbit Learn:</p>
 
               <div className="bg-green-50 rounded-lg p-4 mb-4">
                 <h4 className="font-medium text-green-900 mb-2">We Act as a School Official</h4>
@@ -675,7 +675,7 @@ const TermsOfServicePage = () => {
               </div>
 
               <h4 className="font-medium text-gray-800 mb-2">License You Grant Us</h4>
-              <p className="text-gray-600 mb-2">By submitting content to OrbitLearn, you grant us a worldwide, royalty-free, non-exclusive license to:</p>
+              <p className="text-gray-600 mb-2">By submitting content to Orbit Learn, you grant us a worldwide, royalty-free, non-exclusive license to:</p>
               <ul className="list-disc pl-6 text-gray-600 mb-4 space-y-1">
                 <li>Process content through our AI services</li>
                 <li>Store content on our servers</li>
@@ -691,7 +691,7 @@ const TermsOfServicePage = () => {
                 <li>Commercial redistribution of AI-generated content requires written permission</li>
               </ul>
 
-              <h3 className="text-md font-semibold text-gray-800 mb-3">10.3 OrbitLearn Intellectual Property</h3>
+              <h3 className="text-md font-semibold text-gray-800 mb-3">10.3 Orbit Learn Intellectual Property</h3>
               <p className="text-gray-600 mb-2">All rights, title, and interest in and to the Service, including:</p>
               <ul className="list-disc pl-6 text-gray-600 mb-4 space-y-1">
                 <li>Platform design and functionality</li>

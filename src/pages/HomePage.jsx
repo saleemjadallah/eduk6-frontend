@@ -61,7 +61,7 @@ const HomePage = () => {
           <Link to="/" className="flex items-center">
             <img
               src="/assets/rebranding-jeffrey-2024/orbit-learn-logo-icon 2.png"
-              alt="OrbitLearn"
+              alt="Orbit Learn"
               className="h-16 md:h-20 w-auto"
             />
           </Link>

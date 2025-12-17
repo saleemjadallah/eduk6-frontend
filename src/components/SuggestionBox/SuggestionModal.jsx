@@ -157,7 +157,7 @@ const SuggestionModal = ({
                       <p className="modal-subtitle">
                         {isStudent
                           ? "We'd love to hear what you think!"
-                          : 'Help us improve OrbitLearn for educators'}
+                          : 'Help us improve Orbit Learn for educators'}
                       </p>
                     </div>
                   </motion.div>
@@ -323,7 +323,7 @@ const SuccessState = ({ variant }) => {
       >
         {isStudent
           ? 'Your idea is on its way to our team!'
-          : 'Your feedback helps us improve OrbitLearn.'}
+          : 'Your feedback helps us improve Orbit Learn.'}
       </motion.p>
     </motion.div>
   );

@@ -5,7 +5,7 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>en</string>
 	<key>CFBundleDisplayName</key>
-	<string>OrbitLearn</string>
+	<string>Orbit Learn</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
@@ -46,10 +46,10 @@
 	<key>UIViewControllerBasedStatusBarAppearance</key>
 	<true/>
 	<key>NSCameraUsageDescription</key>
-	<string>OrbitLearn needs camera access to take photos of worksheets, textbook pages, and other learning materials.</string>
+	<string>Orbit Learn needs camera access to take photos of worksheets, textbook pages, and other learning materials.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
-	<string>OrbitLearn needs photo library access to select images of worksheets and learning materials.</string>
+	<string>Orbit Learn needs photo library access to select images of worksheets and learning materials.</string>
 	<key>NSPhotoLibraryAddUsageDescription</key>
-	<string>OrbitLearn needs permission to save captured lesson images to your photo library.</string>
+	<string>Orbit Learn needs permission to save captured lesson images to your photo library.</string>
 </dict>
 </plist>

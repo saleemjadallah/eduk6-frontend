@@ -1,6 +1,6 @@
 {
   "appId": "com.orbitlearn.app",
-  "appName": "OrbitLearn",
+  "appName": "Orbit Learn",
   "webDir": "dist",
   "server": {
     "androidScheme": "https"

@@ -69,7 +69,7 @@ const TeacherFAQSection = () => {
           </h2>
 
           <p className="text-base md:text-lg text-teacher-inkLight max-w-xl mx-auto">
-            Everything you need to know about OrbitLearn for teachers.
+            Everything you need to know about Orbit Learn for teachers.
           </p>
         </motion.div>
 

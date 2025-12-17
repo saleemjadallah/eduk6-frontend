@@ -65,7 +65,7 @@ const TestimonialsSection = () => {
           className="text-center mb-16"
         >
           <h2 className="text-4xl md:text-5xl font-black font-comic mb-4">
-            Families <span className="text-nanobanana-yellow">Love</span> OrbitLearn
+            Families <span className="text-nanobanana-yellow">Love</span> Orbit Learn
           </h2>
           <p className="text-xl text-gray-600 max-w-2xl mx-auto font-medium">
             Join thousands of happy families on their learning journey

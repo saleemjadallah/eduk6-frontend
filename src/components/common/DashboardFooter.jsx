@@ -17,7 +17,7 @@ const DashboardFooter = ({ variant = 'default', className = '' }) => {
     return (
       <footer className={`py-4 px-6 text-center ${className}`}>
         <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-xs text-gray-400">
-          <span>&copy; {currentYear} OrbitLearn</span>
+          <span>&copy; {currentYear} Orbit Learn</span>
           <span className="hidden sm:inline">|</span>
           <Link to="/terms" className="hover:text-gray-600 transition-colors">
             Terms
@@ -38,7 +38,7 @@ const DashboardFooter = ({ variant = 'default', className = '' }) => {
     return (
       <footer className={`py-4 px-6 border-t border-gray-100 ${className}`}>
         <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-sm text-gray-500">
-          <span>&copy; {currentYear} OrbitLearn</span>
+          <span>&copy; {currentYear} Orbit Learn</span>
           <span className="text-gray-300">|</span>
           <Link to="/terms" className="hover:text-indigo-600 transition-colors">
             Terms of Service
@@ -61,7 +61,7 @@ const DashboardFooter = ({ variant = 'default', className = '' }) => {
         <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
           {/* Copyright */}
           <div className="text-sm text-gray-500">
-            &copy; {currentYear} OrbitLearn. All rights reserved.
+            &copy; {currentYear} Orbit Learn. All rights reserved.
           </div>
 
           {/* Legal Links */}

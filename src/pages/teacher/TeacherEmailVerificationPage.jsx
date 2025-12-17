@@ -73,7 +73,7 @@ const TeacherEmailVerificationPage = () => {
       {/* Header */}
       <header className="p-6">
         <Link to="/" className="flex items-center w-fit">
-          <img src="/assets/rebranding-jeffrey-2024/orbit-learn-logo-icon 2.png" alt="OrbitLearn" className="h-16 md:h-20 w-auto rounded-xl" />
+          <img src="/assets/rebranding-jeffrey-2024/orbit-learn-logo-icon 2.png" alt="Orbit Learn" className="h-16 md:h-20 w-auto rounded-xl" />
         </Link>
       </header>
 

@@ -59,7 +59,7 @@ const CoppaCompliancePage = () => {
             <div className="inline-flex items-center justify-center p-4 bg-green-100 rounded-2xl mb-4">
               <Shield className="w-10 h-10 text-green-600" />
             </div>
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">OrbitLearn Children's Privacy Policy</h1>
+            <h1 className="text-3xl font-bold text-gray-900 mb-2">Orbit Learn Children's Privacy Policy</h1>
             <p className="text-lg text-green-600 font-medium mb-2">COPPA Compliance</p>
             <p className="text-gray-500">Last updated: {lastUpdated}</p>
           </div>
@@ -68,7 +68,7 @@ const CoppaCompliancePage = () => {
           <div className="bg-green-50 border border-green-200 rounded-xl p-6 mb-8">
             <h2 className="text-lg font-semibold text-green-900 mb-3">COPPA Compliance Statement</h2>
             <p className="text-green-800">
-              OrbitLearn is committed to protecting the privacy and safety of children under 13 years of age.
+              Orbit Learn is committed to protecting the privacy and safety of children under 13 years of age.
               This Children's Privacy Policy has been designed to comply with the Children's Online Privacy
               Protection Act (COPPA) and explains our information collection, use, and disclosure practices
               regarding children under 13.
@@ -79,7 +79,7 @@ const CoppaCompliancePage = () => {
           <div className="bg-gray-50 rounded-xl p-6 mb-8">
             <h3 className="font-semibold text-gray-900 mb-4">Operator Information</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-              <div><span className="font-medium text-gray-700">Service Name:</span> <span className="text-gray-600">OrbitLearn</span></div>
+              <div><span className="font-medium text-gray-700">Service Name:</span> <span className="text-gray-600">Orbit Learn</span></div>
               <div><span className="font-medium text-gray-700">Operator:</span> <span className="text-gray-600">Jasmine Entertainment Fze</span></div>
               <div><span className="font-medium text-gray-700">Address:</span> <span className="text-gray-600">Publishing City, Sharjah, UAE</span></div>
               <div><span className="font-medium text-gray-700">Phone:</span> <span className="text-gray-600">+971507493651</span></div>
@@ -127,7 +127,7 @@ const CoppaCompliancePage = () => {
                     <li><strong>Have actual knowledge that they are collecting personal information from children under 13</strong></li>
                   </ol>
                   <p className="text-gray-600">
-                    OrbitLearn is designed for children ages 4-12 and is therefore a child-directed service subject to COPPA requirements.
+                    Orbit Learn is designed for children ages 4-12 and is therefore a child-directed service subject to COPPA requirements.
                   </p>
 
                   <div className="bg-green-50 rounded-lg p-4 mt-4">
@@ -143,7 +143,7 @@ const CoppaCompliancePage = () => {
                     </ul>
                   </div>
                   <p className="text-gray-600 font-medium">
-                    OrbitLearn complies with all COPPA requirements and has implemented enhanced protections beyond what is legally required.
+                    Orbit Learn complies with all COPPA requirements and has implemented enhanced protections beyond what is legally required.
                   </p>
                 </div>
               </SectionHeader>
@@ -151,7 +151,7 @@ const CoppaCompliancePage = () => {
 
             {/* Section 2: How We Comply */}
             <section id="how-we-comply">
-              <SectionHeader id="how-we-comply" icon={Shield} title="2. How OrbitLearn Complies with COPPA">
+              <SectionHeader id="how-we-comply" icon={Shield} title="2. How Orbit Learn Complies with COPPA">
                 <div className="grid md:grid-cols-2 gap-4">
                   <div className="bg-blue-50 rounded-lg p-4">
                     <h4 className="font-semibold text-blue-800 mb-3">Before Collection:</h4>
@@ -270,7 +270,7 @@ const CoppaCompliancePage = () => {
               <SectionHeader id="how-collect" icon={Download} title="4. How We Collect Information" defaultOpen={false}>
                 <div className="space-y-4">
                   <div>
-                    <h3 className="font-semibold text-gray-900 mb-2">4.1 Direct Collection (Through OrbitLearn Platform):</h3>
+                    <h3 className="font-semibold text-gray-900 mb-2">4.1 Direct Collection (Through Orbit Learn Platform):</h3>
                     <ul className="list-disc pl-6 text-gray-600 space-y-1">
                       <li>Child profile creation (by parent)</li>
                       <li>Learning activities and lessons</li>
@@ -571,7 +571,7 @@ const CoppaCompliancePage = () => {
               <SectionHeader id="no-advertising" icon={XCircle} title="12. No Advertising to Children">
                 <div className="space-y-4">
                   <div className="bg-green-50 border border-green-200 rounded-xl p-6">
-                    <h3 className="font-semibold text-green-800 mb-3">OrbitLearn is Completely Ad-Free for Children</h3>
+                    <h3 className="font-semibold text-green-800 mb-3">Orbit Learn is Completely Ad-Free for Children</h3>
                     <div className="grid md:grid-cols-2 gap-4 text-green-700">
                       <div>
                         <p className="font-medium mb-2">We DO NOT:</p>
@@ -604,7 +604,7 @@ const CoppaCompliancePage = () => {
                 <div className="space-y-4">
                   <div className="bg-blue-50 border border-blue-200 rounded-xl p-6">
                     <p className="text-blue-800 mb-4">
-                      OrbitLearn is designed to be a safe, private learning environment with <strong>no social networking features</strong>.
+                      Orbit Learn is designed to be a safe, private learning environment with <strong>no social networking features</strong>.
                     </p>
                     <div className="grid md:grid-cols-2 gap-4">
                       <div>
@@ -621,7 +621,7 @@ const CoppaCompliancePage = () => {
                         <p className="font-semibold text-blue-800 mb-2">Children CAN ONLY Interact With:</p>
                         <ul className="text-blue-700 text-sm space-y-1">
                           <li>✓ Jeffrey (AI tutor) - monitored & filtered</li>
-                          <li>✓ Content created by OrbitLearn</li>
+                          <li>✓ Content created by Orbit Learn</li>
                           <li>✓ Materials uploaded by their parent</li>
                           <li>✓ Their own learning activities</li>
                         </ul>
@@ -634,7 +634,7 @@ const CoppaCompliancePage = () => {
 
             {/* Section 14: School Use */}
             <section id="school-use">
-              <SectionHeader id="school-use" icon={School} title="14. School Use of OrbitLearn" defaultOpen={false}>
+              <SectionHeader id="school-use" icon={School} title="14. School Use of Orbit Learn" defaultOpen={false}>
                 <div className="space-y-4">
                   <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
                     <h4 className="font-semibold text-amber-800 mb-2">COPPA's School Consent Provision</h4>
@@ -648,7 +648,7 @@ const CoppaCompliancePage = () => {
                     <div className="border border-gray-200 rounded-lg p-4">
                       <h4 className="font-medium text-gray-900 mb-2">School Responsibilities:</h4>
                       <ul className="text-gray-600 text-sm space-y-1">
-                        <li>• Authorize OrbitLearn for educational use</li>
+                        <li>• Authorize Orbit Learn for educational use</li>
                         <li>• Notify parents of service use</li>
                         <li>• Ensure use for educational purposes only</li>
                         <li>• Execute Data Processing Agreement</li>
@@ -720,7 +720,7 @@ const CoppaCompliancePage = () => {
           {/* Footer Note */}
           <div className="mt-12 pt-8 border-t border-gray-200 text-center text-sm text-gray-500">
             <p>This Children's Privacy Policy was last updated on {lastUpdated} and is effective as of {lastUpdated}.</p>
-            <p className="mt-2"><strong>Jasmine Entertainment Fze | OrbitLearn | coppa@orbitlearn.app</strong></p>
+            <p className="mt-2"><strong>Jasmine Entertainment Fze | Orbit Learn | coppa@orbitlearn.app</strong></p>
           </div>
         </article>
       </main>
@@ -728,7 +728,7 @@ const CoppaCompliancePage = () => {
       {/* Footer */}
       <footer className="bg-white border-t border-gray-200 py-8">
         <div className="max-w-4xl mx-auto px-6 text-center text-gray-500 text-sm">
-          <p>&copy; {new Date().getFullYear()} OrbitLearn. All rights reserved.</p>
+          <p>&copy; {new Date().getFullYear()} Orbit Learn. All rights reserved.</p>
           <div className="mt-2 space-x-4">
             <Link to="/privacy-policy" className="hover:text-gray-700">Privacy Policy</Link>
             <Link to="/terms" className="hover:text-gray-700">Terms of Service</Link>

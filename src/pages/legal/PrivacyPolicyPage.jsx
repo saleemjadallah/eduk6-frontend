@@ -52,11 +52,11 @@ const PrivacyPolicyPage = () => {
         <article className="bg-white rounded-2xl shadow-sm p-8 md:p-12">
           {/* Title Section */}
           <div className="text-center mb-10 pb-8 border-b border-gray-200">
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">OrbitLearn Privacy Policy</h1>
+            <h1 className="text-3xl font-bold text-gray-900 mb-2">Orbit Learn Privacy Policy</h1>
             <p className="text-gray-500 mb-4">Last updated: {lastUpdated}</p>
             <p className="text-gray-600 max-w-2xl mx-auto">
               This Privacy Policy describes how <strong>Jasmine Entertainment Fze</strong> ("Company," "we," "us," or "our"),
-              the operator of <strong>OrbitLearn</strong>, collects, uses, and protects your personal information.
+              the operator of <strong>Orbit Learn</strong>, collects, uses, and protects your personal information.
             </p>
           </div>
 
@@ -79,7 +79,7 @@ const PrivacyPolicyPage = () => {
           {/* Important Notice */}
           <div className="bg-amber-50 border border-amber-200 rounded-xl p-6 mb-8">
             <p className="text-amber-800">
-              <strong>IMPORTANT:</strong> OrbitLearn serves children ages 4-12. We take children's privacy extremely seriously.
+              <strong>IMPORTANT:</strong> Orbit Learn serves children ages 4-12. We take children's privacy extremely seriously.
               Please review our dedicated <strong>Children's Privacy Policy</strong> and <strong>Parental Rights</strong> sections below.
             </p>
           </div>
@@ -112,7 +112,7 @@ const PrivacyPolicyPage = () => {
                   <table className="w-full text-sm">
                     <tbody className="divide-y divide-gray-200">
                       <tr><td className="py-2 font-medium text-gray-700 pr-4">Company Name</td><td className="py-2 text-gray-600">Jasmine Entertainment Fze</td></tr>
-                      <tr><td className="py-2 font-medium text-gray-700 pr-4">Service Name</td><td className="py-2 text-gray-600">OrbitLearn</td></tr>
+                      <tr><td className="py-2 font-medium text-gray-700 pr-4">Service Name</td><td className="py-2 text-gray-600">Orbit Learn</td></tr>
                       <tr><td className="py-2 font-medium text-gray-700 pr-4">Address</td><td className="py-2 text-gray-600">Publishing City, Sharjah, UAE</td></tr>
                       <tr><td className="py-2 font-medium text-gray-700 pr-4">General Support</td><td className="py-2 text-gray-600"><a href="mailto:support@orbitlearn.app" className="text-indigo-600 hover:underline">support@orbitlearn.app</a></td></tr>
                       <tr><td className="py-2 font-medium text-gray-700 pr-4">Privacy Inquiries</td><td className="py-2 text-gray-600"><a href="mailto:privacy@orbitlearn.app" className="text-indigo-600 hover:underline">privacy@orbitlearn.app</a></td></tr>
@@ -391,7 +391,7 @@ const PrivacyPolicyPage = () => {
               <div className="bg-pink-50 border border-pink-200 rounded-xl p-6 mb-6">
                 <p className="text-pink-800 font-semibold">COPPA Compliance Statement</p>
                 <p className="text-pink-700 mt-2">
-                  OrbitLearn complies with COPPA. We obtain verifiable parental consent before collecting children's
+                  Orbit Learn complies with COPPA. We obtain verifiable parental consent before collecting children's
                   information and provide parents full control.
                 </p>
               </div>
@@ -540,7 +540,7 @@ const PrivacyPolicyPage = () => {
                 </div>
 
                 <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                  <h4 className="font-semibold text-blue-800 mb-2">FERPA Compliance - OrbitLearn Acts as "School Official":</h4>
+                  <h4 className="font-semibold text-blue-800 mb-2">FERPA Compliance - Orbit Learn Acts as "School Official":</h4>
                   <ul className="text-blue-700 text-sm space-y-1">
                     <li>Use data for authorized educational purposes</li>
                     <li>Maintain direct control standards</li>
@@ -568,7 +568,7 @@ const PrivacyPolicyPage = () => {
                   <div className="bg-amber-50 rounded-lg p-4">
                     <h4 className="font-semibold text-amber-800 mb-2">School Responsibilities:</h4>
                     <ol className="text-amber-700 text-sm space-y-1 list-decimal pl-4">
-                      <li>Authorize OrbitLearn for educational use</li>
+                      <li>Authorize Orbit Learn for educational use</li>
                       <li>Notify parents about service</li>
                       <li>Provide our privacy policy</li>
                       <li>Maintain data governance</li>
@@ -576,7 +576,7 @@ const PrivacyPolicyPage = () => {
                     </ol>
                   </div>
                   <div className="bg-green-50 rounded-lg p-4">
-                    <h4 className="font-semibold text-green-800 mb-2">OrbitLearn's Obligations:</h4>
+                    <h4 className="font-semibold text-green-800 mb-2">Orbit Learn's Obligations:</h4>
                     <ol className="text-green-700 text-sm space-y-1 list-decimal pl-4">
                       <li>Limited use (educational only)</li>
                       <li>Follow school's instructions</li>
@@ -695,7 +695,7 @@ const PrivacyPolicyPage = () => {
           {/* Footer Note */}
           <div className="mt-12 pt-8 border-t border-gray-200 text-center text-sm text-gray-500">
             <p>This Privacy Policy was last updated on {lastUpdated} and is effective as of {lastUpdated}.</p>
-            <p className="mt-2"><strong>Jasmine Entertainment Fze | OrbitLearn | support@orbitlearn.app</strong></p>
+            <p className="mt-2"><strong>Jasmine Entertainment Fze | Orbit Learn | support@orbitlearn.app</strong></p>
           </div>
         </article>
       </main>
@@ -703,7 +703,7 @@ const PrivacyPolicyPage = () => {
       {/* Footer */}
       <footer className="bg-white border-t border-gray-200 py-8">
         <div className="max-w-4xl mx-auto px-6 text-center text-gray-500 text-sm">
-          <p>&copy; {new Date().getFullYear()} OrbitLearn. All rights reserved.</p>
+          <p>&copy; {new Date().getFullYear()} Orbit Learn. All rights reserved.</p>
           <div className="mt-2 space-x-4">
             <Link to="/terms" className="hover:text-gray-700">Terms of Service</Link>
             <Link to="/coppa" className="hover:text-gray-700">COPPA Compliance</Link>

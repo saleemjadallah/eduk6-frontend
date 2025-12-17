@@ -91,7 +91,7 @@ const TeacherTestimonialsSection = () => {
           <h2 className="text-4xl md:text-5xl lg:text-6xl font-black font-display mb-4">
             <span className="text-teacher-ink">Teachers </span>
             <span className="text-teacher-chalk">Love</span>
-            <span className="text-teacher-ink"> OrbitLearn</span>
+            <span className="text-teacher-ink"> Orbit Learn</span>
           </h2>
 
           <p className="text-lg md:text-xl text-teacher-inkLight max-w-xl mx-auto">

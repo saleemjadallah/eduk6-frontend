@@ -118,7 +118,7 @@ const SignUpStep = ({ isSignIn = false, onComplete, onSwitchToSignIn, onSwitchTo
         <p className="subtitle">
           {isSignIn
             ? 'Sign in to continue learning with Jeffrey'
-            : "Join OrbitLearn and help your child learn with Jeffrey"}
+            : "Join Orbit Learn and help your child learn with Jeffrey"}
         </p>
       </div>
 
