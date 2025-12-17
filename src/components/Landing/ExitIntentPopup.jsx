@@ -160,7 +160,7 @@ const ExitIntentPopup = () => {
                 {/* Close Button */}
                 <button
                   onClick={handleClose}
-                  className="absolute top-4 right-4 z-10 w-10 h-10 flex items-center justify-center bg-gray-100 hover:bg-gray-200 rounded-full border-2 border-black transition-colors"
+                  className="absolute top-4 right-4 z-50 w-10 h-10 flex items-center justify-center bg-gray-100 hover:bg-gray-200 rounded-full border-2 border-black transition-colors"
                 >
                   <X className="w-5 h-5" />
                 </button>
