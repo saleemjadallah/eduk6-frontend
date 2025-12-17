@@ -35,42 +35,44 @@ const CURRENCY_SYMBOLS = {
 
 /**
  * Direct IP geolocation API call (client-side)
- * Uses ipapi.co which has CORS support and includes currency info
- * Free tier: 1000 requests/day
+ * Uses ipwhois.app which has CORS support and includes currency info + exchange rates
+ * Free tier: 10,000 requests/month
  */
 async function detectCurrencyDirect() {
   try {
-    // ipapi.co provides free CORS-enabled currency detection
-    const response = await fetch('https://ipapi.co/json/', {
+    // ipwhois.app provides free CORS-enabled currency detection with exchange rates
+    const response = await fetch('https://ipwhois.app/json/', {
       method: 'GET',
       headers: { 'Accept': 'application/json' },
     });
 
     if (!response.ok) {
-      throw new Error(`ipapi.co error: ${response.status}`);
+      throw new Error(`ipwhois.app error: ${response.status}`);
     }
 
     const data = await response.json();
 
     // Check for error response
-    if (data.error) {
-      throw new Error(data.reason || 'ipapi.co error');
+    if (!data.success) {
+      throw new Error(data.message || 'ipwhois.app error');
     }
 
-    const currencyCode = data.currency || 'USD';
+    const currencyCode = data.currency_code || 'USD';
+    // ipwhois.app provides exchange rate from USD
+    const exchangeRate = data.currency_rates || 1;
 
     return {
       currencyCode: currencyCode,
-      currencySymbol: CURRENCY_SYMBOLS[currencyCode] || currencyCode,
-      exchangeRate: 1, // ipapi.co doesn't provide exchange rates, we'll fetch separately
+      currencySymbol: CURRENCY_SYMBOLS[currencyCode] || data.currency_symbol?.split(' ')[0] || currencyCode,
+      exchangeRate: exchangeRate,
       countryCode: data.country_code || 'US',
-      countryName: data.country_name || 'United States',
+      countryName: data.country || 'United States',
       city: data.city || '',
       region: data.region || '',
       timezone: data.timezone || 'UTC',
-      isEU: data.in_eu || false,
+      isEU: data.is_eu || false,
       euVATrate: null,
-      needsExchangeRate: true, // Flag to fetch exchange rate separately
+      needsExchangeRate: false, // ipwhois.app includes exchange rates
     };
   } catch (error) {
     console.warn('Direct IP detection failed:', error.message);
