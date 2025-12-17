@@ -176,7 +176,7 @@ const TeacherExitIntentPopup = () => {
                 {/* Header - Chalkboard inspired */}
                 <div className="relative bg-gradient-to-br from-teacher-chalk to-teacher-chalkLight px-6 pt-8 pb-10 overflow-hidden">
                   {/* Chalk dust effect */}
-                  <div className="absolute inset-0 opacity-10">
+                  <div className="absolute inset-0 opacity-10 pointer-events-none">
                     <div
                       className="absolute inset-0"
                       style={{
@@ -188,7 +188,7 @@ const TeacherExitIntentPopup = () => {
 
                   {/* Grid lines like notebook paper */}
                   <div
-                    className="absolute inset-0 opacity-5"
+                    className="absolute inset-0 opacity-5 pointer-events-none"
                     style={{
                       backgroundImage: `linear-gradient(rgba(255,255,255,0.1) 1px, transparent 1px)`,
                       backgroundSize: '100% 24px',
