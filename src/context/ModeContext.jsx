@@ -6,6 +6,7 @@ import { tokenManager } from '../services/api/tokenManager';
 import { storageManager } from '../services/storage/storageManager';
 
 const AUTO_SWITCH_DEFAULT_MINUTES = 15;
+const PARENT_MODE_SESSION_KEY = 'orbitlearn_parent_mode';
 
 const ModeContext = createContext(null);
 
@@ -34,7 +35,20 @@ export function ModeProvider({ children }) {
   const currentProfile = authContext?.currentProfile;
   const childProfiles = authContext?.children;
 
-  const [currentMode, setCurrentMode] = useState('child');
+  // Check sessionStorage for persisted parent mode (survives page reloads like Stripe redirects)
+  const getInitialMode = () => {
+    try {
+      const savedMode = sessionStorage.getItem(PARENT_MODE_SESSION_KEY);
+      if (savedMode === 'true') {
+        return 'parent';
+      }
+    } catch (e) {
+      // sessionStorage not available
+    }
+    return 'child';
+  };
+
+  const [currentMode, setCurrentMode] = useState(getInitialMode);
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [lastActivity, setLastActivity] = useState(new Date());
   const [autoSwitchEnabled, setAutoSwitchEnabled] = useState(true);
@@ -50,12 +64,15 @@ export function ModeProvider({ children }) {
         setAutoSwitchMinutes(prefs.autoSwitch.minutes || AUTO_SWITCH_DEFAULT_MINUTES);
       }
 
-      // Check if we have a child token (determines initial mode)
-      if (tokenManager.isChildMode()) {
-        setCurrentMode('child');
-      } else {
-        // Always start in child mode for safety
-        setCurrentMode('child');
+      // Restore parent mode from session if available
+      try {
+        const savedMode = sessionStorage.getItem(PARENT_MODE_SESSION_KEY);
+        if (savedMode === 'true') {
+          setCurrentMode('parent');
+          setLastActivity(new Date());
+        }
+      } catch (e) {
+        // sessionStorage not available
       }
     }
   }, [user]);
@@ -118,6 +135,13 @@ export function ModeProvider({ children }) {
         setCurrentMode('parent');
         setLastActivity(new Date());
 
+        // Persist parent mode to sessionStorage (survives page reloads like Stripe redirects)
+        try {
+          sessionStorage.setItem(PARENT_MODE_SESSION_KEY, 'true');
+        } catch (e) {
+          // sessionStorage not available
+        }
+
         // Navigate to parent dashboard
         navigate('/parent/dashboard');
 
@@ -146,6 +170,13 @@ export function ModeProvider({ children }) {
     // Set mode to child
     setCurrentMode('child');
     setPinError(null);
+
+    // Clear parent mode from sessionStorage
+    try {
+      sessionStorage.removeItem(PARENT_MODE_SESSION_KEY);
+    } catch (e) {
+      // sessionStorage not available
+    }
 
     // Navigate to child learning dashboard
     navigate('/learn');
