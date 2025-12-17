@@ -387,6 +387,50 @@ body {
 }
 
 /* ==========================================
+   Expanded View Modal - iPad/Tablet Fix
+   ========================================== */
+
+/* Ensure modal stays within visible viewport on tablets */
+@media (min-width: 768px) and (max-width: 1366px) {
+  /* Modal container - ensure enough margin for close button */
+  .fixed.inset-0.z-\[9999\] {
+    padding: 24px;
+  }
+
+  /* Modal content - prevent clipping */
+  .fixed.inset-0.z-\[9999\] > div:not(.absolute) {
+    margin: 16px;
+    max-width: calc(100vw - 48px);
+    max-height: calc(100vh - 48px);
+  }
+}
+
+/* iPad Portrait - More compact modal */
+@media (min-width: 768px) and (max-width: 1024px) and (orientation: portrait) {
+  .fixed.inset-0.z-\[9999\] {
+    padding: 20px;
+  }
+
+  /* Smaller max dimensions in portrait */
+  .fixed.inset-0.z-\[9999\] > div:not(.absolute) {
+    max-width: calc(100vw - 40px);
+    max-height: calc(100vh - 60px);
+  }
+}
+
+/* iPad Landscape - Utilize full width */
+@media (min-width: 1024px) and (max-width: 1366px) and (orientation: landscape) {
+  .fixed.inset-0.z-\[9999\] {
+    padding: 32px;
+  }
+
+  .fixed.inset-0.z-\[9999\] > div:not(.absolute) {
+    max-width: calc(100vw - 64px);
+    max-height: calc(100vh - 64px);
+  }
+}
+
+/* ==========================================
    Camera Preview - Transparent Background
    ========================================== */
 
