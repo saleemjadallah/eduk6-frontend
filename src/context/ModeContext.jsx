@@ -151,14 +151,29 @@ export function ModeProvider({ children }) {
         const error = response.error || 'Invalid PIN';
         setPinError(error);
         setIsTransitioning(false);
-        return { success: false, error };
+        // Return full response data for lockout handling
+        return {
+          success: false,
+          error,
+          isLocked: response.isLocked,
+          remainingAttempts: response.remainingAttempts,
+          timeUntilUnlock: response.timeUntilUnlock,
+        };
       }
     } catch (error) {
       console.error('Switch to parent mode error:', error);
       const errorMessage = error.message || 'Failed to verify PIN';
       setPinError(errorMessage);
       setIsTransitioning(false);
-      return { success: false, error: errorMessage };
+      // Check if error response contains lockout info
+      const errorData = error.response?.data || error;
+      return {
+        success: false,
+        error: errorMessage,
+        isLocked: errorData.isLocked,
+        remainingAttempts: errorData.remainingAttempts,
+        timeUntilUnlock: errorData.timeUntilUnlock,
+      };
     }
   }, [user, currentProfile, navigate]);
 

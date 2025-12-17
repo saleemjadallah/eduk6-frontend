@@ -1,12 +1,23 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useMode } from '../../context/ModeContext';
+import { useAuth } from '../../context/AuthContext';
 import './ParentPinVerification.css';
 
 const ParentPinVerification = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { switchToParentMode, hasParentPin, isLocked, remainingAttempts, timeUntilUnlock } = useMode();
+  const { switchToParentMode } = useMode();
+  const { user, isAuthenticated } = useAuth();
+
+  // Registered users who completed onboarding have a PIN
+  // Check user.hasPin if available, otherwise assume authenticated users have a PIN
+  const hasParentPin = user?.hasPin ?? isAuthenticated;
+
+  // Lockout state from API responses
+  const [isLocked, setIsLocked] = useState(false);
+  const [remainingAttempts, setRemainingAttempts] = useState(5);
+  const [timeUntilUnlock, setTimeUntilUnlock] = useState(0);
 
   const [pin, setPin] = useState(['', '', '', '']);
   const [error, setError] = useState('');
@@ -67,19 +78,26 @@ const ParentPinVerification = () => {
     setError('');
 
     try {
-      const success = await switchToParentMode(pinToVerify);
+      const result = await switchToParentMode(pinToVerify);
 
-      if (success) {
+      if (result.success) {
         // Navigate to intended destination or default to dashboard
         const from = location.state?.from?.pathname || '/parent/dashboard';
         navigate(from);
       } else {
-        if (isLocked) {
-          setError(`Too many attempts. Try again in ${timeUntilUnlock} minutes.`);
+        // Update lockout state from response if available
+        if (result.isLocked) {
+          setIsLocked(true);
+          setTimeUntilUnlock(result.timeUntilUnlock || 15);
+          setError(`Too many attempts. Try again in ${result.timeUntilUnlock || 15} minutes.`);
         } else {
+          // Update remaining attempts if provided
+          if (result.remainingAttempts !== undefined) {
+            setRemainingAttempts(result.remainingAttempts);
+          }
           setError(
             hasParentPin
-              ? `Incorrect PIN. ${remainingAttempts} attempt${remainingAttempts !== 1 ? 's' : ''} remaining.`
+              ? `Incorrect PIN. ${result.remainingAttempts ?? remainingAttempts} attempt${(result.remainingAttempts ?? remainingAttempts) !== 1 ? 's' : ''} remaining.`
               : 'PIN must be 4 digits.'
           );
         }
