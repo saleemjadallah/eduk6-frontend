@@ -138,6 +138,51 @@ export function TeacherAuthProvider({ children }) {
     }
   }, []);
 
+  // Google Sign-In function
+  const googleSignIn = useCallback(async (idToken) => {
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      const response = await teacherAPI.googleSignIn(idToken);
+
+      if (!response.success) {
+        throw new Error(response.error || 'Google sign in failed');
+      }
+
+      const data = response.data || response;
+      const teacherData = data.teacher;
+      const isNewUser = data.isNewUser || false;
+
+      if (!teacherData) {
+        throw new Error('Invalid login response: missing teacher data');
+      }
+
+      setTeacher(teacherData);
+      setIsInitialized(true);
+
+      // Set quota from response (already included)
+      if (data.quota) {
+        setQuota(data.quota);
+      } else {
+        // Fetch quota info if not included
+        try {
+          const quotaResponse = await teacherAPI.getQuota();
+          setQuota(quotaResponse.data || quotaResponse);
+        } catch (quotaErr) {
+          console.warn('Failed to fetch quota:', quotaErr);
+        }
+      }
+
+      return { success: true, teacher: teacherData, isNewUser };
+    } catch (err) {
+      setError(err.message);
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
   // Sign out function
   const signOut = useCallback(async () => {
     try {
@@ -244,6 +289,7 @@ export function TeacherAuthProvider({ children }) {
     // Auth actions
     signUp,
     signIn,
+    googleSignIn,
     signOut,
     verifyEmail,
     refreshAuth,
@@ -263,6 +309,7 @@ export function TeacherAuthProvider({ children }) {
     subscriptionInfo,
     signUp,
     signIn,
+    googleSignIn,
     signOut,
     verifyEmail,
     refreshAuth,

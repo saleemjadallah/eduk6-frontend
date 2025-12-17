@@ -250,6 +250,33 @@ export const teacherAPI = {
   },
 
   /**
+   * Google Sign-In / Sign-Up
+   * - New users: Creates account with emailVerified=true, returns isNewUser=true
+   * - Existing users: Logs them in, returns isNewUser=false
+   * - Email-only users: Links Google account to existing account
+   * @param {string} idToken - Google ID token from Google Sign-In
+   * @returns {Promise<Object>} { success, data: { token, refreshToken, teacher, quota, isNewUser } }
+   */
+  googleSignIn: async (idToken) => {
+    const response = await teacherPublicRequest('/auth/google', {
+      method: 'POST',
+      body: JSON.stringify({ idToken }),
+    });
+
+    if (response.success) {
+      const data = response.data || response;
+      if (data.token) {
+        teacherTokenManager.setTokens({
+          token: data.token,
+          refreshToken: data.refreshToken,
+        });
+      }
+    }
+
+    return response;
+  },
+
+  /**
    * Sign out the current teacher
    */
   logout: async () => {

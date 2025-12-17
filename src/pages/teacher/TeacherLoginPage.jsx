@@ -3,11 +3,13 @@ import { useNavigate, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useTeacherAuth } from '../../context/TeacherAuthContext';
 import TeacherForgotPasswordModal from '../../components/teacher/TeacherForgotPasswordModal';
+import GoogleSignInButton from '../../components/Onboarding/GoogleSignInButton';
 
 const TeacherLoginPage = () => {
   const navigate = useNavigate();
   const {
     signIn,
+    googleSignIn,
     isLoading,
     isAuthenticated,
     needsEmailVerification,
@@ -21,9 +23,32 @@ const TeacherLoginPage = () => {
   const [errors, setErrors] = useState({});
   const [apiError, setApiError] = useState('');
   const [showForgotPassword, setShowForgotPassword] = useState(false);
+  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
 
   // Track if we just signed in to handle post-login redirect
   const justSignedIn = useRef(false);
+
+  // Google Sign-In handlers
+  const handleGoogleSuccess = async (idToken) => {
+    setIsGoogleLoading(true);
+    setApiError('');
+
+    try {
+      justSignedIn.current = true;
+      await googleSignIn(idToken);
+      // Redirect happens via useEffect
+    } catch (err) {
+      justSignedIn.current = false;
+      setApiError(err.message || 'Failed to sign in with Google. Please try again.');
+    } finally {
+      setIsGoogleLoading(false);
+    }
+  };
+
+  const handleGoogleError = (error) => {
+    console.error('Google Sign-In error:', error);
+    setApiError('Google Sign-In failed. Please try again or use email/password.');
+  };
 
   // Redirect based on authentication state
   useEffect(() => {
@@ -178,6 +203,16 @@ const TeacherLoginPage = () => {
               <div className="flex-1 border-t border-gray-200"></div>
               <span className="px-4 text-gray-400 text-sm">or</span>
               <div className="flex-1 border-t border-gray-200"></div>
+            </div>
+
+            {/* Google Sign-In */}
+            <div className="mb-6">
+              <GoogleSignInButton
+                onSuccess={handleGoogleSuccess}
+                onError={handleGoogleError}
+                disabled={isLoading || isGoogleLoading}
+                text="signin_with"
+              />
             </div>
 
             {/* Sign Up Link */}

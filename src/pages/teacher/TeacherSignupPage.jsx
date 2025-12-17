@@ -1,11 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useTeacherAuth } from '../../context/TeacherAuthContext';
+import GoogleSignInButton from '../../components/Onboarding/GoogleSignInButton';
 
 const TeacherSignupPage = () => {
   const navigate = useNavigate();
-  const { signUp, isLoading, isAuthenticated, isReady } = useTeacherAuth();
+  const { signUp, googleSignIn, isLoading, isAuthenticated, isReady } = useTeacherAuth();
 
   const [step, setStep] = useState('signup'); // 'signup' | 'verification_sent'
   const [formData, setFormData] = useState({
@@ -17,6 +18,35 @@ const TeacherSignupPage = () => {
   });
   const [errors, setErrors] = useState({});
   const [apiError, setApiError] = useState('');
+  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
+
+  // Track if we just signed in to handle post-signup redirect
+  const justSignedUp = useRef(false);
+
+  // Google Sign-In handlers
+  const handleGoogleSuccess = async (idToken) => {
+    setIsGoogleLoading(true);
+    setApiError('');
+
+    try {
+      justSignedUp.current = true;
+      const result = await googleSignIn(idToken);
+
+      // For new users, redirect to dashboard (email is already verified via Google)
+      // For existing users, also redirect to dashboard
+      window.location.href = '/teacher/dashboard';
+    } catch (err) {
+      justSignedUp.current = false;
+      setApiError(err.message || 'Failed to sign up with Google. Please try again.');
+    } finally {
+      setIsGoogleLoading(false);
+    }
+  };
+
+  const handleGoogleError = (error) => {
+    console.error('Google Sign-In error:', error);
+    setApiError('Google Sign-In failed. Please try again or use email/password.');
+  };
 
   // Redirect if already authenticated
   useEffect(() => {
@@ -269,6 +299,16 @@ const TeacherSignupPage = () => {
               <div className="flex-1 border-t border-gray-200"></div>
               <span className="px-4 text-gray-400 text-sm">or</span>
               <div className="flex-1 border-t border-gray-200"></div>
+            </div>
+
+            {/* Google Sign-Up */}
+            <div className="mb-6">
+              <GoogleSignInButton
+                onSuccess={handleGoogleSuccess}
+                onError={handleGoogleError}
+                disabled={isLoading || isGoogleLoading}
+                text="signup_with"
+              />
             </div>
 
             {/* Sign In Link */}
