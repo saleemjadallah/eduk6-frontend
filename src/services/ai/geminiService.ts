@@ -280,7 +280,7 @@ export function createGeminiService(model: 'pro' | 'flash' = 'flash'): GeminiSer
 
   return new GeminiService({
     apiKey,
-    model: model === 'pro' ? 'gemini-1.5-pro-latest' : 'gemini-1.5-flash-latest',
+    model: model === 'pro' ? 'gemini-3-pro-preview' : 'gemini-3-flash-preview',
     safetySettings: [
       {
         category: HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT,
