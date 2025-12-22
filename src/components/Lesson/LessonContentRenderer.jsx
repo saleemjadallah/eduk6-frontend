@@ -28,15 +28,19 @@ const LessonContentRenderer = ({
   const renderedContent = useMemo(() => {
     if (!content) return null;
 
-    // First, sanitize the content but allow our custom attributes
+    // First, sanitize the content but allow our custom attributes and images
     const sanitized = DOMPurify.sanitize(content, {
       ALLOWED_TAGS: [
         'p', 'br', 'b', 'strong', 'i', 'em', 'u',
         'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
         'ul', 'ol', 'li', 'span', 'div', 'blockquote',
-        'table', 'thead', 'tbody', 'tr', 'th', 'td'
+        'table', 'thead', 'tbody', 'tr', 'th', 'td',
+        'img' // Allow images from PPTX extraction
       ],
-      ALLOWED_ATTR: ['class', 'style', 'data-exercise-id', 'data-type', 'data-answer'],
+      ALLOWED_ATTR: [
+        'class', 'style', 'data-exercise-id', 'data-type', 'data-answer',
+        'src', 'alt', 'loading', 'width', 'height' // Image attributes
+      ],
     });
 
     // Parse the HTML to find interactive exercises
