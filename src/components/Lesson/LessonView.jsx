@@ -124,13 +124,31 @@ const formatLine = (line) => {
 const formatContent = (text) => {
     if (!text) return '';
 
+    // DEBUG: Check for images in incoming content
+    const imgTagsInRaw = (text.match(/<img[^>]*>/gi) || []);
+    console.log('[formatContent] Debug:', {
+      textLength: text.length,
+      hasImgTags: imgTagsInRaw.length > 0,
+      imgTagCount: imgTagsInRaw.length,
+      firstImgTag: imgTagsInRaw[0] || 'none',
+    });
+
     // If content already has substantial HTML tags, just sanitize and return
     const htmlTagCount = (text.match(/<[a-z][^>]*>/gi) || []).length;
     if (htmlTagCount > 5) {
-        return DOMPurify.sanitize(text, {
-            ALLOWED_TAGS: ['p', 'br', 'b', 'strong', 'i', 'em', 'u', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'ul', 'ol', 'li', 'span', 'div', 'blockquote', 'table', 'thead', 'tbody', 'tr', 'th', 'td', 'code', 'mark'],
-            ALLOWED_ATTR: ['class', 'style', 'data-page', 'data-exercise-id', 'data-type', 'data-definition', 'data-section', 'data-numerator', 'data-denominator', 'title'],
+        const sanitized = DOMPurify.sanitize(text, {
+            ALLOWED_TAGS: ['p', 'br', 'b', 'strong', 'i', 'em', 'u', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'ul', 'ol', 'li', 'span', 'div', 'blockquote', 'table', 'thead', 'tbody', 'tr', 'th', 'td', 'code', 'mark', 'img'],
+            ALLOWED_ATTR: ['class', 'style', 'data-page', 'data-exercise-id', 'data-type', 'data-definition', 'data-section', 'data-numerator', 'data-denominator', 'title', 'src', 'alt', 'loading', 'width', 'height'],
         });
+
+        // DEBUG: Check if images survived
+        const imgTagsAfter = (sanitized.match(/<img[^>]*>/gi) || []);
+        console.log('[formatContent] After sanitize:', {
+          imgTagCount: imgTagsAfter.length,
+          preserved: imgTagsInRaw.length === imgTagsAfter.length,
+        });
+
+        return sanitized;
     }
 
     // Clean up formatting artifacts from Gemini
@@ -201,10 +219,30 @@ const formatContent = (text) => {
     if (inList) result.push('</ul>');
     if (inTable) result.push('</tbody></table>');
 
-    return DOMPurify.sanitize(result.join('\n'), {
-        ALLOWED_TAGS: ['p', 'br', 'b', 'strong', 'i', 'em', 'u', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'ul', 'ol', 'li', 'span', 'div', 'blockquote', 'code', 'table', 'tbody', 'tr', 'td', 'th', 'mark'],
-        ALLOWED_ATTR: ['class', 'style', 'data-page', 'data-exercise-id', 'data-type', 'data-definition', 'data-section', 'data-numerator', 'data-denominator', 'title'],
+    const finalHtml = result.join('\n');
+
+    // DEBUG: Check for images before final sanitization
+    const imgTagsBeforeFinal = (finalHtml.match(/<img[^>]*>/gi) || []);
+    console.log('[formatContent] Before final sanitize:', {
+        htmlLength: finalHtml.length,
+        imgTagCount: imgTagsBeforeFinal.length,
+        firstImgTag: imgTagsBeforeFinal[0] || 'none',
     });
+
+    const sanitizedFinal = DOMPurify.sanitize(finalHtml, {
+        ALLOWED_TAGS: ['p', 'br', 'b', 'strong', 'i', 'em', 'u', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'ul', 'ol', 'li', 'span', 'div', 'blockquote', 'code', 'table', 'tbody', 'tr', 'td', 'th', 'mark', 'img'],
+        ALLOWED_ATTR: ['class', 'style', 'data-page', 'data-exercise-id', 'data-type', 'data-definition', 'data-section', 'data-numerator', 'data-denominator', 'title', 'src', 'alt', 'loading', 'width', 'height'],
+    });
+
+    // DEBUG: Check for images after final sanitization
+    const imgTagsAfterFinal = (sanitizedFinal.match(/<img[^>]*>/gi) || []);
+    console.log('[formatContent] After final sanitize:', {
+        sanitizedLength: sanitizedFinal.length,
+        imgTagCount: imgTagsAfterFinal.length,
+        imgTagsPreserved: imgTagsBeforeFinal.length === imgTagsAfterFinal.length,
+    });
+
+    return sanitizedFinal;
 };
 
 /**
@@ -544,18 +582,34 @@ const LessonView = ({ lesson, onComplete, showContentViewer = false }) => {
 
                     {/* FULL LESSON CONTENT - Primary display */}
                     {/* We display the original extractedText to preserve full content */}
-                    {getPrimaryContent(displayLesson) && (
-                        <div className="prose prose-lg max-w-none">
-                            <div className="bg-white rounded-2xl border-2 border-gray-200 p-6 shadow-sm">
-                                <div
-                                    className="text-gray-800 leading-relaxed lesson-content"
-                                    dangerouslySetInnerHTML={{
-                                        __html: formatContent(getPrimaryContent(displayLesson))
-                                    }}
-                                />
+                    {getPrimaryContent(displayLesson) && (() => {
+                        const rawContent = getPrimaryContent(displayLesson);
+                        const imgTagsInRaw = (rawContent.match(/<img[^>]*>/gi) || []);
+                        console.log('[LessonView] Render - Primary content:', {
+                            contentLength: rawContent.length,
+                            hasImgTags: imgTagsInRaw.length > 0,
+                            imgTagCount: imgTagsInRaw.length,
+                            firstImgTag: imgTagsInRaw[0] || 'none',
+                            contentSource: displayLesson?.formattedContent ? 'formattedContent' : 'extractedText',
+                        });
+                        const formattedHtml = formatContent(rawContent);
+                        const imgTagsFormatted = (formattedHtml.match(/<img[^>]*>/gi) || []);
+                        console.log('[LessonView] Render - After formatContent:', {
+                            formattedLength: formattedHtml.length,
+                            imgTagCount: imgTagsFormatted.length,
+                            imagesPreserved: imgTagsInRaw.length === imgTagsFormatted.length,
+                        });
+                        return (
+                            <div className="prose prose-lg max-w-none">
+                                <div className="bg-white rounded-2xl border-2 border-gray-200 p-6 shadow-sm">
+                                    <div
+                                        className="text-gray-800 leading-relaxed lesson-content"
+                                        dangerouslySetInnerHTML={{ __html: formattedHtml }}
+                                    />
+                                </div>
                             </div>
-                        </div>
-                    )}
+                        );
+                    })()}
 
                     {/* Divider before study aids */}
                     {getPrimaryContent(displayLesson) &&

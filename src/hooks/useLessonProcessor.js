@@ -80,6 +80,17 @@ export function useLessonProcessor() {
                 const pptAnalysis = pptResponse.data;
                 extractedText = pptAnalysis.extractedText || '';
 
+                // DEBUG: Check for images in API response
+                const apiFormattedContent = pptAnalysis.formattedContent || '';
+                const imgTagsInResponse = (apiFormattedContent.match(/<img[^>]*>/gi) || []);
+                console.log('[useLessonProcessor] PPT API Response:', {
+                    hasFormattedContent: !!pptAnalysis.formattedContent,
+                    formattedContentLength: apiFormattedContent.length,
+                    imgTagCount: imgTagsInResponse.length,
+                    firstImgTag: imgTagsInResponse[0] || 'none',
+                    imageCount: pptAnalysis.imageCount || 0,
+                });
+
                 // The backend already created the lesson, use the returned lesson data
                 const backendLesson = pptAnalysis.lesson;
 

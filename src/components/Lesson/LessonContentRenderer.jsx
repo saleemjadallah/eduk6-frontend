@@ -28,6 +28,21 @@ const LessonContentRenderer = ({
   const renderedContent = useMemo(() => {
     if (!content) return null;
 
+    // DEBUG: Check for images in raw content
+    const imgTagsInRaw = (content.match(/<img[^>]*>/gi) || []);
+    const slideHeadersInRaw = (content.match(/class="slide-header"/gi) || []);
+    const slideImagesInRaw = (content.match(/class="slide-image"/gi) || []);
+
+    console.log('[LessonContentRenderer] Debug:', {
+      contentLength: content.length,
+      hasImgTags: imgTagsInRaw.length > 0,
+      imgTagCount: imgTagsInRaw.length,
+      slideHeaderCount: slideHeadersInRaw.length,
+      slideImageCount: slideImagesInRaw.length,
+      firstImgTag: imgTagsInRaw[0] || 'none',
+      contentPreview: content.substring(0, 500),
+    });
+
     // First, sanitize the content but allow our custom attributes and images
     const sanitized = DOMPurify.sanitize(content, {
       ALLOWED_TAGS: [
@@ -41,6 +56,15 @@ const LessonContentRenderer = ({
         'class', 'style', 'data-exercise-id', 'data-type', 'data-answer',
         'src', 'alt', 'loading', 'width', 'height' // Image attributes
       ],
+    });
+
+    // DEBUG: Check for images after sanitization
+    const imgTagsAfterSanitize = (sanitized.match(/<img[^>]*>/gi) || []);
+    console.log('[LessonContentRenderer] After DOMPurify:', {
+      sanitizedLength: sanitized.length,
+      imgTagCount: imgTagsAfterSanitize.length,
+      imgTagsPreserved: imgTagsInRaw.length === imgTagsAfterSanitize.length,
+      firstImgTag: imgTagsAfterSanitize[0] || 'none',
     });
 
     // Parse the HTML to find interactive exercises
