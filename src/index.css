@@ -910,15 +910,22 @@ body.camera-active .fixed.inset-0.z-\[100\] {
 }
 
 .slide-image {
-  margin: 1rem 0;
+  margin: 1.5rem 0;
   text-align: center;
+  display: flex;
+  justify-content: center;
 }
 
 .slide-image img.lesson-image {
-  max-width: 100%;
+  max-width: min(100%, 480px);  /* Max 480px wide, or 100% on small screens */
+  max-height: 360px;            /* Max 360px tall */
+  width: auto;
   height: auto;
-  border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  object-fit: contain;          /* Maintain aspect ratio */
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  border: 2px solid #e5e7eb;
+  background: #f9fafb;          /* Light bg for transparent images */
 }
 
 /* ============================================
