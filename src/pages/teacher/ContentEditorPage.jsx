@@ -4,9 +4,33 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { teacherAPI } from '../../services/api/teacherAPI';
 import ExportMenu from '../../components/teacher/ExportMenu';
 
+// Teacher Color Palette
+const colors = {
+  cream: '#FDF8F3',
+  paper: '#FAF7F2',
+  chalk: '#2D5A4A',
+  chalkLight: '#3D7A6A',
+  chalkDark: '#1E3D32',
+  terracotta: '#C75B39',
+  terracottaLight: '#E8846A',
+  terracottaDark: '#9A4329',
+  ink: '#1E2A3A',
+  inkLight: '#3D4F66',
+  gold: '#D4A853',
+  goldLight: '#E8C97A',
+  goldDark: '#B8923F',
+  sage: '#7BAE7F',
+  sageLight: '#A8D4AB',
+  sageDark: '#5A8E5E',
+  coral: '#E07B6B',
+  plum: '#7B5EA7',
+  plumLight: '#9D85C4',
+  plumDark: '#5C4680',
+};
+
 // Icons
 const BackIcon = () => (
-  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
     <path d="M19 12H5M12 19l-7-7 7-7" />
   </svg>
 );
@@ -27,8 +51,14 @@ const EditIcon = () => (
 );
 
 const GenerateIcon = () => (
-  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
     <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
+  </svg>
+);
+
+const SparklesIcon = () => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <path d="M12 3L14 9L20 9L15 13L17 20L12 16L7 20L9 13L4 9L10 9L12 3Z" />
   </svg>
 );
 
@@ -86,18 +116,85 @@ const SpinnerIcon = () => (
   </svg>
 );
 
+const CalendarIcon = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+    <line x1="16" y1="2" x2="16" y2="6"/>
+    <line x1="8" y1="2" x2="8" y2="6"/>
+    <line x1="3" y1="10" x2="21" y2="10"/>
+  </svg>
+);
+
+const TokenIcon = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <circle cx="12" cy="12" r="10"/>
+    <path d="M12 6v12M6 12h12"/>
+  </svg>
+);
+
+const CheckCircleIcon = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+    <path d="M22 11.08V12a10 10 0 11-5.93-9.14"/>
+    <polyline points="22,4 12,14.01 9,11.01"/>
+  </svg>
+);
+
 const contentTypeConfig = {
-  LESSON: { icon: LessonIcon, label: 'Lesson', color: '#8B5CF6' },
-  QUIZ: { icon: QuizIcon, label: 'Quiz', color: '#F59E0B' },
-  FLASHCARD_DECK: { icon: FlashcardIcon, label: 'Flashcards', color: '#10B981' },
-  STUDY_GUIDE: { icon: StudyGuideIcon, label: 'Study Guide', color: '#3B82F6' },
+  LESSON: {
+    icon: LessonIcon,
+    label: 'Lesson',
+    color: colors.chalk,
+    lightColor: colors.chalkLight,
+    gradient: `linear-gradient(135deg, ${colors.chalk}, ${colors.chalkLight})`
+  },
+  QUIZ: {
+    icon: QuizIcon,
+    label: 'Quiz',
+    color: colors.plum,
+    lightColor: colors.plumLight,
+    gradient: `linear-gradient(135deg, ${colors.plum}, ${colors.plumLight})`
+  },
+  FLASHCARD_DECK: {
+    icon: FlashcardIcon,
+    label: 'Flashcards',
+    color: colors.terracotta,
+    lightColor: colors.terracottaLight,
+    gradient: `linear-gradient(135deg, ${colors.terracotta}, ${colors.terracottaLight})`
+  },
+  STUDY_GUIDE: {
+    icon: StudyGuideIcon,
+    label: 'Study Guide',
+    color: colors.gold,
+    lightColor: colors.goldLight,
+    gradient: `linear-gradient(135deg, ${colors.gold}, ${colors.goldLight})`
+  },
 };
 
 const statusConfig = {
-  DRAFT: { label: 'Draft', color: '#6B7280', bg: '#F3F4F6' },
-  REVIEW: { label: 'In Review', color: '#F59E0B', bg: '#FEF3C7' },
-  PUBLISHED: { label: 'Published', color: '#10B981', bg: '#D1FAE5' },
-  ARCHIVED: { label: 'Archived', color: '#9CA3AF', bg: '#F9FAFB' },
+  DRAFT: {
+    label: 'Draft',
+    color: colors.inkLight,
+    bg: `${colors.ink}10`,
+    borderColor: `${colors.ink}30`
+  },
+  REVIEW: {
+    label: 'In Review',
+    color: colors.gold,
+    bg: `${colors.gold}20`,
+    borderColor: colors.gold
+  },
+  PUBLISHED: {
+    label: 'Published',
+    color: colors.sage,
+    bg: `${colors.sage}20`,
+    borderColor: colors.sage
+  },
+  ARCHIVED: {
+    label: 'Archived',
+    color: '#9CA3AF',
+    bg: '#F3F4F6',
+    borderColor: '#D1D5DB'
+  },
 };
 
 const subjectOptions = [
@@ -317,10 +414,16 @@ export default function ContentEditorPage() {
   if (loading) {
     return (
       <div style={styles.container}>
-        <div style={styles.loadingContainer}>
-          <SpinnerIcon />
-          <span style={{ marginLeft: '12px', color: '#6B7280' }}>Loading content...</span>
-        </div>
+        <motion.div
+          style={styles.loadingContainer}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+        >
+          <div style={styles.loadingSpinner}>
+            <SpinnerIcon />
+          </div>
+          <span style={styles.loadingText}>Loading content...</span>
+        </motion.div>
       </div>
     );
   }
@@ -328,28 +431,38 @@ export default function ContentEditorPage() {
   if (error && !content) {
     return (
       <div style={styles.container}>
-        <div style={styles.errorContainer}>
-          <h2 style={{ color: '#DC2626', marginBottom: '8px' }}>Error</h2>
-          <p style={{ color: '#6B7280' }}>{error}</p>
-          <Link to="/teacher/content" style={styles.backLink}>
+        <motion.div
+          style={styles.errorContainer}
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+        >
+          <div style={styles.errorIcon}>!</div>
+          <h2 style={styles.errorTitle}>Something went wrong</h2>
+          <p style={styles.errorText}>{error}</p>
+          <Link to="/teacher/content" style={styles.backLinkButton}>
             <BackIcon /> Back to Content
           </Link>
-        </div>
+        </motion.div>
       </div>
     );
   }
 
   const TypeIcon = contentTypeConfig[content?.contentType]?.icon || LessonIcon;
-  const typeColor = contentTypeConfig[content?.contentType]?.color || '#8B5CF6';
-  const typeLabel = contentTypeConfig[content?.contentType]?.label || 'Content';
+  const typeConfig = contentTypeConfig[content?.contentType] || contentTypeConfig.LESSON;
   const statusInfo = statusConfig[content?.status] || statusConfig.DRAFT;
 
   return (
     <div style={styles.container}>
-      {/* Header */}
-      <div style={styles.header}>
+      {/* Header Navigation */}
+      <motion.div
+        style={styles.header}
+        initial={{ opacity: 0, y: -10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3 }}
+      >
         <Link to="/teacher/content" style={styles.backLink}>
-          <BackIcon /> Back to Content
+          <BackIcon />
+          <span>Back to Content</span>
         </Link>
 
         <div style={styles.headerActions}>
@@ -363,6 +476,14 @@ export default function ContentEditorPage() {
               <button
                 onClick={() => setIsEditing(true)}
                 style={styles.secondaryButton}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.transform = 'translateY(-2px)';
+                  e.currentTarget.style.boxShadow = `0 4px 0 ${colors.inkLight}40`;
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.transform = 'translateY(0)';
+                  e.currentTarget.style.boxShadow = `0 3px 0 ${colors.inkLight}30`;
+                }}
               >
                 <EditIcon /> Edit
               </button>
@@ -370,12 +491,28 @@ export default function ContentEditorPage() {
                 onClick={handleDuplicate}
                 style={styles.secondaryButton}
                 disabled={saving}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.transform = 'translateY(-2px)';
+                  e.currentTarget.style.boxShadow = `0 4px 0 ${colors.inkLight}40`;
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.transform = 'translateY(0)';
+                  e.currentTarget.style.boxShadow = `0 3px 0 ${colors.inkLight}30`;
+                }}
               >
                 <DuplicateIcon /> Duplicate
               </button>
               <button
                 onClick={() => setShowDeleteModal(true)}
-                style={{ ...styles.secondaryButton, color: '#DC2626' }}
+                style={styles.dangerButton}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.transform = 'translateY(-2px)';
+                  e.currentTarget.style.boxShadow = `0 4px 0 ${colors.coral}90`;
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.transform = 'translateY(0)';
+                  e.currentTarget.style.boxShadow = `0 3px 0 ${colors.coral}70`;
+                }}
               >
                 <DeleteIcon /> Delete
               </button>
@@ -406,37 +543,43 @@ export default function ContentEditorPage() {
             </>
           )}
         </div>
-      </div>
+      </motion.div>
 
       {/* Success/Error Messages */}
       <AnimatePresence>
         {successMessage && (
           <motion.div
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
+            initial={{ opacity: 0, y: -20, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -20, scale: 0.95 }}
             style={styles.successBanner}
           >
-            {successMessage}
+            <CheckCircleIcon />
+            <span>{successMessage}</span>
           </motion.div>
         )}
         {error && (
           <motion.div
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
+            initial={{ opacity: 0, y: -20, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -20, scale: 0.95 }}
             style={styles.errorBanner}
           >
-            {error}
+            <span>{error}</span>
             <button onClick={() => setError(null)} style={styles.dismissButton}>×</button>
           </motion.div>
         )}
       </AnimatePresence>
 
       {/* Content Header Card */}
-      <div style={styles.contentHeader}>
+      <motion.div
+        style={styles.contentHeader}
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4, delay: 0.1 }}
+      >
         <div style={styles.typeIconWrapper}>
-          <div style={{ ...styles.typeIcon, backgroundColor: `${typeColor}20`, color: typeColor }}>
+          <div style={{ ...styles.typeIcon, background: typeConfig.gradient }}>
             <TypeIcon />
           </div>
         </div>
@@ -455,17 +598,32 @@ export default function ContentEditorPage() {
           )}
 
           <div style={styles.metaRow}>
-            <span style={{ ...styles.badge, backgroundColor: `${typeColor}20`, color: typeColor }}>
-              {typeLabel}
+            <span style={{
+              ...styles.typeBadge,
+              backgroundColor: `${typeConfig.color}15`,
+              color: typeConfig.color,
+              borderColor: `${typeConfig.color}40`
+            }}>
+              <TypeIcon style={{ width: 14, height: 14 }} />
+              {typeConfig.label}
             </span>
-            <span style={{ ...styles.badge, backgroundColor: statusInfo.bg, color: statusInfo.color }}>
+            <span style={{
+              ...styles.statusBadge,
+              backgroundColor: statusInfo.bg,
+              color: statusInfo.color,
+              borderColor: statusInfo.borderColor
+            }}>
               {statusInfo.label}
             </span>
             {content.subject && (
-              <span style={styles.metaText}>{content.subject}</span>
+              <span style={styles.metaTag}>
+                {content.subject.replace('_', ' ')}
+              </span>
             )}
             {content.gradeLevel && (
-              <span style={styles.metaText}>Grade {content.gradeLevel}</span>
+              <span style={styles.metaTag}>
+                Grade {content.gradeLevel}
+              </span>
             )}
           </div>
         </div>
@@ -475,7 +633,7 @@ export default function ContentEditorPage() {
           {content.status === 'DRAFT' && (
             <button
               onClick={() => handleStatusChange('PUBLISHED')}
-              style={{ ...styles.statusButton, backgroundColor: '#10B981', color: 'white' }}
+              style={styles.publishButton}
               disabled={saving}
             >
               Publish
@@ -484,7 +642,7 @@ export default function ContentEditorPage() {
           {content.status === 'PUBLISHED' && (
             <button
               onClick={() => handleStatusChange('ARCHIVED')}
-              style={{ ...styles.statusButton, backgroundColor: '#6B7280', color: 'white' }}
+              style={styles.archiveButton}
               disabled={saving}
             >
               Archive
@@ -493,22 +651,30 @@ export default function ContentEditorPage() {
           {content.status === 'ARCHIVED' && (
             <button
               onClick={() => handleStatusChange('DRAFT')}
-              style={{ ...styles.statusButton, backgroundColor: '#3B82F6', color: 'white' }}
+              style={styles.restoreButton}
               disabled={saving}
             >
               Restore to Draft
             </button>
           )}
         </div>
-      </div>
+      </motion.div>
 
       {/* Main Content Grid */}
       <div style={styles.contentGrid}>
         {/* Left Column - Details */}
-        <div style={styles.detailsColumn}>
+        <motion.div
+          style={styles.detailsColumn}
+          initial={{ opacity: 0, x: -20 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.4, delay: 0.2 }}
+        >
           {/* Description */}
           <div style={styles.section}>
-            <h3 style={styles.sectionTitle}>Description</h3>
+            <h3 style={styles.sectionTitle}>
+              <span style={styles.sectionTitleIcon}>📝</span>
+              Description
+            </h3>
             {isEditing ? (
               <textarea
                 value={editedFields.description}
@@ -527,7 +693,10 @@ export default function ContentEditorPage() {
           {/* Subject & Grade */}
           {isEditing && (
             <div style={styles.section}>
-              <h3 style={styles.sectionTitle}>Details</h3>
+              <h3 style={styles.sectionTitle}>
+                <span style={styles.sectionTitleIcon}>⚙️</span>
+                Details
+              </h3>
               <div style={styles.formRow}>
                 <div style={styles.formGroup}>
                   <label style={styles.label}>Subject</label>
@@ -562,39 +731,50 @@ export default function ContentEditorPage() {
           {/* Lesson Content */}
           {content.lessonContent && (
             <div style={styles.section}>
-              <h3 style={styles.sectionTitle}>Lesson Content</h3>
+              <h3 style={styles.sectionTitle}>
+                <span style={styles.sectionTitleIcon}>📖</span>
+                Lesson Content
+              </h3>
               <div style={styles.contentPreview}>
                 {content.lessonContent.title && (
                   <h4 style={styles.previewTitle}>{content.lessonContent.title}</h4>
                 )}
                 {content.lessonContent.objectives && (
                   <div style={styles.previewSection}>
-                    <strong>Objectives:</strong>
-                    <ul style={styles.previewList}>
+                    <div style={styles.objectivesHeader}>
+                      <span style={styles.objectivesIcon}>🎯</span>
+                      <strong>Learning Objectives</strong>
+                    </div>
+                    <ul style={styles.objectivesList}>
                       {content.lessonContent.objectives.map((obj, i) => (
-                        <li key={i}>{obj}</li>
+                        <li key={i} style={styles.objectiveItem}>
+                          <span style={styles.objectiveCheck}>✓</span>
+                          {obj}
+                        </li>
                       ))}
                     </ul>
                   </div>
                 )}
                 {content.lessonContent.sections && (
                   <div style={styles.previewSection}>
-                    <strong>Sections:</strong>
+                    <div style={styles.sectionsLabel}>
+                      <span style={styles.objectivesIcon}>📚</span>
+                      <strong>Sections</strong>
+                    </div>
                     {content.lessonContent.sections.map((section, i) => (
                       <div
                         key={i}
                         style={{
                           ...styles.sectionPreview,
-                          cursor: 'pointer',
-                          transition: 'all 0.2s ease',
-                          border: expandedSections[`section-${i}`] ? '2px solid #8B5CF6' : '1px solid #E5E7EB',
+                          border: expandedSections[`section-${i}`] ? `2px solid ${colors.chalk}` : `1px solid ${colors.ink}15`,
                         }}
                         onClick={() => setExpandedSections(prev => ({
                           ...prev,
                           [`section-${i}`]: !prev[`section-${i}`]
                         }))}
                       >
-                        <div style={styles.sectionHeader}>
+                        <div style={styles.sectionPreviewHeader}>
+                          <span style={styles.sectionNumber}>{i + 1}</span>
                           <h5 style={styles.sectionPreviewTitle}>{section.title}</h5>
                           <span style={{
                             ...styles.expandIcon,
@@ -604,14 +784,16 @@ export default function ContentEditorPage() {
                           </span>
                         </div>
                         {section.duration && (
-                          <span style={styles.sectionDuration}>{section.duration} min</span>
+                          <span style={styles.sectionDuration}>
+                            <span>⏱</span> {section.duration} min
+                          </span>
                         )}
                         {expandedSections[`section-${i}`] ? (
                           <div style={styles.sectionFullContent}>
                             <p style={styles.sectionContentText}>{section.content}</p>
                             {section.activities && section.activities.length > 0 && (
                               <div style={styles.activitiesSection}>
-                                <strong style={styles.subHeading}>Activities:</strong>
+                                <strong style={styles.subHeading}>🎮 Activities:</strong>
                                 <ul style={styles.activityList}>
                                   {section.activities.map((activity, j) => (
                                     <li key={j} style={styles.activityItem}>
@@ -623,7 +805,7 @@ export default function ContentEditorPage() {
                             )}
                             {section.teachingTips && (
                               <div style={styles.tipsSection}>
-                                <strong style={styles.subHeading}>Teaching Tips:</strong>
+                                <strong style={styles.subHeading}>💡 Teaching Tips:</strong>
                                 <p style={styles.tipText}>{section.teachingTips}</p>
                               </div>
                             )}
@@ -642,15 +824,13 @@ export default function ContentEditorPage() {
                 {content.lessonContent.vocabulary && content.lessonContent.vocabulary.length > 0 && (
                   <div style={styles.previewSection}>
                     <div
-                      style={{
-                        ...styles.vocabularyHeader,
-                        cursor: 'pointer',
-                      }}
+                      style={styles.vocabularyHeader}
                       onClick={() => setExpandedSections(prev => ({
                         ...prev,
                         vocabulary: !prev.vocabulary
                       }))}
                     >
+                      <span style={styles.vocabIcon}>📖</span>
                       <strong>Vocabulary ({content.lessonContent.vocabulary.length} terms)</strong>
                       <span style={{
                         ...styles.expandIcon,
@@ -675,15 +855,13 @@ export default function ContentEditorPage() {
                 {content.lessonContent.assessment && content.lessonContent.assessment.questions && (
                   <div style={styles.previewSection}>
                     <div
-                      style={{
-                        ...styles.vocabularyHeader,
-                        cursor: 'pointer',
-                      }}
+                      style={styles.vocabularyHeader}
                       onClick={() => setExpandedSections(prev => ({
                         ...prev,
                         assessment: !prev.assessment
                       }))}
                     >
+                      <span style={styles.vocabIcon}>📝</span>
                       <strong>Assessment ({content.lessonContent.assessment.questions.length} questions)</strong>
                       <span style={{
                         ...styles.expandIcon,
@@ -706,7 +884,8 @@ export default function ContentEditorPage() {
                                       key={j}
                                       style={{
                                         ...styles.optionItem,
-                                        backgroundColor: opt === q.correctAnswer || j === q.correctIndex ? '#D1FAE5' : '#F9FAFB',
+                                        backgroundColor: opt === q.correctAnswer || j === q.correctIndex ? `${colors.sage}20` : colors.paper,
+                                        borderColor: opt === q.correctAnswer || j === q.correctIndex ? colors.sage : 'transparent',
                                         fontWeight: opt === q.correctAnswer || j === q.correctIndex ? '500' : '400',
                                       }}
                                     >
@@ -730,38 +909,41 @@ export default function ContentEditorPage() {
           {content.quizContent && content.quizContent.questions?.length > 0 && (
             <div style={styles.section}>
               <div
-                style={{
-                  ...styles.sectionTitle,
-                  cursor: 'pointer',
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                }}
+                style={styles.quizSectionHeader}
                 onClick={() => setExpandedSections(prev => ({
                   ...prev,
                   quiz: !prev.quiz
                 }))}
               >
-                <span>Quiz ({content.quizContent.questions.length} questions)</span>
+                <div style={styles.quizSectionTitle}>
+                  <span style={styles.quizIcon}>❓</span>
+                  <span>Quiz ({content.quizContent.questions.length} questions)</span>
+                </div>
                 <span style={{
-                  ...styles.expandIcon,
+                  ...styles.expandIconLarge,
                   transform: expandedSections.quiz ? 'rotate(180deg)' : 'rotate(0deg)',
                 }}>
                   ▼
                 </span>
               </div>
-              <div style={styles.contentPreview}>
+              <div style={styles.quizPreview}>
                 {/* Render quiz questions with answers */}
                 {(expandedSections.quiz ? content.quizContent.questions : content.quizContent.questions.slice(0, 3)).map((q, i) => (
-                  <div key={i} style={styles.quizQuestionCard}>
+                  <motion.div
+                    key={i}
+                    style={styles.quizQuestionCard}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: i * 0.05 }}
+                  >
                     <div style={styles.quizQuestionHeader}>
-                      <span style={styles.questionNumber}>Q{i + 1}</span>
+                      <span style={styles.quizQuestionNumber}>Q{i + 1}</span>
                       {q.type && (
                         <span style={styles.questionType}>
-                          {q.type === 'multiple_choice' ? 'Multiple Choice' :
-                           q.type === 'true_false' ? 'True/False' :
-                           q.type === 'fill_blank' ? 'Fill in Blank' :
-                           q.type === 'short_answer' ? 'Short Answer' : q.type}
+                          {q.type === 'multiple_choice' ? '🔘 Multiple Choice' :
+                           q.type === 'true_false' ? '✓✗ True/False' :
+                           q.type === 'fill_blank' ? '📝 Fill in Blank' :
+                           q.type === 'short_answer' ? '✏️ Short Answer' : q.type}
                         </span>
                       )}
                       {q.points && (
@@ -780,20 +962,23 @@ export default function ContentEditorPage() {
                               key={j}
                               style={{
                                 ...styles.quizOption,
-                                backgroundColor: isCorrect ? '#D1FAE5' : '#F9FAFB',
-                                borderColor: isCorrect ? '#10B981' : '#E5E7EB',
+                                backgroundColor: isCorrect ? `${colors.sage}15` : colors.paper,
+                                borderColor: isCorrect ? colors.sage : `${colors.ink}15`,
+                                borderWidth: isCorrect ? '2px' : '1px',
                               }}
                             >
                               <span style={{
                                 ...styles.quizOptionLetter,
-                                backgroundColor: isCorrect ? '#10B981' : '#E5E7EB',
-                                color: isCorrect ? 'white' : '#6B7280',
+                                backgroundColor: isCorrect ? colors.sage : `${colors.ink}10`,
+                                color: isCorrect ? 'white' : colors.inkLight,
                               }}>
                                 {String.fromCharCode(65 + j)}
                               </span>
-                              <span style={{ color: isCorrect ? '#065F46' : '#374151' }}>{option}</span>
+                              <span style={{ color: isCorrect ? colors.sageDark : colors.ink, flex: 1 }}>{option}</span>
                               {isCorrect && (
-                                <span style={styles.correctBadge}>✓ Correct</span>
+                                <span style={styles.correctBadge}>
+                                  <CheckCircleIcon /> Correct
+                                </span>
                               )}
                             </div>
                           );
@@ -806,7 +991,7 @@ export default function ContentEditorPage() {
                       <div style={styles.quizAnswerBox}>
                         <span style={styles.answerLabel}>Answer:</span>
                         <span style={styles.correctAnswerText}>
-                          {String(q.correctAnswer).toLowerCase() === 'true' ? 'True' : 'False'}
+                          {String(q.correctAnswer).toLowerCase() === 'true' ? '✓ True' : '✗ False'}
                         </span>
                       </div>
                     )}
@@ -834,12 +1019,15 @@ export default function ContentEditorPage() {
                         <span>{q.explanation}</span>
                       </div>
                     )}
-                  </div>
+                  </motion.div>
                 ))}
 
                 {/* Show expand prompt when collapsed and more questions exist */}
                 {!expandedSections.quiz && content.quizContent.questions.length > 3 && (
-                  <p style={{...styles.moreText, cursor: 'pointer'}} onClick={() => setExpandedSections(prev => ({...prev, quiz: true}))}>
+                  <p
+                    style={styles.moreText}
+                    onClick={() => setExpandedSections(prev => ({...prev, quiz: true}))}
+                  >
                     +{content.quizContent.questions.length - 3} more questions (click to expand)
                   </p>
                 )}
@@ -851,46 +1039,72 @@ export default function ContentEditorPage() {
           {content.flashcardContent && content.flashcardContent.cards?.length > 0 && (
             <div style={styles.section}>
               <div
-                style={{
-                  ...styles.sectionTitle,
-                  cursor: 'pointer',
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                }}
+                style={styles.quizSectionHeader}
                 onClick={() => setExpandedSections(prev => ({
                   ...prev,
                   flashcards: !prev.flashcards
                 }))}
               >
-                <span>Flashcards ({content.flashcardContent.cards.length} cards)</span>
+                <div style={styles.quizSectionTitle}>
+                  <span style={styles.quizIcon}>🃏</span>
+                  <span>Flashcards ({content.flashcardContent.cards.length} cards)</span>
+                </div>
                 <span style={{
-                  ...styles.expandIcon,
+                  ...styles.expandIconLarge,
                   transform: expandedSections.flashcards ? 'rotate(180deg)' : 'rotate(0deg)',
                 }}>
                   ▼
                 </span>
               </div>
-              <div style={styles.contentPreview}>
+              <div style={styles.flashcardGrid}>
                 {/* Always show first 3 cards */}
                 {content.flashcardContent.cards.slice(0, 3).map((card, i) => (
-                  <div key={i} style={styles.flashcardPreview}>
-                    <div style={styles.flashcardFront}>{card.front || card.term}</div>
-                    <div style={styles.flashcardBack}>{card.back || card.definition}</div>
-                  </div>
+                  <motion.div
+                    key={i}
+                    style={styles.flashcardPreview}
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ delay: i * 0.05 }}
+                  >
+                    <div style={styles.flashcardFront}>
+                      <span style={styles.flashcardLabel}>Q</span>
+                      <span>{card.front || card.term}</span>
+                    </div>
+                    <div style={styles.flashcardDivider}>→</div>
+                    <div style={styles.flashcardBack}>
+                      <span style={styles.flashcardLabelBack}>A</span>
+                      <span>{card.back || card.definition}</span>
+                    </div>
+                  </motion.div>
                 ))}
                 {/* Show remaining cards when expanded */}
                 {expandedSections.flashcards && content.flashcardContent.cards.length > 3 && (
                   content.flashcardContent.cards.slice(3).map((card, i) => (
-                    <div key={i + 3} style={styles.flashcardPreview}>
-                      <div style={styles.flashcardFront}>{card.front || card.term}</div>
-                      <div style={styles.flashcardBack}>{card.back || card.definition}</div>
-                    </div>
+                    <motion.div
+                      key={i + 3}
+                      style={styles.flashcardPreview}
+                      initial={{ opacity: 0, scale: 0.95 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      transition={{ delay: (i + 3) * 0.03 }}
+                    >
+                      <div style={styles.flashcardFront}>
+                        <span style={styles.flashcardLabel}>Q</span>
+                        <span>{card.front || card.term}</span>
+                      </div>
+                      <div style={styles.flashcardDivider}>→</div>
+                      <div style={styles.flashcardBack}>
+                        <span style={styles.flashcardLabelBack}>A</span>
+                        <span>{card.back || card.definition}</span>
+                      </div>
+                    </motion.div>
                   ))
                 )}
                 {/* Show expand prompt when collapsed and more cards exist */}
                 {!expandedSections.flashcards && content.flashcardContent.cards.length > 3 && (
-                  <p style={{...styles.moreText, cursor: 'pointer'}} onClick={() => setExpandedSections(prev => ({...prev, flashcards: true}))}>
+                  <p
+                    style={styles.moreText}
+                    onClick={() => setExpandedSections(prev => ({...prev, flashcards: true}))}
+                  >
                     +{content.flashcardContent.cards.length - 3} more cards (click to expand)
                   </p>
                 )}
@@ -902,18 +1116,19 @@ export default function ContentEditorPage() {
           {content.infographicUrl && (
             <div style={styles.section}>
               <div
-                style={{...styles.sectionHeader, cursor: 'pointer'}}
+                style={styles.quizSectionHeader}
                 onClick={() => setExpandedSections(prev => ({...prev, infographic: !prev.infographic}))}
               >
-                <span style={{...styles.sectionIcon, background: 'linear-gradient(135deg, #EC4899, #F472B6)'}}>
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2">
-                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
-                    <circle cx="8.5" cy="8.5" r="1.5"/>
-                    <polyline points="21,15 16,10 5,21"/>
-                  </svg>
+                <div style={styles.quizSectionTitle}>
+                  <span style={styles.quizIcon}>🖼️</span>
+                  <span>Infographic</span>
+                </div>
+                <span style={{
+                  ...styles.expandIconLarge,
+                  transform: expandedSections.infographic !== false ? 'rotate(180deg)' : 'rotate(0deg)',
+                }}>
+                  ▼
                 </span>
-                <span>Infographic</span>
-                <span style={styles.expandIcon}>{expandedSections.infographic ? '−' : '+'}</span>
               </div>
               <AnimatePresence>
                 {expandedSections.infographic !== false && (
@@ -941,89 +1156,163 @@ export default function ContentEditorPage() {
           {/* Source Text */}
           {content.extractedText && (
             <div style={styles.section}>
-              <h3 style={styles.sectionTitle}>Source Text</h3>
+              <h3 style={styles.sectionTitle}>
+                <span style={styles.sectionTitleIcon}>📄</span>
+                Source Text
+              </h3>
               <div style={styles.sourceText}>
                 {content.extractedText.substring(0, 500)}
                 {content.extractedText.length > 500 && '...'}
               </div>
             </div>
           )}
-        </div>
+        </motion.div>
 
         {/* Right Column - Actions & Info */}
-        <div style={styles.actionsColumn}>
+        <motion.div
+          style={styles.actionsColumn}
+          initial={{ opacity: 0, x: 20 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.4, delay: 0.3 }}
+        >
           {/* Generate Actions */}
           <div style={styles.actionCard}>
-            <h3 style={styles.actionCardTitle}>
-              <GenerateIcon /> Generate Content
-            </h3>
-            <p style={styles.actionCardDescription}>
-              Use AI to generate additional materials from this content.
-            </p>
+            <div style={styles.actionCardHeader}>
+              <div style={styles.actionCardIconWrapper}>
+                <SparklesIcon />
+              </div>
+              <div>
+                <h3 style={styles.actionCardTitle}>Generate Content</h3>
+                <p style={styles.actionCardDescription}>
+                  Use AI to create materials
+                </p>
+              </div>
+            </div>
             <div style={styles.generateButtons}>
               <button
                 onClick={() => { setGenerateType('quiz'); setShowGenerateModal(true); }}
                 style={styles.generateButton}
                 disabled={generating}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.transform = 'translateY(-2px)';
+                  e.currentTarget.style.borderColor = colors.plum;
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.transform = 'translateY(0)';
+                  e.currentTarget.style.borderColor = `${colors.ink}15`;
+                }}
               >
-                <QuizIcon /> Generate Quiz
+                <span style={{...styles.generateIcon, background: `linear-gradient(135deg, ${colors.plum}, ${colors.plumLight})`}}>
+                  <QuizIcon />
+                </span>
+                <span style={styles.generateText}>
+                  <span style={styles.generateLabel}>Generate Quiz</span>
+                  <span style={styles.generateHint}>Create questions</span>
+                </span>
               </button>
               <button
                 onClick={() => { setGenerateType('flashcards'); setShowGenerateModal(true); }}
                 style={styles.generateButton}
                 disabled={generating}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.transform = 'translateY(-2px)';
+                  e.currentTarget.style.borderColor = colors.terracotta;
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.transform = 'translateY(0)';
+                  e.currentTarget.style.borderColor = `${colors.ink}15`;
+                }}
               >
-                <FlashcardIcon /> Generate Flashcards
+                <span style={{...styles.generateIcon, background: `linear-gradient(135deg, ${colors.terracotta}, ${colors.terracottaLight})`}}>
+                  <FlashcardIcon />
+                </span>
+                <span style={styles.generateText}>
+                  <span style={styles.generateLabel}>Generate Flashcards</span>
+                  <span style={styles.generateHint}>Study cards</span>
+                </span>
               </button>
               <button
                 onClick={() => { setGenerateType('study-guide'); setShowGenerateModal(true); }}
                 style={styles.generateButton}
                 disabled={generating}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.transform = 'translateY(-2px)';
+                  e.currentTarget.style.borderColor = colors.gold;
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.transform = 'translateY(0)';
+                  e.currentTarget.style.borderColor = `${colors.ink}15`;
+                }}
               >
-                <StudyGuideIcon /> Generate Study Guide
+                <span style={{...styles.generateIcon, background: `linear-gradient(135deg, ${colors.gold}, ${colors.goldLight})`}}>
+                  <StudyGuideIcon />
+                </span>
+                <span style={styles.generateText}>
+                  <span style={styles.generateLabel}>Generate Study Guide</span>
+                  <span style={styles.generateHint}>Summary & review</span>
+                </span>
               </button>
             </div>
           </div>
 
           {/* Info Card */}
           <div style={styles.infoCard}>
-            <h3 style={styles.infoCardTitle}>Information</h3>
-            <div style={styles.infoRow}>
-              <span style={styles.infoLabel}>Created</span>
-              <span style={styles.infoValue}>
-                {new Date(content.createdAt).toLocaleDateString()}
-              </span>
-            </div>
-            <div style={styles.infoRow}>
-              <span style={styles.infoLabel}>Last Updated</span>
-              <span style={styles.infoValue}>
-                {new Date(content.updatedAt).toLocaleDateString()}
-              </span>
-            </div>
-            {content.publishedAt && (
+            <h3 style={styles.infoCardTitle}>
+              <span style={styles.infoIcon}>ℹ️</span>
+              Information
+            </h3>
+            <div style={styles.infoList}>
               <div style={styles.infoRow}>
-                <span style={styles.infoLabel}>Published</span>
+                <span style={styles.infoLabel}>
+                  <CalendarIcon /> Created
+                </span>
                 <span style={styles.infoValue}>
-                  {new Date(content.publishedAt).toLocaleDateString()}
+                  {new Date(content.createdAt).toLocaleDateString('en-US', {
+                    month: 'short', day: 'numeric', year: 'numeric'
+                  })}
                 </span>
               </div>
-            )}
-            {content.tokensUsed > 0 && (
               <div style={styles.infoRow}>
-                <span style={styles.infoLabel}>Tokens Used</span>
+                <span style={styles.infoLabel}>
+                  <CalendarIcon /> Updated
+                </span>
                 <span style={styles.infoValue}>
-                  {content.tokensUsed.toLocaleString()}
+                  {new Date(content.updatedAt).toLocaleDateString('en-US', {
+                    month: 'short', day: 'numeric', year: 'numeric'
+                  })}
                 </span>
               </div>
-            )}
-            {content.template && (
-              <div style={styles.infoRow}>
-                <span style={styles.infoLabel}>Template</span>
-                <span style={styles.infoValue}>{content.template.name}</span>
-              </div>
-            )}
+              {content.publishedAt && (
+                <div style={styles.infoRow}>
+                  <span style={styles.infoLabel}>
+                    <CheckCircleIcon /> Published
+                  </span>
+                  <span style={styles.infoValue}>
+                    {new Date(content.publishedAt).toLocaleDateString('en-US', {
+                      month: 'short', day: 'numeric', year: 'numeric'
+                    })}
+                  </span>
+                </div>
+              )}
+              {content.tokensUsed > 0 && (
+                <div style={styles.infoRowHighlight}>
+                  <span style={styles.infoLabel}>
+                    <TokenIcon /> Tokens Used
+                  </span>
+                  <span style={styles.infoValueBold}>
+                    {content.tokensUsed.toLocaleString()}
+                  </span>
+                </div>
+              )}
+              {content.template && (
+                <div style={styles.infoRow}>
+                  <span style={styles.infoLabel}>Template</span>
+                  <span style={styles.infoValue}>{content.template.name}</span>
+                </div>
+              )}
+            </div>
           </div>
-        </div>
+        </motion.div>
       </div>
 
       {/* Generate Modal */}
@@ -1037,32 +1326,44 @@ export default function ContentEditorPage() {
             onClick={() => { setShowGenerateModal(false); setGenerateType(null); }}
           >
             <motion.div
-              initial={{ scale: 0.95, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.95, opacity: 0 }}
+              initial={{ scale: 0.9, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.9, opacity: 0, y: 20 }}
               style={styles.modal}
               onClick={(e) => e.stopPropagation()}
             >
-              <h2 style={styles.modalTitle}>
-                Generate {generateType === 'study-guide' ? 'Study Guide' : generateType?.charAt(0).toUpperCase() + generateType?.slice(1)}
-              </h2>
+              <div style={styles.modalHeader}>
+                <div style={{
+                  ...styles.modalIconWrapper,
+                  background: generateType === 'quiz' ? `linear-gradient(135deg, ${colors.plum}, ${colors.plumLight})` :
+                              generateType === 'flashcards' ? `linear-gradient(135deg, ${colors.terracotta}, ${colors.terracottaLight})` :
+                              `linear-gradient(135deg, ${colors.gold}, ${colors.goldLight})`
+                }}>
+                  {generateType === 'quiz' ? <QuizIcon /> :
+                   generateType === 'flashcards' ? <FlashcardIcon /> :
+                   <StudyGuideIcon />}
+                </div>
+                <h2 style={styles.modalTitle}>
+                  Generate {generateType === 'study-guide' ? 'Study Guide' : generateType?.charAt(0).toUpperCase() + generateType?.slice(1)}
+                </h2>
+              </div>
               <p style={styles.modalDescription}>
-                AI will analyze your content and generate {generateType === 'quiz' ? 'quiz questions' : generateType === 'flashcards' ? 'flashcards' : 'a study guide'}.
+                AI will analyze your content and generate {generateType === 'quiz' ? 'engaging quiz questions' : generateType === 'flashcards' ? 'study flashcards' : 'a comprehensive study guide'}.
               </p>
 
               <div style={styles.modalActions}>
                 <button
                   onClick={() => { setShowGenerateModal(false); setGenerateType(null); }}
-                  style={styles.secondaryButton}
+                  style={styles.modalSecondaryButton}
                 >
                   Cancel
                 </button>
                 <button
                   onClick={() => handleGenerate(generateType)}
-                  style={styles.primaryButton}
+                  style={styles.modalPrimaryButton}
                   disabled={generating}
                 >
-                  {generating ? <><SpinnerIcon /> Generating...</> : 'Generate'}
+                  {generating ? <><SpinnerIcon /> Generating...</> : <><SparklesIcon /> Generate</>}
                 </button>
               </div>
             </motion.div>
@@ -1081,30 +1382,35 @@ export default function ContentEditorPage() {
             onClick={() => setShowDeleteModal(false)}
           >
             <motion.div
-              initial={{ scale: 0.95, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.95, opacity: 0 }}
+              initial={{ scale: 0.9, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.9, opacity: 0, y: 20 }}
               style={styles.modal}
               onClick={(e) => e.stopPropagation()}
             >
-              <h2 style={{ ...styles.modalTitle, color: '#DC2626' }}>Delete Content</h2>
+              <div style={styles.modalHeader}>
+                <div style={{...styles.modalIconWrapper, background: `linear-gradient(135deg, ${colors.coral}, #F87171)`}}>
+                  <DeleteIcon />
+                </div>
+                <h2 style={{...styles.modalTitle, color: colors.coral}}>Delete Content</h2>
+              </div>
               <p style={styles.modalDescription}>
-                Are you sure you want to delete "{content.title}"? This action cannot be undone.
+                Are you sure you want to delete <strong>"{content.title}"</strong>? This action cannot be undone.
               </p>
 
               <div style={styles.modalActions}>
                 <button
                   onClick={() => setShowDeleteModal(false)}
-                  style={styles.secondaryButton}
+                  style={styles.modalSecondaryButton}
                 >
                   Cancel
                 </button>
                 <button
                   onClick={handleDelete}
-                  style={{ ...styles.primaryButton, backgroundColor: '#DC2626' }}
+                  style={styles.modalDangerButton}
                   disabled={deleting}
                 >
-                  {deleting ? <><SpinnerIcon /> Deleting...</> : 'Delete'}
+                  {deleting ? <><SpinnerIcon /> Deleting...</> : <><DeleteIcon /> Delete</>}
                 </button>
               </div>
             </motion.div>
@@ -1118,88 +1424,179 @@ export default function ContentEditorPage() {
 const styles = {
   container: {
     padding: '24px',
-    maxWidth: '1200px',
+    maxWidth: '1280px',
     margin: '0 auto',
+    fontFamily: 'Outfit, sans-serif',
   },
   loadingContainer: {
     display: 'flex',
+    flexDirection: 'column',
     alignItems: 'center',
     justifyContent: 'center',
-    padding: '80px 20px',
+    padding: '120px 20px',
+    gap: '16px',
+  },
+  loadingSpinner: {
+    width: '48px',
+    height: '48px',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    color: colors.chalk,
+  },
+  loadingText: {
+    color: colors.inkLight,
+    fontSize: '15px',
+    fontWeight: '500',
   },
   errorContainer: {
     textAlign: 'center',
     padding: '80px 20px',
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    gap: '16px',
+  },
+  errorIcon: {
+    width: '56px',
+    height: '56px',
+    borderRadius: '50%',
+    backgroundColor: `${colors.coral}20`,
+    color: colors.coral,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    fontSize: '24px',
+    fontWeight: '700',
+  },
+  errorTitle: {
+    color: colors.coral,
+    fontSize: '20px',
+    fontWeight: '600',
+    fontFamily: 'Fraunces, serif',
+    margin: 0,
+  },
+  errorText: {
+    color: colors.inkLight,
+    fontSize: '15px',
+    margin: 0,
+  },
+  backLinkButton: {
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: '8px',
+    padding: '12px 20px',
+    backgroundColor: colors.chalk,
+    color: 'white',
+    textDecoration: 'none',
+    borderRadius: '12px',
+    fontSize: '14px',
+    fontWeight: '600',
+    marginTop: '8px',
+    boxShadow: `0 4px 0 ${colors.chalkDark}`,
+    transition: 'all 0.15s ease',
   },
   header: {
     display: 'flex',
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: '24px',
+    flexWrap: 'wrap',
+    gap: '16px',
   },
   backLink: {
     display: 'flex',
     alignItems: 'center',
     gap: '8px',
-    color: '#6B7280',
+    color: colors.inkLight,
     textDecoration: 'none',
     fontSize: '14px',
-    fontWeight: '500',
+    fontWeight: '600',
+    padding: '8px 12px',
+    borderRadius: '8px',
+    transition: 'all 0.15s ease',
   },
   headerActions: {
     display: 'flex',
-    gap: '12px',
+    gap: '10px',
+    flexWrap: 'wrap',
   },
   primaryButton: {
     display: 'flex',
     alignItems: 'center',
     gap: '8px',
     padding: '10px 20px',
-    backgroundColor: '#8B5CF6',
+    background: `linear-gradient(135deg, ${colors.chalk}, ${colors.chalkLight})`,
     color: 'white',
     border: 'none',
-    borderRadius: '8px',
+    borderRadius: '10px',
     fontSize: '14px',
-    fontWeight: '500',
+    fontWeight: '600',
     cursor: 'pointer',
+    boxShadow: `0 4px 0 ${colors.chalkDark}`,
+    transition: 'all 0.15s ease',
   },
   secondaryButton: {
     display: 'flex',
     alignItems: 'center',
     gap: '8px',
-    padding: '10px 20px',
+    padding: '10px 18px',
     backgroundColor: 'white',
-    color: '#374151',
-    border: '1px solid #E5E7EB',
-    borderRadius: '8px',
+    color: colors.ink,
+    border: `2px solid ${colors.ink}20`,
+    borderRadius: '10px',
     fontSize: '14px',
-    fontWeight: '500',
+    fontWeight: '600',
     cursor: 'pointer',
+    boxShadow: `0 3px 0 ${colors.inkLight}30`,
+    transition: 'all 0.15s ease',
+  },
+  dangerButton: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '8px',
+    padding: '10px 18px',
+    backgroundColor: `${colors.coral}10`,
+    color: colors.coral,
+    border: `2px solid ${colors.coral}30`,
+    borderRadius: '10px',
+    fontSize: '14px',
+    fontWeight: '600',
+    cursor: 'pointer',
+    boxShadow: `0 3px 0 ${colors.coral}70`,
+    transition: 'all 0.15s ease',
   },
   successBanner: {
-    padding: '12px 20px',
-    backgroundColor: '#D1FAE5',
-    color: '#065F46',
-    borderRadius: '8px',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '10px',
+    padding: '14px 20px',
+    backgroundColor: `${colors.sage}15`,
+    color: colors.sageDark,
+    borderRadius: '12px',
     marginBottom: '20px',
-    fontWeight: '500',
+    fontWeight: '600',
+    border: `2px solid ${colors.sage}40`,
   },
   errorBanner: {
     display: 'flex',
     justifyContent: 'space-between',
     alignItems: 'center',
-    padding: '12px 20px',
-    backgroundColor: '#FEE2E2',
-    color: '#991B1B',
-    borderRadius: '8px',
+    padding: '14px 20px',
+    backgroundColor: `${colors.coral}15`,
+    color: colors.coral,
+    borderRadius: '12px',
     marginBottom: '20px',
+    fontWeight: '500',
+    border: `2px solid ${colors.coral}40`,
   },
   dismissButton: {
     background: 'none',
     border: 'none',
-    fontSize: '20px',
+    fontSize: '22px',
     cursor: 'pointer',
-    color: '#991B1B',
+    color: colors.coral,
+    lineHeight: 1,
   },
   contentHeader: {
     display: 'flex',
@@ -1207,70 +1604,128 @@ const styles = {
     gap: '20px',
     padding: '24px',
     backgroundColor: 'white',
-    borderRadius: '12px',
-    border: '1px solid #E5E7EB',
+    borderRadius: '16px',
+    border: `1px solid ${colors.ink}10`,
     marginBottom: '24px',
+    boxShadow: `0 4px 12px ${colors.ink}08`,
+    position: 'relative',
+    overflow: 'hidden',
   },
   typeIconWrapper: {
     flexShrink: 0,
   },
   typeIcon: {
-    width: '56px',
-    height: '56px',
-    borderRadius: '12px',
+    width: '64px',
+    height: '64px',
+    borderRadius: '16px',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
+    color: 'white',
+    boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
   },
   contentMeta: {
     flex: 1,
+    minWidth: 0,
   },
   contentTitle: {
-    fontSize: '24px',
-    fontWeight: '600',
-    color: '#111827',
-    margin: '0 0 12px 0',
+    fontSize: '26px',
+    fontWeight: '700',
+    color: colors.ink,
+    margin: '0 0 14px 0',
+    fontFamily: 'Fraunces, serif',
+    lineHeight: 1.3,
   },
   titleInput: {
     fontSize: '24px',
-    fontWeight: '600',
-    color: '#111827',
+    fontWeight: '700',
+    color: colors.ink,
     width: '100%',
-    padding: '8px 12px',
-    border: '2px solid #8B5CF6',
-    borderRadius: '8px',
-    marginBottom: '12px',
+    padding: '10px 14px',
+    border: `2px solid ${colors.chalk}`,
+    borderRadius: '10px',
+    marginBottom: '14px',
+    fontFamily: 'Fraunces, serif',
+    outline: 'none',
+    boxShadow: `0 0 0 4px ${colors.chalk}20`,
   },
   metaRow: {
     display: 'flex',
     alignItems: 'center',
-    gap: '12px',
+    gap: '10px',
     flexWrap: 'wrap',
   },
-  badge: {
-    padding: '4px 12px',
+  typeBadge: {
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: '6px',
+    padding: '6px 14px',
     borderRadius: '20px',
     fontSize: '13px',
-    fontWeight: '500',
+    fontWeight: '600',
+    border: '1.5px solid',
   },
-  metaText: {
-    color: '#6B7280',
-    fontSize: '14px',
+  statusBadge: {
+    display: 'inline-flex',
+    alignItems: 'center',
+    padding: '6px 14px',
+    borderRadius: '20px',
+    fontSize: '13px',
+    fontWeight: '600',
+    border: '1.5px solid',
+  },
+  metaTag: {
+    display: 'inline-flex',
+    alignItems: 'center',
+    padding: '6px 12px',
+    backgroundColor: colors.paper,
+    color: colors.inkLight,
+    borderRadius: '8px',
+    fontSize: '13px',
+    fontWeight: '500',
   },
   statusActions: {
     flexShrink: 0,
   },
-  statusButton: {
-    padding: '10px 20px',
+  publishButton: {
+    padding: '12px 24px',
+    background: `linear-gradient(135deg, ${colors.sage}, ${colors.sageLight})`,
+    color: 'white',
     border: 'none',
-    borderRadius: '8px',
+    borderRadius: '10px',
     fontSize: '14px',
-    fontWeight: '500',
+    fontWeight: '700',
     cursor: 'pointer',
+    boxShadow: `0 4px 0 ${colors.sageDark}`,
+    transition: 'all 0.15s ease',
+  },
+  archiveButton: {
+    padding: '12px 24px',
+    backgroundColor: colors.inkLight,
+    color: 'white',
+    border: 'none',
+    borderRadius: '10px',
+    fontSize: '14px',
+    fontWeight: '700',
+    cursor: 'pointer',
+    boxShadow: `0 4px 0 ${colors.ink}`,
+    transition: 'all 0.15s ease',
+  },
+  restoreButton: {
+    padding: '12px 24px',
+    background: `linear-gradient(135deg, ${colors.chalk}, ${colors.chalkLight})`,
+    color: 'white',
+    border: 'none',
+    borderRadius: '10px',
+    fontSize: '14px',
+    fontWeight: '700',
+    cursor: 'pointer',
+    boxShadow: `0 4px 0 ${colors.chalkDark}`,
+    transition: 'all 0.15s ease',
   },
   contentGrid: {
     display: 'grid',
-    gridTemplateColumns: '1fr 320px',
+    gridTemplateColumns: '1fr 340px',
     gap: '24px',
   },
   detailsColumn: {
@@ -1284,30 +1739,42 @@ const styles = {
     gap: '20px',
   },
   section: {
-    padding: '20px',
+    padding: '24px',
     backgroundColor: 'white',
-    borderRadius: '12px',
-    border: '1px solid #E5E7EB',
+    borderRadius: '16px',
+    border: `1px solid ${colors.ink}10`,
+    boxShadow: `0 2px 8px ${colors.ink}06`,
   },
   sectionTitle: {
-    fontSize: '16px',
-    fontWeight: '600',
-    color: '#111827',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '10px',
+    fontSize: '17px',
+    fontWeight: '700',
+    color: colors.ink,
     margin: '0 0 16px 0',
+    fontFamily: 'Fraunces, serif',
+  },
+  sectionTitleIcon: {
+    fontSize: '18px',
   },
   description: {
-    color: '#6B7280',
-    lineHeight: '1.6',
+    color: colors.inkLight,
+    lineHeight: '1.7',
     margin: 0,
+    fontSize: '15px',
   },
   descriptionInput: {
     width: '100%',
-    padding: '12px',
-    border: '1px solid #E5E7EB',
-    borderRadius: '8px',
-    fontSize: '14px',
+    padding: '14px',
+    border: `2px solid ${colors.ink}15`,
+    borderRadius: '10px',
+    fontSize: '15px',
     lineHeight: '1.6',
     resize: 'vertical',
+    fontFamily: 'Outfit, sans-serif',
+    outline: 'none',
+    transition: 'border-color 0.2s',
   },
   formRow: {
     display: 'grid',
@@ -1317,105 +1784,171 @@ const styles = {
   formGroup: {
     display: 'flex',
     flexDirection: 'column',
-    gap: '6px',
+    gap: '8px',
   },
   label: {
     fontSize: '14px',
-    fontWeight: '500',
-    color: '#374151',
+    fontWeight: '600',
+    color: colors.ink,
   },
   select: {
-    padding: '10px 12px',
-    border: '1px solid #E5E7EB',
-    borderRadius: '8px',
+    padding: '12px 14px',
+    border: `2px solid ${colors.ink}15`,
+    borderRadius: '10px',
     fontSize: '14px',
     backgroundColor: 'white',
+    fontFamily: 'Outfit, sans-serif',
+    cursor: 'pointer',
+    outline: 'none',
   },
   contentPreview: {
-    backgroundColor: '#F9FAFB',
-    borderRadius: '8px',
-    padding: '16px',
+    backgroundColor: colors.paper,
+    borderRadius: '12px',
+    padding: '20px',
   },
   previewTitle: {
-    fontSize: '16px',
-    fontWeight: '600',
-    color: '#111827',
-    margin: '0 0 12px 0',
+    fontSize: '18px',
+    fontWeight: '700',
+    color: colors.ink,
+    margin: '0 0 16px 0',
+    fontFamily: 'Fraunces, serif',
   },
   previewSection: {
-    marginBottom: '16px',
+    marginBottom: '20px',
   },
-  previewList: {
-    margin: '8px 0 0 0',
-    paddingLeft: '20px',
-    color: '#4B5563',
+  objectivesHeader: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '8px',
+    marginBottom: '12px',
+    color: colors.ink,
+    fontWeight: '600',
+  },
+  objectivesIcon: {
+    fontSize: '16px',
+  },
+  objectivesList: {
+    margin: 0,
+    padding: 0,
+    listStyle: 'none',
+  },
+  objectiveItem: {
+    display: 'flex',
+    alignItems: 'flex-start',
+    gap: '10px',
+    padding: '10px 14px',
+    backgroundColor: `${colors.sage}10`,
+    borderRadius: '8px',
+    marginBottom: '8px',
+    fontSize: '14px',
+    color: colors.ink,
+    lineHeight: '1.5',
+  },
+  objectiveCheck: {
+    color: colors.sage,
+    fontWeight: '700',
+    flexShrink: 0,
+  },
+  sectionsLabel: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '8px',
+    marginBottom: '12px',
+    color: colors.ink,
+    fontWeight: '600',
   },
   sectionPreview: {
-    padding: '16px',
+    padding: '18px',
     backgroundColor: 'white',
-    borderRadius: '8px',
+    borderRadius: '12px',
     marginTop: '12px',
-    border: '1px solid #E5E7EB',
+    cursor: 'pointer',
+    transition: 'all 0.2s ease',
   },
-  sectionHeader: {
+  sectionPreviewHeader: {
     display: 'flex',
-    justifyContent: 'space-between',
     alignItems: 'center',
+    gap: '12px',
+  },
+  sectionNumber: {
+    width: '28px',
+    height: '28px',
+    borderRadius: '50%',
+    backgroundColor: colors.chalk,
+    color: 'white',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    fontSize: '13px',
+    fontWeight: '700',
+    flexShrink: 0,
   },
   sectionPreviewTitle: {
     fontSize: '15px',
     fontWeight: '600',
-    color: '#374151',
+    color: colors.ink,
     margin: 0,
+    flex: 1,
   },
   expandIcon: {
     fontSize: '10px',
-    color: '#9CA3AF',
+    color: colors.inkLight,
+    transition: 'transform 0.2s ease',
+  },
+  expandIconLarge: {
+    fontSize: '12px',
+    color: colors.inkLight,
     transition: 'transform 0.2s ease',
   },
   sectionDuration: {
-    display: 'inline-block',
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: '4px',
     fontSize: '12px',
-    color: '#6B7280',
-    backgroundColor: '#F3F4F6',
-    padding: '2px 8px',
-    borderRadius: '4px',
-    marginTop: '8px',
+    color: colors.inkLight,
+    backgroundColor: colors.paper,
+    padding: '4px 10px',
+    borderRadius: '6px',
+    marginTop: '10px',
+    marginLeft: '40px',
   },
   sectionPreviewContent: {
-    fontSize: '13px',
-    color: '#6B7280',
-    margin: '12px 0 0 0',
-    lineHeight: '1.5',
+    fontSize: '14px',
+    color: colors.inkLight,
+    margin: '14px 0 0 40px',
+    lineHeight: '1.6',
   },
   clickToExpand: {
-    color: '#8B5CF6',
-    fontSize: '12px',
-    fontStyle: 'italic',
+    color: colors.chalk,
+    fontSize: '13px',
+    fontWeight: '500',
   },
   sectionFullContent: {
     marginTop: '16px',
+    marginLeft: '40px',
     paddingTop: '16px',
-    borderTop: '1px solid #E5E7EB',
+    borderTop: `1px solid ${colors.ink}10`,
   },
   sectionContentText: {
     fontSize: '14px',
-    color: '#374151',
+    color: colors.ink,
     lineHeight: '1.7',
     margin: 0,
     whiteSpace: 'pre-wrap',
   },
   activitiesSection: {
     marginTop: '16px',
-    padding: '12px',
-    backgroundColor: '#F0FDF4',
-    borderRadius: '6px',
+    padding: '14px',
+    backgroundColor: `${colors.sage}10`,
+    borderRadius: '10px',
+    borderLeft: `4px solid ${colors.sage}`,
   },
   subHeading: {
     fontSize: '13px',
-    color: '#166534',
+    color: colors.sageDark,
     display: 'block',
-    marginBottom: '8px',
+    marginBottom: '10px',
+    fontWeight: '600',
   },
   activityList: {
     margin: 0,
@@ -1423,77 +1956,85 @@ const styles = {
   },
   activityItem: {
     fontSize: '13px',
-    color: '#166534',
-    marginBottom: '4px',
+    color: colors.sageDark,
+    marginBottom: '6px',
     lineHeight: '1.5',
   },
   tipsSection: {
-    marginTop: '12px',
-    padding: '12px',
-    backgroundColor: '#FEF3C7',
-    borderRadius: '6px',
+    marginTop: '14px',
+    padding: '14px',
+    backgroundColor: `${colors.gold}15`,
+    borderRadius: '10px',
+    borderLeft: `4px solid ${colors.gold}`,
   },
   tipText: {
     fontSize: '13px',
-    color: '#92400E',
+    color: colors.goldDark,
     margin: 0,
     lineHeight: '1.5',
   },
   vocabularyHeader: {
     display: 'flex',
-    justifyContent: 'space-between',
     alignItems: 'center',
-    padding: '12px',
-    backgroundColor: '#F9FAFB',
-    borderRadius: '6px',
-    marginTop: '8px',
+    gap: '10px',
+    padding: '14px',
+    backgroundColor: 'white',
+    borderRadius: '10px',
+    cursor: 'pointer',
+    border: `1px solid ${colors.ink}10`,
+    transition: 'all 0.2s',
+  },
+  vocabIcon: {
+    fontSize: '16px',
   },
   vocabularyGrid: {
     display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))',
+    gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))',
     gap: '12px',
-    marginTop: '12px',
+    marginTop: '14px',
   },
   vocabularyCard: {
     display: 'flex',
     flexDirection: 'column',
-    gap: '4px',
-    padding: '12px',
-    backgroundColor: '#EEF2FF',
-    borderRadius: '6px',
+    gap: '6px',
+    padding: '14px',
+    backgroundColor: `${colors.plum}10`,
+    borderRadius: '10px',
+    borderLeft: `4px solid ${colors.plum}`,
   },
   vocabularyTerm: {
     fontSize: '14px',
-    fontWeight: '600',
-    color: '#4338CA',
+    fontWeight: '700',
+    color: colors.plum,
   },
   vocabularyDefinition: {
     fontSize: '13px',
-    color: '#6366F1',
-    lineHeight: '1.4',
+    color: colors.plumDark,
+    lineHeight: '1.5',
   },
   assessmentList: {
-    marginTop: '12px',
+    marginTop: '14px',
     display: 'flex',
     flexDirection: 'column',
     gap: '12px',
   },
   assessmentQuestion: {
     display: 'flex',
-    gap: '12px',
+    gap: '14px',
     padding: '16px',
     backgroundColor: 'white',
-    borderRadius: '8px',
-    border: '1px solid #E5E7EB',
+    borderRadius: '12px',
+    border: `1px solid ${colors.ink}10`,
   },
   questionContent: {
     flex: 1,
   },
   questionText: {
     fontSize: '14px',
-    color: '#374151',
+    color: colors.ink,
     margin: '0 0 12px 0',
     fontWeight: '500',
+    lineHeight: '1.5',
   },
   optionsList: {
     listStyle: 'none',
@@ -1501,93 +2042,289 @@ const styles = {
     padding: 0,
     display: 'flex',
     flexDirection: 'column',
-    gap: '6px',
+    gap: '8px',
   },
   optionItem: {
     fontSize: '13px',
-    color: '#4B5563',
-    padding: '8px 12px',
-    borderRadius: '4px',
-  },
-  questionPreview: {
-    display: 'flex',
-    alignItems: 'flex-start',
-    gap: '12px',
-    padding: '12px',
-    backgroundColor: 'white',
-    borderRadius: '6px',
-    marginBottom: '8px',
-    border: '1px solid #E5E7EB',
-    fontSize: '14px',
-    color: '#374151',
+    color: colors.ink,
+    padding: '10px 14px',
+    borderRadius: '8px',
+    border: '1.5px solid transparent',
+    transition: 'all 0.2s',
   },
   questionNumber: {
-    backgroundColor: '#8B5CF6',
+    backgroundColor: colors.plum,
     color: 'white',
-    padding: '2px 8px',
-    borderRadius: '4px',
+    padding: '4px 10px',
+    borderRadius: '6px',
+    fontSize: '12px',
+    fontWeight: '700',
+    flexShrink: 0,
+    height: 'fit-content',
+  },
+  // Quiz section styles
+  quizSectionHeader: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    cursor: 'pointer',
+    marginBottom: '16px',
+  },
+  quizSectionTitle: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '10px',
+    fontSize: '17px',
+    fontWeight: '700',
+    color: colors.ink,
+    fontFamily: 'Fraunces, serif',
+  },
+  quizIcon: {
+    fontSize: '20px',
+  },
+  quizPreview: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '14px',
+  },
+  quizQuestionCard: {
+    backgroundColor: colors.paper,
+    borderRadius: '14px',
+    padding: '20px',
+    border: `1px solid ${colors.ink}08`,
+  },
+  quizQuestionHeader: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '12px',
+    marginBottom: '14px',
+  },
+  quizQuestionNumber: {
+    background: `linear-gradient(135deg, ${colors.plum}, ${colors.plumLight})`,
+    color: 'white',
+    padding: '6px 12px',
+    borderRadius: '8px',
+    fontSize: '13px',
+    fontWeight: '700',
+  },
+  questionType: {
     fontSize: '12px',
     fontWeight: '600',
+    color: colors.inkLight,
+    backgroundColor: 'white',
+    padding: '5px 10px',
+    borderRadius: '6px',
+  },
+  questionPoints: {
+    fontSize: '13px',
+    color: colors.terracotta,
+    fontWeight: '700',
+    marginLeft: 'auto',
+    backgroundColor: `${colors.terracotta}15`,
+    padding: '4px 10px',
+    borderRadius: '6px',
+  },
+  quizQuestionText: {
+    fontSize: '15px',
+    fontWeight: '600',
+    color: colors.ink,
+    margin: '0 0 16px 0',
+    lineHeight: '1.5',
+  },
+  quizOptionsList: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '10px',
+  },
+  quizOption: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '12px',
+    padding: '12px 16px',
+    borderRadius: '10px',
+    border: '1.5px solid',
+    fontSize: '14px',
+    transition: 'all 0.2s',
+  },
+  quizOptionLetter: {
+    width: '28px',
+    height: '28px',
+    borderRadius: '50%',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    fontSize: '13px',
+    fontWeight: '700',
+    flexShrink: 0,
+  },
+  correctBadge: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '4px',
+    fontSize: '12px',
+    fontWeight: '700',
+    color: colors.sage,
+    backgroundColor: `${colors.sage}20`,
+    padding: '4px 10px',
+    borderRadius: '6px',
+  },
+  quizAnswerBox: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '12px',
+    padding: '14px 18px',
+    backgroundColor: `${colors.sage}15`,
+    borderRadius: '10px',
+    border: `2px solid ${colors.sage}40`,
+  },
+  answerLabel: {
+    fontSize: '13px',
+    fontWeight: '700',
+    color: colors.sageDark,
+  },
+  correctAnswerText: {
+    fontSize: '14px',
+    fontWeight: '600',
+    color: colors.sage,
+  },
+  quizExplanation: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '6px',
+    marginTop: '14px',
+    padding: '14px',
+    backgroundColor: `${colors.gold}12`,
+    borderRadius: '10px',
+    fontSize: '13px',
+    color: colors.goldDark,
+    lineHeight: '1.6',
+    borderLeft: `4px solid ${colors.gold}`,
+  },
+  explanationLabel: {
+    fontWeight: '700',
+    color: colors.gold,
+  },
+  flashcardGrid: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '12px',
   },
   flashcardPreview: {
     display: 'grid',
-    gridTemplateColumns: '1fr 1fr',
+    gridTemplateColumns: '1fr auto 1fr',
     gap: '12px',
-    padding: '12px',
-    backgroundColor: 'white',
-    borderRadius: '6px',
-    marginBottom: '8px',
-    border: '1px solid #E5E7EB',
-    fontSize: '14px',
+    alignItems: 'stretch',
+    padding: '16px',
+    backgroundColor: colors.paper,
+    borderRadius: '12px',
+    border: `1px solid ${colors.ink}08`,
   },
   flashcardFront: {
-    padding: '8px',
-    backgroundColor: '#EEF2FF',
-    borderRadius: '4px',
-    color: '#4338CA',
-    fontWeight: '500',
-  },
-  flashcardBack: {
-    padding: '8px',
-    backgroundColor: '#F0FDF4',
-    borderRadius: '4px',
-    color: '#166534',
-  },
-  moreText: {
-    color: '#6B7280',
-    fontSize: '13px',
-    fontStyle: 'italic',
-    marginTop: '8px',
-    marginBottom: 0,
-  },
-  sourceText: {
-    backgroundColor: '#F9FAFB',
-    padding: '16px',
-    borderRadius: '8px',
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '8px',
+    padding: '14px',
+    backgroundColor: `${colors.terracotta}12`,
+    borderRadius: '10px',
+    color: colors.terracotta,
     fontSize: '14px',
-    color: '#4B5563',
-    lineHeight: '1.6',
-    whiteSpace: 'pre-wrap',
+    lineHeight: '1.5',
   },
-  actionCard: {
-    padding: '20px',
-    backgroundColor: 'white',
-    borderRadius: '12px',
-    border: '1px solid #E5E7EB',
+  flashcardLabel: {
+    fontSize: '11px',
+    fontWeight: '700',
+    color: 'white',
+    backgroundColor: colors.terracotta,
+    padding: '2px 8px',
+    borderRadius: '4px',
+    width: 'fit-content',
   },
-  actionCardTitle: {
+  flashcardDivider: {
     display: 'flex',
     alignItems: 'center',
+    color: colors.inkLight,
+    fontSize: '18px',
+  },
+  flashcardBack: {
+    display: 'flex',
+    flexDirection: 'column',
     gap: '8px',
-    fontSize: '16px',
+    padding: '14px',
+    backgroundColor: `${colors.sage}12`,
+    borderRadius: '10px',
+    color: colors.sageDark,
+    fontSize: '14px',
+    lineHeight: '1.5',
+  },
+  flashcardLabelBack: {
+    fontSize: '11px',
+    fontWeight: '700',
+    color: 'white',
+    backgroundColor: colors.sage,
+    padding: '2px 8px',
+    borderRadius: '4px',
+    width: 'fit-content',
+  },
+  moreText: {
+    color: colors.chalk,
+    fontSize: '14px',
     fontWeight: '600',
-    color: '#111827',
-    margin: '0 0 8px 0',
+    marginTop: '8px',
+    marginBottom: 0,
+    cursor: 'pointer',
+    padding: '12px',
+    backgroundColor: `${colors.chalk}10`,
+    borderRadius: '10px',
+    textAlign: 'center',
+    transition: 'all 0.2s',
+  },
+  sourceText: {
+    backgroundColor: colors.paper,
+    padding: '18px',
+    borderRadius: '12px',
+    fontSize: '14px',
+    color: colors.ink,
+    lineHeight: '1.7',
+    whiteSpace: 'pre-wrap',
+    fontFamily: 'monospace',
+  },
+  // Action card styles
+  actionCard: {
+    padding: '24px',
+    backgroundColor: 'white',
+    borderRadius: '16px',
+    border: `1px solid ${colors.ink}10`,
+    boxShadow: `0 2px 8px ${colors.ink}06`,
+  },
+  actionCardHeader: {
+    display: 'flex',
+    alignItems: 'flex-start',
+    gap: '14px',
+    marginBottom: '20px',
+  },
+  actionCardIconWrapper: {
+    width: '44px',
+    height: '44px',
+    borderRadius: '12px',
+    background: `linear-gradient(135deg, ${colors.gold}, ${colors.goldLight})`,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    color: 'white',
+    boxShadow: '0 4px 8px rgba(0,0,0,0.1)',
+    flexShrink: 0,
+  },
+  actionCardTitle: {
+    fontSize: '16px',
+    fontWeight: '700',
+    color: colors.ink,
+    margin: 0,
+    fontFamily: 'Fraunces, serif',
   },
   actionCardDescription: {
-    color: '#6B7280',
-    fontSize: '14px',
-    marginBottom: '16px',
+    color: colors.inkLight,
+    fontSize: '13px',
+    margin: '4px 0 0 0',
   },
   generateButtons: {
     display: 'flex',
@@ -1597,73 +2334,149 @@ const styles = {
   generateButton: {
     display: 'flex',
     alignItems: 'center',
-    gap: '10px',
-    padding: '12px 16px',
-    backgroundColor: '#F3F4F6',
-    color: '#374151',
-    border: 'none',
-    borderRadius: '8px',
+    gap: '14px',
+    padding: '14px 16px',
+    backgroundColor: 'white',
+    color: colors.ink,
+    border: `2px solid ${colors.ink}15`,
+    borderRadius: '12px',
     fontSize: '14px',
     fontWeight: '500',
     cursor: 'pointer',
     textAlign: 'left',
+    transition: 'all 0.2s ease',
   },
+  generateIcon: {
+    width: '40px',
+    height: '40px',
+    borderRadius: '10px',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    color: 'white',
+    flexShrink: 0,
+  },
+  generateText: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '2px',
+  },
+  generateLabel: {
+    fontWeight: '600',
+    color: colors.ink,
+  },
+  generateHint: {
+    fontSize: '12px',
+    color: colors.inkLight,
+  },
+  // Info card styles
   infoCard: {
-    padding: '20px',
+    padding: '24px',
     backgroundColor: 'white',
-    borderRadius: '12px',
-    border: '1px solid #E5E7EB',
+    borderRadius: '16px',
+    border: `1px solid ${colors.ink}10`,
+    boxShadow: `0 2px 8px ${colors.ink}06`,
   },
   infoCardTitle: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '8px',
     fontSize: '16px',
-    fontWeight: '600',
-    color: '#111827',
-    margin: '0 0 16px 0',
+    fontWeight: '700',
+    color: colors.ink,
+    margin: '0 0 18px 0',
+    fontFamily: 'Fraunces, serif',
+  },
+  infoIcon: {
+    fontSize: '16px',
+  },
+  infoList: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '2px',
   },
   infoRow: {
     display: 'flex',
     justifyContent: 'space-between',
-    padding: '8px 0',
-    borderBottom: '1px solid #F3F4F6',
+    alignItems: 'center',
+    padding: '12px 0',
+    borderBottom: `1px solid ${colors.ink}08`,
+  },
+  infoRowHighlight: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: '14px',
+    margin: '8px -14px',
+    backgroundColor: `${colors.gold}12`,
+    borderRadius: '10px',
   },
   infoLabel: {
-    color: '#6B7280',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '8px',
+    color: colors.inkLight,
     fontSize: '14px',
   },
   infoValue: {
-    color: '#111827',
+    color: colors.ink,
     fontSize: '14px',
-    fontWeight: '500',
+    fontWeight: '600',
   },
+  infoValueBold: {
+    color: colors.gold,
+    fontSize: '15px',
+    fontWeight: '700',
+  },
+  // Modal styles
   modalOverlay: {
     position: 'fixed',
     top: 0,
     left: 0,
     right: 0,
     bottom: 0,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    backgroundColor: 'rgba(30, 42, 58, 0.6)',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
     zIndex: 1000,
+    backdropFilter: 'blur(4px)',
   },
   modal: {
     backgroundColor: 'white',
-    borderRadius: '16px',
-    padding: '24px',
-    maxWidth: '400px',
+    borderRadius: '20px',
+    padding: '28px',
+    maxWidth: '420px',
     width: '90%',
+    boxShadow: '0 20px 40px rgba(0,0,0,0.2)',
+  },
+  modalHeader: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '14px',
+    marginBottom: '16px',
+  },
+  modalIconWrapper: {
+    width: '48px',
+    height: '48px',
+    borderRadius: '14px',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    color: 'white',
+    flexShrink: 0,
   },
   modalTitle: {
-    fontSize: '20px',
-    fontWeight: '600',
-    color: '#111827',
-    margin: '0 0 12px 0',
+    fontSize: '22px',
+    fontWeight: '700',
+    color: colors.ink,
+    margin: 0,
+    fontFamily: 'Fraunces, serif',
   },
   modalDescription: {
-    color: '#6B7280',
-    fontSize: '14px',
-    lineHeight: '1.5',
+    color: colors.inkLight,
+    fontSize: '15px',
+    lineHeight: '1.6',
     marginBottom: '24px',
   },
   modalActions: {
@@ -1671,131 +2484,72 @@ const styles = {
     justifyContent: 'flex-end',
     gap: '12px',
   },
+  modalSecondaryButton: {
+    padding: '12px 20px',
+    backgroundColor: 'white',
+    color: colors.ink,
+    border: `2px solid ${colors.ink}20`,
+    borderRadius: '10px',
+    fontSize: '14px',
+    fontWeight: '600',
+    cursor: 'pointer',
+    transition: 'all 0.15s ease',
+  },
+  modalPrimaryButton: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '8px',
+    padding: '12px 24px',
+    background: `linear-gradient(135deg, ${colors.chalk}, ${colors.chalkLight})`,
+    color: 'white',
+    border: 'none',
+    borderRadius: '10px',
+    fontSize: '14px',
+    fontWeight: '700',
+    cursor: 'pointer',
+    boxShadow: `0 4px 0 ${colors.chalkDark}`,
+    transition: 'all 0.15s ease',
+  },
+  modalDangerButton: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '8px',
+    padding: '12px 24px',
+    background: `linear-gradient(135deg, ${colors.coral}, #F87171)`,
+    color: 'white',
+    border: 'none',
+    borderRadius: '10px',
+    fontSize: '14px',
+    fontWeight: '700',
+    cursor: 'pointer',
+    boxShadow: '0 4px 0 #DC2626',
+    transition: 'all 0.15s ease',
+  },
   infographicContainer: {
-    marginTop: '12px',
+    marginTop: '14px',
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'center',
-    gap: '8px',
+    gap: '10px',
   },
   infographicImage: {
     maxWidth: '100%',
     maxHeight: '500px',
-    borderRadius: '12px',
-    border: '1px solid #E5E7EB',
+    borderRadius: '14px',
+    border: `2px solid ${colors.ink}10`,
     cursor: 'pointer',
     transition: 'transform 0.2s, box-shadow 0.2s',
-    boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
+    boxShadow: '0 8px 20px rgba(0,0,0,0.1)',
   },
   infographicHint: {
-    fontSize: '12px',
-    color: '#9CA3AF',
+    fontSize: '13px',
+    color: colors.inkLight,
     margin: 0,
   },
-  // Quiz question styles with answers
-  quizQuestionCard: {
-    backgroundColor: 'white',
-    borderRadius: '12px',
-    border: '1px solid #E5E7EB',
-    padding: '16px',
-    marginBottom: '12px',
-  },
-  quizQuestionHeader: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '10px',
-    marginBottom: '12px',
-  },
-  questionType: {
-    fontSize: '11px',
-    fontWeight: '500',
-    color: '#6B7280',
-    backgroundColor: '#F3F4F6',
-    padding: '3px 8px',
-    borderRadius: '4px',
-    textTransform: 'uppercase',
-    letterSpacing: '0.5px',
-  },
-  questionPoints: {
-    fontSize: '12px',
-    color: '#8B5CF6',
-    fontWeight: '500',
-    marginLeft: 'auto',
-  },
-  quizQuestionText: {
-    fontSize: '15px',
-    fontWeight: '500',
-    color: '#111827',
-    margin: '0 0 16px 0',
-    lineHeight: '1.5',
-  },
-  quizOptionsList: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '8px',
-  },
-  quizOption: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '12px',
-    padding: '10px 14px',
-    borderRadius: '8px',
-    border: '1px solid',
-    fontSize: '14px',
-  },
-  quizOptionLetter: {
-    width: '24px',
-    height: '24px',
-    borderRadius: '50%',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    fontSize: '12px',
-    fontWeight: '600',
-    flexShrink: 0,
-  },
-  correctBadge: {
-    marginLeft: 'auto',
-    fontSize: '12px',
-    fontWeight: '600',
-    color: '#059669',
-    backgroundColor: '#ECFDF5',
-    padding: '2px 8px',
-    borderRadius: '4px',
-  },
-  quizAnswerBox: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '10px',
-    padding: '12px 16px',
-    backgroundColor: '#D1FAE5',
-    borderRadius: '8px',
-    border: '1px solid #10B981',
-  },
-  answerLabel: {
-    fontSize: '13px',
-    fontWeight: '600',
-    color: '#065F46',
-  },
-  correctAnswerText: {
-    fontSize: '14px',
-    fontWeight: '500',
-    color: '#047857',
-  },
-  quizExplanation: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '4px',
-    marginTop: '12px',
-    padding: '12px',
-    backgroundColor: '#FEF3C7',
-    borderRadius: '8px',
-    fontSize: '13px',
-    color: '#92400E',
-    lineHeight: '1.5',
-  },
-  explanationLabel: {
-    fontWeight: '600',
-    color: '#B45309',
-  },
 };
+
+// Add responsive styles via media query
+if (typeof window !== 'undefined' && window.innerWidth < 1024) {
+  styles.contentGrid.gridTemplateColumns = '1fr';
+  styles.actionsColumn.order = -1;
+}
