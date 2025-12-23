@@ -1,13 +1,32 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import TeacherSidebar from './TeacherSidebar';
 import TeacherHeader from './TeacherHeader';
 import DashboardFooter from '../common/DashboardFooter';
+import { useTeacherAuth } from '../../context/TeacherAuthContext';
+import { LogOut } from 'lucide-react';
 // SuggestionBox moved to dashboard page directly
 
 const TeacherLayout = ({ children, title, subtitle, headerActions }) => {
+  const navigate = useNavigate();
+  const { sessionExpired, clearSessionExpired } = useTeacherAuth();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [showSessionModal, setShowSessionModal] = useState(false);
+
+  // Handle session expiration
+  useEffect(() => {
+    if (sessionExpired) {
+      setShowSessionModal(true);
+    }
+  }, [sessionExpired]);
+
+  const handleSessionExpiredRedirect = () => {
+    clearSessionExpired();
+    setShowSessionModal(false);
+    navigate('/teacher/login');
+  };
 
   // Close mobile menu on resize to desktop
   useEffect(() => {
@@ -145,6 +164,46 @@ const TeacherLayout = ({ children, title, subtitle, headerActions }) => {
         </div>
       </div>
 
+      {/* Session Expired Modal */}
+      <AnimatePresence>
+        {showSessionModal && (
+          <>
+            {/* Backdrop */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[100]"
+              onClick={handleSessionExpiredRedirect}
+            />
+            {/* Modal */}
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className="fixed inset-0 flex items-center justify-center z-[101] p-4"
+            >
+              <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-8 text-center">
+                <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-teacher-gold/10 flex items-center justify-center">
+                  <LogOut className="w-8 h-8 text-teacher-gold" />
+                </div>
+                <h2 className="text-xl font-semibold text-teacher-ink mb-2">
+                  Session Expired
+                </h2>
+                <p className="text-teacher-inkLight mb-6">
+                  Your session has expired for security reasons. Please sign in again to continue where you left off.
+                </p>
+                <button
+                  onClick={handleSessionExpiredRedirect}
+                  className="w-full py-3 px-6 bg-teacher-gold text-white font-semibold rounded-xl hover:bg-teacher-goldLight transition-colors"
+                >
+                  Sign In Again
+                </button>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
     </div>
   );
 };

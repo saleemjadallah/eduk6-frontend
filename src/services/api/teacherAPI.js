@@ -160,13 +160,31 @@ async function teacherRequest(endpoint, options = {}, retryCount = 0) {
         await teacherTokenManager.refreshAccessToken();
         return teacherRequest(endpoint, options, 1);
       } catch (refreshError) {
-        throw new Error('Session expired. Please log in again.');
+        teacherTokenManager.clearTokens();
+        const error = new Error('Your session has expired. Please sign in again to continue.');
+        error.code = 'SESSION_EXPIRED';
+        error.status = 401;
+        throw error;
       }
     }
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
-      const error = new Error(errorData.error || errorData.message || `HTTP error! status: ${response.status}`);
+      let userMessage = errorData.error || errorData.message || `Something went wrong. Please try again.`;
+
+      // Map technical errors to user-friendly messages
+      if (userMessage.toLowerCase().includes('invalid token') ||
+          userMessage.toLowerCase().includes('unauthorized') ||
+          userMessage.toLowerCase().includes('token expired')) {
+        teacherTokenManager.clearTokens();
+        userMessage = 'Your session has expired. Please sign in again to continue.';
+        const error = new Error(userMessage);
+        error.code = 'SESSION_EXPIRED';
+        error.status = 401;
+        throw error;
+      }
+
+      const error = new Error(userMessage);
       error.status = response.status;
       error.data = errorData;
       throw error;
@@ -742,21 +760,50 @@ export const teacherAPI = {
    * @returns {Promise<Object>} The generated lesson with all components
    */
   generateFullLesson: async (data, onProgress) => {
-    const token = teacherTokenManager.getAccessToken();
+    // Helper function to make the SSE request
+    const makeRequest = async (token) => {
+      const response = await fetch(`${API_BASE_URL}/api/teacher/content/generate/full-lesson`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        credentials: 'include',
+        body: JSON.stringify(data),
+      });
+      return response;
+    };
 
-    const response = await fetch(`${API_BASE_URL}/api/teacher/content/generate/full-lesson`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${token}`,
-      },
-      credentials: 'include',
-      body: JSON.stringify(data),
-    });
+    let token = teacherTokenManager.getAccessToken();
+    let response = await makeRequest(token);
+
+    // Handle 401 - try to refresh token and retry once
+    if (response.status === 401) {
+      try {
+        await teacherTokenManager.refreshAccessToken();
+        token = teacherTokenManager.getAccessToken();
+        response = await makeRequest(token);
+      } catch (refreshError) {
+        // Refresh failed - clear tokens and throw user-friendly error
+        teacherTokenManager.clearTokens();
+        const error = new Error('Your session has expired. Please sign in again to continue.');
+        error.code = 'SESSION_EXPIRED';
+        throw error;
+      }
+    }
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.error || 'Failed to generate lesson');
+      // Map technical errors to user-friendly messages
+      let userMessage = errorData.error || 'Failed to generate lesson';
+      if (userMessage.toLowerCase().includes('invalid token') || userMessage.toLowerCase().includes('unauthorized')) {
+        teacherTokenManager.clearTokens();
+        userMessage = 'Your session has expired. Please sign in again to continue.';
+        const error = new Error(userMessage);
+        error.code = 'SESSION_EXPIRED';
+        throw error;
+      }
+      throw new Error(userMessage);
     }
 
     const reader = response.body.getReader();

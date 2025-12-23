@@ -12,6 +12,7 @@ export function TeacherAuthProvider({ children }) {
   const [isLoading, setIsLoading] = useState(true);
   const [isInitialized, setIsInitialized] = useState(false);
   const [error, setError] = useState(null);
+  const [sessionExpired, setSessionExpired] = useState(false);
 
   // Load auth state on mount
   useEffect(() => {
@@ -255,6 +256,20 @@ export function TeacherAuthProvider({ children }) {
     return response;
   }, []);
 
+  // Handle session expired - call this when API returns SESSION_EXPIRED
+  const handleSessionExpired = useCallback(() => {
+    teacherTokenManager.clearTokens();
+    setTeacher(null);
+    setQuota(null);
+    setSessionExpired(true);
+    setError(null);
+  }, []);
+
+  // Clear session expired flag (call after redirect to login)
+  const clearSessionExpired = useCallback(() => {
+    setSessionExpired(false);
+  }, []);
+
   // Derived state
   const isAuthenticated = !!teacher;
   const needsEmailVerification = teacher && !teacher.emailVerified;
@@ -279,6 +294,7 @@ export function TeacherAuthProvider({ children }) {
     isLoading,
     isInitialized,
     error,
+    sessionExpired,
 
     // Derived state
     isAuthenticated,
@@ -297,12 +313,17 @@ export function TeacherAuthProvider({ children }) {
 
     // Quota actions
     refreshQuota,
+
+    // Session management
+    handleSessionExpired,
+    clearSessionExpired,
   }), [
     teacher,
     quota,
     isLoading,
     isInitialized,
     error,
+    sessionExpired,
     isAuthenticated,
     needsEmailVerification,
     isReady,
@@ -315,6 +336,8 @@ export function TeacherAuthProvider({ children }) {
     refreshAuth,
     updateProfile,
     refreshQuota,
+    handleSessionExpired,
+    clearSessionExpired,
   ]);
 
   return (

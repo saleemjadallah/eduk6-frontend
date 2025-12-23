@@ -135,7 +135,7 @@ const LESSON_TYPES = [
 
 const CreateContentPage = () => {
   const navigate = useNavigate();
-  const { teacher, quota, refreshQuota } = useTeacherAuth();
+  const { teacher, quota, refreshQuota, handleSessionExpired } = useTeacherAuth();
   const chatEndRef = useRef(null);
   const inputRef = useRef(null);
 
@@ -502,6 +502,12 @@ const CreateContentPage = () => {
         }
       }
     } catch (err) {
+      // Handle session expired
+      if (err.code === 'SESSION_EXPIRED') {
+        handleSessionExpired();
+        return;
+      }
+
       setError(err.message || 'Failed to generate lesson');
       addMessage('jeffrey',
         `Oops! Something went wrong: ${err.message}\n\nPlease try again or adjust your request.`
