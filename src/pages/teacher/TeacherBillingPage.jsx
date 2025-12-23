@@ -171,6 +171,36 @@ const TeacherBillingPage = () => {
   const currentTier = teacher?.subscriptionTier || 'FREE';
   const currentPlan = PLANS[currentTier];
 
+  // Subscription period info
+  const isInTrial = subscriptionData?.isInTrial;
+  const trialEndsAt = subscriptionData?.trialEndsAt ? new Date(subscriptionData.trialEndsAt) : null;
+  const currentPeriodEnd = subscriptionData?.subscription?.currentPeriodEnd
+    ? new Date(subscriptionData.subscription.currentPeriodEnd)
+    : null;
+
+  // Calculate days until trial ends
+  const daysUntilTrialEnd = trialEndsAt
+    ? Math.ceil((trialEndsAt.getTime() - Date.now()) / (1000 * 60 * 60 * 24))
+    : null;
+
+  // Format reset/renewal date
+  const getResetDateText = () => {
+    if (isInTrial && trialEndsAt) {
+      const days = daysUntilTrialEnd;
+      if (days <= 0) return 'Trial ended';
+      if (days === 1) return 'Trial ends tomorrow';
+      return `Trial ends in ${days} days (${trialEndsAt.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })})`;
+    }
+    if (currentPeriodEnd && currentTier !== 'FREE') {
+      return `Renews on ${currentPeriodEnd.toLocaleDateString('en-US', { month: 'long', day: 'numeric' })}`;
+    }
+    // Fallback for FREE tier
+    const nextMonth = new Date();
+    nextMonth.setMonth(nextMonth.getMonth() + 1);
+    nextMonth.setDate(1);
+    return `Resets on ${nextMonth.toLocaleDateString('en-US', { month: 'long', day: 'numeric' })}`;
+  };
+
   // Handle subscription upgrade
   const handleUpgrade = async (tier, isAnnual = false) => {
     setLoading(true);
@@ -324,6 +354,11 @@ const TeacherBillingPage = () => {
                 <span className={`teacher-badge ${currentTier.toLowerCase()}`}>
                   Current Plan
                 </span>
+                {isInTrial && daysUntilTrialEnd > 0 && (
+                  <span className="px-2 py-0.5 text-xs font-semibold rounded-full bg-teacher-gold/20 text-teacher-gold">
+                    {daysUntilTrialEnd} day{daysUntilTrialEnd !== 1 ? 's' : ''} left in trial
+                  </span>
+                )}
               </div>
               <p className="text-teacher-inkLight">
                 {currentPlan.credits.toLocaleString()} credits/month
@@ -389,7 +424,7 @@ const TeacherBillingPage = () => {
             />
           </div>
           <p className="text-xs text-teacher-inkLight mt-2">
-            Resets on {quota?.quota?.resetDate ? new Date(quota.quota.resetDate).toLocaleDateString('en-US', { month: 'long', day: 'numeric' }) : 'the 1st of next month'}
+            {getResetDateText()}
           </p>
         </div>
       </motion.div>
