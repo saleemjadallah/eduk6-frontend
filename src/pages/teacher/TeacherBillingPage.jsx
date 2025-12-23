@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import TeacherLayout from '../../components/teacher/TeacherLayout';
 import { useTeacherAuth } from '../../context/TeacherAuthContext';
@@ -20,6 +21,7 @@ import {
   Shield,
   Clock,
   Star,
+  PartyPopper,
 } from 'lucide-react';
 
 // Plan configuration matching backend
@@ -118,11 +120,36 @@ const CREDIT_PACKS = [
 ];
 
 const TeacherBillingPage = () => {
-  const { teacher, quota } = useTeacherAuth();
+  const { teacher, quota, refreshAuth } = useTeacherAuth();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [billingPeriod, setBillingPeriod] = useState('monthly');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [subscriptionData, setSubscriptionData] = useState(null);
+  const [successMessage, setSuccessMessage] = useState(null);
+
+  // Handle return from Stripe checkout
+  useEffect(() => {
+    const success = searchParams.get('success');
+    const tier = searchParams.get('tier');
+    const creditsSuccess = searchParams.get('credits');
+    const cancelled = searchParams.get('cancelled');
+
+    if (success === 'true') {
+      setSuccessMessage(`Welcome to ${PLANS[tier]?.name || 'your new plan'}! Your subscription is now active.`);
+      // Clear URL params
+      setSearchParams({});
+      // Refresh teacher data to get updated subscription
+      refreshAuth();
+    } else if (creditsSuccess === 'success') {
+      setSuccessMessage('Credit pack purchased successfully! Your bonus credits are now available.');
+      setSearchParams({});
+      refreshAuth();
+    } else if (cancelled === 'true') {
+      setError('Checkout was cancelled. No charges were made.');
+      setSearchParams({});
+    }
+  }, [searchParams, setSearchParams, refreshAuth]);
 
   // Fetch subscription data
   useEffect(() => {
@@ -137,7 +164,7 @@ const TeacherBillingPage = () => {
       }
     };
     fetchSubscription();
-  }, []);
+  }, [teacher?.subscriptionTier]); // Refetch when tier changes
 
   // Get credit info from quota
   const credits = quota?.credits || { subscription: 100, total: 100, used: 0, remaining: 100, rollover: 0, bonus: 0 };
@@ -232,6 +259,29 @@ const TeacherBillingPage = () => {
       title="Plans & Billing"
       subtitle="Manage your subscription and purchase credits"
     >
+      {/* Success Alert */}
+      <AnimatePresence>
+        {successMessage && (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            className="mb-6 p-4 bg-teacher-sage/10 border-2 border-teacher-sage/30 rounded-xl flex items-start gap-3"
+          >
+            <PartyPopper className="w-5 h-5 text-teacher-sage flex-shrink-0 mt-0.5" />
+            <div className="flex-1">
+              <p className="text-teacher-sage font-medium">{successMessage}</p>
+            </div>
+            <button
+              onClick={() => setSuccessMessage(null)}
+              className="text-teacher-sage/60 hover:text-teacher-sage"
+            >
+              &times;
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Error Alert */}
       <AnimatePresence>
         {error && (
