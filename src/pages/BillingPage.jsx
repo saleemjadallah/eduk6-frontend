@@ -229,6 +229,35 @@ const BillingPage = () => {
   const isCancelled = subscription?.cancelAtPeriodEnd;
   const isInTrial = subscription?.isInTrial;
 
+  // Parse subscription period dates
+  const trialEndsAt = subscription?.trialEndsAt ? new Date(subscription.trialEndsAt) : null;
+  const currentPeriodEnd = subscription?.currentPeriodEnd ? new Date(subscription.currentPeriodEnd) : null;
+
+  // Calculate days until trial ends
+  const daysUntilTrialEnd = trialEndsAt
+    ? Math.ceil((trialEndsAt.getTime() - Date.now()) / (1000 * 60 * 60 * 24))
+    : null;
+
+  // Format reset/renewal date text
+  const getResetDateText = () => {
+    if (isInTrial && trialEndsAt && daysUntilTrialEnd !== null) {
+      if (daysUntilTrialEnd <= 0) return 'Trial ended';
+      if (daysUntilTrialEnd === 1) return 'Trial ends tomorrow';
+      return `Trial ends in ${daysUntilTrialEnd} days (${trialEndsAt.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })})`;
+    }
+    if (currentPeriodEnd && currentTier !== 'FREE') {
+      return `Renews on ${currentPeriodEnd.toLocaleDateString('en-US', { month: 'long', day: 'numeric' })}`;
+    }
+    // Fallback for FREE tier - monthly reset
+    if (usage?.resetDate) {
+      return `Resets on ${new Date(usage.resetDate).toLocaleDateString('en-US', { month: 'long', day: 'numeric' })}`;
+    }
+    const nextMonth = new Date();
+    nextMonth.setMonth(nextMonth.getMonth() + 1);
+    nextMonth.setDate(1);
+    return `Resets on ${nextMonth.toLocaleDateString('en-US', { month: 'long', day: 'numeric' })}`;
+  };
+
   // Calculate usage percentage
   const usagePercent = usage?.percentUsed || 0;
   const lessonsRemaining = usage?.lessonsRemaining;
@@ -275,10 +304,10 @@ const BillingPage = () => {
               >
                 {currentTier === 'FREE' ? 'Free Plan' : currentTier === 'FAMILY' ? 'Family Plan' : 'Family Plus'}
               </span>
-              {isInTrial && (
+              {isInTrial && daysUntilTrialEnd > 0 && (
                 <span className="trial-badge">
                   <span className="trial-icon">🎁</span>
-                  Trial Active
+                  {daysUntilTrialEnd} day{daysUntilTrialEnd !== 1 ? 's' : ''} left in trial
                 </span>
               )}
               {isCancelled && (
@@ -361,7 +390,7 @@ const BillingPage = () => {
                 </>
               )}
               <div className="reset-info">
-                Resets {usage?.resetDate ? new Date(usage.resetDate).toLocaleDateString() : 'on the 1st'}
+                {getResetDateText()}
               </div>
             </div>
 
@@ -394,22 +423,36 @@ const BillingPage = () => {
             </div>
 
             {/* Next Billing */}
-            {isOnPaidPlan && subscription?.currentPeriodEnd && (
+            {isOnPaidPlan && currentPeriodEnd && (
               <div className="billing-info-card">
                 <div className="billing-info-header">
                   <span className="billing-icon">📅</span>
-                  <h3>Next Billing Date</h3>
+                  <h3>{isInTrial ? 'Trial Period' : 'Next Billing Date'}</h3>
                 </div>
-                <div className="billing-date">
-                  {new Date(subscription.currentPeriodEnd).toLocaleDateString('en-US', {
-                    month: 'long',
-                    day: 'numeric',
-                    year: 'numeric',
-                  })}
-                </div>
-                {isInTrial && subscription?.trialEndsAt && (
-                  <div className="trial-info">
-                    Trial ends {new Date(subscription.trialEndsAt).toLocaleDateString()}
+                {isInTrial && trialEndsAt ? (
+                  <>
+                    <div className="billing-date">
+                      {trialEndsAt.toLocaleDateString('en-US', {
+                        month: 'long',
+                        day: 'numeric',
+                        year: 'numeric',
+                      })}
+                    </div>
+                    <div className="trial-info">
+                      {daysUntilTrialEnd <= 0
+                        ? 'Trial ended'
+                        : daysUntilTrialEnd === 1
+                          ? 'Trial ends tomorrow'
+                          : `${daysUntilTrialEnd} days remaining in trial`}
+                    </div>
+                  </>
+                ) : (
+                  <div className="billing-date">
+                    {currentPeriodEnd.toLocaleDateString('en-US', {
+                      month: 'long',
+                      day: 'numeric',
+                      year: 'numeric',
+                    })}
                   </div>
                 )}
               </div>
