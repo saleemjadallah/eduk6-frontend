@@ -135,7 +135,7 @@ const LESSON_TYPES = [
 
 const CreateContentPage = () => {
   const navigate = useNavigate();
-  const { teacher, quota } = useTeacherAuth();
+  const { teacher, quota, refreshQuota } = useTeacherAuth();
   const chatEndRef = useRef(null);
   const inputRef = useRef(null);
 
@@ -415,6 +415,9 @@ const CreateContentPage = () => {
           if (saveResponse.success) {
             const contentId = saveResponse.data.id;
 
+            // Refresh quota to update sidebar credits
+            refreshQuota?.();
+
             setConversationStage('complete');
             addMessage('jeffrey',
               `Your lesson is ready!\n\nI've created:\n` +
@@ -481,6 +484,9 @@ const CreateContentPage = () => {
                 console.warn('Flashcard generation failed:', e);
               }
             }
+
+            // Refresh quota to update sidebar credits
+            refreshQuota?.();
 
             setConversationStage('complete');
             addMessage('jeffrey',

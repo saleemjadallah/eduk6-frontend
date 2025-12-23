@@ -37,7 +37,7 @@ import {
 const TeacherContentCreatePage = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const { quota } = useTeacherAuth();
+  const { quota, refreshQuota } = useTeacherAuth();
 
   // State
   const [selectedType, setSelectedType] = useState(searchParams.get('type') || null);
@@ -325,8 +325,11 @@ const TeacherContentCreatePage = () => {
         }
       }
 
-      // Success! Navigate to content list
+      // Success! Refresh quota and navigate to content list
       setGenerationProgress({ step: 'complete', message: 'Content created successfully!' });
+
+      // Refresh quota to update sidebar credits
+      refreshQuota?.();
 
       // Brief delay to show success message
       setTimeout(() => {
