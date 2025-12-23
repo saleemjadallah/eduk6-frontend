@@ -94,6 +94,15 @@ const StudyGuideIcon = () => (
   </svg>
 );
 
+const InfographicIcon = () => (
+  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <rect x="3" y="3" width="18" height="18" rx="2" />
+    <circle cx="8.5" cy="8.5" r="1.5" />
+    <path d="M21 15l-5-5L5 21" />
+    <path d="M14 14l3-3 4 4" />
+  </svg>
+);
+
 const DeleteIcon = () => (
   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
     <polyline points="3,6 5,6 21,6" />
@@ -1120,7 +1129,12 @@ export default function ContentEditorPage() {
                 onClick={() => setExpandedSections(prev => ({...prev, infographic: !prev.infographic}))}
               >
                 <div style={styles.quizSectionTitle}>
-                  <span style={styles.quizIcon}>🖼️</span>
+                  <span style={{
+                    ...styles.sectionIconBadge,
+                    background: `linear-gradient(135deg, ${colors.sage}, ${colors.sageLight})`,
+                  }}>
+                    <InfographicIcon />
+                  </span>
                   <span>Infographic</span>
                 </div>
                 <span style={{
@@ -1144,7 +1158,34 @@ export default function ContentEditorPage() {
                         alt="Generated infographic"
                         style={styles.infographicImage}
                         onClick={() => window.open(content.infographicUrl, '_blank')}
+                        onError={(e) => {
+                          e.target.style.display = 'none';
+                          e.target.nextSibling.style.display = 'flex';
+                        }}
                       />
+                      <div style={{
+                        display: 'none',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        padding: '40px',
+                        background: `${colors.cream}`,
+                        borderRadius: '12px',
+                        border: `2px dashed ${colors.ink}20`,
+                      }}>
+                        <span style={{ fontSize: '48px', marginBottom: '12px' }}>🖼️</span>
+                        <p style={{ color: colors.inkLight, fontSize: '14px', textAlign: 'center' }}>
+                          Infographic image unavailable
+                        </p>
+                        <a
+                          href={content.infographicUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          style={{ color: colors.chalk, fontSize: '12px', marginTop: '8px' }}
+                        >
+                          Try opening directly →
+                        </a>
+                      </div>
                       <p style={styles.infographicHint}>Click image to view full size</p>
                     </div>
                   </motion.div>
@@ -2081,6 +2122,16 @@ const styles = {
   },
   quizIcon: {
     fontSize: '20px',
+  },
+  sectionIconBadge: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: '36px',
+    height: '36px',
+    borderRadius: '10px',
+    color: 'white',
+    flexShrink: 0,
   },
   quizPreview: {
     display: 'flex',
