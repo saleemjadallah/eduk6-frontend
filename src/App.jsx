@@ -51,6 +51,11 @@ import {
   GenerateFlashcardsPage,
   TeacherSettingsPage,
   TeacherHelpPage,
+  AudioUpdatesPage,
+  SubPlansPage,
+  SubPlanDetailPage,
+  IEPGoalsPage,
+  IEPGoalDetailPage,
 } from './pages/teacher';
 
 // Admin Pages
@@ -290,6 +295,52 @@ const router = createBrowserRouter([
                 element: (
                     <ProtectedTeacherRoute>
                         <GenerateFlashcardsPage />
+                    </ProtectedTeacherRoute>
+                ),
+            },
+
+            // Teacher Tools - Audio Updates (parent podcast summaries)
+            {
+                path: 'audio-updates',
+                element: (
+                    <ProtectedTeacherRoute>
+                        <AudioUpdatesPage />
+                    </ProtectedTeacherRoute>
+                ),
+            },
+
+            // Teacher Tools - Substitute Plans
+            {
+                path: 'sub-plans',
+                element: (
+                    <ProtectedTeacherRoute>
+                        <SubPlansPage />
+                    </ProtectedTeacherRoute>
+                ),
+            },
+            {
+                path: 'sub-plans/:id',
+                element: (
+                    <ProtectedTeacherRoute>
+                        <SubPlanDetailPage />
+                    </ProtectedTeacherRoute>
+                ),
+            },
+
+            // Teacher Tools - IEP Goals
+            {
+                path: 'iep-goals',
+                element: (
+                    <ProtectedTeacherRoute>
+                        <IEPGoalsPage />
+                    </ProtectedTeacherRoute>
+                ),
+            },
+            {
+                path: 'iep-goals/:id',
+                element: (
+                    <ProtectedTeacherRoute>
+                        <IEPGoalDetailPage />
                     </ProtectedTeacherRoute>
                 ),
             },

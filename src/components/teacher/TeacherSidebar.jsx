@@ -20,6 +20,9 @@ import {
   Coffee,
   HelpCircle,
   X,
+  Mic,
+  ClipboardList,
+  Target,
 } from 'lucide-react';
 
 const TeacherSidebar = ({ collapsed, onToggle, isMobile = false }) => {
@@ -62,6 +65,14 @@ const TeacherSidebar = ({ collapsed, onToggle, isMobile = false }) => {
         //   badge: 'Soon',
         //   disabled: true,
         // },
+      ],
+    },
+    {
+      section: 'Teacher Tools',
+      items: [
+        { icon: Mic, label: 'Audio Updates', path: '/teacher/audio-updates', badge: 'New' },
+        { icon: ClipboardList, label: 'Sub Plans', path: '/teacher/sub-plans', badge: 'New' },
+        { icon: Target, label: 'IEP Goals', path: '/teacher/iep-goals', badge: 'New' },
       ],
     },
     {

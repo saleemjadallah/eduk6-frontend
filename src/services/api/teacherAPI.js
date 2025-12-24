@@ -49,6 +49,17 @@ function safeRemoveItem(key) {
   }
 }
 
+// Session expired callback - set by TeacherAuthContext
+let onSessionExpiredCallback = null;
+
+/**
+ * Set the callback to be called when session expires
+ * This allows the auth context to handle session expiration globally
+ */
+export function setSessionExpiredCallback(callback) {
+  onSessionExpiredCallback = callback;
+}
+
 /**
  * Teacher Token Manager
  */
@@ -161,6 +172,10 @@ async function teacherRequest(endpoint, options = {}, retryCount = 0) {
         return teacherRequest(endpoint, options, 1);
       } catch (refreshError) {
         teacherTokenManager.clearTokens();
+        // Trigger global session expired handler for auto-redirect
+        if (onSessionExpiredCallback) {
+          onSessionExpiredCallback();
+        }
         const error = new Error('Your session has expired. Please sign in again to continue.');
         error.code = 'SESSION_EXPIRED';
         error.status = 401;
@@ -177,6 +192,10 @@ async function teacherRequest(endpoint, options = {}, retryCount = 0) {
           userMessage.toLowerCase().includes('unauthorized') ||
           userMessage.toLowerCase().includes('token expired')) {
         teacherTokenManager.clearTokens();
+        // Trigger global session expired handler for auto-redirect
+        if (onSessionExpiredCallback) {
+          onSessionExpiredCallback();
+        }
         userMessage = 'Your session has expired. Please sign in again to continue.';
         const error = new Error(userMessage);
         error.code = 'SESSION_EXPIRED';
@@ -1042,6 +1061,242 @@ export const teacherAPI = {
    */
   deleteGoogleDriveFile: async (fileId) => {
     return teacherRequest(`/export/drive/files/${fileId}`, { method: 'DELETE' });
+  },
+
+  // ============================================
+  // AUDIO CLASS UPDATES
+  // ============================================
+
+  /**
+   * List audio updates with pagination
+   */
+  listAudioUpdates: async (params = {}) => {
+    const queryParams = new URLSearchParams();
+    Object.entries(params).forEach(([key, value]) => {
+      if (value !== undefined && value !== null && value !== '') {
+        queryParams.append(key, value);
+      }
+    });
+    return teacherRequest(`/audio-updates?${queryParams}`, { method: 'GET' });
+  },
+
+  /**
+   * Get available voice options
+   */
+  getVoiceOptions: async () => {
+    return teacherRequest('/audio-updates/voices', { method: 'GET' });
+  },
+
+  /**
+   * Create a new audio update
+   */
+  createAudioUpdate: async (data) => {
+    return teacherRequest('/audio-updates', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  },
+
+  /**
+   * Get an audio update by ID
+   */
+  getAudioUpdate: async (id) => {
+    return teacherRequest(`/audio-updates/${id}`, { method: 'GET' });
+  },
+
+  /**
+   * Update an audio update
+   */
+  updateAudioUpdate: async (id, data) => {
+    return teacherRequest(`/audio-updates/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    });
+  },
+
+  /**
+   * Delete an audio update
+   */
+  deleteAudioUpdate: async (id) => {
+    return teacherRequest(`/audio-updates/${id}`, { method: 'DELETE' });
+  },
+
+  /**
+   * Regenerate script for an audio update
+   */
+  regenerateAudioScript: async (id) => {
+    return teacherRequest(`/audio-updates/${id}/regenerate`, { method: 'POST' });
+  },
+
+  /**
+   * Generate audio from script
+   */
+  generateAudio: async (id) => {
+    return teacherRequest(`/audio-updates/${id}/generate-audio`, { method: 'POST' });
+  },
+
+  /**
+   * Publish an audio update
+   */
+  publishAudioUpdate: async (id) => {
+    return teacherRequest(`/audio-updates/${id}/publish`, { method: 'POST' });
+  },
+
+  /**
+   * Unpublish an audio update
+   */
+  unpublishAudioUpdate: async (id) => {
+    return teacherRequest(`/audio-updates/${id}/unpublish`, { method: 'POST' });
+  },
+
+  // ============================================
+  // SUBSTITUTE TEACHER PLANS
+  // ============================================
+
+  /**
+   * List substitute plans with pagination
+   */
+  listSubPlans: async (params = {}) => {
+    const queryParams = new URLSearchParams();
+    Object.entries(params).forEach(([key, value]) => {
+      if (value !== undefined && value !== null && value !== '') {
+        queryParams.append(key, value);
+      }
+    });
+    return teacherRequest(`/sub-plans?${queryParams}`, { method: 'GET' });
+  },
+
+  /**
+   * Create a new substitute plan
+   */
+  createSubPlan: async (data) => {
+    return teacherRequest('/sub-plans', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  },
+
+  /**
+   * Get a substitute plan by ID
+   */
+  getSubPlan: async (id) => {
+    return teacherRequest(`/sub-plans/${id}`, { method: 'GET' });
+  },
+
+  /**
+   * Update a substitute plan
+   */
+  updateSubPlan: async (id, data) => {
+    return teacherRequest(`/sub-plans/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    });
+  },
+
+  /**
+   * Delete a substitute plan
+   */
+  deleteSubPlan: async (id) => {
+    return teacherRequest(`/sub-plans/${id}`, { method: 'DELETE' });
+  },
+
+  /**
+   * Duplicate a substitute plan
+   */
+  duplicateSubPlan: async (id) => {
+    return teacherRequest(`/sub-plans/${id}/duplicate`, { method: 'POST' });
+  },
+
+  /**
+   * Regenerate activities for a substitute plan
+   */
+  regenerateSubPlanActivities: async (id) => {
+    return teacherRequest(`/sub-plans/${id}/regenerate`, { method: 'POST' });
+  },
+
+  // ============================================
+  // IEP GOAL WRITER
+  // ============================================
+
+  /**
+   * Get available disability categories
+   */
+  getDisabilityCategories: async () => {
+    return teacherRequest('/iep-goals/disability-categories', { method: 'GET' });
+  },
+
+  /**
+   * Get available IEP subject areas
+   */
+  getIEPSubjectAreas: async () => {
+    return teacherRequest('/iep-goals/subject-areas', { method: 'GET' });
+  },
+
+  /**
+   * Generate IEP goals preview (without saving)
+   */
+  generateIEPGoalsPreview: async (data) => {
+    return teacherRequest('/iep-goals/generate', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  },
+
+  /**
+   * Create an IEP goal session (generates and saves)
+   */
+  createIEPSession: async (data) => {
+    return teacherRequest('/iep-goals/sessions', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  },
+
+  /**
+   * List IEP goal sessions with pagination and filtering
+   */
+  listIEPSessions: async (params = {}) => {
+    const queryParams = new URLSearchParams();
+    Object.entries(params).forEach(([key, value]) => {
+      if (value !== undefined && value !== null && value !== '') {
+        queryParams.append(key, value);
+      }
+    });
+    return teacherRequest(`/iep-goals/sessions?${queryParams}`, { method: 'GET' });
+  },
+
+  /**
+   * Get an IEP goal session by ID
+   */
+  getIEPSession: async (id) => {
+    return teacherRequest(`/iep-goals/sessions/${id}`, { method: 'GET' });
+  },
+
+  /**
+   * Update an IEP goal session (save selections)
+   */
+  updateIEPSession: async (id, data) => {
+    return teacherRequest(`/iep-goals/sessions/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    });
+  },
+
+  /**
+   * Delete an IEP goal session
+   */
+  deleteIEPSession: async (id) => {
+    return teacherRequest(`/iep-goals/sessions/${id}`, { method: 'DELETE' });
+  },
+
+  /**
+   * Regenerate goals for an IEP session
+   */
+  regenerateIEPGoals: async (id, additionalContext) => {
+    return teacherRequest(`/iep-goals/sessions/${id}/regenerate`, {
+      method: 'POST',
+      body: JSON.stringify({ additionalContext }),
+    });
   },
 };
 

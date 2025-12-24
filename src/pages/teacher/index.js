@@ -14,3 +14,8 @@ export { default as GenerateQuizPage } from './GenerateQuizPage';
 export { default as GenerateFlashcardsPage } from './GenerateFlashcardsPage';
 export { default as TeacherSettingsPage } from './TeacherSettingsPage';
 export { default as TeacherHelpPage } from './TeacherHelpPage';
+export { default as AudioUpdatesPage } from './AudioUpdatesPage';
+export { default as SubPlansPage } from './SubPlansPage';
+export { default as SubPlanDetailPage } from './SubPlanDetailPage';
+export { default as IEPGoalsPage } from './IEPGoalsPage';
+export { default as IEPGoalDetailPage } from './IEPGoalDetailPage';

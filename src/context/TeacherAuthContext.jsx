@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
-import { teacherAPI, teacherTokenManager } from '../services/api/teacherAPI';
+import { teacherAPI, teacherTokenManager, setSessionExpiredCallback } from '../services/api/teacherAPI';
 
 // Create context
 const TeacherAuthContext = createContext(null);
@@ -77,6 +77,24 @@ export function TeacherAuthProvider({ children }) {
     };
 
     loadAuth();
+  }, []);
+
+  // Register session expired callback to auto-sign out when session expires
+  useEffect(() => {
+    const handleGlobalSessionExpired = () => {
+      // Clear all auth state - this will cause ProtectedTeacherRoute to redirect to login
+      teacherTokenManager.clearTokens();
+      setTeacher(null);
+      setQuota(null);
+      setSessionExpired(true);
+    };
+
+    setSessionExpiredCallback(handleGlobalSessionExpired);
+
+    // Cleanup on unmount
+    return () => {
+      setSessionExpiredCallback(null);
+    };
   }, []);
 
   // Sign up function
