@@ -58,7 +58,7 @@ This document provides a comprehensive implementation plan for integrating Googl
                        │
                        ▼
 ┌─────────────────────────────────────────────────────────────┐
-│              Display to Child (Jeffrey Response)             │
+│              Display to Child (Ollie Response)             │
 └─────────────────────────────────────────────────────────────┘
 ```
 
@@ -699,7 +699,7 @@ class PromptBuilder {
   }
 
   private getCoreIdentity(): string {
-    return `You are Jeffrey, a friendly and encouraging AI tutor for elementary school children (ages 4-12) learning on the Orbit Learn platform. Your personality traits:
+    return `You are Ollie, a friendly and encouraging AI tutor for elementary school children (ages 4-12) learning on the Orbit Learn platform. Your personality traits:
 
 - ENTHUSIASTIC and positive, celebrating every learning moment
 - PATIENT and supportive, never showing frustration
@@ -1650,12 +1650,12 @@ const ChatInterface: React.FC = () => {
     <div className="chat-interface">
       {/* Header with context indicator */}
       <div className="chat-header">
-        <div className="jeffrey-avatar">
-          <img src="/jeffrey-avatar.png" alt="Jeffrey" />
+        <div className="ollie-avatar">
+          <img src="/ollie-avatar.png" alt="Ollie" />
           <span className="status-dot" />
         </div>
         <div className="chat-header-info">
-          <h2>Jeffrey</h2>
+          <h2>Ollie</h2>
           {currentLesson && (
             <p className="lesson-context">
               Helping with: {currentLesson.topic}
@@ -1669,9 +1669,9 @@ const ChatInterface: React.FC = () => {
       <div className="messages-container">
         {messages.length === 0 ? (
           <div className="empty-state">
-            <div className="jeffrey-welcome">
-              <img src="/jeffrey-large.png" alt="Jeffrey" />
-              <h3>Hi! I'm Jeffrey! 👋</h3>
+            <div className="ollie-welcome">
+              <img src="/ollie-large.png" alt="Ollie" />
+              <h3>Hi! I'm Ollie! 👋</h3>
               <p>I'm here to help you learn! What would you like to explore today?</p>
             </div>
             {currentLesson && (
@@ -1698,7 +1698,7 @@ const ChatInterface: React.FC = () => {
               >
                 {message.role === 'assistant' && (
                   <div className="message-avatar">
-                    <img src="/jeffrey-avatar.png" alt="Jeffrey" />
+                    <img src="/ollie-avatar.png" alt="Ollie" />
                   </div>
                 )}
                 <div className="message-content">
@@ -1720,7 +1720,7 @@ const ChatInterface: React.FC = () => {
             {isLoading && !isStreaming && (
               <div className="message message-assistant">
                 <div className="message-avatar">
-                  <img src="/jeffrey-avatar.png" alt="Jeffrey" />
+                  <img src="/ollie-avatar.png" alt="Ollie" />
                 </div>
                 <div className="message-content">
                   <div className="typing-indicator">
@@ -1752,7 +1752,7 @@ const ChatInterface: React.FC = () => {
             value={inputValue}
             onChange={(e) => setInputValue(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder="Ask Jeffrey anything..."
+            placeholder="Ask Ollie anything..."
             rows={1}
             disabled={isLoading}
             className="chat-input"
@@ -2200,7 +2200,7 @@ Key metrics to track:
 Phase 2 additions:
 1. **Voice Integration** (ElevenLabs)
    - Voice input for pre-readers
-   - Voice output with Jeffrey's voice
+   - Voice output with Ollie's voice
    - Arabic voice support
 
 2. **Image Understanding** (Gemini Vision)

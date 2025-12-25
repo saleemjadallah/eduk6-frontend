@@ -8,7 +8,7 @@ const SelectedTextPreview = ({ onSendToChat }) => {
 
     if (!currentSelection) return null;
 
-    const handleSendToJeffrey = () => {
+    const handleSendToOllie = () => {
         addHighlight(currentSelection, 'blue');
         onSendToChat(currentSelection.text);
         clearSelection();
@@ -55,11 +55,11 @@ const SelectedTextPreview = ({ onSendToChat }) => {
                     <motion.button
                         whileHover={{ scale: 1.02 }}
                         whileTap={{ scale: 0.98 }}
-                        onClick={handleSendToJeffrey}
+                        onClick={handleSendToOllie}
                         className="flex-1 flex items-center justify-center gap-2 p-3 bg-nanobanana-blue text-white font-bold rounded-xl border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] active:shadow-none active:translate-y-[2px]"
                     >
                         <Send className="w-4 h-4" />
-                        Send to Jeffrey
+                        Send to Ollie
                     </motion.button>
 
                     <motion.button

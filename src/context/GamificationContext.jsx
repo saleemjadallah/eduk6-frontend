@@ -314,7 +314,7 @@ export function GamificationProvider({ children }) {
       const reasonMap = {
         // Chat interactions
         'Chat interaction': 'CHAT_QUESTION',
-        'Asked Jeffrey a question': 'CHAT_QUESTION',
+        'Asked Ollie a question': 'CHAT_QUESTION',
         'Chat question': 'CHAT_QUESTION',
 
         // Lesson activities

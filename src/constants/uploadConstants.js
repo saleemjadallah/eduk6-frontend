@@ -85,17 +85,17 @@ export const GRADE_LEVELS = [
 // Fun loading messages for kids
 export const PROCESSING_MESSAGES = {
   uploading: [
-    "📤 Sending your lesson to Jeffrey...",
+    "📤 Sending your lesson to Ollie...",
     "🚀 Zooming to the cloud...",
     "📬 Special delivery incoming!",
   ],
   extracting: [
-    "📖 Jeffrey is reading really fast...",
+    "📖 Ollie is reading really fast...",
     "🔍 Looking at every word...",
     "📚 Turning pages at super speed!",
   ],
   analyzing: [
-    "🤔 Jeffrey is thinking hard...",
+    "🤔 Ollie is thinking hard...",
     "🧠 Finding the coolest facts...",
     "✨ Discovering hidden treasures!",
   ],
@@ -116,7 +116,7 @@ export const ERROR_MESSAGES = {
   FILE_TOO_LARGE: "Oops! This file is too big. Try a smaller one! 📦",
   INVALID_TYPE: "Hmm, I can't read this type of file. Try a PDF, PowerPoint, or image! 📄",
   UPLOAD_FAILED: "Something went wrong. Let's try again! 🔄",
-  PROCESSING_FAILED: "Jeffrey got confused. Let's try a different file! 🤔",
+  PROCESSING_FAILED: "Ollie got confused. Let's try a different file! 🤔",
   NETWORK_ERROR: "Can't reach the internet. Check your connection! 🌐",
   EMPTY_FILE: "This file looks empty. Try another one! 📭",
   INVALID_YOUTUBE: "That doesn't look like a YouTube link. Try again! 🎬",

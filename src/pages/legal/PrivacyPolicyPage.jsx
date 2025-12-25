@@ -164,7 +164,7 @@ const PrivacyPolicyPage = () => {
                         <tbody className="divide-y divide-gray-200">
                           <tr><td className="px-4 py-2 text-gray-600">Profile</td><td className="px-4 py-2 text-gray-600">First name, age, grade</td><td className="px-4 py-2 text-gray-600">Age-appropriate content</td></tr>
                           <tr><td className="px-4 py-2 text-gray-600">Learning Activity</td><td className="px-4 py-2 text-gray-600">Progress, scores, time</td><td className="px-4 py-2 text-gray-600">Progress tracking</td></tr>
-                          <tr><td className="px-4 py-2 text-gray-600">AI Tutor</td><td className="px-4 py-2 text-gray-600">Conversations with Jeffrey</td><td className="px-4 py-2 text-gray-600">Educational assistance</td></tr>
+                          <tr><td className="px-4 py-2 text-gray-600">AI Tutor</td><td className="px-4 py-2 text-gray-600">Conversations with Ollie</td><td className="px-4 py-2 text-gray-600">Educational assistance</td></tr>
                           <tr><td className="px-4 py-2 text-gray-600">Content</td><td className="px-4 py-2 text-gray-600">Uploads, generated materials</td><td className="px-4 py-2 text-gray-600">Study support</td></tr>
                         </tbody>
                       </table>
@@ -214,7 +214,7 @@ const PrivacyPolicyPage = () => {
                     <h3 className="font-semibold text-gray-900 mb-2">Educational Purposes:</h3>
                     <ul className="list-disc pl-6 text-gray-600 space-y-1">
                       <li>Generate personalized content</li>
-                      <li>Power AI tutor (Jeffrey)</li>
+                      <li>Power AI tutor (Ollie)</li>
                       <li>Track learning progress</li>
                       <li>Adapt to learning level</li>
                     </ul>
@@ -466,7 +466,7 @@ const PrivacyPolicyPage = () => {
                       <li>No chat between children</li>
                       <li>No social features</li>
                       <li>No public profiles</li>
-                      <li>Only Jeffrey AI tutor interaction</li>
+                      <li>Only Ollie AI tutor interaction</li>
                     </ul>
                   </div>
                 </div>

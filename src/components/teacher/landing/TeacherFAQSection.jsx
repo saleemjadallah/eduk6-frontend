@@ -20,7 +20,7 @@ const TeacherFAQSection = () => {
     },
     {
       question: 'Is the content aligned to educational standards?',
-      answer: 'Jeffrey creates content aligned to Common Core State Standards and can adapt to state-specific standards. When you specify a grade level and subject, the AI automatically incorporates appropriate learning objectives and assessment criteria. You can also customize standards alignment in your generated content.',
+      answer: 'Ollie creates content aligned to Common Core State Standards and can adapt to state-specific standards. When you specify a grade level and subject, the AI automatically incorporates appropriate learning objectives and assessment criteria. You can also customize standards alignment in your generated content.',
     },
     {
       question: 'When will the Grading Center be available?',
@@ -32,7 +32,7 @@ const TeacherFAQSection = () => {
     },
     {
       question: 'How does the AI ensure content quality?',
-      answer: 'Jeffrey is trained specifically for educational content creation and includes built-in quality checks. Content is reviewed for grade-level appropriateness, factual accuracy (using verified educational sources), and pedagogical best practices. You always have full control to edit and customize the generated content before using it.',
+      answer: 'Ollie is trained specifically for educational content creation and includes built-in quality checks. Content is reviewed for grade-level appropriateness, factual accuracy (using verified educational sources), and pedagogical best practices. You always have full control to edit and customize the generated content before using it.',
     },
     {
       question: 'What if I need to cancel my subscription?',

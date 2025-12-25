@@ -91,10 +91,10 @@ const ProtectedChildLayout = () => {
         <Outlet />
       </main>
 
-      {/* Floating Jeffrey helper for younger children */}
+      {/* Floating Ollie helper for younger children */}
       {currentProfile && currentProfile.age <= 8 && (
-        <div className="jeffrey-helper">
-          <div className="jeffrey-avatar">
+        <div className="ollie-helper">
+          <div className="ollie-avatar">
             <span>🤖</span>
           </div>
           <button className="help-button">Need help?</button>

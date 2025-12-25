@@ -1,7 +1,7 @@
 # Upload Flow Implementation Plan
 ## K-6 AI Learning Platform - Content Upload System
 
-**Purpose:** Implement the complete upload flow that allows users to add lesson content (PDFs, images, YouTube links), process it with AI, and save to LessonContext for Jeffrey (AI tutor) to use.
+**Purpose:** Implement the complete upload flow that allows users to add lesson content (PDFs, images, YouTube links), process it with AI, and save to LessonContext for Ollie (AI tutor) to use.
 
 **Prerequisites:** LessonContext must be implemented first (see LESSONCONTEXT_IMPLEMENTATION_PLAN.md)
 
@@ -196,17 +196,17 @@ export const GRADE_LEVELS = [
 // Fun loading messages for kids
 export const PROCESSING_MESSAGES = {
   uploading: [
-    "📤 Sending your lesson to Jeffrey...",
+    "📤 Sending your lesson to Ollie...",
     "🚀 Zooming to the cloud...",
     "📬 Special delivery incoming!",
   ],
   extracting: [
-    "📖 Jeffrey is reading really fast...",
+    "📖 Ollie is reading really fast...",
     "🔍 Looking at every word...",
     "📚 Turning pages at super speed!",
   ],
   analyzing: [
-    "🤔 Jeffrey is thinking hard...",
+    "🤔 Ollie is thinking hard...",
     "🧠 Finding the coolest facts...",
     "✨ Discovering hidden treasures!",
   ],
@@ -227,7 +227,7 @@ export const ERROR_MESSAGES = {
   FILE_TOO_LARGE: "Oops! This file is too big. Try a smaller one! 📦",
   INVALID_TYPE: "Hmm, I can't read this type of file. Try a PDF or image! 📄",
   UPLOAD_FAILED: "Something went wrong. Let's try again! 🔄",
-  PROCESSING_FAILED: "Jeffrey got confused. Let's try a different file! 🤔",
+  PROCESSING_FAILED: "Ollie got confused. Let's try a different file! 🤔",
   NETWORK_ERROR: "Can't reach the internet. Check your connection! 🌐",
   EMPTY_FILE: "This file looks empty. Try another one! 📭",
   INVALID_YOUTUBE: "That doesn't look like a YouTube link. Try again! 🎬",
@@ -655,7 +655,7 @@ function generateMockChatResponse(message, context) {
   const lowerMessage = message.toLowerCase();
   
   if (lowerMessage.includes('hello') || lowerMessage.includes('hi')) {
-    return `Hi there! 👋 I'm Jeffrey, your learning buddy! ${title ? `I see we're studying "${title}" today. ` : ''}What would you like to learn about?`;
+    return `Hi there! 👋 I'm Ollie, your learning buddy! ${title ? `I see we're studying "${title}" today. ` : ''}What would you like to learn about?`;
   }
   
   if (lowerMessage.includes('explain') || lowerMessage.includes('what is')) {
@@ -747,7 +747,7 @@ const genAI = new GoogleGenerativeAI(process.env.REACT_APP_GEMINI_API_KEY);
 const model = genAI.getGenerativeModel({ model: 'gemini-pro' });
 
 // System prompt for child-safe educational content
-const SYSTEM_PROMPT = `You are Jeffrey, a friendly AI tutor for children ages 4-12. 
+const SYSTEM_PROMPT = `You are Ollie, a friendly AI tutor for children ages 4-12. 
 Your responses should be:
 - Age-appropriate and safe for children
 - Educational and encouraging
@@ -2141,7 +2141,7 @@ export default StudyPage;
 - [ ] Lesson data persists after upload
 - [ ] LessonView displays new lesson content
 - [ ] ChatInterface receives lesson context
-- [ ] Jeffrey's greeting is context-aware
+- [ ] Ollie's greeting is context-aware
 - [ ] Error states show child-friendly messages
 
 ### Edge Cases

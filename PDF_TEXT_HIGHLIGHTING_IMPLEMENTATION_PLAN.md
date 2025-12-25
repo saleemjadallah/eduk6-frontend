@@ -1,7 +1,7 @@
 # PDF Text Highlighting & Context Menu Implementation Plan
 ## K-6 AI Learning Platform - Option D
 
-**Goal:** Create an interactive PDF text highlighting system that allows children to select text from uploaded documents, transfer selections to Jeffrey (AI tutor), and access quick-action context menus for creating flashcards, explainer videos, quizzes, or starting a conversation about the selected content.
+**Goal:** Create an interactive PDF text highlighting system that allows children to select text from uploaded documents, transfer selections to Ollie (AI tutor), and access quick-action context menus for creating flashcards, explainer videos, quizzes, or starting a conversation about the selected content.
 
 ---
 
@@ -36,7 +36,7 @@
 │   │   │   (Left Pane - 60%)     │     │      (Right Pane - 40%)         │    │   │
 │   │   │                         │     │                                  │    │   │
 │   │   │  ┌───────────────────┐  │     │  ┌──────────────────────────┐   │    │   │
-│   │   │  │   Rendered PDF    │  │     │  │     Jeffrey Avatar       │   │    │   │
+│   │   │  │   Rendered PDF    │  │     │  │     Ollie Avatar       │   │    │   │
 │   │   │  │   with Text Layer │  │     │  │   "Tell me more about    │   │    │   │
 │   │   │  │                   │  │     │  │    what you selected!"   │   │    │   │
 │   │   │  │  [████████████]   │  │────▶│  │                          │   │    │   │
@@ -60,7 +60,7 @@
 │                              ┌─────────────────────────────────────┐              │
 │                              │        CONTEXT MENU POPUP           │              │
 │                              │  ┌─────────────────────────────────┐│              │
-│                              │  │ 💬 Chat with Jeffrey            ││              │
+│                              │  │ 💬 Chat with Ollie            ││              │
 │                              │  │    "Ask me about this!"         ││              │
 │                              │  ├─────────────────────────────────┤│              │
 │                              │  │ 🃏 Create Flashcards            ││              │
@@ -94,7 +94,7 @@
 │                      │  │  Context   │  │     Context        │  │                 │
 │                      │  │            │  │                    │  │                 │
 │                      │  │ Send text  │  │ Generate cards     │  │                 │
-│                      │  │ to Jeffrey │  │ from selection     │  │                 │
+│                      │  │ to Ollie │  │ from selection     │  │                 │
 │                      │  └────────────┘  └────────────────────┘  │                 │
 │                      │                                          │                 │
 │                      │  ┌────────────┐  ┌────────────────────┐  │                 │
@@ -934,7 +934,7 @@ import { useFlashcardContext } from '../../context/FlashcardContext';
 const ContextMenu = ({ position, selection, onClose }) => {
   const menuRef = useRef(null);
   const { addHighlight, recordAction } = useHighlightContext();
-  const { sendToJeffrey } = useLessonContext();
+  const { sendToOllie } = useLessonContext();
   const { generateFlashcardsFromText } = useFlashcardContext();
 
   // Adjust position to stay within viewport
@@ -966,12 +966,12 @@ const ContextMenu = ({ position, selection, onClose }) => {
       id: 'chat',
       icon: <MessageCircle className="w-5 h-5" />,
       emoji: '💬',
-      label: 'Ask Jeffrey',
+      label: 'Ask Ollie',
       description: 'Chat about this text',
       color: 'bg-nanobanana-blue',
       handler: async () => {
         const highlight = addHighlight(selection, 'blue');
-        await sendToJeffrey(selection.text, 'explain');
+        await sendToOllie(selection.text, 'explain');
         recordAction(highlight.id, 'chat');
         onClose();
       },
@@ -1198,7 +1198,7 @@ const SelectionPopup = ({ selection, scale }) => {
   if (!popupPosition) return null;
 
   const handleQuickChat = () => {
-    // Quick action to send to Jeffrey
+    // Quick action to send to Ollie
     addHighlight(selection, 'blue');
     // Trigger chat interface
   };
@@ -1230,7 +1230,7 @@ const SelectionPopup = ({ selection, scale }) => {
         className="flex items-center gap-2 px-3 py-2 bg-nanobanana-blue text-white rounded-full font-bold text-sm"
       >
         <MessageCircle className="w-4 h-4" />
-        Ask Jeffrey
+        Ask Ollie
       </motion.button>
 
       {/* More Options Button */}
@@ -1271,7 +1271,7 @@ const SelectedTextPreview = ({ onSendToChat }) => {
 
   if (!currentSelection) return null;
 
-  const handleSendToJeffrey = () => {
+  const handleSendToOllie = () => {
     addHighlight(currentSelection, 'blue');
     onSendToChat(currentSelection.text);
     clearSelection();
@@ -1316,11 +1316,11 @@ const SelectedTextPreview = ({ onSendToChat }) => {
           <motion.button
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
-            onClick={handleSendToJeffrey}
+            onClick={handleSendToOllie}
             className="flex-1 flex items-center justify-center gap-2 p-3 bg-nanobanana-blue text-white font-bold rounded-xl border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] active:shadow-none active:translate-y-[2px]"
           >
             <Send className="w-4 h-4" />
-            Send to Jeffrey
+            Send to Ollie
           </motion.button>
           
           <motion.button
@@ -1944,7 +1944,7 @@ export const CONTEXT_MENU_ACTIONS = {
   CHAT: {
     id: 'chat',
     emoji: '💬',
-    label: 'Ask Jeffrey',
+    label: 'Ask Ollie',
     description: 'Chat about this text',
     color: 'bg-nanobanana-blue',
     highlightColor: 'blue',
@@ -2164,7 +2164,7 @@ export const createVideoRequest = (selection) => {
 
 ## 10. Integration with Existing Systems
 
-### 10.1 Update LessonContext - Add Jeffrey Communication
+### 10.1 Update LessonContext - Add Ollie Communication
 
 **Location:** Update `src/context/LessonContext.jsx`
 
@@ -2195,7 +2195,7 @@ case ACTIONS.SET_CHAT_CONTEXT:
   };
 
 // Add to provider value
-const sendToJeffrey = useCallback((text, promptType = 'explain') => {
+const sendToOllie = useCallback((text, promptType = 'explain') => {
   const prompt = createChatPrompt({ text }, promptType);
   dispatch({
     type: ACTIONS.SEND_TO_CHAT,
@@ -2363,7 +2363,7 @@ const { addXP, checkAchievements } = useGamificationContext();
 // After successful action
 const handleChatAction = async () => {
   const highlight = addHighlight(selection, 'blue');
-  await sendToJeffrey(selection.text, 'explain');
+  await sendToOllie(selection.text, 'explain');
   recordAction(highlight.id, 'chat');
   
   // Award XP
@@ -2591,7 +2591,7 @@ export const CHILD_UX_CONFIG = {
   // Simplify labels based on age
   LABELS: {
     K_2: {
-      chat: 'Talk to Jeffrey',
+      chat: 'Talk to Ollie',
       flashcard: 'Make Cards',
       video: 'Watch Video',
       quiz: 'Play Quiz',
@@ -2599,7 +2599,7 @@ export const CHILD_UX_CONFIG = {
       copy: 'Save It',
     },
     3_6: {
-      chat: 'Ask Jeffrey',
+      chat: 'Ask Ollie',
       flashcard: 'Make Flashcards',
       video: 'Explainer Video',
       quiz: 'Create Quiz',
@@ -2646,7 +2646,7 @@ export const CHILD_UX_CONFIG = {
   - [ ] Overlapping highlights handled
 
 - [ ] **Action Integration**
-  - [ ] "Ask Jeffrey" sends text to chat
+  - [ ] "Ask Ollie" sends text to chat
   - [ ] "Make Flashcards" generates cards
   - [ ] "Create Quiz" initiates quiz generation
   - [ ] "Explainer Video" triggers video creation
@@ -2655,8 +2655,8 @@ export const CHILD_UX_CONFIG = {
 
 - [ ] **Chat Integration**
   - [ ] Selected text preview appears in chat pane
-  - [ ] "Send to Jeffrey" populates chat input
-  - [ ] Jeffrey responds contextually
+  - [ ] "Send to Ollie" populates chat input
+  - [ ] Ollie responds contextually
   - [ ] Chat history includes selection context
 
 - [ ] **Gamification Integration**

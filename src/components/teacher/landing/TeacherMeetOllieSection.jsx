@@ -3,8 +3,7 @@ import { motion } from 'framer-motion';
 import { Clock, Target, Zap, GraduationCap, BookOpen, ClipboardCheck, Layers, Sparkles } from 'lucide-react';
 import Ollie from '../../Avatar/Ollie';
 
-// LEGACY: Use TeacherMeetOllieSection instead
-const TeacherMeetJeffreySection = () => {
+const TeacherMeetOllieSection = () => {
   const [typedText, setTypedText] = useState('');
   const [currentMessageIndex, setCurrentMessageIndex] = useState(0);
   const [isTyping, setIsTyping] = useState(true);
@@ -300,4 +299,4 @@ const TeacherMeetJeffreySection = () => {
   );
 };
 
-export default TeacherMeetJeffreySection;
+export default TeacherMeetOllieSection;

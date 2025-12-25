@@ -1,6 +1,7 @@
 export { default as HeroSection } from './HeroSection';
 export { default as SocialProofBar } from './SocialProofBar';
 export { default as MeetJeffreySection } from './MeetJeffreySection';
+export { default as MeetOllieSection } from './MeetJeffreySection'; // Alias for compatibility
 export { default as HowItWorksSection } from './HowItWorksSection';
 export { default as LearningToolsSection } from './LearningToolsSection';
 export { default as ParentDashboardSection } from './ParentDashboardSection';

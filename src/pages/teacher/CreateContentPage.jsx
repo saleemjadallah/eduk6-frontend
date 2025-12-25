@@ -25,8 +25,8 @@ import {
   AlertCircle,
 } from 'lucide-react';
 
-// Jeffrey Avatar using actual asset
-const JeffreyAvatar = ({ size = 'md' }) => {
+// Ollie Avatar using actual asset
+const OllieAvatar = ({ size = 'md' }) => {
   const sizeClasses = {
     sm: 'w-8 h-8',
     md: 'w-10 h-10 sm:w-12 sm:h-12',
@@ -36,8 +36,8 @@ const JeffreyAvatar = ({ size = 'md' }) => {
   return (
     <div className={`${sizeClasses[size]} rounded-full overflow-hidden flex-shrink-0 border-2 border-teacher-gold/20 bg-teacher-paper`}>
       <img
-        src="/assets/images/jeffrey-avatar.png"
-        alt="Jeffrey"
+        src="/assets/images/ollie-avatar.png"
+        alt="Ollie"
         className="w-full h-full object-cover"
       />
     </div>
@@ -143,8 +143,8 @@ const CreateContentPage = () => {
   const [messages, setMessages] = useState([
     {
       id: 1,
-      sender: 'jeffrey',
-      text: "Hi! I'm Jeffrey, your teaching assistant!\n\nTell me what you'd like to create today. You can describe your lesson idea, and I'll help you build something amazing for your students.",
+      sender: 'ollie',
+      text: "Hi! I'm Ollie, your teaching assistant!\n\nTell me what you'd like to create today. You can describe your lesson idea, and I'll help you build something amazing for your students.",
       timestamp: new Date(),
     }
   ]);
@@ -224,7 +224,7 @@ const CreateContentPage = () => {
       setLessonDetails(prev => ({ ...prev, topic: userMessage }));
       setConversationStage('gathering');
 
-      addMessage('jeffrey',
+      addMessage('ollie',
         `Great topic! "${userMessage}" sounds like it will be an engaging lesson!\n\nLet me help you set up the details. Please select the options below, and I'll create a comprehensive lesson plan for you.`
       );
       setShowOptions(true);
@@ -233,7 +233,7 @@ const CreateContentPage = () => {
         ...prev,
         additionalNotes: prev.additionalNotes + '\n' + userMessage
       }));
-      addMessage('jeffrey',
+      addMessage('ollie',
         `Got it! I've noted that down. Feel free to adjust the options below or add more details. When you're ready, click "Generate Lesson" to create your content!`
       );
     }
@@ -333,7 +333,7 @@ const CreateContentPage = () => {
         setConversationStage('gathering');
 
         // Add a message to the chat
-        addMessage('jeffrey',
+        addMessage('ollie',
           `I've analyzed your document "${selectedFile.name}"!\n\n` +
           `**Topic:** ${result.data.suggestedTitle}\n` +
           `**Subject:** ${result.data.detectedSubject || 'Not detected'}\n` +
@@ -419,7 +419,7 @@ const CreateContentPage = () => {
             refreshQuota?.();
 
             setConversationStage('complete');
-            addMessage('jeffrey',
+            addMessage('ollie',
               `Your lesson is ready!\n\nI've created:\n` +
               `- Complete lesson plan with ${result.data.lesson?.sections?.length || 0} sections\n` +
               `${result.data.lesson?.objectives?.length ? `- ${result.data.lesson.objectives.length} learning objectives\n` : ''}` +
@@ -439,7 +439,7 @@ const CreateContentPage = () => {
         }
       } else {
         // Use original single generation for simple lessons
-        addMessage('jeffrey',
+        addMessage('ollie',
           `Perfect! I'm now creating your ${isFullLesson ? 'full lesson' : 'lesson guide'} on "${lessonDetails.topic}"...\n\n` +
           `This may take a moment...`
         );
@@ -489,7 +489,7 @@ const CreateContentPage = () => {
             refreshQuota?.();
 
             setConversationStage('complete');
-            addMessage('jeffrey',
+            addMessage('ollie',
               `Your lesson is ready!\n\nI've created:\n- Complete lesson plan with ${result.data.sections?.length || 0} sections\n${result.data.objectives?.length ? `- ${result.data.objectives.length} learning objectives\n` : ''}${result.data.vocabulary?.length ? `- ${result.data.vocabulary.length} vocabulary terms\n` : ''}\nClick below to view and edit your lesson!`
             );
 
@@ -509,7 +509,7 @@ const CreateContentPage = () => {
       }
 
       setError(err.message || 'Failed to generate lesson');
-      addMessage('jeffrey',
+      addMessage('ollie',
         `Oops! Something went wrong: ${err.message}\n\nPlease try again or adjust your request.`
       );
       setConversationStage('gathering');
@@ -544,7 +544,7 @@ const CreateContentPage = () => {
 
   return (
     <TeacherLayout
-      title="Create with Jeffrey"
+      title="Create with Ollie"
       subtitle="Your AI teaching assistant"
       headerActions={headerActions}
     >
@@ -554,9 +554,9 @@ const CreateContentPage = () => {
           {/* Chat Header */}
           <div className="px-4 sm:px-6 py-4 border-b border-teacher-ink/5 bg-gradient-to-r from-teacher-chalk to-teacher-chalkLight">
             <div className="flex items-center gap-3">
-              <JeffreyAvatar size="md" />
+              <OllieAvatar size="md" />
               <div>
-                <h2 className="text-white font-semibold text-base sm:text-lg">Jeffrey</h2>
+                <h2 className="text-white font-semibold text-base sm:text-lg">Ollie</h2>
                 <p className="text-white/80 text-xs sm:text-sm">Ready to help you create amazing content</p>
               </div>
               <div className="ml-auto hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/10 text-white/90 text-xs">
@@ -603,14 +603,14 @@ const CreateContentPage = () => {
                 animate={{ opacity: 1, y: 0 }}
                 className={`flex gap-2 sm:gap-3 ${message.sender === 'teacher' ? 'flex-row-reverse' : ''}`}
               >
-                {message.sender === 'jeffrey' ? (
-                  <JeffreyAvatar size="sm" />
+                {message.sender === 'ollie' ? (
+                  <OllieAvatar size="sm" />
                 ) : (
                   <TeacherAvatar teacher={teacher} size="sm" />
                 )}
                 <div
                   className={`max-w-[85%] sm:max-w-[80%] rounded-2xl px-3 sm:px-4 py-2 sm:py-3 text-sm sm:text-base ${
-                    message.sender === 'jeffrey'
+                    message.sender === 'ollie'
                       ? 'bg-teacher-paper text-teacher-ink'
                       : 'bg-teacher-chalk text-white'
                   }`}
@@ -628,7 +628,7 @@ const CreateContentPage = () => {
                 animate={{ opacity: 1 }}
                 className="flex gap-2 sm:gap-3"
               >
-                <JeffreyAvatar size="sm" />
+                <OllieAvatar size="sm" />
                 <div className="bg-teacher-paper rounded-2xl px-4 py-3">
                   <div className="flex gap-1">
                     <span className="w-2 h-2 bg-teacher-inkLight rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
@@ -829,13 +829,13 @@ const CreateContentPage = () => {
                     animate={{ opacity: 1, y: 0 }}
                     className="mb-4 p-4 bg-gradient-to-br from-teacher-chalk/5 to-teacher-gold/5 border border-teacher-chalk/20 rounded-xl"
                   >
-                    {/* Jeffrey with speech bubble */}
+                    {/* Ollie with speech bubble */}
                     <div className="flex items-start gap-3 mb-4">
                       <div className="relative">
                         <div className="w-14 h-14 rounded-full overflow-hidden border-2 border-teacher-gold/30 bg-teacher-paper">
                           <img
-                            src="/assets/images/jeffrey-avatar.png"
-                            alt="Jeffrey"
+                            src="/assets/images/ollie-avatar.png"
+                            alt="Ollie"
                             className={`w-full h-full object-cover ${
                               generationProgress.step === 'completed' ? 'animate-bounce' : 'animate-pulse'
                             }`}

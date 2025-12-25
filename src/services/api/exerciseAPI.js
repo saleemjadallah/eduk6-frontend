@@ -35,7 +35,7 @@ export const exerciseAPI = {
    * @param {string} [lessonId] - Required when exerciseId is a marker ID like "ex-1"
    * @returns {Promise<Object>} Response with validation result
    * @returns {boolean} response.data.isCorrect - Whether the answer is correct
-   * @returns {string} response.data.feedback - Jeffrey's feedback message
+   * @returns {string} response.data.feedback - Ollie's feedback message
    * @returns {number|null} response.data.showHint - Which hint to show (1 or 2), or null
    * @returns {string} [response.data.correctAnswer] - The correct answer (if max attempts reached)
    * @returns {string} [response.data.explanation] - Explanation of the answer

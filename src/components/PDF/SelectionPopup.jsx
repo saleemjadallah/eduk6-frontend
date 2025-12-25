@@ -50,7 +50,7 @@ const SelectionPopup = ({ selection, scale }) => {
                 className="flex items-center gap-2 px-3 py-2 bg-nanobanana-blue text-white rounded-full font-bold text-sm"
             >
                 <MessageCircle className="w-4 h-4" />
-                Ask Jeffrey
+                Ask Ollie
             </motion.button>
 
             {/* More Options Button */}

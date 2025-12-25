@@ -4,7 +4,7 @@ import { useTeacherAuth } from '../../context/TeacherAuthContext';
 import {
   TeacherLandingNav,
   TeacherHeroSection,
-  TeacherMeetJeffreySection,
+  TeacherMeetOllieSection,
   TeacherFeaturesSection,
   TeacherHowItWorksSection,
   TeacherPricingSection,
@@ -51,8 +51,8 @@ const TeacherLandingPage = () => {
       {/* Hero Section */}
       <TeacherHeroSection />
 
-      {/* Meet Jeffrey Section */}
-      <TeacherMeetJeffreySection />
+      {/* Meet Ollie Section */}
+      <TeacherMeetOllieSection />
 
       {/* Features Section */}
       <TeacherFeaturesSection />

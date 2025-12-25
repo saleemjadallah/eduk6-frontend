@@ -49,7 +49,7 @@ export const createChatPrompt = (selection, promptType = 'explain') => {
     const { text } = selection;
 
     // Prompts designed to be conversational and encourage learning
-    // Each prompt gives Jeffrey clear context about what the child needs
+    // Each prompt gives Ollie clear context about what the child needs
     const prompts = {
         explain: `I found this in my lesson and I want to understand it better. Can you explain what this means using simple words and maybe a fun example I can relate to?\n\nHere's the part I'm curious about:\n"${text}"`,
 

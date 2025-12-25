@@ -76,7 +76,7 @@ export function ChatProvider({ children, userProfile: propUserProfile }) {
   const { currentXP, currentLevel, streak, earnXP, recordActivity, updateDailyChallengeProgress } = gamificationContext || {};
 
   // Build lesson context for ChatService
-  // This provides Jeffrey with the full lesson content for answering contextual questions
+  // This provides Ollie with the full lesson content for answering contextual questions
   const buildLessonContext = useCallback(() => {
     if (!currentLesson) return undefined;
 
@@ -90,7 +90,7 @@ export function ChatProvider({ children, userProfile: propUserProfile }) {
     // Debug: Log warning if lesson exists but content is empty
     // This helps identify data flow issues
     if (!fullContent && currentLesson.id) {
-      console.warn('[ChatContext] Lesson loaded but extractedText is empty. Jeffrey may not be able to answer lesson-specific questions.', {
+      console.warn('[ChatContext] Lesson loaded but extractedText is empty. Ollie may not be able to answer lesson-specific questions.', {
         lessonId: currentLesson.id,
         title: currentLesson.title,
         hasExtractedText: !!currentLesson.extractedText,
@@ -105,8 +105,8 @@ export function ChatProvider({ children, userProfile: propUserProfile }) {
       topic: currentLesson.title || currentLesson.topic,
       grade: currentLesson.grade || currentLesson.gradeLevel,
       contentType: currentLesson.contentType || currentLesson.sourceType,
-      // Full content for Jeffrey to reference when answering questions
-      // This allows Jeffrey to answer questions like "what does question 3 mean?"
+      // Full content for Ollie to reference when answering questions
+      // This allows Ollie to answer questions like "what does question 3 mean?"
       content: fullContent,
       uploadedContent: fullContent, // Alias for backwards compatibility
       summary: currentLesson.summary,
@@ -381,9 +381,9 @@ export function ChatProvider({ children, userProfile: propUserProfile }) {
   // Get welcome message based on context
   const getWelcomeMessage = useCallback(() => {
     if (currentLesson) {
-      return `Hi! I'm Jeffrey, your learning buddy! I see you're studying "${currentLesson.title || currentLesson.subject}". What would you like to know about it?`;
+      return `Hi! I'm Ollie, your learning buddy! I see you're studying "${currentLesson.title || currentLesson.subject}". What would you like to know about it?`;
     }
-    return "Hi there! I'm Jeffrey, your learning buddy! Upload a lesson or ask me anything you'd like to learn about!";
+    return "Hi there! I'm Ollie, your learning buddy! Upload a lesson or ask me anything you'd like to learn about!";
   }, [currentLesson]);
 
   // Derived state

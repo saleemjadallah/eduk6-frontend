@@ -107,7 +107,7 @@ const TeacherHeroSection = () => {
               className="text-base md:text-lg lg:text-xl text-teacher-inkLight leading-relaxed mb-6 lg:mb-8"
             >
               Create complete lesson plans, quizzes, flashcards, and infographics in minutes.
-              Let Jeffrey handle the prep work so you can focus
+              Let Ollie handle the prep work so you can focus
               on what matters most—<span className="font-bold text-teacher-ink">inspiring your students</span>.
             </motion.p>
 

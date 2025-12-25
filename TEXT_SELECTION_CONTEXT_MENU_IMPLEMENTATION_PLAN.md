@@ -1,5 +1,5 @@
 # Text Selection & Context Menu Implementation Plan
-## Interactive "Select → Ask Jeffrey" Feature for PDF/Content Pages
+## Interactive "Select → Ask Ollie" Feature for PDF/Content Pages
 
 **Document Version**: 1.0  
 **Last Updated**: November 25, 2024  
@@ -19,19 +19,19 @@ Enable children to select any text within lesson content (PDFs, articles, genera
 1. Child reads content in Lesson Viewer
 2. Child long-presses or selects text with their finger
 3. Selected text highlights in bright yellow with sparkle animation
-4. Jeffrey's avatar appears with context menu floating above selection
+4. Ollie's avatar appears with context menu floating above selection
 5. Child taps an action (Ask, Flashcard, Quiz, Save, Read Aloud)
 6. Action executes with immediate feedback (animation + sound)
-7. Result displays (Jeffrey answers, flashcard created, etc.)
+7. Result displays (Ollie answers, flashcard created, etc.)
 8. XP awarded, streak updated
 9. Menu dismisses, child continues reading
 ```
 
 ### 1.3 Key Success Metrics
-- **Engagement**: 60% of children use "Ask Jeffrey" at least once per session
+- **Engagement**: 60% of children use "Ask Ollie" at least once per session
 - **Learning Depth**: Average 3-5 interactions per lesson (indicates active reading)
 - **Feature Discovery**: 80% of users discover the feature within first 2 lessons
-- **Response Quality**: 95% of Jeffrey's answers rated appropriate by parents
+- **Response Quality**: 95% of Ollie's answers rated appropriate by parents
 
 ---
 
@@ -47,12 +47,12 @@ Enable children to select any text within lesson content (PDFs, articles, genera
 
 **Available Actions** (3 options max):
 1. 🔊 **"Read to Me"** (default)
-2. 🤔 **"What is this?"** (pre-set question to Jeffrey)
+2. 🤔 **"What is this?"** (pre-set question to Ollie)
 3. ⭐ **"Save"** (adds to favorites)
 
 **Interaction Pattern**:
 - No free-form questions
-- Jeffrey responds with voice-first + simple illustration
+- Ollie responds with voice-first + simple illustration
 - Menu stays open until explicitly dismissed (less accidental closes)
 
 #### **Tier 2: Ages 8-12 (Fluent Readers)**
@@ -62,14 +62,14 @@ Enable children to select any text within lesson content (PDFs, articles, genera
 - "Select All in Box" button for entire paragraphs
 
 **Available Actions** (5 options):
-1. 🤔 **"Ask Jeffrey"** (free-form question)
+1. 🤔 **"Ask Ollie"** (free-form question)
 2. 🎴 **"Make Flashcard"**
 3. 🎮 **"Practice Quiz"**
 4. ⭐ **"Save This"**
 5. 🔊 **"Read to Me"**
 
 **Interaction Pattern**:
-- Can type custom questions to Jeffrey
+- Can type custom questions to Ollie
 - Menu includes "Challenge Me" quick action
 - Access to "Find Similar" (cross-lesson connections)
 
@@ -78,7 +78,7 @@ Enable children to select any text within lesson content (PDFs, articles, genera
 - **Haptic Feedback**: Vibration on selection start/end for tactile confirmation
 - **Visual Feedback**: Immediate color change + particle effects
 - **Error Forgiveness**: 15-second menu timeout (not instant dismissal)
-- **Persistence**: "Jeffrey is thinking..." loaders, never silent failures
+- **Persistence**: "Ollie is thinking..." loaders, never silent failures
 
 ---
 
@@ -95,11 +95,11 @@ Enable children to select any text within lesson content (PDFs, articles, genera
         │     ├── <ParticleEffect />
         │     └── <SelectionHandles />
         ├── <ContextMenu>
-        │     ├── <JeffreyAvatar />
+        │     ├── <OllieAvatar />
         │     ├── <MenuActions />
         │     └── <QuickHints />
         └── <SelectionResultModal>
-              ├── <JeffreyResponse />
+              ├── <OllieResponse />
               ├── <FlashcardPreview />
               └── <QuizPreview />
 ```
@@ -125,7 +125,7 @@ interface SelectionAction {
     pageNumber?: number;
     timestamp: Date;
   };
-  userQuestion?: string; // For "Ask Jeffrey" with custom question
+  userQuestion?: string; // For "Ask Ollie" with custom question
 }
 
 const HighlightableContent: React.FC<HighlightableContentProps> = ({
@@ -151,7 +151,7 @@ const HighlightableContent: React.FC<HighlightableContentProps> = ({
   useEffect(() => {
     if (menuVisible) {
       const timer = setTimeout(() => {
-        // Show Jeffrey reminder: "Still there?"
+        // Show Ollie reminder: "Still there?"
         setShowDismissPrompt(true);
       }, 15000);
       return () => clearTimeout(timer);
@@ -211,9 +211,9 @@ const ContextMenu: React.FC<ContextMenuProps> = ({
         zIndex: 1000
       }}
     >
-      {/* Jeffrey Avatar */}
-      <div className="jeffrey-avatar">
-        <img src="/assets/jeffrey-curious.png" alt="Jeffrey" />
+      {/* Ollie Avatar */}
+      <div className="ollie-avatar">
+        <img src="/assets/ollie-curious.png" alt="Ollie" />
         <motion.div
           className="speech-bubble"
           animate={{ scale: [1, 1.05, 1] }}
@@ -245,7 +245,7 @@ const ContextMenu: React.FC<ContextMenuProps> = ({
         >
           <input
             type="text"
-            placeholder="Ask Jeffrey anything..."
+            placeholder="Ask Ollie anything..."
             autoFocus
             onKeyDown={(e) => {
               if (e.key === 'Enter') handleSubmitQuestion();
@@ -286,7 +286,7 @@ const getAgeAppropriateActions = (ageGroup: string): MenuAction[] => {
   
   // Ages 8-12
   return [
-    { type: 'ask', icon: '🤔', label: 'Ask Jeffrey', color: '#4ECDC4' },
+    { type: 'ask', icon: '🤔', label: 'Ask Ollie', color: '#4ECDC4' },
     { type: 'flashcard', icon: '🎴', label: 'Make Flashcard', color: '#A259FF' },
     { type: 'quiz', icon: '🎮', label: 'Practice Quiz', color: '#FF6B6B' },
     { type: 'save', icon: '⭐', label: 'Save This', color: '#FFD93D' },
@@ -353,7 +353,7 @@ interface SelectionResultModalProps {
 }
 
 interface SelectionResult {
-  type: 'jeffrey-response' | 'flashcard' | 'quiz';
+  type: 'ollie-response' | 'flashcard' | 'quiz';
   content: any;
   xpEarned: number;
   streakUpdated: boolean;
@@ -389,8 +389,8 @@ const SelectionResultModal: React.FC<SelectionResultModalProps> = ({
       <XPGainAnimation xp={result.xpEarned} />
       
       {/* Result Content */}
-      {result.type === 'jeffrey-response' && (
-        <JeffreyResponseView
+      {result.type === 'ollie-response' && (
+        <OllieResponseView
           question={action.userQuestion}
           answer={result.content.answer}
           selectedText={action.selectedText}
@@ -454,8 +454,8 @@ type SelectionActionType = 'ask' | 'flashcard' | 'quiz' | 'save' | 'read';
 interface SelectionResultData {
   actionType: SelectionActionType;
   
-  // For "Ask Jeffrey"
-  jeffreyResponse?: {
+  // For "Ask Ollie"
+  ollieResponse?: {
     answer: string;
     confidence: number;
     safetyCheckPassed: boolean;
@@ -547,12 +547,12 @@ CREATE TABLE selection_analytics (
 
 ### 5.1 Backend Endpoints
 
-#### **POST /api/selections/ask-jeffrey**
-Handle "Ask Jeffrey" action with text selection.
+#### **POST /api/selections/ask-ollie**
+Handle "Ask Ollie" action with text selection.
 
 ```typescript
 // Request
-interface AskJeffreyRequest {
+interface AskOllieRequest {
   userId: string;
   lessonId: string;
   selectedText: string;
@@ -566,7 +566,7 @@ interface AskJeffreyRequest {
 }
 
 // Response
-interface AskJeffreyResponse {
+interface AskOllieResponse {
   selectionId: string;
   answer: string;
   voiceAudioUrl?: string; // Pre-generated TTS for "Read to Me"
@@ -577,7 +577,7 @@ interface AskJeffreyResponse {
 }
 
 // Implementation
-router.post('/selections/ask-jeffrey', async (req, res) => {
+router.post('/selections/ask-ollie', async (req, res) => {
   const { userId, selectedText, userQuestion, ageGroup } = req.body;
   
   try {
@@ -595,7 +595,7 @@ router.post('/selections/ask-jeffrey', async (req, res) => {
     }
     
     // 2. Build context-aware prompt for Gemini
-    const prompt = buildJeffreyPrompt({
+    const prompt = buildOlliePrompt({
       selectedText,
       selectionContext: req.body.selectionContext,
       userQuestion,
@@ -618,13 +618,13 @@ router.post('/selections/ask-jeffrey', async (req, res) => {
     // 4. Generate TTS audio (for "Read to Me")
     const audioUrl = await generateTTS({
       text: answer,
-      voice: 'jeffrey-friendly',
+      voice: 'ollie-friendly',
       language: 'en'
     });
     
     // 5. Award XP
     const xpAwarded = 5; // Base XP for asking
-    await gamificationService.awardXP(userId, xpAwarded, 'ask-jeffrey');
+    await gamificationService.awardXP(userId, xpAwarded, 'ask-ollie');
     
     // 6. Store selection in database
     const selection = await db.textSelections.create({
@@ -633,7 +633,7 @@ router.post('/selections/ask-jeffrey', async (req, res) => {
       selectedText,
       actionType: 'ask',
       resultData: {
-        jeffreyResponse: { answer, confidence: 0.85, voiceAudioUrl: audioUrl }
+        ollieResponse: { answer, confidence: 0.85, voiceAudioUrl: audioUrl }
       },
       ageGroup
     });
@@ -660,9 +660,9 @@ router.post('/selections/ask-jeffrey', async (req, res) => {
     });
     
   } catch (error) {
-    console.error('Ask Jeffrey error:', error);
+    console.error('Ask Ollie error:', error);
     res.status(500).json({ 
-      error: 'Jeffrey had trouble answering. Try again!' 
+      error: 'Ollie had trouble answering. Try again!' 
     });
   }
 });
@@ -874,10 +874,10 @@ router.post('/selections/save', async (req, res) => {
 
 ### 5.2 Gemini Prompt Engineering
 
-#### **Jeffrey's Response Prompt Template**
+#### **Ollie's Response Prompt Template**
 
 ```typescript
-const buildJeffreyPrompt = ({
+const buildOlliePrompt = ({
   selectedText,
   selectionContext,
   userQuestion,
@@ -888,7 +888,7 @@ const buildJeffreyPrompt = ({
   userQuestion?: string;
   ageGroup: '4-7' | '8-12';
 }): string => {
-  const baseContext = `You are Jeffrey, a friendly AI tutor for children aged ${ageGroup}. A child has selected this text from their lesson:
+  const baseContext = `You are Ollie, a friendly AI tutor for children aged ${ageGroup}. A child has selected this text from their lesson:
 
 "${selectedText}"
 
@@ -912,7 +912,7 @@ Be encouraging and excited!`;
 
 The child asks: "${userQuestion || 'Can you explain this?'}"
 
-Respond as Jeffrey with:
+Respond as Ollie with:
 - Clear, age-appropriate language (8-12 year old level)
 - 2-4 sentences
 - One example or analogy
@@ -961,7 +961,7 @@ export const SelectionProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       
       switch (action.type) {
         case 'ask':
-          response = await api.post('/selections/ask-jeffrey', {
+          response = await api.post('/selections/ask-ollie', {
             userId: user.id,
             lessonId: action.lessonId,
             selectedText: currentSelection.text,
@@ -971,7 +971,7 @@ export const SelectionProvider: React.FC<{ children: React.ReactNode }> = ({ chi
           });
           
           setResult({
-            type: 'jeffrey-response',
+            type: 'ollie-response',
             content: {
               answer: response.data.answer,
               voiceAudioUrl: response.data.voiceAudioUrl
@@ -1341,15 +1341,15 @@ export const notifyParent = async (notification: ParentNotification) => {
   border-top: 12px solid #000;
 }
 
-/* Jeffrey Avatar */
-.jeffrey-avatar {
+/* Ollie Avatar */
+.ollie-avatar {
   display: flex;
   align-items: center;
   gap: 12px;
   margin-bottom: 16px;
 }
 
-.jeffrey-avatar img {
+.ollie-avatar img {
   width: 48px;
   height: 48px;
   border-radius: 50%;
@@ -1595,7 +1595,7 @@ export const notifyParent = async (notification: ParentNotification) => {
 
 // Award XP for different actions
 const XP_REWARDS = {
-  'ask-jeffrey': 5,
+  'ask-ollie': 5,
   'create-flashcard': 10,
   'generate-quiz': 8,
   'save-selection': 3,
@@ -1608,8 +1608,8 @@ const SELECTION_BADGES = [
   {
     id: 'curious-cat',
     name: 'Curious Cat',
-    description: 'Asked Jeffrey 50 questions',
-    requirement: { action: 'ask-jeffrey', count: 50 },
+    description: 'Asked Ollie 50 questions',
+    requirement: { action: 'ask-ollie', count: 50 },
     icon: '🐱',
     xpBonus: 100
   },
@@ -1669,10 +1669,10 @@ const updateStreakForSelection = async (userId: string) => {
 };
 ```
 
-### 9.2 Chat Integration (Jeffrey)
+### 9.2 Chat Integration (Ollie)
 
 ```typescript
-// When user asks Jeffrey from text selection, context flows into chat
+// When user asks Ollie from text selection, context flows into chat
 
 interface ChatMessageFromSelection {
   type: 'selection-question';
@@ -1690,8 +1690,8 @@ interface ChatMessageFromSelection {
 
 // In chat context
 const handleSelectionQuestion = async (message: ChatMessageFromSelection) => {
-  // Jeffrey's response includes context awareness
-  const systemPrompt = `You are Jeffrey. A child just selected text from their lesson "${message.selectionData.lessonTitle}" and asked you about it.
+  // Ollie's response includes context awareness
+  const systemPrompt = `You are Ollie. A child just selected text from their lesson "${message.selectionData.lessonTitle}" and asked you about it.
 
 Selected text: "${message.selectionData.selectedText}"
 
@@ -1714,7 +1714,7 @@ Respond helpfully with context awareness. Reference the lesson naturally.`;
   });
 };
 
-// Button in Jeffrey's response to "Go back to lesson"
+// Button in Ollie's response to "Go back to lesson"
 const returnToLesson = (lessonId: string) => {
   navigate(`/lessons/${lessonId}`, {
     state: { scrollToLastSelection: true }
@@ -1790,7 +1790,7 @@ router.get('/api/parent/analytics/selections/:childId', async (req, res) => {
 **Context Menu**
 - [ ] Menu appears above selection (not below)
 - [ ] Menu position adjusts near screen edges
-- [ ] Jeffrey avatar animates in smoothly
+- [ ] Ollie avatar animates in smoothly
 - [ ] Menu actions render correctly for each age group
 - [ ] Age 4-7: Only 3 actions (Read, Ask, Save)
 - [ ] Age 8-12: All 5 actions (Ask, Flashcard, Quiz, Save, Read)
@@ -1799,8 +1799,8 @@ router.get('/api/parent/analytics/selections/:childId', async (req, res) => {
 - [ ] Menu survives outside taps (forgiving UX)
 
 **Actions**
-- [ ] "Ask Jeffrey" submits question successfully
-- [ ] Jeffrey's response displays in modal
+- [ ] "Ask Ollie" submits question successfully
+- [ ] Ollie's response displays in modal
 - [ ] TTS audio plays for "Read to Me"
 - [ ] Flashcard preview shows correctly
 - [ ] Quiz preview displays with 4 options
@@ -1833,7 +1833,7 @@ router.get('/api/parent/analytics/selections/:childId', async (req, res) => {
 - [ ] XP totals sync with global XP counter
 
 **Chat Integration**
-- [ ] Selection context flows into Jeffrey chat
+- [ ] Selection context flows into Ollie chat
 - [ ] Chat history includes selection-based questions
 - [ ] "Return to lesson" button works from chat
 
@@ -1892,7 +1892,7 @@ router.get('/api/parent/analytics/selections/:childId', async (req, res) => {
 
 **Days 3-4**: ContextMenu component
 - Age-appropriate action buttons
-- Jeffrey avatar integration
+- Ollie avatar integration
 - Menu positioning logic
 - Auto-dismiss timer
 
@@ -1907,13 +1907,13 @@ router.get('/api/parent/analytics/selections/:childId', async (req, res) => {
 
 ### Phase 2: Backend Integration (Week 2)
 **Days 6-7**: API endpoints
-- `/api/selections/ask-jeffrey`
+- `/api/selections/ask-ollie`
 - `/api/selections/create-flashcard`
 - `/api/selections/generate-quiz`
 - `/api/selections/save`
 
 **Days 8-9**: Gemini integration
-- Prompt engineering for Jeffrey responses
+- Prompt engineering for Ollie responses
 - Flashcard generation prompts
 - Quiz generation prompts
 - Safety settings configuration
@@ -1935,7 +1935,7 @@ router.get('/api/parent/analytics/selections/:childId', async (req, res) => {
 - Parent notification system
 
 **Days 13-14**: Result modals
-- Jeffrey response view with TTS
+- Ollie response view with TTS
 - Flashcard preview modal
 - Quiz preview modal
 - XP gain animations
@@ -1961,7 +1961,7 @@ router.get('/api/parent/analytics/selections/:childId', async (req, res) => {
 - Release to 10-20 test families
 - Gather feedback on UX
 - Monitor error rates
-- Iterate on Jeffrey's response quality
+- Iterate on Ollie's response quality
 
 **Day 20**: Launch
 - Deploy to production
@@ -1979,7 +1979,7 @@ router.get('/api/parent/analytics/selections/:childId', async (req, res) => {
 - 1 Frontend Developer (React/TypeScript)
 - 1 Backend Developer (Node.js/PostgreSQL)
 - 0.5 AI Engineer (Gemini prompt engineering)
-- 0.25 Designer (animations, Jeffrey avatar states)
+- 0.25 Designer (animations, Ollie avatar states)
 
 **Dependencies**:
 - Gemini API access (already have)
@@ -2007,10 +2007,10 @@ const SELECTION_METRICS = [
 ];
 
 const ACTION_SPECIFIC_METRICS = {
-  'ask-jeffrey': [
-    'jeffrey_response_time',      // API latency
-    'jeffrey_response_length',    // Word count
-    'jeffrey_response_played',    // TTS triggered
+  'ask-ollie': [
+    'ollie_response_time',      // API latency
+    'ollie_response_length',    // Word count
+    'ollie_response_played',    // TTS triggered
     'custom_question_used',       // Free-form question (8-12 only)
   ],
   'flashcard': [
@@ -2061,13 +2061,13 @@ WHERE created_at >= NOW() - INTERVAL '7 days'
 GROUP BY age_group, action_type
 ORDER BY age_group, count DESC;
 
-// Jeffrey response quality (by parent ratings, if implemented)
+// Ollie response quality (by parent ratings, if implemented)
 SELECT 
   AVG(parent_rating) as avg_rating,
   COUNT(*) as total_rated
 FROM text_selections
 WHERE action_type = 'ask'
-  AND result_data->'jeffreyResponse'->>'parentRating' IS NOT NULL;
+  AND result_data->'ollieResponse'->>'parentRating' IS NOT NULL;
 
 // Content filter effectiveness
 SELECT 
@@ -2087,7 +2087,7 @@ GROUP BY DATE(created_at);
 
 **Smart Highlighting** (Phase 5)
 - Auto-highlight key concepts as child reads
-- Tap highlighted text to see Jeffrey's explanation
+- Tap highlighted text to see Ollie's explanation
 - "Difficult word detector" based on reading level
 
 **Collaborative Learning** (Phase 6)
@@ -2101,7 +2101,7 @@ GROUP BY DATE(created_at);
 - Suggest related lessons based on interests
 
 **Voice Selection** (Phase 8)
-- "Jeffrey, what does [word] mean?" → Auto-highlights
+- "Ollie, what does [word] mean?" → Auto-highlights
 - Voice commands: "Make this a flashcard"
 - Hands-free learning for younger kids
 
@@ -2118,8 +2118,8 @@ GROUP BY DATE(created_at);
 - Metric: Engagement duration
 
 **Test 3: XP Rewards**
-- Variant A: +5 XP for "Ask Jeffrey"
-- Variant B: +10 XP for "Ask Jeffrey"
+- Variant A: +5 XP for "Ask Ollie"
+- Variant B: +10 XP for "Ask Ollie"
 - Metric: Questions asked per session
 
 ---
@@ -2130,7 +2130,7 @@ This feature is considered **successful** when:
 
 1. **Adoption**: 60%+ of active users use text selection at least once per week
 2. **Engagement**: Average 3-5 selections per lesson (indicates active reading)
-3. **Quality**: 90%+ of Jeffrey responses rated "helpful" by parents
+3. **Quality**: 90%+ of Ollie responses rated "helpful" by parents
 4. **Safety**: 100% of flagged content reviewed by parents within 24 hours
 5. **Performance**: p95 response time <3 seconds for all actions
 6. **Retention**: Users who engage with selection have 20%+ higher 7-day retention
@@ -2190,7 +2190,7 @@ This feature is considered **successful** when:
 4. Fix and redeploy
 5. Resume gradual rollout
 
-**If Jeffrey response quality <80% satisfaction:**
+**If Ollie response quality <80% satisfaction:**
 1. Revert to simpler prompts
 2. Increase Gemini temperature
 3. Add more examples to prompts
@@ -2203,11 +2203,11 @@ This feature is considered **successful** when:
 ### In-App Tooltip (First Use)
 
 ```
-🎉 New Feature: Ask Jeffrey Anything!
+🎉 New Feature: Ask Ollie Anything!
 
 Your child can now:
 1. Tap and hold any text while reading
-2. Ask Jeffrey questions
+2. Ask Ollie questions
 3. Create flashcards instantly
 4. Practice with quizzes
 
@@ -2218,27 +2218,27 @@ It's like having a tutor right in the lesson!
 
 ### Help Center Article
 
-**Title**: "How to Use Text Selection & Ask Jeffrey"
+**Title**: "How to Use Text Selection & Ask Ollie"
 
 **Content**:
 Your child can interact with any text in their lessons by selecting it. Here's how:
 
 **For Ages 4-7:**
 - Tap any word to hear it read aloud
-- Jeffrey will explain what it means
+- Ollie will explain what it means
 - Save favorite words with the star button
 
 **For Ages 8-12:**
 - Tap and drag to select text
 - Choose from 5 actions:
-  - 🤔 Ask Jeffrey a question
+  - 🤔 Ask Ollie a question
   - 🎴 Make a flashcard
   - 🎮 Create a practice quiz
   - ⭐ Save to collection
   - 🔊 Hear it read aloud
 
 **Safety Note:**
-All content is filtered for age-appropriateness. If Jeffrey detects anything that needs review, you'll get a notification in your Parent Dashboard.
+All content is filtered for age-appropriateness. If Ollie detects anything that needs review, you'll get a notification in your Parent Dashboard.
 
 **Tips:**
 - Encourage your child to ask "why" and "how" questions
@@ -2249,7 +2249,7 @@ All content is filtered for age-appropriateness. If Jeffrey detects anything tha
 
 ## 18. Conclusion
 
-This feature transforms passive reading into active learning by allowing children to satisfy their curiosity instantly. By integrating Jeffrey's AI tutoring with text selection, we create a "curiosity loop" that keeps children engaged and asking questions.
+This feature transforms passive reading into active learning by allowing children to satisfy their curiosity instantly. By integrating Ollie's AI tutoring with text selection, we create a "curiosity loop" that keeps children engaged and asking questions.
 
 **Key Innovations:**
 1. **Age-appropriate interactions** (simpler for 4-7, richer for 8-12)

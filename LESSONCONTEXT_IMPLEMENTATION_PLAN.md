@@ -1,7 +1,7 @@
 # LessonContext Implementation Plan
 ## K-6 AI Learning Platform - Core Learning Loop Foundation
 
-**Purpose:** Implement the LessonContext system that enables global lesson state management, connecting uploaded content to the chat interface (Jeffrey AI tutor) and the LessonView component.
+**Purpose:** Implement the LessonContext system that enables global lesson state management, connecting uploaded content to the chat interface (Ollie AI tutor) and the LessonView component.
 
 **Estimated Time:** 2-4 hours for core implementation
 
@@ -76,7 +76,7 @@ src/
 │          ▼                         ▼                         ▼          │
 │   ┌─────────────┐          ┌─────────────┐          ┌─────────────┐    │
 │   │ StudyPage   │          │ LessonView  │          │ChatInterface│    │
-│   │ (orchestr.) │          │ (display)   │          │ (Jeffrey)   │    │
+│   │ (orchestr.) │          │ (display)   │          │ (Ollie)   │    │
 │   └─────────────┘          └─────────────┘          └─────────────┘    │
 └─────────────────────────────────────────────────────────────────────────┘
 ```
@@ -86,7 +86,7 @@ src/
 2. **Processing updates** via `updateProgress()` and `setProcessingStage()`
 3. **Completion calls** `addLesson()` → automatically sets as current lesson
 4. **LessonView** reads `currentLesson` to display content
-5. **ChatInterface** reads `currentLesson` to provide context to Jeffrey
+5. **ChatInterface** reads `currentLesson` to provide context to Ollie
 
 ---
 
@@ -119,7 +119,7 @@ interface Lesson {
   // Structured content
   rawText: string;               // Original extracted text
   chapters: Chapter[];           // AI-organized sections
-  keyConceptsForchat: string[];  // For Jeffrey's context
+  keyConceptsForchat: string[];  // For Ollie's context
   vocabulary: VocabWord[];       // Key terms with definitions
   
   // Learning aids
@@ -186,19 +186,19 @@ export const PROCESSING_STAGES = {
   uploading: {
     key: 'uploading',
     label: 'Uploading your lesson...',
-    childLabel: '📤 Sending to Jeffrey...',
+    childLabel: '📤 Sending to Ollie...',
     progress: 15,
   },
   extracting: {
     key: 'extracting',
     label: 'Reading the content...',
-    childLabel: '📖 Jeffrey is reading...',
+    childLabel: '📖 Ollie is reading...',
     progress: 35,
   },
   analyzing: {
     key: 'analyzing',
     label: 'Understanding the lesson...',
-    childLabel: '🤔 Jeffrey is thinking...',
+    childLabel: '🤔 Ollie is thinking...',
     progress: 60,
   },
   generating: {
@@ -223,7 +223,7 @@ export const PROCESSING_STAGES = {
 
 // Fun loading messages for kids (rotate during processing)
 export const LOADING_MESSAGES = [
-  "Jeffrey is putting on his reading glasses... 🤓",
+  "Ollie is putting on his reading glasses... 🤓",
   "Turning pages really fast... 📚",
   "Looking for the important stuff... 🔍",
   "Making flashcards in his head... 🧠",
@@ -816,7 +816,7 @@ export function useLessonActions() {
   }, [startProcessing, setProcessingStage, updateProgress, addLesson, setError]);
 
   /**
-   * Get context string for chat (Jeffrey).
+   * Get context string for chat (Ollie).
    * Returns a formatted string with lesson info for AI context.
    */
   const getChatContext = useCallback(() => {
@@ -923,7 +923,7 @@ const ChatInterface = ({ demoMode = false }) => {
   
   const { getChatContext, addChatMessage } = useLessonActions();
   
-  // Use lesson context for Jeffrey's awareness
+  // Use lesson context for Ollie's awareness
   const lessonContext = getChatContext();
   
   // Suggested questions based on lesson
@@ -999,7 +999,7 @@ const LessonView = () => {
           👋 Hi there!
         </h2>
         <p className="text-gray-600 mb-6">
-          Upload a lesson to start learning with Jeffrey!
+          Upload a lesson to start learning with Ollie!
         </p>
         {/* Upload button will be added here */}
       </div>
@@ -1065,7 +1065,7 @@ const StudyPage = () => {
         <LessonView />
       </div>
       
-      {/* Right: Chat with Jeffrey */}
+      {/* Right: Chat with Ollie */}
       <div className="w-1/2 flex flex-col">
         <ChatInterface demoMode={!currentLesson && !isProcessing} />
       </div>
@@ -1181,7 +1181,7 @@ deleteLesson(lessonId);
 
 1. **Upload Flow Components** (UploadModal, FileDropzone, etc.)
 2. **Gemini Integration** (useGemini hook for AI processing)
-3. **HighlightableContent** (select text → ask Jeffrey)
+3. **HighlightableContent** (select text → ask Ollie)
 4. **GamificationContext** (XP, streaks, badges)
 
 ---

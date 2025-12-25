@@ -39,8 +39,8 @@ import {
   MessageCircle,
 } from 'lucide-react';
 
-// Jeffrey Avatar Component
-const JeffreyAvatar = ({ size = 'md', animate = false }) => {
+// Ollie Avatar Component
+const OllieAvatar = ({ size = 'md', animate = false }) => {
   const sizeClasses = {
     sm: 'w-8 h-8',
     md: 'w-12 h-12',
@@ -51,8 +51,8 @@ const JeffreyAvatar = ({ size = 'md', animate = false }) => {
   return (
     <div className={`${sizeClasses[size]} rounded-full overflow-hidden flex-shrink-0 border-2 border-teacher-gold/20 bg-teacher-paper`}>
       <img
-        src="/assets/images/jeffrey-avatar.png"
-        alt="Jeffrey"
+        src="/assets/images/ollie-avatar.png"
+        alt="Ollie"
         className={`w-full h-full object-cover ${animate ? 'animate-pulse' : ''}`}
       />
     </div>
@@ -760,7 +760,7 @@ const AudioUpdatesPage = () => {
             className="teacher-card p-12 text-center"
           >
             <div className="relative w-24 h-24 mx-auto mb-6">
-              <JeffreyAvatar size="xl" />
+              <OllieAvatar size="xl" />
               <div className="absolute -bottom-1 -right-1 w-8 h-8 rounded-full bg-teacher-gold flex items-center justify-center shadow-lg">
                 <Mic className="w-4 h-4 text-white" />
               </div>

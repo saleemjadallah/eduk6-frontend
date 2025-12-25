@@ -25,7 +25,7 @@ const TeacherTestimonialsSection = () => {
       rating: 5,
     },
     {
-      quote: "I was skeptical about AI tools, but Jeffrey feels like having a teaching assistant. The lessons are actually good—aligned to standards and engaging. My prep time dropped by 70%.",
+      quote: "I was skeptical about AI tools, but Ollie feels like having a teaching assistant. The lessons are actually good—aligned to standards and engaging. My prep time dropped by 70%.",
       name: 'Jennifer Lee',
       role: 'Special Education Teacher',
       school: 'Oak Park Academy, Chicago IL',
@@ -34,7 +34,7 @@ const TeacherTestimonialsSection = () => {
       rating: 5,
     },
     {
-      quote: "My students are more engaged than ever with the infographics and visual materials. I used to spend hours making them in Canva. Now Jeffrey does it in 30 seconds.",
+      quote: "My students are more engaged than ever with the infographics and visual materials. I used to spend hours making them in Canva. Now Ollie does it in 30 seconds.",
       name: 'David Kim',
       role: 'High School History',
       school: 'Central High School, Seattle WA',

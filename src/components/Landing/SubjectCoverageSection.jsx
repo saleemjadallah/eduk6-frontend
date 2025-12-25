@@ -118,7 +118,7 @@ const SubjectCoverageSection = () => {
           <div className="inline-flex items-center gap-3 bg-nanobanana-yellow/20 px-6 py-3 rounded-full border-2 border-nanobanana-yellow">
             <span className="text-2xl">+</span>
             <span className="font-bold text-gray-700">
-              Upload any topic and Jeffrey will help!
+              Upload any topic and Ollie will help!
             </span>
           </div>
         </motion.div>

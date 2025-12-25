@@ -9,7 +9,7 @@ import { generateChatResponse, generateFlashcards, generateQuiz } from '../servi
  * useContentActions - Hook for handling selection-based actions
  *
  * Provides handlers for:
- * - Asking Jeffrey about selected text
+ * - Asking Ollie about selected text
  * - Creating flashcards from selection
  * - Generating quizzes from selection
  * - Copying text
@@ -23,7 +23,7 @@ export function useContentActions() {
 
   // XP rewards for actions
   const XP_REWARDS = {
-    ask_jeffrey: 5,
+    ask_ollie: 5,
     create_flashcard: 10,
     generate_quiz: 8,
     highlight: 2,
@@ -34,9 +34,9 @@ export function useContentActions() {
   };
 
   /**
-   * Send selected text to chat with Jeffrey
+   * Send selected text to chat with Ollie
    */
-  const askJeffrey = useCallback(async (selectedText, question) => {
+  const askOllie = useCallback(async (selectedText, question) => {
     try {
       const context = {
         lessonTitle: currentLesson?.title,
@@ -51,7 +51,7 @@ export function useContentActions() {
       const response = await generateChatResponse(prompt, context);
 
       // Award XP
-      earnXP?.(XP_REWARDS.ask_jeffrey, 'Asked Jeffrey a question');
+      earnXP?.(XP_REWARDS.ask_ollie, 'Asked Ollie a question');
       updateStatistics?.({ questionsAnswered: 1 });
       updateDailyChallengeProgress?.('questionAnswered');
 
@@ -70,10 +70,10 @@ export function useContentActions() {
       return {
         success: true,
         response,
-        xpEarned: XP_REWARDS.ask_jeffrey,
+        xpEarned: XP_REWARDS.ask_ollie,
       };
     } catch (error) {
-      console.error('Error asking Jeffrey:', error);
+      console.error('Error asking Ollie:', error);
       return { success: false, error };
     }
   }, [currentLesson, earnXP, updateStatistics, updateDailyChallengeProgress, chatContext]);
@@ -211,8 +211,8 @@ export function useContentActions() {
     const text = selection?.text || '';
 
     switch (actionId) {
-      case 'ask_jeffrey':
-        return askJeffrey(text);
+      case 'ask_ollie':
+        return askOllie(text);
 
       case 'create_flashcard':
         return createFlashcardsFromSelection(text);
@@ -248,7 +248,7 @@ export function useContentActions() {
         return { success: false, error: `Unknown action: ${actionId}` };
     }
   }, [
-    askJeffrey,
+    askOllie,
     createFlashcardsFromSelection,
     generateQuizFromSelection,
     explainMore,
@@ -259,7 +259,7 @@ export function useContentActions() {
 
   return {
     handleAction,
-    askJeffrey,
+    askOllie,
     createFlashcardsFromSelection,
     generateQuizFromSelection,
     copyText,

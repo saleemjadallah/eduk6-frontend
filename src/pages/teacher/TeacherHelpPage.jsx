@@ -31,7 +31,7 @@ const FAQ_ITEMS = [
     questions: [
       {
         q: 'How do I create my first lesson?',
-        a: 'From your dashboard, click "Create Lesson" or go to the Create page. You can either describe your topic in the chat, upload a PDF/PowerPoint file, or paste existing content. Jeffrey, your AI assistant, will help generate a complete lesson with objectives, vocabulary, activities, and more.',
+        a: 'From your dashboard, click "Create Lesson" or go to the Create page. You can either describe your topic in the chat, upload a PDF/PowerPoint file, or paste existing content. Ollie, your AI assistant, will help generate a complete lesson with objectives, vocabulary, activities, and more.',
       },
       {
         q: 'What file types can I upload?',

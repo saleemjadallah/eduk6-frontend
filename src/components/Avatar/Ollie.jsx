@@ -1,9 +1,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 
-// Legacy export - use Ollie.jsx instead
-// This file is kept for backwards compatibility
-const Jeffrey = ({ isTyping = false, size = 'default' }) => {
+const Ollie = ({ isTyping = false, size = 'default' }) => {
   // Size variants
   const sizeClasses = {
     small: 'w-10 h-10',
@@ -66,6 +64,4 @@ const Jeffrey = ({ isTyping = false, size = 'default' }) => {
   );
 };
 
-// Re-export as Ollie for backwards compatibility
-export { Jeffrey as Ollie };
-export default Jeffrey;
+export default Ollie;

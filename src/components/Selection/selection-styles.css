@@ -138,6 +138,7 @@
     border-bottom: 2px solid #f0f0f0;
 }
 
+.ollie-mini,
 .jeffrey-mini {
     width: 28px;
     height: 28px;
@@ -272,9 +273,10 @@
 }
 
 /* ============================================
-   JEFFREY AVATAR
+   OLLIE AVATAR
    ============================================ */
 
+.ollie-avatar,
 .jeffrey-avatar {
     display: flex;
     align-items: center;
@@ -282,6 +284,7 @@
     margin-bottom: 12px;
 }
 
+.ollie-image,
 .jeffrey-image {
     flex-shrink: 0;
 }
@@ -525,9 +528,10 @@
 }
 
 /* ============================================
-   JEFFREY RESPONSE VIEW
+   OLLIE RESPONSE VIEW
    ============================================ */
 
+.ollie-response-view,
 .jeffrey-response-view {
     padding: 8px 0;
 }

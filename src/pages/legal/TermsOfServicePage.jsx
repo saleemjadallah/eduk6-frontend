@@ -205,7 +205,7 @@ const TermsOfServicePage = () => {
                 <li><strong>Interactive Lessons:</strong> Age-appropriate formatting with visual elements</li>
                 <li><strong>Multiple Child Profiles:</strong> Manage learning for multiple children (subscription tier dependent)</li>
                 <li><strong>Progress Tracking:</strong> Monitor learning activity and lesson completion</li>
-                <li><strong>AI Tutor (Jeffrey):</strong> Interactive AI-powered tutoring character for personalized assistance</li>
+                <li><strong>AI Tutor (Ollie):</strong> Interactive AI-powered tutoring character for personalized assistance</li>
                 <li><strong>Parent Dashboard:</strong> Comprehensive oversight of all child activities and content</li>
               </ul>
 
@@ -310,7 +310,7 @@ const TermsOfServicePage = () => {
                 <li>First name and age (for personalization)</li>
                 <li>Grade level (for age-appropriate content)</li>
                 <li>Learning activity data (progress, lesson completion, quiz results)</li>
-                <li>AI chat interactions with Jeffrey (for educational purposes only)</li>
+                <li>AI chat interactions with Ollie (for educational purposes only)</li>
                 <li>Content uploaded for study assistance</li>
               </ul>
 
@@ -350,7 +350,7 @@ const TermsOfServicePage = () => {
               <ul className="list-disc pl-6 text-gray-600 mb-4 space-y-1">
                 <li>All child activity and learning history</li>
                 <li>AI-generated content shown to their child</li>
-                <li>Chat interactions with the AI tutor Jeffrey</li>
+                <li>Chat interactions with the AI tutor Ollie</li>
                 <li>Uploaded educational materials</li>
                 <li>Progress and assessment data</li>
                 <li>Screen time and usage patterns</li>
@@ -695,7 +695,7 @@ const TermsOfServicePage = () => {
               <p className="text-gray-600 mb-2">All rights, title, and interest in and to the Service, including:</p>
               <ul className="list-disc pl-6 text-gray-600 mb-4 space-y-1">
                 <li>Platform design and functionality</li>
-                <li>AI tutor character (Jeffrey) and personality</li>
+                <li>AI tutor character (Ollie) and personality</li>
                 <li>Proprietary algorithms and models</li>
                 <li>Trademarks, logos, and branding</li>
                 <li>Interface design and user experience</li>

@@ -117,8 +117,8 @@ const SignUpStep = ({ isSignIn = false, onComplete, onSwitchToSignIn, onSwitchTo
         <h2>{isSignIn ? 'Welcome Back!' : 'Create Your Account'}</h2>
         <p className="subtitle">
           {isSignIn
-            ? 'Sign in to continue learning with Jeffrey'
-            : "Join Orbit Learn and help your child learn with Jeffrey"}
+            ? 'Sign in to continue learning with Ollie'
+            : "Join Orbit Learn and help your child learn with Ollie"}
         </p>
       </div>
 

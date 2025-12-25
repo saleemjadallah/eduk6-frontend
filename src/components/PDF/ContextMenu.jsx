@@ -50,7 +50,7 @@ const ContextMenu = ({ position, selection, onClose, onSendToChat, onCreateFlash
             id: 'chat',
             icon: <MessageCircle className="w-5 h-5" />,
             emoji: '💬',
-            label: 'Ask Jeffrey',
+            label: 'Ask Ollie',
             description: 'Chat about this text',
             color: 'bg-nanobanana-blue',
             handler: async () => {

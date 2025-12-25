@@ -262,7 +262,7 @@ class GeminiService {
     }
 
     if (query.includes('hi') || query.includes('hello') || query.includes('hey')) {
-      return "Hi there, friend! I'm Jeffrey, your learning buddy! I'm so excited to learn with you today. What would you like to explore? We could talk about your lessons, practice some problems, or just chat about something cool you've learned!";
+      return "Hi there, friend! I'm Ollie, your learning buddy! I'm so excited to learn with you today. What would you like to explore? We could talk about your lessons, practice some problems, or just chat about something cool you've learned!";
     }
 
     if (query.includes('flashcard') || query.includes('quiz')) {

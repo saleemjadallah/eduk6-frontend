@@ -7,7 +7,7 @@ const TestimonialsSection = () => {
 
   const testimonials = [
     {
-      quote: "My daughter used to dread homework time. Now she can't wait to chat with Jeffrey! Her math grades have improved so much.",
+      quote: "My daughter used to dread homework time. Now she can't wait to chat with Ollie! Her math grades have improved so much.",
       author: 'Sarah M.',
       role: 'Parent of Emma, 3rd Grade',
       rating: 5,
@@ -28,7 +28,7 @@ const TestimonialsSection = () => {
       color: '#FFD700',
     },
     {
-      quote: "Jeffrey explains things in a way that just clicks with my son. He went from struggling to confident in reading!",
+      quote: "Ollie explains things in a way that just clicks with my son. He went from struggling to confident in reading!",
       author: 'David R.',
       role: 'Parent of Liam, 2nd Grade',
       rating: 5,

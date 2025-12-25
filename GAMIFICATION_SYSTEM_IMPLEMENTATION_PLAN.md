@@ -2200,7 +2200,7 @@ const StudyPage = () => {
                 Ready to Learn?
               </h2>
               <p className="text-gray-600 mb-6 max-w-md">
-                Upload a lesson to get started! Jeffrey is excited to help you learn.
+                Upload a lesson to get started! Ollie is excited to help you learn.
               </p>
               <UploadButton 
                 onClick={() => setIsUploadModalOpen(true)}

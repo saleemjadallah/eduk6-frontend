@@ -43,7 +43,7 @@ const PricingSection = () => {
       features: [
         '1 child profile',
         '10 lessons per month',
-        'Chat with Jeffrey AI',
+        'Chat with Ollie AI',
         'Basic flashcards & quizzes',
         'Email support',
       ],
@@ -66,7 +66,7 @@ const PricingSection = () => {
       features: [
         '2 child profiles',
         'Unlimited lessons',
-        'Advanced Jeffrey AI',
+        'Advanced Ollie AI',
         'Unlimited flashcards & quizzes',
         'Full parent dashboard',
         'Progress analytics',

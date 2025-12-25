@@ -1,7 +1,7 @@
 # Enhanced LessonView with Real Content Rendering
 ## K-6 AI Learning Platform - Complete Interactive Learning Experience
 
-**Purpose:** Transform LessonView from a placeholder component into a fully functional content viewer that renders PDFs, images, and text with interactive features including text selection, highlighting, context menus, and seamless chat integration with Jeffrey AI tutor.
+**Purpose:** Transform LessonView from a placeholder component into a fully functional content viewer that renders PDFs, images, and text with interactive features including text selection, highlighting, context menus, and seamless chat integration with Ollie AI tutor.
 
 **Target Completion:** 8-12 developer hours for complete implementation
 
@@ -26,7 +26,7 @@
 ### Design Philosophy
 - **Content-First**: Display uploaded content (PDFs, images, text) prominently
 - **Interaction-Rich**: Enable text selection, highlighting, and contextual actions
-- **Jeffrey Integration**: Seamless connection between content and AI tutor
+- **Ollie Integration**: Seamless connection between content and AI tutor
 - **Child-Friendly**: Large touch targets, fun animations, clear feedback
 - **Progressive Enhancement**: Start with viewing, add interactivity layer by layer
 
@@ -40,7 +40,7 @@
 │   │                        LessonView Container                          │ │
 │   │                                                                      │ │
 │   │   ┌────────────────┐  ┌────────────────┐  ┌────────────────┐      │ │
-│   │   │  Content Type  │  │   Interactive  │  │     Jeffrey    │      │ │
+│   │   │  Content Type  │  │   Interactive  │  │     Ollie    │      │ │
 │   │   │    Detector    │  │     Layer      │  │   Connection   │      │ │
 │   │   └────────────────┘  └────────────────┘  └────────────────┘      │ │
 │   │            │                   │                    │               │ │
@@ -59,7 +59,7 @@
 │     ┌─────────────────────┐  ┌─────────────────┐  ┌────────────────┐     │
 │     │   Image Viewer      │  │  Context Menu   │  │  Flashcard     │     │
 │     │                     │  │                 │  │   Generator    │     │
-│     │  • Pinch zoom       │  │ • Ask Jeffrey   │  │                │     │
+│     │  • Pinch zoom       │  │ • Ask Ollie   │  │                │     │
 │     │  • Pan/drag         │  │ • Create Card   │  │ • AI-powered   │     │
 │     │  • Annotations      │  │ • Explain More  │  │ • Spaced Rep   │     │
 │     │  • Captions         │  │ • Make Quiz     │  │ • Review       │     │
@@ -100,7 +100,7 @@ LessonView/
 │   ├── ContextMenu
 │   └── SelectionPopup
 ├── ActionHandlers
-│   ├── AskJeffreyHandler
+│   ├── AskOllieHandler
 │   ├── FlashcardGenerator
 │   ├── QuizGenerator
 │   └── ExplainerRequest
@@ -290,7 +290,7 @@ interface BoundingRect {
 type HighlightColor = 'yellow' | 'green' | 'blue' | 'pink' | 'orange';
 
 interface HighlightAction {
-  type: 'asked_jeffrey' | 'created_flashcard' | 'made_quiz' | 'requested_video';
+  type: 'asked_ollie' | 'created_flashcard' | 'made_quiz' | 'requested_video';
   timestamp: string;
   result?: any;                    // Store result data
 }
@@ -351,7 +351,7 @@ import { useContentActions } from '../../hooks/useContentActions';
  * - Multi-format support (PDF, image, text, YouTube)
  * - Text selection and highlighting
  * - Context menus for actions
- * - Jeffrey chat integration
+ * - Ollie chat integration
  * - Progress tracking
  */
 const LessonView = () => {
@@ -426,7 +426,7 @@ const LessonView = () => {
             Getting Your Lesson Ready!
           </h2>
           <p className="text-gray-600">
-            Jeffrey is preparing something awesome...
+            Ollie is preparing something awesome...
           </p>
         </div>
       </motion.div>
@@ -1226,7 +1226,7 @@ export default ContextMenuItem;
 
 ## 7. Integration Points
 
-### 7.1 Chat Integration with Jeffrey
+### 7.1 Chat Integration with Ollie
 
 **Update ChatInterface to accept selected text:**
 
@@ -1261,7 +1261,7 @@ import { X, Sparkles } from 'lucide-react';
 /**
  * SelectedTextPreview - Shows selected text at top of chat
  */
-const SelectedTextPreview = ({ selection, onClear, onAskJeffrey }) => {
+const SelectedTextPreview = ({ selection, onClear, onAskOllie }) => {
   if (!selection) return null;
 
   return (
@@ -1292,10 +1292,10 @@ const SelectedTextPreview = ({ selection, onClear, onAskJeffrey }) => {
           <motion.button
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
-            onClick={onAskJeffrey}
+            onClick={onAskOllie}
             className="px-3 py-1 bg-nanobanana-purple text-white border-2 border-black rounded-lg font-bold text-xs shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]"
           >
-            Ask Jeffrey
+            Ask Ollie
           </motion.button>
 
           <motion.button
@@ -1558,10 +1558,10 @@ export const TOUCH_TARGETS = {
 
 ### 9.4 Action Tests
 
-- [ ] **Ask Jeffrey**
+- [ ] **Ask Ollie**
   - [ ] Selection sends to chat
   - [ ] Chat populates with context
-  - [ ] Jeffrey responds appropriately
+  - [ ] Ollie responds appropriately
   - [ ] XP awarded for action
 
 - [ ] **Create Flashcard**
@@ -1591,7 +1591,7 @@ export const TOUCH_TARGETS = {
 - [ ] **Chat Integration**
   - [ ] Selected text appears in chat
   - [ ] Chat maintains conversation history
-  - [ ] Jeffrey's responses are contextual
+  - [ ] Ollie's responses are contextual
 
 ### 9.6 Child Safety Tests
 
@@ -1691,7 +1691,7 @@ cp node_modules/pdfjs-dist/build/pdf.worker.min.js public/
 **Step 12:** Connect to Chat
 - [ ] SelectedTextPreview component
 - [ ] Update ChatInterface
-- [ ] Test Jeffrey responses
+- [ ] Test Ollie responses
 
 **Step 13:** Connect to Flashcards
 - [ ] useFlashcardGeneration hook
@@ -1781,8 +1781,8 @@ import { MessageCircle, BookOpen, HelpCircle, Video, Copy } from 'lucide-react';
 
 export const CONTEXT_MENU_ACTIONS = [
   {
-    id: 'ask_jeffrey',
-    label: 'Ask Jeffrey',
+    id: 'ask_ollie',
+    label: 'Ask Ollie',
     description: 'Chat about this text',
     emoji: '💬',
     icon: MessageCircle,
@@ -1848,7 +1848,7 @@ This implementation is complete when:
 2. ✅ Images display with zoom/pan controls
 3. ✅ Text selections trigger context menu
 4. ✅ Highlights persist across sessions
-5. ✅ "Ask Jeffrey" sends text to chat
+5. ✅ "Ask Ollie" sends text to chat
 6. ✅ Flashcard generation works
 7. ✅ XP rewards trigger for actions
 8. ✅ All child safety checks pass

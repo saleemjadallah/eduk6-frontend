@@ -30,18 +30,18 @@ const XPGainAnimation = ({ xp }) => {
 };
 
 /**
- * Jeffrey's Response View
+ * Ollie's Response View
  */
-const JeffreyResponseView = ({ question, answer, selectedText, imageData, mimeType }) => {
+const OllieResponseView = ({ question, answer, selectedText, imageData, mimeType }) => {
     return (
-        <div className="jeffrey-response-view">
-            {/* Jeffrey Avatar */}
+        <div className="ollie-response-view">
+            {/* Ollie Avatar */}
             <div className="flex items-center gap-3 mb-4">
                 <div className="w-14 h-14 bg-gradient-to-br from-blue-400 to-purple-500 rounded-full border-3 border-black flex items-center justify-center text-3xl shadow-lg">
                     🤓
                 </div>
                 <div>
-                    <h3 className="font-bold text-lg">Jeffrey says:</h3>
+                    <h3 className="font-bold text-lg">Ollie says:</h3>
                     {question && (
                         <p className="text-sm text-gray-500">You asked: "{question}"</p>
                     )}
@@ -66,11 +66,11 @@ const JeffreyResponseView = ({ question, answer, selectedText, imageData, mimeTy
                 >
                     <div className="bg-gradient-to-r from-purple-100 to-pink-100 px-3 py-2 flex items-center gap-2">
                         <Sparkles className="w-4 h-4 text-purple-500" />
-                        <span className="text-sm font-bold text-purple-700">Jeffrey drew this for you!</span>
+                        <span className="text-sm font-bold text-purple-700">Ollie drew this for you!</span>
                     </div>
                     <img
                         src={`data:${mimeType || 'image/png'};base64,${imageData}`}
-                        alt="Jeffrey's drawing"
+                        alt="Ollie's drawing"
                         className="w-full"
                     />
                 </motion.div>
@@ -383,8 +383,8 @@ const SelectionResultModal = ({ result, onClose }) => {
 
                 {/* Result Content */}
                 <div className="result-content mt-4">
-                    {result.type === 'jeffrey-response' && (
-                        <JeffreyResponseView
+                    {result.type === 'ollie-response' && (
+                        <OllieResponseView
                             question={result.content.question}
                             answer={result.content.answer}
                             selectedText={result.content.selectedText}

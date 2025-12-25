@@ -320,7 +320,7 @@ const ChildDashboard = () => {
                         <span className="text-5xl">📚</span>
                     </div>
                     <h2 className="text-2xl font-bold font-comic mb-2">No lessons yet!</h2>
-                    <p className="text-gray-600 mb-6">Upload your first lesson to start learning with Jeffrey</p>
+                    <p className="text-gray-600 mb-6">Upload your first lesson to start learning with Ollie</p>
                     <button
                         onClick={handleStartNewLesson}
                         className="inline-flex items-center gap-2 bg-nanobanana-green text-white font-bold px-6 py-3 rounded-xl border-4 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] transition-all"

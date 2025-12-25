@@ -9,19 +9,19 @@ export const PROCESSING_STAGES = {
   uploading: {
     key: 'uploading',
     label: 'Uploading your lesson...',
-    childLabel: '📤 Sending to Jeffrey...',
+    childLabel: '📤 Sending to Ollie...',
     progress: 15,
   },
   extracting: {
     key: 'extracting',
     label: 'Reading the content...',
-    childLabel: '📖 Jeffrey is reading...',
+    childLabel: '📖 Ollie is reading...',
     progress: 35,
   },
   analyzing: {
     key: 'analyzing',
     label: 'Understanding the lesson...',
-    childLabel: '🤔 Jeffrey is thinking...',
+    childLabel: '🤔 Ollie is thinking...',
     progress: 60,
   },
   generating: {
@@ -46,7 +46,7 @@ export const PROCESSING_STAGES = {
 
 // Fun loading messages for kids (rotate during processing)
 export const LOADING_MESSAGES = [
-  "Jeffrey is putting on his reading glasses... 🤓",
+  "Ollie is putting on his reading glasses... 🤓",
   "Turning pages really fast... 📚",
   "Looking for the important stuff... 🔍",
   "Making flashcards in his head... 🧠",

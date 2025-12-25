@@ -64,12 +64,12 @@ const EmptyState = ({
           {hasLessons ? (
             <>
               Pick a lesson from your library, or upload something new!
-              Jeffrey is ready to help you learn.
+              Ollie is ready to help you learn.
             </>
           ) : (
             <>
               Upload a PDF, image, or YouTube video to start learning!
-              Jeffrey will help you understand everything.
+              Ollie will help you understand everything.
             </>
           )}
         </p>
@@ -118,7 +118,7 @@ const features = [
   { emoji: '📄', label: 'PDFs' },
   { emoji: '🖼️', label: 'Images' },
   { emoji: '🎥', label: 'YouTube' },
-  { emoji: '💬', label: 'Chat with Jeffrey' },
+  { emoji: '💬', label: 'Chat with Ollie' },
   { emoji: '🃏', label: 'Flashcards' },
   { emoji: '❓', label: 'Quizzes' },
 ];

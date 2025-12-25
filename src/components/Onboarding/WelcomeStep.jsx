@@ -51,12 +51,12 @@ const WelcomeStep = ({ onComplete }) => {
         transition={{ duration: 0.5, type: 'spring' }}
         className="welcome-content"
       >
-        {/* Jeffrey Avatar */}
-        <div className="jeffrey-welcome">
+        {/* Ollie Avatar */}
+        <div className="ollie-welcome">
           <img
-            src="/assets/images/jeffrey-avatar.png"
-            alt="Jeffrey"
-            className="jeffrey-avatar-large"
+            src="/assets/images/ollie-avatar.png"
+            alt="Ollie"
+            className="ollie-avatar-large"
           />
           <span className="party-emoji">🎉</span>
         </div>
@@ -65,7 +65,7 @@ const WelcomeStep = ({ onComplete }) => {
 
         <p className="welcome-text">
           You're all set! {profile?.displayName || 'Your child'} is ready to start
-          an amazing learning adventure with Jeffrey, our friendly AI tutor.
+          an amazing learning adventure with Ollie, our friendly AI tutor.
         </p>
 
         <div className="profile-card">
@@ -95,7 +95,7 @@ const WelcomeStep = ({ onComplete }) => {
           </div>
           <div className="feature">
             <span className="feature-icon">💬</span>
-            <span className="feature-text">Chat with Jeffrey</span>
+            <span className="feature-text">Chat with Ollie</span>
           </div>
           <div className="feature">
             <span className="feature-icon">🎮</span>
@@ -156,13 +156,13 @@ const WelcomeStep = ({ onComplete }) => {
           z-index: 1;
         }
 
-        .jeffrey-welcome {
+        .ollie-welcome {
           position: relative;
           display: inline-block;
           margin-bottom: 16px;
         }
 
-        .jeffrey-avatar-large {
+        .ollie-avatar-large {
           width: 100px;
           height: 100px;
           border-radius: 50%;

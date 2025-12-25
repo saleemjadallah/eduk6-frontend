@@ -1711,7 +1711,7 @@ const FlashcardGenerator = ({ lessonId, onGenerate, onCancel }) => {
               <Sparkles className="w-8 h-8 text-white" />
             </motion.div>
             <p className="font-bold text-lg mb-2">{generationStep}</p>
-            <p className="text-sm text-gray-500">Jeffrey is working his magic ✨</p>
+            <p className="text-sm text-gray-500">Ollie is working his magic ✨</p>
           </motion.div>
         ) : (
           <motion.div

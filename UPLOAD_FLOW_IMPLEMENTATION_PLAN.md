@@ -1,7 +1,7 @@
 # Upload Flow Implementation Plan
 ## K-6 AI Learning Platform - Option A
 
-**Goal:** Enable users to upload lesson content (PDFs, images, YouTube links) → process with Gemini AI → store in context → make Jeffrey (AI tutor) aware of the content for contextual conversations.
+**Goal:** Enable users to upload lesson content (PDFs, images, YouTube links) → process with Gemini AI → store in context → make Ollie (AI tutor) aware of the content for contextual conversations.
 
 ---
 
@@ -744,7 +744,7 @@ import { Sparkles, BookOpen, Brain, Lightbulb, CheckCircle } from 'lucide-react'
 const stages = [
     { key: 'uploading', label: 'Uploading your lesson...', icon: BookOpen, color: 'bg-blue-500' },
     { key: 'extracting', label: 'Reading the content...', icon: BookOpen, color: 'bg-purple-500' },
-    { key: 'analyzing', label: 'Jeffrey is thinking...', icon: Brain, color: 'bg-pink-500' },
+    { key: 'analyzing', label: 'Ollie is thinking...', icon: Brain, color: 'bg-pink-500' },
     { key: 'generating', label: 'Creating your study guide...', icon: Lightbulb, color: 'bg-orange-500' },
     { key: 'complete', label: 'All done! 🎉', icon: CheckCircle, color: 'bg-green-500' },
 ];
@@ -829,7 +829,7 @@ const ProcessingAnimation = ({ stage, progress }) => {
             >
                 {stage === 'analyzing' && (
                     <p className="text-gray-500 text-sm italic">
-                        ✨ Jeffrey is finding the coolest facts for you!
+                        ✨ Ollie is finding the coolest facts for you!
                     </p>
                 )}
                 {stage === 'generating' && (
@@ -1674,7 +1674,7 @@ function mockStudyGuide(text) {
         tips: [
             'Review this material again tomorrow for better retention',
             'Try to create your own examples',
-            'Ask Jeffrey if anything is unclear!',
+            'Ask Ollie if anything is unclear!',
         ],
     };
 }
@@ -1757,7 +1757,7 @@ const StudyPage = () => {
                             Ready to Learn?
                         </h2>
                         <p className="text-gray-600 mb-6 max-w-md">
-                            Upload a lesson to get started! Jeffrey is excited to help you learn.
+                            Upload a lesson to get started! Ollie is excited to help you learn.
                         </p>
                         <UploadButton 
                             onClick={() => setIsUploadModalOpen(true)}
@@ -1924,13 +1924,13 @@ export default LessonView;
 
 **Location:** `src/components/Chat/ChatInterface.jsx`
 
-Add lesson context awareness to Jeffrey's chat.
+Add lesson context awareness to Ollie's chat.
 
 ```jsx
 import React, { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { Send, Image, Video, FileText, Sparkles } from 'lucide-react';
-import Jeffrey from '../Avatar/Jeffrey';
+import Ollie from '../Avatar/Ollie';
 
 const ChatInterface = ({ demoMode = false, lesson = null }) => {
     const [messages, setMessages] = useState([]);
@@ -1944,13 +1944,13 @@ const ChatInterface = ({ demoMode = false, lesson = null }) => {
             setMessages([{
                 id: 1,
                 type: 'bot',
-                text: `Hi! I'm Jeffrey! 🎉 I just read "${lesson.title}" and I'm ready to help you learn! What would you like to know?`
+                text: `Hi! I'm Ollie! 🎉 I just read "${lesson.title}" and I'm ready to help you learn! What would you like to know?`
             }]);
         } else {
             setMessages([{
                 id: 1,
                 type: 'bot',
-                text: "Hi! I'm Jeffrey. Upload a lesson and I'll help you learn! 📚"
+                text: "Hi! I'm Ollie. Upload a lesson and I'll help you learn! 📚"
             }]);
         }
     }, [lesson?.id]);
@@ -2025,10 +2025,10 @@ const ChatInterface = ({ demoMode = false, lesson = null }) => {
             <div className="bg-nanobanana-yellow border-b-4 border-black p-4 flex items-center justify-between">
                 <div className="flex items-center gap-3">
                     <div className={demoMode ? "scale-75 origin-left" : ""}>
-                        <Jeffrey />
+                        <Ollie />
                     </div>
                     <div>
-                        <h2 className="font-bold text-xl font-comic">Chat with Jeffrey</h2>
+                        <h2 className="font-bold text-xl font-comic">Chat with Ollie</h2>
                         <div className="flex items-center gap-1 text-xs font-bold opacity-70">
                             <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
                             {lesson ? `Studying: ${lesson.title.slice(0, 20)}...` : 'Ready to help!'}
@@ -2130,7 +2130,7 @@ const ChatInterface = ({ demoMode = false, lesson = null }) => {
             <div className="p-4 bg-white border-t-2 border-gray-200">
                 {demoMode ? (
                     <div className="h-12 bg-gray-100 rounded-xl border-2 border-gray-300 flex items-center px-4 text-gray-400 italic text-sm">
-                        Ask Jeffrey anything...
+                        Ask Ollie anything...
                     </div>
                 ) : (
                     <div className="flex gap-2">
@@ -2139,7 +2139,7 @@ const ChatInterface = ({ demoMode = false, lesson = null }) => {
                             value={input}
                             onChange={(e) => setInput(e.target.value)}
                             onKeyPress={(e) => e.key === 'Enter' && handleSend()}
-                            placeholder={lesson ? "Ask Jeffrey about the lesson..." : "Upload a lesson to start..."}
+                            placeholder={lesson ? "Ask Ollie about the lesson..." : "Upload a lesson to start..."}
                             disabled={!lesson}
                             className="flex-1 p-3 border-2 border-black rounded-xl focus:outline-none focus:ring-2 focus:ring-nanobanana-yellow shadow-[2px_2px_0px_0px_rgba(0,0,0,0.1)] disabled:bg-gray-100 disabled:cursor-not-allowed"
                         />
@@ -2197,7 +2197,7 @@ export default ChatInterface;
   - [ ] Lesson data persists after upload
   - [ ] LessonView displays lesson content
   - [ ] ChatInterface receives lesson context
-  - [ ] Jeffrey's greeting is context-aware
+  - [ ] Ollie's greeting is context-aware
 
 - [ ] **Chat Integration**
   - [ ] Suggested questions appear for new lessons

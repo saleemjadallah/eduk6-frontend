@@ -5,7 +5,7 @@ import { motion } from 'framer-motion';
 import {
   HeroSection,
   SocialProofBar,
-  MeetJeffreySection,
+  MeetOllieSection,
   HowItWorksSection,
   LearningToolsSection,
   ParentDashboardSection,
@@ -100,8 +100,8 @@ const HomePage = () => {
         {/* Social Proof Stats */}
         <SocialProofBar />
 
-        {/* Meet Jeffrey - AI Tutor */}
-        <MeetJeffreySection />
+        {/* Meet Ollie - AI Tutor */}
+        <MeetOllieSection />
 
         {/* How It Works */}
         <HowItWorksSection />

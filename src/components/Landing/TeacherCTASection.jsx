@@ -90,7 +90,7 @@ const TeacherCTASection = () => {
 
             <p className="text-lg md:text-xl text-gray-600 mb-8 max-w-xl leading-relaxed">
               Create lessons, quizzes, and study materials in minutes with our AI-powered Teacher Portal.
-              Let Jeffrey help you spend less time on prep and more time inspiring students.
+              Let Ollie help you spend less time on prep and more time inspiring students.
             </p>
 
             {/* Features grid */}
@@ -177,13 +177,13 @@ const TeacherCTASection = () => {
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-full overflow-hidden border-2 border-[#D4A853]/30">
                       <img
-                        src="/assets/images/jeffrey-avatar.png"
-                        alt="Jeffrey"
+                        src="/assets/images/ollie-avatar.png"
+                        alt="Ollie"
                         className="w-full h-full object-cover"
                       />
                     </div>
                     <div>
-                      <p className="text-sm font-bold text-gray-900">Create with Jeffrey</p>
+                      <p className="text-sm font-bold text-gray-900">Create with Ollie</p>
                       <p className="text-xs text-gray-500">What would you like to create?</p>
                     </div>
                   </div>

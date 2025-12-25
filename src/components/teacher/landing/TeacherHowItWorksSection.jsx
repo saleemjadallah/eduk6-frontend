@@ -8,7 +8,7 @@ const TeacherHowItWorksSection = () => {
       number: '01',
       icon: PenTool,
       title: 'Choose Your Topic',
-      description: 'Select subject, grade level, and content type. Tell Jeffrey what you need—be as specific or general as you like.',
+      description: 'Select subject, grade level, and content type. Tell Ollie what you need—be as specific or general as you like.',
       color: '#2D5A4A', // chalk
       details: [
         'Pick from any subject area',
@@ -20,7 +20,7 @@ const TeacherHowItWorksSection = () => {
       number: '02',
       icon: Sparkles,
       title: 'AI Creates Content',
-      description: 'Jeffrey instantly generates professional, standards-aligned content tailored to your specifications.',
+      description: 'Ollie instantly generates professional, standards-aligned content tailored to your specifications.',
       color: '#D4A853', // gold
       details: [
         'Generated in seconds',

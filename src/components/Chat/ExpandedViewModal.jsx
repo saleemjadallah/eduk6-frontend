@@ -51,7 +51,7 @@ const ExpandedViewModal = ({ isOpen, onClose, type, data }) => {
                     <div className="w-full max-w-4xl px-2">
                         <img
                             src={`data:${data.mimeType || 'image/png'};base64,${data.imageData}`}
-                            alt="Jeffrey's drawing"
+                            alt="Ollie's drawing"
                             className="w-full max-h-[70vh] md:max-h-[75vh] object-contain rounded-2xl border-4 border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)]"
                         />
                         {data.text && (

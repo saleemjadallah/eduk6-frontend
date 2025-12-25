@@ -414,8 +414,8 @@ const ContentListPage = () => {
         >
           <div className="w-20 h-20 sm:w-24 sm:h-24 mx-auto mb-4 relative">
             <img
-              src="/assets/images/landing/hero-jeffrey-teaching.png"
-              alt="Jeffrey - Your AI Teaching Assistant"
+              src="/assets/images/landing/hero-ollie-teaching.png"
+              alt="Ollie - Your AI Teaching Assistant"
               className="w-full h-full object-contain"
             />
           </div>

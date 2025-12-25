@@ -299,7 +299,7 @@ function transformDbLesson(dbLesson) {
     formattedContent: dbLesson.formattedContent, // Deprecated, may be null
     summary: dbLesson.summary,
     chapters: dbLesson.chapters || [],
-    keyConcepts: dbLesson.keyConcepts || [], // Used for Jeffrey context
+    keyConcepts: dbLesson.keyConcepts || [], // Used for Ollie context
     keyConceptsForChat: dbLesson.keyConcepts || [], // Alias
     vocabulary: dbLesson.vocabulary || [],
     suggestedQuestions: dbLesson.suggestedQuestions || [],

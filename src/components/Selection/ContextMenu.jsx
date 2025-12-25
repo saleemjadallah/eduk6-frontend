@@ -4,11 +4,11 @@ import MenuButton from './MenuButton';
 import LanguageSelector from './LanguageSelector';
 import './selection-styles.css';
 
-// Jeffrey avatar images (placeholders - replace with actual paths)
-const JEFFREY_AVATARS = {
-    curious: '/assets/jeffrey-curious.png',
-    thinking: '/assets/jeffrey-thinking.png',
-    happy: '/assets/jeffrey-happy.png',
+// Ollie avatar images (placeholders - replace with actual paths)
+const OLLIE_AVATARS = {
+    curious: '/assets/ollie-curious.png',
+    thinking: '/assets/ollie-thinking.png',
+    happy: '/assets/ollie-happy.png',
 };
 
 /**
@@ -42,7 +42,7 @@ const getAgeAppropriateActions = (ageGroup) => {
 
     // Ages 8-12 - full feature set
     return [
-        { type: 'ask', icon: '\ud83e\udd14', label: 'Ask Jeffrey', color: '#4ECDC4' },
+        { type: 'ask', icon: '\ud83e\udd14', label: 'Ask Ollie', color: '#4ECDC4' },
         { type: 'flashcard', icon: '\ud83c\udff4', label: 'Make Flashcard', color: '#A259FF' },
         { type: 'translate', icon: '\ud83c\udf0d', label: 'Translate', color: '#10B981' },
         { type: 'save', icon: '\u2b50', label: 'Save This', color: '#FFD93D' },
@@ -110,7 +110,7 @@ const ContextMenu = ({
     const handleActionClick = (action) => {
         if (isProcessing) return;
 
-        // For "Ask Jeffrey" with custom question option (ages 8-12)
+        // For "Ask Ollie" with custom question option (ages 8-12)
         if (action.type === 'ask' && ageGroup === '8-12' && !action.presetQuestion) {
             setShowQuestionInput(true);
             return;
@@ -178,10 +178,10 @@ const ContextMenu = ({
                 zIndex: 1000,
             }}
         >
-            {/* Compact header with Jeffrey and selected text */}
+            {/* Compact header with Ollie and selected text */}
             <div className="compact-header">
                 <motion.div
-                    className="jeffrey-mini"
+                    className="ollie-mini"
                     animate={{ rotate: isProcessing ? 360 : 0 }}
                     transition={{ duration: 2, repeat: isProcessing ? Infinity : 0, ease: 'linear' }}
                 >
@@ -228,7 +228,7 @@ const ContextMenu = ({
                         <input
                             ref={inputRef}
                             type="text"
-                            placeholder="Ask Jeffrey..."
+                            placeholder="Ask Ollie..."
                             value={customQuestion}
                             onChange={(e) => setCustomQuestion(e.target.value)}
                             onKeyDown={handleKeyDown}

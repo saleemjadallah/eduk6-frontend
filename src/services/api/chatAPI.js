@@ -1,6 +1,6 @@
 /**
  * Chat API Service
- * Handles chat-related API calls to Jeffrey AI assistant
+ * Handles chat-related API calls to Ollie AI assistant
  */
 
 import { makeAuthenticatedRequest as makeRequest } from './apiUtils.js';
@@ -10,7 +10,7 @@ const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
 export const chatAPI = {
   /**
-   * Send a demo message to Jeffrey AI (completely standalone - no auth)
+   * Send a demo message to Ollie AI (completely standalone - no auth)
    * Used for landing page interactive demo - limited to 3 messages per session
    * This uses a raw fetch to avoid any auth/token logic
    * @param {Object} data - Message data
@@ -41,7 +41,7 @@ export const chatAPI = {
   },
 
   /**
-   * Send a message to Jeffrey AI assistant
+   * Send a message to Ollie AI assistant
    * @param {Object} data - Message data
    * @param {string} data.message - The user's message
    * @param {string} [data.childId] - The child's ID (optional)

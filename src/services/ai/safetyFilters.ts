@@ -318,7 +318,7 @@ class SafetyFilters {
       profanity: "Let's use kind and friendly words when we talk! Can you try asking that in a different way?",
       pii_detected: "Oops! We should never share personal information like phone numbers, addresses, or full names. Let's keep that private and safe!",
       inappropriate_topic: "That's not something I can help with, but I'd love to help you learn something cool instead! What subject are you curious about?",
-      manipulation_attempt: "Let's focus on learning together! I'm Jeffrey, your learning buddy. What would you like to study today?",
+      manipulation_attempt: "Let's focus on learning together! I'm Ollie, your learning buddy. What would you like to study today?",
       inappropriate_content: "I can't show you that, but let me find something better for you!",
       external_links: "I'll explain it to you instead of sending you to another website!",
       message_too_long: "That's a really long message! Can you break it into smaller questions? I'd love to help you one step at a time.",

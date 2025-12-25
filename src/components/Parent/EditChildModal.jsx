@@ -201,7 +201,7 @@ const EditChildModal = ({ child, onClose, onSuccess, onDelete }) => {
                       className={errors.displayName ? 'error' : ''}
                     />
                     {errors.displayName && <span className="field-error">{errors.displayName}</span>}
-                    <span className="field-hint">This is the name Jeffrey will use</span>
+                    <span className="field-hint">This is the name Ollie will use</span>
                   </div>
 
                   <div className="form-group">

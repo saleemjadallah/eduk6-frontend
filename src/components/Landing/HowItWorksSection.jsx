@@ -23,7 +23,7 @@ const HowItWorksSection = () => {
     {
       number: 3,
       icon: MessageCircle,
-      title: 'Learn with Jeffrey',
+      title: 'Learn with Ollie',
       description: 'Chat, ask questions, create flashcards, and master the material!',
       color: '#32CD32',
       image: '/assets/images/landing/how-it-works-learn.png',

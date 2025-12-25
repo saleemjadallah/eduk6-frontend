@@ -66,7 +66,7 @@ interface ModeState {
 ```
 Child Routes (Public for authenticated children):
 /learn              - Main learning dashboard
-/learn/chat         - Chat with Jeffrey
+/learn/chat         - Chat with Ollie
 /learn/flashcards   - Flashcard practice
 /learn/upload       - Upload content
 /learn/games        - Educational games
@@ -674,10 +674,10 @@ const ChildLayout: React.FC = () => {
         <Outlet />
       </main>
 
-      {/* Optional: Floating Jeffrey helper */}
+      {/* Optional: Floating Ollie helper */}
       {currentProfile && currentProfile.age <= 8 && (
-        <div className="jeffrey-helper">
-          <img src="/jeffrey-float.png" alt="Jeffrey" />
+        <div className="ollie-helper">
+          <img src="/ollie-float.png" alt="Ollie" />
           <button className="help-button">Need help?</button>
         </div>
       )}
@@ -1562,7 +1562,7 @@ describe('Mode Switching', () => {
     
     // Should work
     navigate('/learn/chat');
-    expect(screen.getByText(/Chat with Jeffrey/i)).toBeInTheDocument();
+    expect(screen.getByText(/Chat with Ollie/i)).toBeInTheDocument();
     
     // Should redirect
     navigate('/parent/billing');

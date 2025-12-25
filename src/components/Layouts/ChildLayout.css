@@ -194,7 +194,8 @@
   z-index: 1;
 }
 
-/* Jeffrey helper */
+/* Ollie helper */
+.ollie-helper,
 .jeffrey-helper {
   position: fixed;
   bottom: 24px;
@@ -206,6 +207,7 @@
   z-index: 50;
 }
 
+.ollie-avatar,
 .jeffrey-avatar {
   width: 64px;
   height: 64px;
@@ -261,6 +263,7 @@
   font-size: 1.5rem;
 }
 
+.young-learner .ollie-avatar,
 .young-learner .jeffrey-avatar {
   width: 80px;
   height: 80px;
@@ -322,11 +325,13 @@
     padding: 12px;
   }
 
+  .ollie-helper,
   .jeffrey-helper {
     bottom: 16px;
     right: 16px;
   }
 
+  .ollie-avatar,
   .jeffrey-avatar {
     width: 56px;
     height: 56px;

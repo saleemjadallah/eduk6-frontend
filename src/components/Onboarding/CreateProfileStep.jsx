@@ -167,7 +167,7 @@ const CreateProfileStep = ({ onComplete }) => {
           {currentStep === 3 && "Learning preferences"}
         </h2>
         <p className="subtitle">
-          {currentStep === 1 && "This helps Jeffrey personalize the learning experience."}
+          {currentStep === 1 && "This helps Ollie personalize the learning experience."}
           {currentStep === 2 && "Pick a fun character to represent your child!"}
           {currentStep === 3 && "Help us tailor lessons to your child's style."}
         </p>

@@ -190,7 +190,7 @@ const CameraCapture = ({ onImageCapture, capturedImage, onClear }) => {
                 <p className="font-bold text-yellow-800 text-sm mb-2">Tips for best results:</p>
                 <ul className="text-xs text-yellow-700 space-y-1">
                     <li>• Make sure text is clear and readable</li>
-                    <li>• Good lighting helps Jeffrey read better</li>
+                    <li>• Good lighting helps Ollie read better</li>
                     <li>• Hold the camera steady to avoid blur</li>
                     <li>• Include the full page in the frame</li>
                 </ul>

@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Send, Image, FileText, Sparkles, Clock, RefreshCw, Trash2, BookOpen, Loader2, HelpCircle, ZoomIn, ChevronDown, ChevronUp, ArrowRight } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import Jeffrey from '../Avatar/Jeffrey';
+import Ollie from '../Avatar/Ollie';
 import SafetyIndicator from './SafetyIndicator';
 import FlashcardInline from './FlashcardInline';
 import SummaryInline from './SummaryInline';
@@ -144,7 +144,7 @@ const ChatInterface = ({
             setDemoMessages([{
                 id: 1,
                 role: 'assistant',
-                content: "Hi there! I'm Jeffrey, your learning buddy! Ask me anything you'd like to learn about - try questions like \"What are black holes?\" or \"How do plants grow?\" 🌟",
+                content: "Hi there! I'm Ollie, your learning buddy! Ask me anything you'd like to learn about - try questions like \"What are black holes?\" or \"How do plants grow?\" 🌟",
                 timestamp: new Date(),
             }]);
         }
@@ -262,7 +262,7 @@ const ChatInterface = ({
             setDemoMessages([{
                 id: Date.now(),
                 role: 'assistant',
-                content: "Hi! I'm Jeffrey. What would you like to learn about?",
+                content: "Hi! I'm Ollie. What would you like to learn about?",
                 timestamp: new Date(),
             }]);
         }
@@ -578,10 +578,10 @@ const ChatInterface = ({
             <div className="bg-nanobanana-yellow border-b-4 border-black p-4 flex items-center justify-between">
                 <div className="flex items-center gap-3">
                     <div className={demoMode ? "scale-75 origin-left" : ""}>
-                        <Jeffrey />
+                        <Ollie />
                     </div>
                     <div>
-                        <h2 className="font-bold text-xl font-comic">Chat with Jeffrey</h2>
+                        <h2 className="font-bold text-xl font-comic">Chat with Ollie</h2>
                         <div className="flex items-center gap-2 text-xs font-bold opacity-70">
                             <span className="flex items-center gap-1">
                                 <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
@@ -654,8 +654,8 @@ const ChatInterface = ({
                     >
                         <div className="flex items-end gap-2">
                             <img
-                                src="/assets/images/jeffrey-avatar.png"
-                                alt="Jeffrey"
+                                src="/assets/images/ollie-avatar.png"
+                                alt="Ollie"
                                 className="w-8 h-8 rounded-full border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] flex-shrink-0"
                             />
                             <div className="max-w-[80%] p-3 rounded-2xl border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] bg-gray-100 text-black rounded-bl-none">
@@ -677,11 +677,11 @@ const ChatInterface = ({
                         {/* Regular text message */}
                         {msg.messageType === 'text' && (
                             <div className={`flex items-end gap-2 ${msg.type === 'user' ? 'flex-row-reverse' : 'flex-row'}`}>
-                                {/* Jeffrey avatar for bot messages */}
+                                {/* Ollie avatar for bot messages */}
                                 {msg.type === 'bot' && (
                                     <img
-                                        src="/assets/images/jeffrey-avatar.png"
-                                        alt="Jeffrey"
+                                        src="/assets/images/ollie-avatar.png"
+                                        alt="Ollie"
                                         className="w-8 h-8 rounded-full border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] flex-shrink-0"
                                     />
                                 )}
@@ -713,8 +713,8 @@ const ChatInterface = ({
                         {msg.messageType === 'flashcards' && msg.flashcards && (
                             <div className="flex items-start gap-2">
                                 <img
-                                    src="/assets/images/jeffrey-avatar.png"
-                                    alt="Jeffrey"
+                                    src="/assets/images/ollie-avatar.png"
+                                    alt="Ollie"
                                     className="w-8 h-8 rounded-full border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] flex-shrink-0"
                                 />
                                 <div className="w-full max-w-md p-3 bg-gray-100 rounded-2xl border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] rounded-bl-none">
@@ -740,8 +740,8 @@ const ChatInterface = ({
                         {msg.messageType === 'summary' && msg.summary && (
                             <div className="flex items-start gap-2">
                                 <img
-                                    src="/assets/images/jeffrey-avatar.png"
-                                    alt="Jeffrey"
+                                    src="/assets/images/ollie-avatar.png"
+                                    alt="Ollie"
                                     className="w-8 h-8 rounded-full border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] flex-shrink-0"
                                 />
                                 <div className="w-full max-w-lg p-3 bg-gray-100 rounded-2xl border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] rounded-bl-none">
@@ -767,8 +767,8 @@ const ChatInterface = ({
                         {msg.messageType === 'infographic' && msg.imageData && (
                             <div className="flex items-start gap-2">
                                 <img
-                                    src="/assets/images/jeffrey-avatar.png"
-                                    alt="Jeffrey"
+                                    src="/assets/images/ollie-avatar.png"
+                                    alt="Ollie"
                                     className="w-8 h-8 rounded-full border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] flex-shrink-0"
                                 />
                                 <div className="w-full max-w-md p-3 bg-gray-100 rounded-2xl border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] rounded-bl-none">
@@ -801,15 +801,15 @@ const ChatInterface = ({
                         {msg.messageType === 'image' && msg.imageData && (
                             <div className="flex items-start gap-2">
                                 <img
-                                    src="/assets/images/jeffrey-avatar.png"
-                                    alt="Jeffrey"
+                                    src="/assets/images/ollie-avatar.png"
+                                    alt="Ollie"
                                     className="w-8 h-8 rounded-full border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] flex-shrink-0"
                                 />
                                 <div className="w-full max-w-md p-3 bg-gradient-to-br from-purple-50 to-pink-50 rounded-2xl border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] rounded-bl-none">
                                     <div className="flex items-center justify-between mb-3">
                                         <div className="flex items-center gap-2 text-sm font-bold text-purple-600">
                                             <Sparkles className="w-4 h-4" />
-                                            <span>Jeffrey drew this for you!</span>
+                                            <span>Ollie drew this for you!</span>
                                         </div>
                                         <button
                                             onClick={() => handleExpandView('image', { imageData: msg.imageData, mimeType: msg.mimeType, text: msg.text })}
@@ -821,7 +821,7 @@ const ChatInterface = ({
                                     </div>
                                     <img
                                         src={`data:${msg.mimeType || 'image/png'};base64,${msg.imageData}`}
-                                        alt="Jeffrey's drawing"
+                                        alt="Ollie's drawing"
                                         className="w-full rounded-xl border-2 border-black"
                                     />
                                     {msg.text && (
@@ -835,8 +835,8 @@ const ChatInterface = ({
                         {msg.messageType === 'quiz' && msg.quiz && (
                             <div className="flex items-start gap-2">
                                 <img
-                                    src="/assets/images/jeffrey-avatar.png"
-                                    alt="Jeffrey"
+                                    src="/assets/images/ollie-avatar.png"
+                                    alt="Ollie"
                                     className="w-8 h-8 rounded-full border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] flex-shrink-0"
                                 />
                                 <div className="w-full max-w-lg p-3 bg-gray-100 rounded-2xl border-2 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] rounded-bl-none">
@@ -860,7 +860,7 @@ const ChatInterface = ({
                     </motion.div>
                 ))}
 
-                {/* Typing indicator - Jeffrey avatar with animated dots */}
+                {/* Typing indicator - Ollie avatar with animated dots */}
                 {(isTyping || demoTyping || isToolLoading) && !isStreaming && (
                     <motion.div
                         initial={{ opacity: 0, scale: 0.8 }}
@@ -868,7 +868,7 @@ const ChatInterface = ({
                         className="flex justify-start"
                     >
                         <div className="relative">
-                            {/* Jeffrey circular avatar */}
+                            {/* Ollie circular avatar */}
                             <motion.div
                                 className="w-12 h-12"
                                 animate={{ y: [-2, 2] }}
@@ -880,8 +880,8 @@ const ChatInterface = ({
                                 }}
                             >
                                 <img
-                                    src="/assets/images/jeffrey-avatar.png"
-                                    alt="Jeffrey thinking"
+                                    src="/assets/images/ollie-avatar.png"
+                                    alt="Ollie thinking"
                                     className="w-full h-full object-cover rounded-full border-3 border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]"
                                 />
                             </motion.div>
@@ -1055,7 +1055,7 @@ const ChatInterface = ({
                             value={input}
                             onChange={(e) => handleInputChange(e.target.value)}
                             onKeyDown={handleKeyDown}
-                            placeholder={activeLesson ? "Ask Jeffrey about the lesson..." : "Upload a lesson to start chatting..."}
+                            placeholder={activeLesson ? "Ask Ollie about the lesson..." : "Upload a lesson to start chatting..."}
                             disabled={isInputDisabled}
                             className="flex-1 p-3 border-2 border-black rounded-xl focus:outline-none focus:ring-2 focus:ring-nanobanana-yellow shadow-[2px_2px_0px_0px_rgba(0,0,0,0.1)] disabled:bg-gray-100 disabled:cursor-not-allowed"
                         />

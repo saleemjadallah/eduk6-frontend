@@ -6,7 +6,7 @@ import { generateChatResponse, generateFlashcards, generateQuiz, translateText }
 
 // XP rewards for different actions
 const XP_REWARDS = {
-    'ask-jeffrey': 5,
+    'ask-ollie': 5,
     'create-flashcard': 10,
     'generate-quiz': 8,
     'translate': 5,
@@ -55,9 +55,9 @@ export function SelectionProvider({ children }) {
     }, []);
 
     /**
-     * Handle "Ask Jeffrey" action
+     * Handle "Ask Ollie" action
      */
-    const handleAskJeffrey = useCallback(async (userQuestion) => {
+    const handleAskOllie = useCallback(async (userQuestion) => {
         if (!currentSelection) return null;
 
         setIsProcessing(true);
@@ -80,7 +80,7 @@ export function SelectionProvider({ children }) {
             const isImageResponse = typeof response === 'object' && response.type === 'image';
 
             const resultData = {
-                type: 'jeffrey-response',
+                type: 'ollie-response',
                 content: {
                     answer: isImageResponse ? response.content : response,
                     question: userQuestion,
@@ -91,19 +91,19 @@ export function SelectionProvider({ children }) {
                         mimeType: response.mimeType,
                     }),
                 },
-                xpEarned: XP_REWARDS['ask-jeffrey'],
+                xpEarned: XP_REWARDS['ask-ollie'],
             };
 
             setResult(resultData);
 
             // Award XP
-            earnXP(XP_REWARDS['ask-jeffrey'], 'Asked Jeffrey a question');
+            earnXP(XP_REWARDS['ask-ollie'], 'Asked Ollie a question');
             updateStatistics({ questionsAnswered: 1 });
             updateDailyChallengeProgress('questionAnswered');
 
             return resultData;
         } catch (error) {
-            console.error('Error asking Jeffrey:', error);
+            console.error('Error asking Ollie:', error);
             throw error;
         } finally {
             setIsProcessing(false);
@@ -296,7 +296,7 @@ export function SelectionProvider({ children }) {
 
         switch (action.type) {
             case 'ask':
-                return handleAskJeffrey(action.userQuestion);
+                return handleAskOllie(action.userQuestion);
             case 'flashcard':
                 return handleCreateFlashcard();
             case 'quiz':
@@ -311,7 +311,7 @@ export function SelectionProvider({ children }) {
                 console.warn('Unknown action type:', action.type);
                 return null;
         }
-    }, [currentSelection, handleAskJeffrey, handleCreateFlashcard, handleGenerateQuiz, handleTranslate, handleSaveSelection, handleReadAloud]);
+    }, [currentSelection, handleAskOllie, handleCreateFlashcard, handleGenerateQuiz, handleTranslate, handleSaveSelection, handleReadAloud]);
 
     /**
      * Clear the result modal
@@ -345,7 +345,7 @@ export function SelectionProvider({ children }) {
         setSelection,
         clearSelection,
         handleAction,
-        handleAskJeffrey,
+        handleAskOllie,
         handleCreateFlashcard,
         handleGenerateQuiz,
         handleTranslate,

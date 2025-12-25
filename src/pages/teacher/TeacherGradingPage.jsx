@@ -341,8 +341,8 @@ const TeacherGradingPage = () => {
       >
         <div className="w-20 h-20 mx-auto mb-4">
           <img
-            src="/assets/images/landing/meet-jeffrey.png"
-            alt="Jeffrey - Your AI Teaching Assistant"
+            src="/assets/images/landing/meet-ollie.png"
+            alt="Ollie - Your AI Teaching Assistant"
             className="w-full h-full object-contain"
           />
         </div>

@@ -444,8 +444,8 @@ const TeacherDashboardPage = () => {
             <div className="teacher-card p-6 sm:p-8 text-center">
               <div className="w-20 h-20 sm:w-24 sm:h-24 mx-auto mb-3 sm:mb-4 relative">
                 <img
-                  src="/assets/images/landing/hero-jeffrey-teaching.png"
-                  alt="Jeffrey - Your AI Teaching Assistant"
+                  src="/assets/images/landing/hero-ollie-teaching.png"
+                  alt="Ollie - Your AI Teaching Assistant"
                   className="w-full h-full object-contain"
                 />
               </div>
@@ -453,7 +453,7 @@ const TeacherDashboardPage = () => {
                 Ready to create your first content?
               </h3>
               <p className="text-sm sm:text-base text-teacher-inkLight mb-4 sm:mb-6 max-w-md mx-auto">
-                I'm Jeffrey, your AI teaching assistant! Let me help you generate engaging lessons, quizzes, and flashcards for your students in minutes.
+                I'm Ollie, your AI teaching assistant! Let me help you generate engaging lessons, quizzes, and flashcards for your students in minutes.
               </p>
               <Link
                 to="/teacher/content/create"
@@ -502,19 +502,19 @@ const TeacherDashboardPage = () => {
             </div>
           </div>
 
-          {/* Tip Card with Jeffrey */}
+          {/* Tip Card with Ollie */}
           <div className="teacher-card teacher-accent-border p-4 sm:p-5 bg-gradient-to-br from-teacher-gold/5 to-transparent">
             <div className="flex items-start gap-2 sm:gap-3">
               <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full overflow-hidden flex-shrink-0 border-2 border-teacher-gold/20 bg-teacher-paper">
                 <img
-                  src="/assets/images/jeffrey-avatar.png"
-                  alt="Jeffrey"
+                  src="/assets/images/ollie-avatar.png"
+                  alt="Ollie"
                   className="w-full h-full object-cover"
                 />
               </div>
               <div className="min-w-0">
                 <h4 className="font-semibold text-teacher-ink text-xs sm:text-sm mb-0.5 sm:mb-1">
-                  Jeffrey's Tip
+                  Ollie's Tip
                 </h4>
                 <p className="text-[11px] sm:text-xs text-teacher-inkLight leading-relaxed">
                   Upload a PDF of your existing lesson materials, and I'll automatically generate a beautifully formatted lesson, complete with quizzes and flashcards!

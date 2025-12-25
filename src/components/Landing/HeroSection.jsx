@@ -52,7 +52,7 @@ const HeroSection = () => {
               transition={{ delay: 0.2 }}
               className="text-lg sm:text-xl md:text-2xl text-gray-600 mb-6 md:mb-8 font-medium leading-relaxed max-w-xl"
             >
-              Meet Jeffrey, your child's friendly AI tutor. Upload any lesson, and watch as learning transforms into an exciting journey of discovery.
+              Meet Ollie, your child's friendly AI tutor. Upload any lesson, and watch as learning transforms into an exciting journey of discovery.
             </motion.p>
 
             {/* CTA Buttons - iPad touch-optimized */}
@@ -113,8 +113,8 @@ const HeroSection = () => {
             >
               <div className="bg-nanobanana-blue p-2 md:p-3 rounded-[1.5rem] md:rounded-[2rem] border-4 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] md:shadow-[12px_12px_0px_0px_rgba(0,0,0,1)] transform rotate-2 hover:rotate-0 transition-transform duration-500">
                 <img
-                  src="/assets/images/landing/hero-jeffrey-teaching.png"
-                  alt="Jeffrey teaching kids"
+                  src="/assets/images/landing/hero-ollie-teaching.png"
+                  alt="Ollie teaching kids"
                   className="w-full max-w-sm lg:max-w-lg rounded-xl border-4 border-black"
                 />
               </div>

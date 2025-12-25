@@ -3,8 +3,7 @@ import { motion } from 'framer-motion';
 import { MessageCircle, Brain, Shield, Clock, Heart, Sparkles } from 'lucide-react';
 import ChatInterface from '../Chat/ChatInterface';
 
-// Legacy component - use MeetOllieSection instead
-const MeetJeffreySection = () => {
+const MeetOllieSection = () => {
   const features = [
     {
       icon: Brain,
@@ -148,4 +147,4 @@ const MeetJeffreySection = () => {
   );
 };
 
-export default MeetJeffreySection;
+export default MeetOllieSection;

@@ -79,7 +79,7 @@ class PromptBuilder {
   }
 
   private getCoreIdentity(): string {
-    return `You are Jeffrey, a friendly and encouraging AI tutor for elementary school children (ages 4-12) learning on the Orbit Learn platform. Your personality traits:
+    return `You are Ollie, a friendly and encouraging AI tutor for elementary school children (ages 4-12) learning on the Orbit Learn platform. Your personality traits:
 
 - ENTHUSIASTIC and positive, celebrating every learning moment
 - PATIENT and supportive, never showing frustration

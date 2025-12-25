@@ -7,7 +7,7 @@ export const CONTEXT_MENU_ACTIONS = {
     CHAT: {
         id: 'chat',
         emoji: '💬',
-        label: 'Ask Jeffrey',
+        label: 'Ask Ollie',
         description: 'Chat about this text',
         color: 'bg-nanobanana-blue',
         highlightColor: 'blue',
@@ -126,7 +126,7 @@ export const CHILD_UX_CONFIG = {
     PREFERRED_FONT_SIZE: 16,
     LABELS: {
         K_2: {
-            chat: 'Talk to Jeffrey',
+            chat: 'Talk to Ollie',
             flashcard: 'Make Cards',
             video: 'Watch Video',
             translate: 'Say It Different',
@@ -134,7 +134,7 @@ export const CHILD_UX_CONFIG = {
             copy: 'Save It',
         },
         3_6: {
-            chat: 'Ask Jeffrey',
+            chat: 'Ask Ollie',
             flashcard: 'Make Flashcards',
             video: 'Explainer Video',
             translate: 'Translate',

@@ -82,7 +82,7 @@ export function useLessonActions() {
   }, [startProcessing, setProcessingStage, updateProgress, addLesson, setError]);
 
   /**
-   * Get context string for chat (Jeffrey).
+   * Get context string for chat (Ollie).
    * Returns a formatted object with lesson info for AI context.
    */
   const getChatContext = useCallback(() => {

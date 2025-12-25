@@ -409,7 +409,7 @@ const LessonView = ({ lesson, onComplete, showContentViewer = false }) => {
                         Ready to Learn?
                     </h2>
                     <p className="text-gray-600 mb-6 max-w-md">
-                        Upload a lesson to start learning with Jeffrey!
+                        Upload a lesson to start learning with Ollie!
                         He's excited to help you understand new things.
                     </p>
                 </div>
@@ -735,7 +735,7 @@ const LessonView = ({ lesson, onComplete, showContentViewer = false }) => {
                             <CheckCircle className="w-8 h-8 text-green-500 mx-auto mb-2" />
                             <p className="font-bold text-green-700">Great job! You've completed this lesson!</p>
                             <p className="text-sm text-green-600 mt-1">
-                                Keep chatting with Jeffrey to learn more.
+                                Keep chatting with Ollie to learn more.
                             </p>
                         </div>
                     )}

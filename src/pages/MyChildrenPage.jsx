@@ -129,7 +129,7 @@ const MyChildrenPage = () => {
             <span className="empty-emoji">👦</span>
           </div>
           <h2>No Children Yet</h2>
-          <p>Add your first child to start their learning journey with Jeffrey!</p>
+          <p>Add your first child to start their learning journey with Ollie!</p>
           <button className="add-child-btn-large" onClick={() => setShowAddModal(true)}>
             <span className="btn-icon">+</span>
             Add Your First Child

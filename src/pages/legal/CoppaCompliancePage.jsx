@@ -211,7 +211,7 @@ const CoppaCompliancePage = () => {
                         <tbody className="divide-y divide-gray-200">
                           <tr><td className="px-4 py-2 text-gray-600 font-medium">Basic Profile</td><td className="px-4 py-2 text-gray-600">First name only, age, grade level</td><td className="px-4 py-2 text-gray-600">Personalize learning, age-appropriate content</td></tr>
                           <tr><td className="px-4 py-2 text-gray-600 font-medium">Learning Activity</td><td className="px-4 py-2 text-gray-600">Lessons completed, quiz scores, time spent</td><td className="px-4 py-2 text-gray-600">Track progress, generate reports</td></tr>
-                          <tr><td className="px-4 py-2 text-gray-600 font-medium">AI Tutor Interactions</td><td className="px-4 py-2 text-gray-600">Questions to Jeffrey, conversations</td><td className="px-4 py-2 text-gray-600">Educational assistance, safety review</td></tr>
+                          <tr><td className="px-4 py-2 text-gray-600 font-medium">AI Tutor Interactions</td><td className="px-4 py-2 text-gray-600">Questions to Ollie, conversations</td><td className="px-4 py-2 text-gray-600">Educational assistance, safety review</td></tr>
                           <tr><td className="px-4 py-2 text-gray-600 font-medium">Educational Content</td><td className="px-4 py-2 text-gray-600">Uploaded materials, notes, flashcards</td><td className="px-4 py-2 text-gray-600">AI-powered study assistance</td></tr>
                           <tr><td className="px-4 py-2 text-gray-600 font-medium">Usage Information</td><td className="px-4 py-2 text-gray-600">Features accessed, session duration</td><td className="px-4 py-2 text-gray-600">Service improvement, safety monitoring</td></tr>
                         </tbody>
@@ -274,7 +274,7 @@ const CoppaCompliancePage = () => {
                     <ul className="list-disc pl-6 text-gray-600 space-y-1">
                       <li>Child profile creation (by parent)</li>
                       <li>Learning activities and lessons</li>
-                      <li>AI tutor (Jeffrey) conversations</li>
+                      <li>AI tutor (Ollie) conversations</li>
                       <li>Quiz and assessment responses</li>
                       <li>Study material uploads (with parent approval)</li>
                     </ul>
@@ -302,7 +302,7 @@ const CoppaCompliancePage = () => {
                     <h4 className="font-semibold text-blue-800 mb-3">Educational Purposes Only:</h4>
                     <ul className="text-blue-700 space-y-2">
                       <li><strong>Personalized Learning:</strong> Adapt content difficulty, recommend lessons, customize paths</li>
-                      <li><strong>AI Tutor (Jeffrey):</strong> Answer questions, provide explanations, offer encouragement</li>
+                      <li><strong>AI Tutor (Ollie):</strong> Answer questions, provide explanations, offer encouragement</li>
                       <li><strong>Progress Tracking:</strong> Monitor achievements, generate parent reports, identify support needs</li>
                       <li><strong>Content Generation:</strong> Create personalized study materials, quizzes, flashcards</li>
                       <li><strong>Safety:</strong> Filter inappropriate content, monitor conversations for safety</li>
@@ -620,7 +620,7 @@ const CoppaCompliancePage = () => {
                       <div>
                         <p className="font-semibold text-blue-800 mb-2">Children CAN ONLY Interact With:</p>
                         <ul className="text-blue-700 text-sm space-y-1">
-                          <li>✓ Jeffrey (AI tutor) - monitored & filtered</li>
+                          <li>✓ Ollie (AI tutor) - monitored & filtered</li>
                           <li>✓ Content created by Orbit Learn</li>
                           <li>✓ Materials uploaded by their parent</li>
                           <li>✓ Their own learning activities</li>
