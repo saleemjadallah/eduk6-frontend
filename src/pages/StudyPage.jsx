@@ -121,10 +121,11 @@ const StudyPage = () => {
     const { createDeck, addCards } = useFlashcardContext();
     const studyStartTimeRef = useRef(null);
 
-    // PDFs now show formatted content by default (like other content types)
-    // Users can toggle to view original PDF via "View File" button in LessonView
-    // Only use PDF viewer for explicit PDF-only view requests (future feature)
-    const isPdfLesson = false; // Disabled - always show formatted LessonView
+    // Only render PDF viewer when we actually have a file URL; otherwise fall back to lesson view
+    const isPdfLesson = !!currentLesson?.fileUrl && (
+        currentLesson?.sourceType === 'pdf' ||
+        currentLesson?.fileUrl?.toLowerCase().endsWith('.pdf')
+    );
 
     // Handle sending selected text to chat
     const handleSendToChat = useCallback((text) => {
