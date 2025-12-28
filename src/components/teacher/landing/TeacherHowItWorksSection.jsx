@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { PenTool, Sparkles, Share2, ArrowRight, CheckCircle } from 'lucide-react';
 
@@ -35,7 +36,7 @@ const TeacherHowItWorksSection = () => {
       description: 'Review, customize if needed, then download, print, or share directly with your students.',
       color: '#7BAE7F', // sage
       details: [
-        'Export to PDF or DOCX',
+        'Export to PPT, PDF or DOCX',
         'Print-ready formatting',
         'Share with one click',
       ],
@@ -182,6 +183,17 @@ const TeacherHowItWorksSection = () => {
               <span className="font-bold text-teacher-ink text-sm md:text-base">Average time:</span>
             </div>
             <span className="text-xl md:text-2xl font-black text-teacher-chalk">47 seconds</span>
+          </div>
+
+          {/* Try for Free CTA */}
+          <div className="mt-8">
+            <Link
+              to="/teacher/signup"
+              className="inline-flex items-center gap-2 bg-teacher-chalk text-white font-bold text-lg px-8 py-4 rounded-xl border-3 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] hover:translate-y-[-2px] active:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] active:translate-y-[2px] transition-all"
+            >
+              Try for Free
+              <ArrowRight className="w-5 h-5" />
+            </Link>
           </div>
         </motion.div>
       </div>
