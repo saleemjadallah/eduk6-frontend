@@ -216,12 +216,14 @@ export function TeacherAuthProvider({ children }) {
     setError(null);
   }, []);
 
-  // Verify email
+  // Verify email - sets teacher state and logs user in after OTP verification
   const verifyEmail = useCallback(async (email, code) => {
     const response = await teacherAPI.verifyEmail(email, code);
 
-    if (response.success && response.data?.teacher) {
-      setTeacher(response.data.teacher);
+    // Backend returns teacher directly on response, not under .data
+    if (response.success && response.teacher) {
+      setTeacher(response.teacher);
+      setIsInitialized(true);
 
       // Fetch quota info after verification
       try {

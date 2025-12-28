@@ -337,10 +337,11 @@ export const teacherAPI = {
       body: JSON.stringify({ email, code }),
     });
 
-    if (response.success && response.data?.token) {
+    // Backend returns token directly on response, not under .data
+    if (response.success && response.token) {
       teacherTokenManager.setTokens({
-        token: response.data.token,
-        refreshToken: response.data.refreshToken,
+        token: response.token,
+        refreshToken: response.refreshToken,
       });
     }
 
