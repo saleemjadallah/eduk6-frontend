@@ -181,31 +181,6 @@ const TeacherTestimonialsSection = () => {
           </div>
         </div>
 
-        {/* Stats Bar */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ delay: 0.3 }}
-          className="mt-16 grid grid-cols-2 md:grid-cols-4 gap-4"
-        >
-          {[
-            { value: '10,000+', label: 'Teachers' },
-            { value: '500K+', label: 'Lessons Created' },
-            { value: '4.9/5', label: 'Average Rating' },
-            { value: '80%', label: 'Time Saved' },
-          ].map((stat, index) => (
-            <div
-              key={stat.label}
-              className="bg-white rounded-2xl border-3 border-black p-4 text-center shadow-[4px_4px_0px_0px_rgba(45,90,74,0.2)]"
-            >
-              <p className="text-2xl md:text-3xl font-black text-teacher-chalk mb-1">
-                {stat.value}
-              </p>
-              <p className="text-sm text-teacher-inkLight font-medium">{stat.label}</p>
-            </div>
-          ))}
-        </motion.div>
       </div>
     </section>
   );
