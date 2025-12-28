@@ -60,11 +60,15 @@ export function useLessonProcessor() {
                 const base64 = await fileToBase64(file);
                 updateProgress(30);
 
+                // Get the currently selected child ID from localStorage
+                const childId = localStorage.getItem('current_profile_id') || null;
+
                 // Call the backend PPT analysis endpoint
                 const pptResponse = await api.post('/lessons/analyze-ppt', {
                     pptBase64: base64,
                     filename: file.name,
                     mimeType: file.type,
+                    childId,  // Include childId so lesson is saved to correct child
                     subject,
                     gradeLevel,
                     title,

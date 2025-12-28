@@ -8,26 +8,16 @@
 import { makeAuthenticatedRequest as makeRequest } from './api/apiUtils.js';
 
 // Get child context from localStorage
+// Returns the currently selected child's ID - the backend will validate and use the child's actual ageGroup
 function getChildContext() {
   const currentProfileId = localStorage.getItem('current_profile_id');
-  const storedChildren = localStorage.getItem('demo_children');
 
-  if (currentProfileId && storedChildren) {
-    try {
-      const children = JSON.parse(storedChildren);
-      const child = children.find(c => c.id === currentProfileId);
-      if (child) {
-        return {
-          childId: child.id,
-          ageGroup: child.age <= 7 ? 'YOUNG' : 'OLDER',
-        };
-      }
-    } catch (e) {
-      console.error('Error parsing child context:', e);
-    }
-  }
-
-  return { childId: null, ageGroup: 'OLDER' };
+  // Return the current profile ID directly - backend validates and gets child details
+  // This works for both real users and demo mode
+  return {
+    childId: currentProfileId || null,
+    ageGroup: 'OLDER'  // Default; backend uses actual child's ageGroup
+  };
 }
 
 // ============================================
