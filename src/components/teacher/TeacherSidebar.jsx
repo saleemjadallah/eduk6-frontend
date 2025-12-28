@@ -80,6 +80,8 @@ const TeacherSidebar = ({ collapsed, onToggle, isMobile = false }) => {
       items: [
         { icon: BarChart3, label: 'Usage & Billing', path: '/teacher/usage' },
         { icon: Settings, label: 'Settings', path: '/teacher/settings' },
+        // Sign Out - only shown on mobile for easy access
+        ...(isMobile ? [{ icon: LogOut, label: 'Sign Out', path: '#signout', isSignOut: true }] : []),
       ],
     },
   ];
@@ -202,10 +204,13 @@ const TeacherSidebar = ({ collapsed, onToggle, isMobile = false }) => {
                 return (
                   <li key={item.path}>
                     <Link
-                      to={item.disabled ? '#' : item.path}
-                      onClick={(e) => {
+                      to={item.disabled || item.isSignOut ? '#' : item.path}
+                      onClick={async (e) => {
                         if (item.disabled) {
                           e.preventDefault();
+                        } else if (item.isSignOut) {
+                          e.preventDefault();
+                          await handleSignOut();
                         } else if (isMobile) {
                           onToggle(); // Close mobile menu on navigation
                         }
@@ -215,10 +220,11 @@ const TeacherSidebar = ({ collapsed, onToggle, isMobile = false }) => {
                         ${isActive ? 'active' : ''}
                         ${item.disabled ? 'opacity-50 cursor-not-allowed' : ''}
                         ${!showExpanded ? 'justify-center px-0' : ''}
+                        ${item.isSignOut ? 'text-red-600 hover:bg-red-50 hover:text-red-700' : ''}
                       `}
                       title={!showExpanded ? item.label : undefined}
                     >
-                      <Icon className={`w-5 h-5 flex-shrink-0 ${isActive ? '' : 'text-teacher-inkLight'}`} />
+                      <Icon className={`w-5 h-5 flex-shrink-0 ${item.isSignOut ? '' : (isActive ? '' : 'text-teacher-inkLight')}`} />
 
                       <AnimatePresence>
                         {showExpanded && (
