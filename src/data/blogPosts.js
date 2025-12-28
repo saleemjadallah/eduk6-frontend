@@ -15,7 +15,7 @@ export const blogPosts = [
     tags: ['educational screen time', 'screen time for kids', 'healthy screen time', 'screen time guilt', 'learning apps for kids', 'quality screen time'],
     featuredImage: '/images/blog/educational-screen-time.jpg',
     featuredImageAlt: 'Child engaged in educational learning on tablet with parent nearby',
-    content: \`
+    content: `
 It's 5:47 PM. Dinner isn't started. Your four-year-old is melting down because the red cup is in the dishwasher. And your seven-year-old needs help with homework you don't remember ever learning yourself.
 
 So you do what you swore you wouldn't.
@@ -307,13 +307,13 @@ You have more influence over that relationship than any headline or study. Use i
 *At Orbit Learn, we believe screen time can be one of the most valuable parts of your child's day. Our AI-powered platform creates personalized lessons, quizzes, and flashcards that adapt to your child's unique learning style and interests. With detailed parent dashboards and real [child-safe AI technology](/blog/child-safety-ai-learning-guide), you can see exactly what your child is learning and feel confident about the time they spend with us.*
 
 **[Try Orbit Learn free for 7 days and experience educational screen time you can feel good about](/signup)**
-    \`,
+    `,
     relatedPosts: ['child-safety-ai-learning-guide', 'why-early-childhood-learning-should-feel-like-play'],
     schema: {
       '@context': 'https://schema.org',
       '@type': 'BlogPosting',
       headline: 'How to Make Screen Time Educational (Without the Guilt)',
-      description: 'Stop feeling guilty about screen time. Learn how to transform your child\\'s screen time into meaningful learning with research-backed strategies that work.',
+      description: 'Stop feeling guilty about screen time. Learn how to transform your child\'s screen time into meaningful learning with research-backed strategies that work.',
       author: {
         '@type': 'Organization',
         name: 'Orbit Learn',
