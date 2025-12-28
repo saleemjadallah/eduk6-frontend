@@ -200,6 +200,7 @@ const LandingFooter = () => {
     ],
     Company: [
       { name: 'About Us', href: '/about' },
+      { name: 'Blog', href: '/blog' },
       { name: 'Contact', href: '/contact' },
     ],
     Legal: [

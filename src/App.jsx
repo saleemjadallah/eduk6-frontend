@@ -32,6 +32,8 @@ import SupportPage from './pages/SupportPage';
 import AboutPage from './pages/AboutPage';
 import ContactPage from './pages/ContactPage';
 import NotFoundPage from './pages/NotFoundPage';
+import BlogPage from './pages/BlogPage';
+import BlogPostPage from './pages/BlogPostPage';
 import { PrivacyPolicyPage, TermsOfServicePage, CoppaCompliancePage } from './pages/legal';
 
 // Teacher Pages
@@ -157,6 +159,8 @@ const router = createBrowserRouter([
             // Public informational pages
             { path: 'about', element: <AboutPage /> },
             { path: 'contact', element: <ContactPage /> },
+            { path: 'blog', element: <BlogPage /> },
+            { path: 'blog/:slug', element: <BlogPostPage /> },
             { path: 'privacy-policy', element: <PrivacyPolicyPage /> },
             { path: 'terms', element: <TermsOfServicePage /> },
             { path: 'coppa', element: <CoppaCompliancePage /> },
