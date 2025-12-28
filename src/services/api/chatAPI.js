@@ -166,6 +166,33 @@ export const chatAPI = {
       }),
     });
   },
+
+  /**
+   * Generate an audio summary of the lesson using Ollie's voice
+   * @param {Object} data - Audio summary generation data
+   * @param {string} data.lessonId - Lesson ID
+   * @param {string} [data.ageGroup] - Age group: 'YOUNG' (4-7) or 'OLDER' (8-12)
+   * @returns {Promise<Object>} Response with audio URL and duration
+   */
+  generateAudioSummary: async ({ lessonId, ageGroup = 'OLDER' }) => {
+    return makeRequest(`/lessons/${lessonId}/audio-summary`, {
+      method: 'POST',
+      body: JSON.stringify({
+        ageGroup,
+      }),
+    });
+  },
+
+  /**
+   * Get the audio summary status for a lesson
+   * @param {string} lessonId - Lesson ID
+   * @returns {Promise<Object>} Response with status, audioUrl, and duration
+   */
+  getAudioSummaryStatus: async (lessonId) => {
+    return makeRequest(`/lessons/${lessonId}/audio-summary`, {
+      method: 'GET',
+    });
+  },
 };
 
 export default chatAPI;

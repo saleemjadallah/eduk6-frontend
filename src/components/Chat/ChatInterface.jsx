@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Send, Image, FileText, Sparkles, Clock, RefreshCw, Trash2, BookOpen, Loader2, HelpCircle, ZoomIn, ChevronDown, ChevronUp, ArrowRight } from 'lucide-react';
+import { Send, Image, FileText, Sparkles, Clock, RefreshCw, Trash2, BookOpen, Loader2, HelpCircle, ZoomIn, ChevronDown, ChevronUp, ArrowRight, Volume2, Play, Pause, RotateCcw } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import Ollie from '../Avatar/Ollie';
 import SafetyIndicator from './SafetyIndicator';
@@ -91,6 +91,15 @@ const ChatInterface = ({
     const [isGeneratingInfographic, setIsGeneratingInfographic] = useState(false);
     const [isGeneratingSummary, setIsGeneratingSummary] = useState(false);
     const [isGeneratingQuiz, setIsGeneratingQuiz] = useState(false);
+    const [isGeneratingAudioSummary, setIsGeneratingAudioSummary] = useState(false);
+
+    // Audio summary playback state
+    const [audioSummary, setAudioSummary] = useState(null); // { audioUrl, duration, status }
+    const [isAudioPlaying, setIsAudioPlaying] = useState(false);
+    const [audioCurrentTime, setAudioCurrentTime] = useState(0);
+    const [audioDuration, setAudioDuration] = useState(0);
+    const audioRef = useRef(null);
+    const progressBarRef = useRef(null);
 
     // Expanded view modal state
     const [expandedView, setExpandedView] = useState({ isOpen: false, type: null, data: null });
@@ -149,6 +158,26 @@ const ChatInterface = ({
             }]);
         }
     }, [demoMode]);
+
+    // Load existing audio summary when lesson changes
+    useEffect(() => {
+        if (!demoMode && activeLesson?.id) {
+            // Reset audio state when lesson changes
+            setAudioSummary(null);
+            setIsAudioPlaying(false);
+
+            // Check if lesson already has an audio summary
+            chatAPI.getAudioSummaryStatus(activeLesson.id)
+                .then(response => {
+                    if (response.data?.status === 'READY' && response.data?.audioUrl) {
+                        setAudioSummary(response.data);
+                    }
+                })
+                .catch(() => {
+                    // Ignore errors - just means no audio summary exists yet
+                });
+        }
+    }, [demoMode, activeLesson?.id]);
 
     const handleSend = async () => {
         if (!input.trim()) return;
@@ -548,8 +577,105 @@ const ChatInterface = ({
         }
     };
 
+    // Handle Audio Summary generation (Ollie's Voice)
+    const handleGenerateAudioSummary = async () => {
+        if (!activeLesson || isGeneratingAudioSummary) return;
+
+        setIsGeneratingAudioSummary(true);
+        const { ageGroup } = getChildContext();
+
+        try {
+            // First check if we already have an audio summary
+            const statusResponse = await chatAPI.getAudioSummaryStatus(activeLesson.id);
+
+            if (statusResponse.data?.status === 'READY' && statusResponse.data?.audioUrl) {
+                // Audio already exists, just play it
+                setAudioSummary(statusResponse.data);
+                setIsGeneratingAudioSummary(false);
+                // Auto-play
+                setTimeout(() => {
+                    if (audioRef.current) {
+                        audioRef.current.play();
+                        setIsAudioPlaying(true);
+                    }
+                }, 100);
+                return;
+            }
+
+            // Generate new audio summary
+            const response = await chatAPI.generateAudioSummary({
+                lessonId: activeLesson.id,
+                ageGroup,
+            });
+
+            if (response.data?.audioUrl) {
+                setAudioSummary(response.data);
+                // Auto-play when ready
+                setTimeout(() => {
+                    if (audioRef.current) {
+                        audioRef.current.play();
+                        setIsAudioPlaying(true);
+                    }
+                }, 100);
+            }
+        } catch (error) {
+            console.error('Audio summary generation failed:', error);
+            // Show error message in chat
+            const errorMsg = {
+                id: Date.now(),
+                role: 'assistant',
+                content: "Oops! I couldn't create an audio summary right now. Try again in a moment!",
+                timestamp: new Date(),
+                isError: true,
+            };
+            if (chatContext?.addMessage) {
+                chatContext.addMessage(errorMsg);
+            }
+        } finally {
+            setIsGeneratingAudioSummary(false);
+        }
+    };
+
+    // Audio playback controls
+    const toggleAudioPlayback = () => {
+        if (!audioRef.current) return;
+
+        if (isAudioPlaying) {
+            audioRef.current.pause();
+            setIsAudioPlaying(false);
+        } else {
+            audioRef.current.play();
+            setIsAudioPlaying(true);
+        }
+    };
+
+    const restartAudio = () => {
+        if (!audioRef.current) return;
+        audioRef.current.currentTime = 0;
+        audioRef.current.play();
+        setIsAudioPlaying(true);
+    };
+
+    // Handle seeking in the progress bar
+    const handleSeek = (e) => {
+        if (!audioRef.current || !progressBarRef.current) return;
+        const rect = progressBarRef.current.getBoundingClientRect();
+        const clickX = e.clientX - rect.left;
+        const percentage = Math.max(0, Math.min(1, clickX / rect.width));
+        const newTime = percentage * audioDuration;
+        audioRef.current.currentTime = newTime;
+        setAudioCurrentTime(newTime);
+    };
+
+    // Format time as mm:ss
+    const formatTime = (seconds) => {
+        const mins = Math.floor(seconds / 60);
+        const secs = Math.floor(seconds % 60);
+        return `${mins}:${secs.toString().padStart(2, '0')}`;
+    };
+
     // Check if any tool is loading
-    const isToolLoading = isGeneratingFlashcards || isGeneratingInfographic || isGeneratingSummary || isGeneratingQuiz;
+    const isToolLoading = isGeneratingFlashcards || isGeneratingInfographic || isGeneratingSummary || isGeneratingQuiz || isGeneratingAudioSummary;
 
     // Determine if chat should be disabled
     const isChatDisabled = !demoMode && !activeLesson && !isProcessing;
@@ -994,19 +1120,96 @@ const ChatInterface = ({
                             <span className="text-[10px] md:text-xs font-bold">Summarize</span>
                         </button>
                     </div>
-                    {/* Quiz button - full width */}
-                    <button
-                        onClick={handleGenerateQuiz}
-                        className="w-full flex items-center justify-center gap-2 p-2.5 md:p-3 min-h-[48px] md:min-h-[52px] bg-purple-500 text-white border-2 border-black rounded-xl hover:bg-purple-600 transition-colors shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] active:translate-y-[2px] active:shadow-none disabled:opacity-50 disabled:cursor-not-allowed"
-                        disabled={isChatDisabled || isToolLoading}
-                    >
-                        {isGeneratingQuiz ? (
-                            <Loader2 className="w-5 h-5 animate-spin" />
-                        ) : (
-                            <HelpCircle className="w-5 h-5" />
-                        )}
-                        <span className="font-bold text-sm md:text-base">Take a Quiz</span>
-                    </button>
+                    {/* Ollie's Summary + Quiz buttons - split width */}
+                    <div className="grid grid-cols-2 gap-2">
+                        <button
+                            onClick={handleGenerateAudioSummary}
+                            className="flex items-center justify-center gap-2 p-2.5 md:p-3 min-h-[48px] md:min-h-[52px] bg-teal-500 text-white border-2 border-black rounded-xl hover:bg-teal-600 transition-colors shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] active:translate-y-[2px] active:shadow-none disabled:opacity-50 disabled:cursor-not-allowed"
+                            disabled={isChatDisabled || isToolLoading}
+                        >
+                            {isGeneratingAudioSummary ? (
+                                <Loader2 className="w-5 h-5 animate-spin" />
+                            ) : (
+                                <Volume2 className="w-5 h-5" />
+                            )}
+                            <span className="font-bold text-sm md:text-base">Ollie's Summary</span>
+                        </button>
+                        <button
+                            onClick={handleGenerateQuiz}
+                            className="flex items-center justify-center gap-2 p-2.5 md:p-3 min-h-[48px] md:min-h-[52px] bg-purple-500 text-white border-2 border-black rounded-xl hover:bg-purple-600 transition-colors shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] active:translate-y-[2px] active:shadow-none disabled:opacity-50 disabled:cursor-not-allowed"
+                            disabled={isChatDisabled || isToolLoading}
+                        >
+                            {isGeneratingQuiz ? (
+                                <Loader2 className="w-5 h-5 animate-spin" />
+                            ) : (
+                                <HelpCircle className="w-5 h-5" />
+                            )}
+                            <span className="font-bold text-sm md:text-base">Take a Quiz</span>
+                        </button>
+                    </div>
+                    {/* Audio Player - shows when audio summary is available */}
+                    {audioSummary?.audioUrl && (
+                        <div className="mt-2 p-3 bg-teal-50 border-2 border-teal-200 rounded-xl">
+                            <div className="flex items-center gap-3 mb-2">
+                                <button
+                                    onClick={toggleAudioPlayback}
+                                    className="flex-shrink-0 flex items-center justify-center w-10 h-10 bg-teal-500 text-white rounded-full hover:bg-teal-600 transition-colors shadow-md"
+                                >
+                                    {isAudioPlaying ? (
+                                        <Pause className="w-5 h-5" />
+                                    ) : (
+                                        <Play className="w-5 h-5 ml-0.5" />
+                                    )}
+                                </button>
+                                <div className="flex-1 min-w-0">
+                                    <p className="text-sm font-bold text-teal-800 truncate">Ollie's Lesson Summary</p>
+                                </div>
+                                <button
+                                    onClick={restartAudio}
+                                    className="flex-shrink-0 flex items-center justify-center w-8 h-8 text-teal-600 hover:text-teal-800 transition-colors"
+                                    title="Restart"
+                                >
+                                    <RotateCcw className="w-4 h-4" />
+                                </button>
+                            </div>
+                            {/* Progress Bar */}
+                            <div className="flex items-center gap-2">
+                                <span className="text-xs text-teal-600 font-mono w-10 text-right">
+                                    {formatTime(audioCurrentTime)}
+                                </span>
+                                <div
+                                    ref={progressBarRef}
+                                    onClick={handleSeek}
+                                    className="flex-1 h-2 bg-teal-200 rounded-full cursor-pointer relative overflow-hidden group"
+                                >
+                                    <div
+                                        className="absolute top-0 left-0 h-full bg-teal-500 rounded-full transition-all duration-100"
+                                        style={{ width: `${audioDuration > 0 ? (audioCurrentTime / audioDuration) * 100 : 0}%` }}
+                                    />
+                                    <div
+                                        className="absolute top-1/2 -translate-y-1/2 w-3 h-3 bg-teal-600 rounded-full shadow-md opacity-0 group-hover:opacity-100 transition-opacity"
+                                        style={{ left: `calc(${audioDuration > 0 ? (audioCurrentTime / audioDuration) * 100 : 0}% - 6px)` }}
+                                    />
+                                </div>
+                                <span className="text-xs text-teal-600 font-mono w-10">
+                                    {formatTime(audioDuration)}
+                                </span>
+                            </div>
+                            <audio
+                                ref={audioRef}
+                                src={audioSummary.audioUrl}
+                                onEnded={() => {
+                                    setIsAudioPlaying(false);
+                                    setAudioCurrentTime(0);
+                                }}
+                                onPause={() => setIsAudioPlaying(false)}
+                                onPlay={() => setIsAudioPlaying(true)}
+                                onTimeUpdate={(e) => setAudioCurrentTime(e.target.currentTime)}
+                                onLoadedMetadata={(e) => setAudioDuration(e.target.duration)}
+                                className="hidden"
+                            />
+                        </div>
+                    )}
                 </div>
             )}
 
