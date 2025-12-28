@@ -72,7 +72,7 @@ const TeacherEmailVerificationPage = () => {
     <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 flex flex-col">
       {/* Header */}
       <header className="p-6">
-        <Link to="/" className="flex items-center w-fit">
+        <Link to="/teacher" className="flex items-center w-fit">
           <img src="/assets/rebranding-jeffrey-2024/orbit-learn-logo-icon 2.png" alt="Orbit Learn" className="h-16 md:h-20 w-auto rounded-xl" />
         </Link>
       </header>
