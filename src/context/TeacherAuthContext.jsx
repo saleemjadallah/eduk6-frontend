@@ -97,7 +97,7 @@ export function TeacherAuthProvider({ children }) {
     };
   }, []);
 
-  // Sign up function
+  // Sign up function - now logs user in immediately after signup
   const signUp = useCallback(async (email, password, firstName, lastName) => {
     setIsLoading(true);
     setError(null);
@@ -109,7 +109,26 @@ export function TeacherAuthProvider({ children }) {
         throw new Error(response.error || 'Sign up failed');
       }
 
-      return { success: true, requiresEmailVerification: true };
+      // Signup now returns tokens and logs the user in immediately
+      const data = response.data || response;
+      const teacherData = data.teacher;
+
+      if (teacherData) {
+        setTeacher(teacherData);
+        setIsInitialized(true);
+
+        // Set quota from response if available
+        if (data.quota) {
+          setQuota(data.quota);
+        }
+      }
+
+      return {
+        success: true,
+        teacher: teacherData,
+        // Note: email verification is still needed for subscriptions
+        needsEmailVerification: !teacherData?.emailVerified,
+      };
     } catch (err) {
       setError(err.message);
       throw err;
@@ -237,6 +256,26 @@ export function TeacherAuthProvider({ children }) {
     return response;
   }, []);
 
+  // Verify email via link token (lower friction than OTP)
+  const verifyEmailLink = useCallback(async (token) => {
+    const response = await teacherAPI.verifyEmailLink(token);
+
+    // If verified successfully, update the teacher's emailVerified status
+    if (response.success && response.teacher) {
+      setTeacher(prev => prev ? { ...prev, emailVerified: true } : prev);
+    }
+
+    return response;
+  }, []);
+
+  // Resend verification link
+  const resendVerificationLink = useCallback(async () => {
+    if (!teacher?.email) {
+      throw new Error('No email available');
+    }
+    return teacherAPI.resendVerificationLink(teacher.email);
+  }, [teacher?.email]);
+
   // Refresh auth (re-fetch teacher data)
   const refreshAuth = useCallback(async () => {
     try {
@@ -328,6 +367,8 @@ export function TeacherAuthProvider({ children }) {
     googleSignIn,
     signOut,
     verifyEmail,
+    verifyEmailLink,
+    resendVerificationLink,
     refreshAuth,
     updateProfile,
 
@@ -353,6 +394,8 @@ export function TeacherAuthProvider({ children }) {
     googleSignIn,
     signOut,
     verifyEmail,
+    verifyEmailLink,
+    resendVerificationLink,
     refreshAuth,
     updateProfile,
     refreshQuota,

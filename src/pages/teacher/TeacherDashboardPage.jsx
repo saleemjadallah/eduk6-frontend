@@ -26,10 +26,29 @@ import { SuggestionBox } from '../../components/SuggestionBox';
 
 const TeacherDashboardPage = () => {
   const navigate = useNavigate();
-  const { teacher, quota } = useTeacherAuth();
+  const { teacher, quota, needsEmailVerification, resendVerificationLink } = useTeacherAuth();
   const [contentStats, setContentStats] = useState(null);
   const [recentContent, setRecentContent] = useState([]);
   const [loadingStats, setLoadingStats] = useState(true);
+  const [resendingEmail, setResendingEmail] = useState(false);
+  const [emailResent, setEmailResent] = useState(false);
+  const [dismissedBanner, setDismissedBanner] = useState(false);
+
+  // Handle resend verification email
+  const handleResendVerification = async () => {
+    if (resendingEmail) return;
+
+    try {
+      setResendingEmail(true);
+      await resendVerificationLink();
+      setEmailResent(true);
+      setTimeout(() => setEmailResent(false), 5000);
+    } catch (err) {
+      console.error('Failed to resend verification:', err);
+    } finally {
+      setResendingEmail(false);
+    }
+  };
 
   useEffect(() => {
     fetchDashboardData();
@@ -181,6 +200,72 @@ const TeacherDashboardPage = () => {
         </Link>
       }
     >
+      {/* Email Verification Banner */}
+      <AnimatePresence>
+        {needsEmailVerification && !dismissedBanner && (
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            className="mb-6 rounded-xl bg-gradient-to-r from-amber-50 to-yellow-50 border border-amber-200 p-4"
+          >
+            <div className="flex items-start gap-3">
+              <div className="flex-shrink-0 mt-0.5">
+                <svg className="w-5 h-5 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+              </div>
+              <div className="flex-1 min-w-0">
+                <h4 className="font-semibold text-amber-800 text-sm">Verify your email to unlock all features</h4>
+                <p className="text-sm text-amber-700 mt-1">
+                  Check your inbox for a verification link. Verified emails unlock subscription upgrades and credit pack purchases.
+                </p>
+                <div className="flex flex-wrap items-center gap-3 mt-3">
+                  <button
+                    onClick={handleResendVerification}
+                    disabled={resendingEmail || emailResent}
+                    className="inline-flex items-center gap-1.5 text-sm font-medium text-amber-700 hover:text-amber-900 disabled:opacity-50"
+                  >
+                    {resendingEmail ? (
+                      <>
+                        <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                        </svg>
+                        Sending...
+                      </>
+                    ) : emailResent ? (
+                      <>
+                        <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                        </svg>
+                        <span className="text-green-700">Email sent!</span>
+                      </>
+                    ) : (
+                      <>
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                        </svg>
+                        Resend verification email
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
+              <button
+                onClick={() => setDismissedBanner(true)}
+                className="flex-shrink-0 p-1 text-amber-400 hover:text-amber-600 transition-colors"
+                aria-label="Dismiss"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Stats Overview */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6 sm:mb-8">
         {/* Credits Card */}

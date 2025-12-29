@@ -256,12 +256,27 @@ async function teacherPublicRequest(endpoint, options = {}) {
 export const teacherAPI = {
   /**
    * Sign up a new teacher account
+   * Returns tokens immediately - teacher is logged in after signup
+   * Email verification is handled separately via link (not blocking signup)
    */
   signUp: async ({ email, password, firstName, lastName }) => {
-    return teacherPublicRequest('/auth/signup', {
+    const response = await teacherPublicRequest('/auth/signup', {
       method: 'POST',
       body: JSON.stringify({ email, password, firstName, lastName }),
     });
+
+    // Signup now returns tokens - store them like login does
+    if (response.success) {
+      const data = response.data || response;
+      if (data.token) {
+        teacherTokenManager.setTokens({
+          token: data.token,
+          refreshToken: data.refreshToken,
+        });
+      }
+    }
+
+    return response;
   },
 
   /**
@@ -349,10 +364,31 @@ export const teacherAPI = {
   },
 
   /**
-   * Resend verification email
+   * Resend verification email (OTP code)
    */
   resendVerificationEmail: async (email) => {
     return teacherPublicRequest('/auth/resend-verification', {
+      method: 'POST',
+      body: JSON.stringify({ email }),
+    });
+  },
+
+  /**
+   * Verify email via link token (lower friction than OTP)
+   * @param {string} token - JWT token from verification link
+   */
+  verifyEmailLink: async (token) => {
+    return teacherPublicRequest('/auth/verify-email-link', {
+      method: 'POST',
+      body: JSON.stringify({ token }),
+    });
+  },
+
+  /**
+   * Resend verification link (not OTP)
+   */
+  resendVerificationLink: async (email) => {
+    return teacherPublicRequest('/auth/resend-verification-link', {
       method: 'POST',
       body: JSON.stringify({ email }),
     });

@@ -8,7 +8,6 @@ const TeacherSignupPage = () => {
   const navigate = useNavigate();
   const { signUp, googleSignIn, isLoading, isAuthenticated, isReady } = useTeacherAuth();
 
-  const [step, setStep] = useState('signup'); // 'signup' | 'verification_sent'
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
@@ -105,67 +104,19 @@ const TeacherSignupPage = () => {
     setApiError('');
 
     try {
+      // Signup now returns tokens and logs the user in immediately
       await signUp(
         formData.email,
         formData.password,
         formData.firstName,
         formData.lastName
       );
-      setStep('verification_sent');
+      // Navigate directly to dashboard - verification link sent via email
+      window.location.href = '/teacher/dashboard';
     } catch (err) {
       setApiError(err.message || 'Failed to create account. Please try again.');
     }
   };
-
-  // Verification sent view
-  if (step === 'verification_sent') {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 flex flex-col">
-        <header className="p-6">
-          <Link to="/teacher" className="flex items-center w-fit">
-            <img src="/assets/rebranding-jeffrey-2024/orbit-learn-logo-icon 2.png" alt="Orbit Learn" className="h-16 md:h-20 w-auto rounded-xl" />
-          </Link>
-        </header>
-
-        <main className="flex-1 flex items-center justify-center p-6">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="w-full max-w-md"
-          >
-            <div className="bg-white rounded-2xl shadow-xl border border-gray-100 p-8 text-center">
-              <div className="inline-flex items-center justify-center w-16 h-16 bg-green-100 rounded-full mb-4">
-                <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                </svg>
-              </div>
-              <h2 className="text-2xl font-bold text-gray-900 mb-2">Check Your Email</h2>
-              <p className="text-gray-600 mb-6">
-                We've sent a verification code to <strong>{formData.email}</strong>.
-                Please check your inbox and enter the code to complete your registration.
-              </p>
-              <Link
-                to="/teacher/verify-email"
-                state={{ email: formData.email }}
-                className="inline-block w-full bg-indigo-600 text-white font-semibold py-3 rounded-lg hover:bg-indigo-700 transition-colors"
-              >
-                Enter Verification Code
-              </Link>
-              <p className="mt-4 text-sm text-gray-500">
-                Didn't receive the email? Check your spam folder or{' '}
-                <button
-                  onClick={() => setStep('signup')}
-                  className="text-indigo-600 hover:underline"
-                >
-                  try again
-                </button>
-              </p>
-            </div>
-          </motion.div>
-        </main>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 flex flex-col">

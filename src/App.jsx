@@ -42,6 +42,7 @@ import {
   TeacherLoginPage,
   TeacherSignupPage,
   TeacherEmailVerificationPage,
+  TeacherVerifyEmailLinkPage,
   TeacherDashboardPage,
   ContentListPage,
   CreateContentPage,
@@ -65,6 +66,7 @@ import { AdminLoginPage, AnalyticsDashboard } from './pages/admin';
 
 // Components
 import { RewardPopup } from './components/Gamification';
+import RotateDevicePrompt from './components/UI/RotateDevicePrompt';
 import ProtectedRoute from './components/Routing/ProtectedRoute';
 import ProtectedTeacherRoute from './components/Routing/ProtectedTeacherRoute';
 import { ProtectedAdminRoute, PublicAdminRoute } from './components/Routing/ProtectedAdminRoute';
@@ -74,6 +76,20 @@ import { AdminLayout } from './components/admin';
 import ProtectedChildLayout from './components/Layouts/ProtectedChildLayout';
 import ParentPinVerification from './components/Parent/ParentPinVerification';
 import { NotebookModal } from './components/Notebook';
+import { useAuth } from './context/AuthContext';
+
+// Wrapper to show rotate prompt only when authenticated
+function AuthenticatedRotatePrompt() {
+    try {
+        const { user } = useAuth();
+        // Only show when user is logged in
+        if (!user) return null;
+        return <RotateDevicePrompt />;
+    } catch {
+        // AuthContext not available
+        return null;
+    }
+}
 
 function RootLayout() {
     return (
@@ -90,6 +106,7 @@ function RootLayout() {
                                     </ModeProvider>
                                     <RewardPopup />
                                     <NotebookModal />
+                                    <AuthenticatedRotatePrompt />
                                 </ChatProvider>
                             </FlashcardProvider>
                         </SelectionProvider>
@@ -246,6 +263,7 @@ const router = createBrowserRouter([
             { path: 'login', element: <TeacherLoginPage /> },
             { path: 'signup', element: <TeacherSignupPage /> },
             { path: 'verify-email', element: <TeacherEmailVerificationPage /> },
+            { path: 'verify-email-link', element: <TeacherVerifyEmailLinkPage /> },
 
             // Protected teacher routes
             {

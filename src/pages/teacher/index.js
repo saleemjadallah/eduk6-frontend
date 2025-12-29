@@ -2,6 +2,7 @@ export { default as TeacherLandingPage } from './TeacherLandingPage';
 export { default as TeacherLoginPage } from './TeacherLoginPage';
 export { default as TeacherSignupPage } from './TeacherSignupPage';
 export { default as TeacherEmailVerificationPage } from './TeacherEmailVerificationPage';
+export { default as TeacherVerifyEmailLinkPage } from './TeacherVerifyEmailLinkPage';
 export { default as TeacherDashboardPage } from './TeacherDashboardPage';
 export { default as ContentListPage } from './ContentListPage';
 export { default as CreateContentPage } from './CreateContentPage';
