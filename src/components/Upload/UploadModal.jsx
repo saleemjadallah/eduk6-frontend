@@ -1,8 +1,9 @@
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, FileText, Camera, Sparkles, AlertCircle } from 'lucide-react';
+import { X, FileText, Camera, Sparkles, AlertCircle, Type } from 'lucide-react';
 import FileDropzone from './FileDropzone';
 import CameraCapture from './CameraCapture';
+import TextInput from './TextInput';
 import ProcessingAnimation from './ProcessingAnimation';
 import SubjectSelector from './SubjectSelector';
 import GradeLevelSelector from './GradeLevelSelector';
@@ -11,6 +12,7 @@ import { useLessonProcessor } from '../../hooks/useLessonProcessor';
 
 const tabs = [
     { id: 'file', label: 'Upload File', icon: FileText },
+    { id: 'text', label: 'Paste Text', icon: Type },
     { id: 'camera', label: 'Camera', icon: Camera },
 ];
 
@@ -19,6 +21,7 @@ const UploadModal = ({ isOpen, onClose, onSuccess }) => {
     const [selectedFile, setSelectedFile] = useState(null);
     const [capturedImage, setCapturedImage] = useState(null);
     const [capturedImagePreview, setCapturedImagePreview] = useState(null);
+    const [pastedText, setPastedText] = useState('');
     const [lessonTitle, setLessonTitle] = useState('');
     const [subject, setSubject] = useState('');
     const [gradeLevel, setGradeLevel] = useState('');
@@ -27,7 +30,7 @@ const UploadModal = ({ isOpen, onClose, onSuccess }) => {
     const hasNavigatedRef = useRef(false);
 
     const { isProcessing, processingStage, processingProgress, error: contextError, setCurrentLesson, clearError, resetProcessing } = useLessonContext();
-    const { processFile } = useLessonProcessor();
+    const { processFile, processText } = useLessonProcessor();
 
     // Clear local error when tab changes
     useEffect(() => {
@@ -54,8 +57,8 @@ const UploadModal = ({ isOpen, onClose, onSuccess }) => {
 
     const handleClearFile = useCallback(() => {
         setSelectedFile(null);
-        if (!capturedImage) setLessonTitle('');
-    }, [capturedImage]);
+        if (!capturedImage && !pastedText) setLessonTitle('');
+    }, [capturedImage, pastedText]);
 
     const handleImageCapture = useCallback((file, previewUrl) => {
         setCapturedImage(file);
@@ -74,8 +77,27 @@ const UploadModal = ({ isOpen, onClose, onSuccess }) => {
     const handleClearImage = useCallback(() => {
         setCapturedImage(null);
         setCapturedImagePreview(null);
-        if (!selectedFile) setLessonTitle('');
-    }, [selectedFile]);
+        if (!selectedFile && !pastedText) setLessonTitle('');
+    }, [selectedFile, pastedText]);
+
+    const handleTextChange = useCallback((text) => {
+        setPastedText(text);
+        setLocalError(null);
+        // Auto-fill title if empty and text is substantial
+        if (!lessonTitle && text.trim().length > 20) {
+            // Try to extract first line or first sentence as title
+            const firstLine = text.trim().split('\n')[0].substring(0, 50);
+            const cleanTitle = firstLine.replace(/[^\w\s-]/g, '').trim();
+            if (cleanTitle.length > 3) {
+                setLessonTitle(cleanTitle);
+            }
+        }
+    }, [lessonTitle]);
+
+    const handleClearText = useCallback(() => {
+        setPastedText('');
+        if (!selectedFile && !capturedImage) setLessonTitle('');
+    }, [selectedFile, capturedImage]);
 
     const handleSubmit = async () => {
         if (!lessonTitle.trim()) {
@@ -96,19 +118,16 @@ const UploadModal = ({ isOpen, onClose, onSuccess }) => {
             } else if (capturedImage) {
                 // Process camera-captured image same as file upload
                 lesson = await processFile(capturedImage, lessonTitle, subject, gradeLevel);
+            } else if (pastedText && pastedText.trim().length >= 10) {
+                // Process pasted text
+                lesson = await processText(pastedText, lessonTitle, subject, gradeLevel);
             }
 
-            // Store the completed lesson to use when navigating
+            // Store the completed lesson - the useEffect will handle navigation
+            // after the processing animation shows "complete"
             if (lesson) {
                 setCompletedLesson(lesson);
                 setCurrentLesson(lesson.id);
-
-                // Navigate immediately after creation to avoid missing the lesson view
-                if (onSuccess && !hasNavigatedRef.current) {
-                    hasNavigatedRef.current = true;
-                    onClose();
-                    onSuccess(lesson.id);
-                }
             }
         } catch (error) {
             // Error is already handled in the processor and set in context
@@ -138,6 +157,7 @@ const UploadModal = ({ isOpen, onClose, onSuccess }) => {
         setSelectedFile(null);
         setCapturedImage(null);
         setCapturedImagePreview(null);
+        setPastedText('');
         setLessonTitle('');
         setSubject('');
         setGradeLevel('');
@@ -147,7 +167,8 @@ const UploadModal = ({ isOpen, onClose, onSuccess }) => {
         hasNavigatedRef.current = false;
     };
 
-    const canSubmit = (selectedFile || capturedImage) && lessonTitle.trim() && !isProcessing;
+    const hasValidText = pastedText && pastedText.trim().length >= 10;
+    const canSubmit = (selectedFile || capturedImage || hasValidText) && lessonTitle.trim() && !isProcessing;
 
     // Backdrop click handler
     const handleBackdropClick = (e) => {
@@ -258,6 +279,20 @@ const UploadModal = ({ isOpen, onClose, onSuccess }) => {
                                                         onFileSelect={handleFileSelect}
                                                         selectedFile={selectedFile}
                                                         onClear={handleClearFile}
+                                                    />
+                                                </motion.div>
+                                            )}
+                                            {activeTab === 'text' && (
+                                                <motion.div
+                                                    key="text-tab"
+                                                    initial={{ opacity: 0, x: -20 }}
+                                                    animate={{ opacity: 1, x: 0 }}
+                                                    exit={{ opacity: 0, x: 20 }}
+                                                >
+                                                    <TextInput
+                                                        onTextChange={handleTextChange}
+                                                        pastedText={pastedText}
+                                                        onClear={handleClearText}
                                                     />
                                                 </motion.div>
                                             )}
