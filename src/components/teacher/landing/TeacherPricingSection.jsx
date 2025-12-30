@@ -335,7 +335,7 @@ const TeacherPricingSection = () => {
               We offer special pricing for schools and districts with shared quotas.
             </p>
             <a
-              href="mailto:schools@orbitlearn.com"
+              href="mailto:support@orbitlearn.app"
               className="inline-flex items-center gap-2 text-teacher-plum font-bold hover:gap-3 transition-all"
             >
               Contact us for school pricing
