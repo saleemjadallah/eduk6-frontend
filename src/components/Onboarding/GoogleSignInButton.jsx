@@ -94,8 +94,8 @@ const GoogleSignInButton = ({ onSuccess, onError, disabled, text = 'continue_wit
       script.async = true;
       script.defer = true;
       script.onload = () => {
-        // Small delay to ensure Google API is fully ready
-        setTimeout(initializeGoogle, 100);
+        // Initialize immediately - script is ready
+        initializeGoogle();
       };
       script.onerror = () => {
         console.error('Failed to load Google Identity Services');
@@ -188,7 +188,7 @@ const GoogleSignInButton = ({ onSuccess, onError, disabled, text = 'continue_wit
               <path d="M3.964 10.712A5.41 5.41 0 013.682 9c0-.593.102-1.17.282-1.71V4.958H.957A8.996 8.996 0 000 9c0 1.452.348 2.827.957 4.042l3.007-2.33z" fill="#FBBC05"/>
               <path d="M9.003 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.464.891 11.428 0 9.002 0A8.997 8.997 0 00.957 4.958L3.964 7.29C4.672 5.163 6.656 3.58 9.002 3.58z" fill="#EA4335"/>
             </svg>
-            <span>Loading Google Sign-In...</span>
+            <span>{text === 'signup_with' ? 'Sign up with Google' : 'Continue with Google'}</span>
           </div>
         </div>
       )}
@@ -224,15 +224,22 @@ const GoogleSignInButton = ({ onSuccess, onError, disabled, text = 'continue_wit
           align-items: center;
           justify-content: center;
           gap: 12px;
-          padding: 10px 24px;
+          padding: 10px 12px;
           border: 1px solid #dadce0;
           border-radius: 4px;
           background: white;
-          font-family: 'Roboto', sans-serif;
+          font-family: 'Google Sans', Roboto, arial, sans-serif;
           font-size: 14px;
-          color: #3c4043;
+          font-weight: 500;
+          color: #1f1f1f;
           width: 100%;
-          max-width: 320px;
+          height: 40px;
+          cursor: pointer;
+          transition: background-color 0.2s, border-color 0.2s;
+        }
+        .loading-placeholder:hover {
+          background: #f8faff;
+          border-color: #d2e3fc;
         }
       `}</style>
     </div>
