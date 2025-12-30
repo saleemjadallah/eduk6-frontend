@@ -22,6 +22,12 @@
 	<string>$(CURRENT_PROJECT_VERSION)</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
+	<key>NSCameraUsageDescription</key>
+	<string>Orbit Learn needs camera access to take photos of worksheets, textbook pages, and other learning materials.</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>Orbit Learn needs permission to save captured lesson images to your photo library.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Orbit Learn needs photo library access to select images of worksheets and learning materials.</string>
 	<key>UILaunchStoryboardName</key>
 	<string>LaunchScreen</string>
 	<key>UIMainStoryboardFile</key>
@@ -30,26 +36,21 @@
 	<array>
 		<string>armv7</string>
 	</array>
-	<key>UISupportedInterfaceOrientations</key>
-	<array>
-		<string>UIInterfaceOrientationPortrait</string>
-		<string>UIInterfaceOrientationLandscapeLeft</string>
-		<string>UIInterfaceOrientationLandscapeRight</string>
-	</array>
 	<key>UISupportedInterfaceOrientations~ipad</key>
 	<array>
-		<string>UIInterfaceOrientationPortrait</string>
-		<string>UIInterfaceOrientationPortraitUpsideDown</string>
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
+		<string>UIInterfaceOrientationPortrait</string>
+		<string>UIInterfaceOrientationPortraitUpsideDown</string>
 	</array>
 	<key>UIViewControllerBasedStatusBarAppearance</key>
 	<true/>
-	<key>NSCameraUsageDescription</key>
-	<string>Orbit Learn needs camera access to take photos of worksheets, textbook pages, and other learning materials.</string>
-	<key>NSPhotoLibraryUsageDescription</key>
-	<string>Orbit Learn needs photo library access to select images of worksheets and learning materials.</string>
-	<key>NSPhotoLibraryAddUsageDescription</key>
-	<string>Orbit Learn needs permission to save captured lesson images to your photo library.</string>
+	<key>NSAppTransportSecurity</key>
+	<dict>
+		<key>NSAllowsArbitraryLoads</key>
+		<true/>
+		<key>NSAllowsLocalNetworking</key>
+		<true/>
+	</dict>
 </dict>
 </plist>

@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Link, useParams, useNavigate } from 'react-router-dom';
 import { LayoutDashboard, TrendingUp } from 'lucide-react';
 import MainLayout from '../components/Layout/MainLayout';
+import './StudyPage.css';
 import LessonView from '../components/Lesson/LessonView';
 import ChatInterface from '../components/Chat/ChatInterface';
 import UploadButton from '../components/Upload/UploadButton';
@@ -228,7 +229,7 @@ const StudyPage = () => {
 
             {/* Main content with padding for top bar */}
             {/* iPad Split-View Layout: Side-by-side on tablet+, stacked on mobile */}
-            <div className="pt-14 md:pt-16 flex-1 flex flex-col md:flex-row overflow-hidden">
+            <div className="pt-14 md:pt-16 flex-1 flex flex-col md:flex-row overflow-hidden study-layout">
                 {isLoadingFromDb ? (
                     <div className="flex-1 flex items-center justify-center">
                         <div className="text-center">
@@ -241,7 +242,7 @@ const StudyPage = () => {
                         {isPdfLesson && currentLesson.fileUrl ? (
                             <>
                                 {/* PDF Viewer - Left Pane */}
-                                <div className="w-full md:w-3/5 p-4 h-1/2 md:h-full overflow-hidden">
+                                <div className="w-full md:w-3/5 p-4 h-1/2 md:h-full overflow-hidden study-pdf-pane">
                                     <PDFViewer
                                         pdfUrl={currentLesson.fileUrl}
                                         lessonId={currentLesson.id}
@@ -253,7 +254,7 @@ const StudyPage = () => {
                                     />
                                 </div>
                                 {/* Chat Interface - Right Pane */}
-                                <div className="w-full md:w-2/5 md:border-l-4 border-t-4 md:border-t-0 border-black flex flex-col h-1/2 md:h-full">
+                                <div className="w-full md:w-2/5 md:border-l-4 border-t-4 md:border-t-0 border-black flex flex-col h-1/2 md:h-full study-pdf-chat-pane">
                                     <SelectedTextPreview onSendToChat={handleSendToChat} />
                                     <ChatInterface
                                         lesson={currentLesson}
@@ -267,13 +268,13 @@ const StudyPage = () => {
                             <>
                                 {/* iPad Split View: Lesson Content (left) | Chat (right) */}
                                 {/* Mobile: Stacked with lesson on top, chat below */}
-                                <div className="w-full md:w-[55%] lg:w-[60%] h-[45%] md:h-full overflow-hidden flex flex-col p-2 md:p-4">
+                                <div className="w-full md:w-[55%] lg:w-[60%] h-[45%] md:h-full overflow-hidden flex flex-col p-2 md:p-4 study-lesson-pane">
                                     <LessonView
                                         lesson={currentLesson}
                                         onComplete={handleLessonComplete}
                                     />
                                 </div>
-                                <div className="w-full md:w-[45%] lg:w-[40%] h-[55%] md:h-full overflow-hidden flex flex-col p-2 md:p-4 md:pl-0">
+                                <div className="w-full md:w-[45%] lg:w-[40%] h-[55%] md:h-full overflow-hidden flex flex-col p-2 md:p-4 md:pl-0 study-chat-pane">
                                     <ChatInterface
                                         lesson={currentLesson}
                                         onInteraction={handleChatInteraction}

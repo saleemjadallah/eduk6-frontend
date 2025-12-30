@@ -1,0 +1,65 @@
+/* StudyPage iPad Landscape Optimizations */
+
+/* iPad landscape: expand lesson canvas, reduce chat width */
+@media (min-width: 768px) and (max-width: 1366px) and (orientation: landscape) {
+  .study-layout {
+    display: flex;
+    flex-direction: row;
+  }
+
+  /* Lesson canvas - expand to 70% on iPad landscape */
+  .study-lesson-pane {
+    width: 70% !important;
+    flex: none !important;
+  }
+
+  /* Chat pane - reduce to 30% on iPad landscape */
+  .study-chat-pane {
+    width: 30% !important;
+    flex: none !important;
+  }
+
+  /* PDF viewer pane - also expand */
+  .study-pdf-pane {
+    width: 65% !important;
+    flex: none !important;
+  }
+
+  /* PDF chat pane */
+  .study-pdf-chat-pane {
+    width: 35% !important;
+    flex: none !important;
+  }
+}
+
+/* Larger iPads (12.9" Pro) in landscape - even wider lesson area */
+@media (min-width: 1024px) and (max-width: 1400px) and (orientation: landscape) {
+  .study-lesson-pane {
+    width: 72% !important;
+  }
+
+  .study-chat-pane {
+    width: 28% !important;
+  }
+}
+
+/* Ensure content uses full width inside the panes */
+@media (min-width: 768px) and (orientation: landscape) {
+  .study-lesson-pane .prose {
+    max-width: none !important;
+  }
+
+  .study-lesson-pane .lesson-content {
+    max-width: none !important;
+  }
+
+  /* Better padding on iPad landscape */
+  .study-lesson-pane {
+    padding: 1rem !important;
+  }
+
+  .study-chat-pane {
+    padding: 0.75rem !important;
+    padding-left: 0 !important;
+  }
+}
