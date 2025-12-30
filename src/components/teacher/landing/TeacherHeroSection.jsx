@@ -126,12 +126,6 @@ const TeacherHeroSection = () => {
                 Start Creating Free
                 <ArrowRight className="w-4 h-4 md:w-5 md:h-5 group-hover:translate-x-1 transition-transform" />
               </Link>
-              <button
-                onClick={() => document.getElementById('features')?.scrollIntoView({ behavior: 'smooth' })}
-                className="inline-flex items-center justify-center gap-2 bg-white text-teacher-ink text-base md:text-lg font-bold px-6 md:px-8 py-3 md:py-4 rounded-2xl border-4 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] hover:translate-y-[-2px] active:translate-y-[2px] active:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] transition-all"
-              >
-                See How It Works
-              </button>
             </motion.div>
 
             {/* Trust Badges */}
