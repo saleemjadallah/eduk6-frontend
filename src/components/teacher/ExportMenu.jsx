@@ -5,6 +5,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { teacherAPI } from '../../services/api/teacherAPI';
+import ExportLoadingModal from './ExportLoadingModal';
 import './ExportMenu.css';
 
 export default function ExportMenu({ contentId, contentTitle, contentType = 'LESSON', onExportStart, onExportEnd }) {
@@ -395,6 +396,13 @@ export default function ExportMenu({ contentId, contentTitle, contentType = 'LES
           </div>
         </div>
       )}
+
+      {/* Export Loading Modal */}
+      <ExportLoadingModal
+        isOpen={isExporting}
+        exportType={exportType}
+        contentTitle={contentTitle}
+      />
     </div>
   );
 }

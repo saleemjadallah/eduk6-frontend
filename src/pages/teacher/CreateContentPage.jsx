@@ -24,6 +24,7 @@ import {
   X,
   AlertCircle,
 } from 'lucide-react';
+import GenerationLoadingModal from '../../components/teacher/GenerationLoadingModal';
 
 // Ollie Avatar using actual asset
 const OllieAvatar = ({ size = 'md' }) => {
@@ -566,31 +567,100 @@ const CreateContentPage = () => {
             </div>
           </div>
 
-          {/* Input Mode Tabs */}
-          <div className="px-4 sm:px-6 py-2 border-b border-teacher-ink/5 bg-teacher-paper/50">
-            <div className="flex gap-2">
-              <button
+          {/* Input Mode Tabs - Prominent Card Style */}
+          <div className="px-4 sm:px-6 py-4 border-b border-teacher-ink/10 bg-gradient-to-b from-teacher-paper/80 to-white">
+            <p className="text-xs font-medium text-teacher-inkLight uppercase tracking-wider mb-3 text-center sm:text-left">
+              How would you like to start?
+            </p>
+            <div className="grid grid-cols-2 gap-3">
+              {/* Describe Topic Option */}
+              <motion.button
                 onClick={() => setInputMode('chat')}
-                className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                className={`relative flex flex-col items-center sm:items-start p-4 rounded-xl border-2 transition-all duration-200 text-left group ${
+                  inputMode === 'chat'
+                    ? 'border-teacher-chalk bg-teacher-chalk/5 shadow-md'
+                    : 'border-teacher-ink/10 bg-white hover:border-teacher-chalk/40 hover:bg-teacher-chalk/5'
+                }`}
+              >
+                {/* Selected indicator */}
+                {inputMode === 'chat' && (
+                  <motion.div
+                    layoutId="activeTab"
+                    className="absolute inset-0 rounded-xl bg-gradient-to-br from-teacher-chalk/10 to-transparent"
+                    initial={false}
+                    transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
+                  />
+                )}
+
+                <div className={`relative w-10 h-10 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center mb-2 transition-colors ${
                   inputMode === 'chat'
                     ? 'bg-teacher-chalk text-white'
-                    : 'text-teacher-inkLight hover:bg-teacher-ink/5'
-                }`}
-              >
-                <MessageSquare className="w-4 h-4" />
-                Describe Topic
-              </button>
-              <button
+                    : 'bg-teacher-ink/5 text-teacher-inkLight group-hover:bg-teacher-chalk/20 group-hover:text-teacher-chalk'
+                }`}>
+                  <MessageSquare className="w-5 h-5 sm:w-6 sm:h-6" />
+                </div>
+
+                <span className={`font-semibold text-sm sm:text-base transition-colors ${
+                  inputMode === 'chat' ? 'text-teacher-chalk' : 'text-teacher-ink'
+                }`}>
+                  Describe Topic
+                </span>
+
+                <span className="text-xs text-teacher-inkLight mt-0.5 hidden sm:block">
+                  Tell Ollie what to create
+                </span>
+              </motion.button>
+
+              {/* Upload File Option */}
+              <motion.button
                 onClick={() => setInputMode('pdf')}
-                className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                className={`relative flex flex-col items-center sm:items-start p-4 rounded-xl border-2 transition-all duration-200 text-left group overflow-hidden ${
                   inputMode === 'pdf'
-                    ? 'bg-teacher-chalk text-white'
-                    : 'text-teacher-inkLight hover:bg-teacher-ink/5'
+                    ? 'border-teacher-gold bg-teacher-gold/5 shadow-md'
+                    : 'border-teacher-ink/10 bg-white hover:border-teacher-gold/40 hover:bg-teacher-gold/5'
                 }`}
               >
-                <Upload className="w-4 h-4" />
-                Upload File
-              </button>
+                {/* Attention-grabbing shimmer for upload option when not selected */}
+                {inputMode !== 'pdf' && (
+                  <motion.div
+                    className="absolute inset-0 bg-gradient-to-r from-transparent via-teacher-gold/10 to-transparent -skew-x-12"
+                    animate={{ x: ['-100%', '200%'] }}
+                    transition={{ duration: 3, repeat: Infinity, repeatDelay: 2 }}
+                  />
+                )}
+
+                {/* Selected indicator */}
+                {inputMode === 'pdf' && (
+                  <motion.div
+                    layoutId="activeTab"
+                    className="absolute inset-0 rounded-xl bg-gradient-to-br from-teacher-gold/10 to-transparent"
+                    initial={false}
+                    transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
+                  />
+                )}
+
+                <div className={`relative w-10 h-10 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center mb-2 transition-colors ${
+                  inputMode === 'pdf'
+                    ? 'bg-teacher-gold text-white'
+                    : 'bg-teacher-ink/5 text-teacher-inkLight group-hover:bg-teacher-gold/20 group-hover:text-teacher-gold'
+                }`}>
+                  <Upload className="w-5 h-5 sm:w-6 sm:h-6" />
+                </div>
+
+                <span className={`font-semibold text-sm sm:text-base transition-colors ${
+                  inputMode === 'pdf' ? 'text-teacher-gold' : 'text-teacher-ink'
+                }`}>
+                  Upload File
+                </span>
+
+                <span className="text-xs text-teacher-inkLight mt-0.5 hidden sm:block">
+                  PDF or PowerPoint
+                </span>
+              </motion.button>
             </div>
           </div>
 
@@ -1083,6 +1153,19 @@ const CreateContentPage = () => {
           </span>
         </div>
       </div>
+
+      {/* Generation Loading Modal */}
+      <GenerationLoadingModal
+        isOpen={generating}
+        progress={generationProgress.progress}
+        currentStep={generationProgress.step}
+        message={generationProgress.message}
+        completedSteps={generationProgress.completedSteps}
+        contentType={lessonDetails.lessonType === 'full' ? 'full_lesson' : 'study_guide'}
+        includeQuiz={lessonDetails.includeQuiz}
+        includeFlashcards={lessonDetails.includeFlashcards}
+        includeInfographic={lessonDetails.includeInfographic}
+      />
     </TeacherLayout>
   );
 };
