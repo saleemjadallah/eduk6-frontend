@@ -107,19 +107,18 @@ const GenerationLoadingModal = ({
 }) => {
   const [messageIndex, setMessageIndex] = useState(0);
   const [tipIndex, setTipIndex] = useState(0);
-  const [elapsedTime, setElapsedTime] = useState(0);
 
-  // Calculate time estimate based on content type and options
+  // Calculate time estimate based on content type and options (capped at 3 minutes)
   const timeEstimate = useMemo(() => {
-    let baseTime = contentType === 'full_lesson' ? 90 : 45; // seconds
-    if (includeQuiz) baseTime += 20;
-    if (includeFlashcards) baseTime += 15;
-    if (includeInfographic) baseTime += 30;
+    let minMinutes = contentType === 'full_lesson' ? 2 : 1;
+    let maxMinutes = contentType === 'full_lesson' ? 3 : 2;
 
-    const minMinutes = Math.ceil(baseTime / 60);
-    const maxMinutes = Math.ceil((baseTime * 1.5) / 60);
+    // Add a bit more for extras but cap at 3
+    if (includeQuiz || includeFlashcards || includeInfographic) {
+      maxMinutes = 3;
+    }
 
-    return { min: minMinutes, max: maxMinutes, baseSeconds: baseTime };
+    return { min: minMinutes, max: Math.min(maxMinutes, 3) };
   }, [contentType, includeQuiz, includeFlashcards, includeInfographic]);
 
   // Build active steps list
@@ -148,35 +147,6 @@ const GenerationLoadingModal = ({
     }, 12000);
     return () => clearInterval(interval);
   }, [isOpen]);
-
-  // Track elapsed time
-  useEffect(() => {
-    if (!isOpen) {
-      setElapsedTime(0);
-      return;
-    }
-    const interval = setInterval(() => {
-      setElapsedTime((prev) => prev + 1);
-    }, 1000);
-    return () => clearInterval(interval);
-  }, [isOpen]);
-
-  // Calculate estimated remaining time
-  const estimatedRemaining = useMemo(() => {
-    if (progress === 0) return timeEstimate.baseSeconds;
-    const progressRate = progress / elapsedTime; // % per second
-    if (progressRate <= 0) return null;
-    const remaining = (100 - progress) / progressRate;
-    return Math.round(remaining);
-  }, [progress, elapsedTime, timeEstimate.baseSeconds]);
-
-  const formatTime = (seconds) => {
-    if (!seconds || seconds < 0) return null;
-    if (seconds < 60) return `~${seconds}s remaining`;
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `~${mins}m ${secs}s remaining`;
-  };
 
   const currentTip = TEACHING_TIPS[tipIndex];
   const TipIcon = currentTip.icon;
@@ -400,17 +370,6 @@ const GenerationLoadingModal = ({
                     {progress}%
                   </motion.div>
                 </div>
-
-                {/* Time remaining */}
-                {estimatedRemaining && estimatedRemaining > 0 && currentStep !== 'completed' && (
-                  <motion.p
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    className="text-xs text-teacher-inkLight text-center"
-                  >
-                    {formatTime(estimatedRemaining)}
-                  </motion.p>
-                )}
               </div>
 
               {/* Step indicators */}
